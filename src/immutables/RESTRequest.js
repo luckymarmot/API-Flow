@@ -13,6 +13,7 @@ export class KeyValue extends Immutable.Record({
 }) { }
 
 export default class Request extends Immutable.Record({
+  name : null,
   url: null,
   method: null,
   headers: Immutable.OrderedMap(),
@@ -55,3 +56,8 @@ export default class Request extends Immutable.Record({
     return this.set('auth', auth)
   }
 }
+
+export class Group extends Immutable.Record({
+  name : null,
+  children : Immutable.OrderedMap()
+})
