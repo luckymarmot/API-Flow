@@ -1,0 +1,487 @@
+{
+  "tests": [
+    {
+      "input": "foo", 
+      "output": "foo"
+    }, 
+    {
+      "input": "foo bar", 
+      "output": [
+        "foo", 
+        "bar"
+      ]
+    }, 
+    {
+      "input": "foo\\ bar", 
+      "output": "foo bar"
+    }, 
+    {
+      "input": "foo\tbar", 
+      "output": [
+        "foo", 
+        "bar"
+      ]
+    }, 
+    {
+      "input": "foo\" \"bar", 
+      "output": "foo bar"
+    }, 
+    {
+      "input": "foo' 'bar", 
+      "output": "foo bar"
+    }, 
+    {
+      "input": "foo$' 'bar", 
+      "output": "foo bar"
+    }, 
+    {
+      "input": "'foo'", 
+      "output": "foo"
+    }, 
+    {
+      "input": "'foo' 'bar'", 
+      "output": [
+        "foo", 
+        "bar"
+      ]
+    }, 
+    {
+      "input": "foo'some infos'bar", 
+      "output": "foosome infosbar"
+    }, 
+    {
+      "input": "foo'some infos'bar", 
+      "output": "foosome infosbar"
+    }, 
+    {
+      "input": "foo'some' 'infos'bar", 
+      "output": [
+        "foosome", 
+        "infosbar"
+      ]
+    }, 
+    {
+      "input": "foo'some''infos'bar", 
+      "output": "foosomeinfosbar"
+    }, 
+    {
+      "input": "foo'some'\\ 'infos'bar", 
+      "output": "foosome infosbar"
+    }, 
+    {
+      "input": "foo'some'\" \"'infos'bar", 
+      "output": "foosome infosbar"
+    }, 
+    {
+      "input": "foo'some'$' ''infos'bar", 
+      "output": "foosome infosbar"
+    }, 
+    {
+      "input": "'foo\\nbar'", 
+      "output": "foo\\nbar"
+    }, 
+    {
+      "input": "foo'foo\\\"bar\\nfoo'bar", 
+      "output": "foofoo\\\"bar\\nfoobar"
+    }, 
+    {
+      "input": "foo\\nbar", 
+      "output": "foonbar"
+    }, 
+    {
+      "input": "foo\\\\bar", 
+      "output": "foo\\bar"
+    }, 
+    {
+      "input": "foo\\\nbar\n", 
+      "output": "foobar"
+    }, 
+    {
+      "input": "\"foo\\nbar\"", 
+      "output": "foo\\nbar"
+    }, 
+    {
+      "input": "\"foo\\ bar\"", 
+      "output": "foo\\ bar"
+    }, 
+    {
+      "input": "\"foo\\rbar\"", 
+      "output": "foo\\rbar"
+    }, 
+    {
+      "input": "\"foo\\\nbar\"", 
+      "output": "foobar"
+    }, 
+    {
+      "input": "\"foo\\\nbar\\\ntoo\\nbar\\\nboo\\ poo\\\ntii\"", 
+      "output": "foobartoo\\nbarboo\\ pootii"
+    }, 
+    {
+      "input": "foo ooo' 'bar\"foo\\\ntoo'boo'\\\nyoo\" loo", 
+      "output": [
+        "foo", 
+        "ooo barfootoo'boo'yoo", 
+        "loo"
+      ]
+    }, 
+    {
+      "input": "foo ooo\" \"bar'foo\\\ntoo\"boo\"\\\nyoo' loo", 
+      "output": [
+        "foo", 
+        "ooo barfoo\\\ntoo\"boo\"\\\nyoo", 
+        "loo"
+      ]
+    }, 
+    {
+      "input": "foo ooo\" \"bar'foo\ntoo\"boo\"\nyoo' loo", 
+      "output": [
+        "foo", 
+        "ooo barfoo\ntoo\"boo\"\nyoo", 
+        "loo"
+      ]
+    }, 
+    {
+      "input": "$'foo'", 
+      "output": "foo"
+    }, 
+    {
+      "input": "$'foo bar'", 
+      "output": "foo bar"
+    }, 
+    {
+      "input": "$'foo\\abar'", 
+      "output": "foo\u0007bar"
+    }, 
+    {
+      "input": "$'foo\\bbar'", 
+      "output": "foo\bbar"
+    }, 
+    {
+      "input": "$'foo\\ebar'", 
+      "output": "foo\u001bbar"
+    }, 
+    {
+      "input": "$'foo\\Ebar'", 
+      "output": "foo\u001bbar"
+    }, 
+    {
+      "input": "$'foo\\fbar'", 
+      "output": "foo\fbar"
+    }, 
+    {
+      "input": "$'foo\\nbar'", 
+      "output": "foo\nbar"
+    }, 
+    {
+      "input": "$'foo\\rbar'", 
+      "output": "foo\rbar"
+    }, 
+    {
+      "input": "$'foo\\tbar'", 
+      "output": "foo\tbar"
+    }, 
+    {
+      "input": "$'foo\\vbar'", 
+      "output": "foo\u000bbar"
+    }, 
+    {
+      "input": "$'foo\\\\bar'", 
+      "output": "foo\\bar"
+    }, 
+    {
+      "input": "$'foo\\'bar'", 
+      "output": "foo'bar"
+    }, 
+    {
+      "input": "$'foo\\\"bar'", 
+      "output": "foo\"bar"
+    }, 
+    {
+      "input": "$'foo\\7bar'", 
+      "output": "foo\u0007bar"
+    }, 
+    {
+      "input": "$'foo\\12bar'", 
+      "output": "foo\nbar"
+    }, 
+    {
+      "input": "$'foo\\110bar'", 
+      "output": "fooHbar"
+    }, 
+    {
+      "input": "$'foo\\x07bar'", 
+      "output": "foo\u0007bar"
+    }, 
+    {
+      "input": "$'foo\\x7'", 
+      "output": "foo\u0007"
+    }, 
+    {
+      "input": "$'foo\\x7zoo'", 
+      "output": "foo\u0007zoo"
+    }, 
+    {
+      "input": "$'foo\\x0abar'", 
+      "output": "foo\nbar"
+    }, 
+    {
+      "input": "$'foo\\x48bar'", 
+      "output": "fooHbar"
+    }, 
+    {
+      "input": "$'foo\\cAbar'", 
+      "output": "foo\u0001bar"
+    }, 
+    {
+      "input": "$'foo\\cBbar'", 
+      "output": "foo\u0002bar"
+    }, 
+    {
+      "input": "$'foo\\cCbar'", 
+      "output": "foo\u0003bar"
+    }, 
+    {
+      "input": "$'foo\\cDbar'", 
+      "output": "foo\u0004bar"
+    }, 
+    {
+      "input": "$'foo\\cEbar'", 
+      "output": "foo\u0005bar"
+    }, 
+    {
+      "input": "$'foo\\cFbar'", 
+      "output": "foo\u0006bar"
+    }, 
+    {
+      "input": "$'foo\\cGbar'", 
+      "output": "foo\u0007bar"
+    }, 
+    {
+      "input": "$'foo\\cHbar'", 
+      "output": "foo\bbar"
+    }, 
+    {
+      "input": "$'foo\\cIbar'", 
+      "output": "foo\tbar"
+    }, 
+    {
+      "input": "$'foo\\cJbar'", 
+      "output": "foo\nbar"
+    }, 
+    {
+      "input": "$'foo\\cKbar'", 
+      "output": "foo\u000bbar"
+    }, 
+    {
+      "input": "$'foo\\cLbar'", 
+      "output": "foo\fbar"
+    }, 
+    {
+      "input": "$'foo\\cMbar'", 
+      "output": "foo\rbar"
+    }, 
+    {
+      "input": "$'foo\\cNbar'", 
+      "output": "foo\u000ebar"
+    }, 
+    {
+      "input": "$'foo\\cObar'", 
+      "output": "foo\u000fbar"
+    }, 
+    {
+      "input": "$'foo\\cPbar'", 
+      "output": "foo\u0010bar"
+    }, 
+    {
+      "input": "$'foo\\cQbar'", 
+      "output": "foo\u0011bar"
+    }, 
+    {
+      "input": "$'foo\\cRbar'", 
+      "output": "foo\u0012bar"
+    }, 
+    {
+      "input": "$'foo\\cSbar'", 
+      "output": "foo\u0013bar"
+    }, 
+    {
+      "input": "$'foo\\cTbar'", 
+      "output": "foo\u0014bar"
+    }, 
+    {
+      "input": "$'foo\\cUbar'", 
+      "output": "foo\u0015bar"
+    }, 
+    {
+      "input": "$'foo\\cVbar'", 
+      "output": "foo\u0016bar"
+    }, 
+    {
+      "input": "$'foo\\cWbar'", 
+      "output": "foo\u0017bar"
+    }, 
+    {
+      "input": "$'foo\\cXbar'", 
+      "output": "foo\u0018bar"
+    }, 
+    {
+      "input": "$'foo\\cYbar'", 
+      "output": "foo\u0019bar"
+    }, 
+    {
+      "input": "$'foo\\cZbar'", 
+      "output": "foo\u001abar"
+    }, 
+    {
+      "input": "$'foo\\cabar'", 
+      "output": "foo\u0001bar"
+    }, 
+    {
+      "input": "$'foo\\cbbar'", 
+      "output": "foo\u0002bar"
+    }, 
+    {
+      "input": "$'foo\\ccbar'", 
+      "output": "foo\u0003bar"
+    }, 
+    {
+      "input": "$'foo\\cdbar'", 
+      "output": "foo\u0004bar"
+    }, 
+    {
+      "input": "$'foo\\cebar'", 
+      "output": "foo\u0005bar"
+    }, 
+    {
+      "input": "$'foo\\cfbar'", 
+      "output": "foo\u0006bar"
+    }, 
+    {
+      "input": "$'foo\\cgbar'", 
+      "output": "foo\u0007bar"
+    }, 
+    {
+      "input": "$'foo\\chbar'", 
+      "output": "foo\bbar"
+    }, 
+    {
+      "input": "$'foo\\cibar'", 
+      "output": "foo\tbar"
+    }, 
+    {
+      "input": "$'foo\\cjbar'", 
+      "output": "foo\nbar"
+    }, 
+    {
+      "input": "$'foo\\ckbar'", 
+      "output": "foo\u000bbar"
+    }, 
+    {
+      "input": "$'foo\\clbar'", 
+      "output": "foo\fbar"
+    }, 
+    {
+      "input": "$'foo\\cmbar'", 
+      "output": "foo\rbar"
+    }, 
+    {
+      "input": "$'foo\\cnbar'", 
+      "output": "foo\u000ebar"
+    }, 
+    {
+      "input": "$'foo\\cobar'", 
+      "output": "foo\u000fbar"
+    }, 
+    {
+      "input": "$'foo\\cpbar'", 
+      "output": "foo\u0010bar"
+    }, 
+    {
+      "input": "$'foo\\cqbar'", 
+      "output": "foo\u0011bar"
+    }, 
+    {
+      "input": "$'foo\\crbar'", 
+      "output": "foo\u0012bar"
+    }, 
+    {
+      "input": "$'foo\\csbar'", 
+      "output": "foo\u0013bar"
+    }, 
+    {
+      "input": "$'foo\\ctbar'", 
+      "output": "foo\u0014bar"
+    }, 
+    {
+      "input": "$'foo\\cubar'", 
+      "output": "foo\u0015bar"
+    }, 
+    {
+      "input": "$'foo\\cvbar'", 
+      "output": "foo\u0016bar"
+    }, 
+    {
+      "input": "$'foo\\cwbar'", 
+      "output": "foo\u0017bar"
+    }, 
+    {
+      "input": "$'foo\\cxbar'", 
+      "output": "foo\u0018bar"
+    }, 
+    {
+      "input": "$'foo\\cybar'", 
+      "output": "foo\u0019bar"
+    }, 
+    {
+      "input": "$'foo\\czbar'", 
+      "output": "foo\u001abar"
+    }, 
+    {
+      "input": "$'foo\\c[bar'", 
+      "output": "foo\u001bbar"
+    }, 
+    {
+      "input": "$'foo\\c\\bar'", 
+      "output": "foo\u001cbar"
+    }, 
+    {
+      "input": "$'foo\\c]bar'", 
+      "output": "foo\u001dbar"
+    }, 
+    {
+      "input": "$'foo\\c^bar'", 
+      "output": "foo\u001ebar"
+    }, 
+    {
+      "input": "$'foo\\c_bar'", 
+      "output": "foo\u001fbar"
+    }, 
+    {
+      "input": "foo    bar     too", 
+      "output": [
+        "foo", 
+        "bar", 
+        "too"
+      ]
+    }, 
+    {
+      "input": "foo   \"bar\"   'too'   $'boo'", 
+      "output": [
+        "foo", 
+        "bar", 
+        "too", 
+        "boo"
+      ]
+    }, 
+    {
+      "input": "foo\"bar\"'too'poo\"boo\"$'too''tii'\"bii\"", 
+      "output": "foobartoopoobootootiibii"
+    }, 
+    {
+      "input": "'foo\\'b\\\nar' foo bar'", 
+      "output": [
+        "foo\\bar foo bar"
+      ]
+    }
+  ]
+}
