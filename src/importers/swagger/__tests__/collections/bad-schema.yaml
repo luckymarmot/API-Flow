@@ -1,0 +1,18 @@
+---
+swagger: '2.0'
+host: basic-auth-server.herokuapp.com
+schemes:
+  - http
+  - https
+securityDefinitions:
+  basicAuth:
+    type: basic
+    description: HTTP Basic Authentication. Works over `HTTP` and `HTTPS`
+paths:
+  /:
+    get:
+      security:
+       - basicAuth: []
+      responses:
+        200:
+          description:  Will send `Authenticated` if authentication is succesful, otherwise it will send `Unauthorized`

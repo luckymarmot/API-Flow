@@ -20,14 +20,20 @@ export class NegotiateAuth extends Immutable.Record({
   password: null
 }) { }
 
+export class ApiKeyAuth extends Immutable.Record({
+  name: null,
+  in: null
+}) { }
+
 //TODO set correct fields
 export class OAuth1Auth extends Immutable.Record({
   username: null,
   password: null
 }) { }
 
-//TODO set correct fields
+//TODO missing scope manipulation
 export class OAuth2Auth extends Immutable.Record({
-  username: null,
-  password: null
+  flow: null,
+  authorizationUrl: null,
+  tokenUrl: null
 }) { }
