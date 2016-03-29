@@ -541,17 +541,6 @@ class TestSwaggerParser extends UnitTest {
     this.assertEqual(expected, result)
   }
 
-  testExtractParams(){
-    const parser = new SwaggerParser()
-    let cases = SwaggerFixtures.getParametersCases()
-    this.__warnProgress('ExtractParams', true)
-    for (let usecase of cases){
-      this.__warnProgress(usecase.name)
-      let output = parser._extractParams.apply(parser, usecase.inputs)
-      this.assertEqual(output, usecase.output, 'in ' + usecase.name)
-    }
-  }
-
   testExtractParamsThrowsOnBadlyFormedParameter(){
     const parser = new SwaggerParser()
     let cases = SwaggerFixtures.getThrowingParametersCases()
@@ -567,70 +556,32 @@ class TestSwaggerParser extends UnitTest {
     }
   }
 
+  testExtractParams(){
+    this.__loadTestSuite('ExtractParams', '_extractParams')
+  }
+
   testExtractResponses(){
-    const parser = new SwaggerParser()
-    let cases = SwaggerFixtures.getResponsesCases()
-    this.__warnProgress('ExtractResponses', true)
-    for (let usecase of cases){
-      this.__warnProgress(usecase.name)
-      let output = parser._extractResponses.apply(parser, usecase.inputs)
-      this.assertEqual(output, usecase.output, 'in ' + usecase.name)
-    }
+    this.__loadTestSuite('ExtractResponses', '_extractResponses')
   }
 
   testGenerateURL(){
-    const parser = new SwaggerParser()
-    let cases = SwaggerFixtures.getURLGenerationCases()
-    this.__warnProgress('GenerateURL', true)
-    for (let usecase of cases){
-      this.__warnProgress(usecase.name)
-      let output = parser._generateURL.apply(parser, usecase.inputs)
-      this.assertEqual(output, usecase.output, 'in ' + usecase.name)
-    }
+    this.__loadTestSuite('GenerateURL', '_generateURL')
   }
 
   testSetBasicInfo(){
-    const parser = new SwaggerParser()
-    let cases = SwaggerFixtures.getBasicInfoCases()
-    this.__warnProgress('SetBasicInfo', true)
-    for (let usecase of cases){
-      this.__warnProgress(usecase.name)
-      let output = parser._setBasicInfo.apply(parser, usecase.inputs)
-      this.assertEqual(output, usecase.output, 'in ' + usecase.name)
-    }
+    this.__loadTestSuite('SetBasicInfo', '_setBasicInfo')
   }
 
   testSetBody(){
-    const parser = new SwaggerParser()
-    let cases = SwaggerFixtures.getSetBodyCases()
-    this.__warnProgress('SetBody', true)
-    for (let usecase of cases){
-      this.__warnProgress(usecase.name)
-      let output = parser._setBody.apply(parser, usecase.inputs)
-      this.assertEqual(output, usecase.output, 'in ' + usecase.name)
-    }
+    this.__loadTestSuite('SetBody', '_setBody')
   }
 
   testSetAuth(){
-    const parser = new SwaggerParser()
-    let cases = SwaggerFixtures.getSetAuthCases()
-    this.__warnProgress('SetAuth', true)
-    for (let usecase of cases){
-      this.__warnProgress(usecase.name)
-      let output = parser._setAuth.apply(parser, usecase.inputs)
-      this.assertEqual(output, usecase.output, 'in ' + usecase.name)
-    }
+    this.__loadTestSuite('SetAuth', '_setAuth')
   }
 
   testCreateRequest(){
-    const parser = new SwaggerParser()
-    let cases = SwaggerFixtures.getCreateRequestCases()
-    this.__warnProgress('CreateRequest', true)
-    for (let usecase of cases){
-      this.__warnProgress(usecase.name)
-      let output = parser._createRequest.apply(parser, usecase.inputs)
-      this.assertEqual(output, usecase.output, 'in ' + usecase.name)
-    }
+    this.__loadTestSuite('CreateRequest', '_createRequest')
   }
   // 
   // helpers
@@ -640,6 +591,17 @@ class TestSwaggerParser extends UnitTest {
     let offset = isTestCase ? '    ' : '      '
     let warn = offset + '\x1b[33m\u25CB\x1b[0m \x1b[90m' + string + '\x1b[0m'
     console.log(warn)
+  }
+
+  __loadTestSuite(testSuitName, functionName){
+    const parser = new SwaggerParser()
+    let cases = SwaggerFixtures["get" + testSuitName + "Cases"]()
+    this.__warnProgress(testSuitName, true)
+    for (let usecase of cases){
+      this.__warnProgress(usecase.name)
+      let output = parser[functionName].apply(parser, usecase.inputs)
+      this.assertEqual(output, usecase.output, 'in ' + usecase.name)
+    }
   }
 
   __loadSwaggerFile(fileName, extension = 'json'){

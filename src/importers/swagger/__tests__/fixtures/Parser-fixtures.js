@@ -58,7 +58,7 @@ export default class SwaggerFixtures {
     ]
   }
 
-  static getParametersCases(){
+  static getExtractParamsCases(){
     return [
       {
         name : 'NoArgsTest',
@@ -416,7 +416,7 @@ export default class SwaggerFixtures {
     ]
   }
 
-  static getResponsesCases(){
+  static getExtractResponsesCases(){
     return [
       {
         name : 'NoArgsTest',
@@ -508,7 +508,7 @@ export default class SwaggerFixtures {
     ]
   }
 
-  static getURLGenerationCases(){
+  static getGenerateURLCases(){
     return [
       {
         name : 'SimpleTest',
@@ -618,7 +618,7 @@ export default class SwaggerFixtures {
     ]
   }
 
-  static getBasicInfoCases(){
+  static getSetBasicInfoCases(){
     return [
       {
         name : 'SimpleTest',
