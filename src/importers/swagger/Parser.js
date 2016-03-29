@@ -332,3 +332,4 @@ export default class SwaggerParser {
     return group
   }
 }
+
