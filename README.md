@@ -1,18 +1,14 @@
 [![Build Status](https://travis-ci.org/luckymarmot/API-Flow.svg?branch=master)](https://travis-ci.org/luckymarmot/API-Flow)
 
-# API-Flow (Paw Extension)
+# API Flow
 
-A [Paw Extension](http://luckymarmot.com/paw/extensions/) to transform different API description standards into one another.
-
-## Documentation
-
-If you want to learn more about how API-Flow is structured, you can read our [documentation](DOCS.md)
+A flow written in ES6 using Immutable to convert between API description formats (Swagger, etc.) and other programs such as cURL command lines.
 
 ## License
 
-This Paw Extension is released under the [MIT License](LICENSE). Feel free to fork, and modify!
+This repository is released under the [MIT License](LICENSE). Feel free to fork, and modify!
 
-Copyright © 2015 Paw Inc.
+Copyright © 2016 Paw Inc.
 
 ## Contributors
 

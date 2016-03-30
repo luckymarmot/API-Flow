@@ -15,7 +15,7 @@ import {
 } from '../../../immutables/Auth'
 
 @registerTest
-class TestCurlParser extends UnitTest {
+export class TestCurlParser extends UnitTest {
 
     // testing simple with no option
     testSimple() {
@@ -1195,43 +1195,60 @@ class TestCurlParser extends UnitTest {
 
     testUserAgent() {
         this.__testRequest(
-            'curl http://httpbin.org/get --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A"',
+            'curl http://httpbin.org/get ' +
+            '--user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) ' +
+            'AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 ' +
+            'Safari/7046A194A"',
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
                 headers: Immutable.OrderedMap({
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; ' +
+                    'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 ' +
+                    '(KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
                 })
             }))
     }
 
     testUserAgentShort() {
         this.__testRequest(
-            'curl http://httpbin.org/get -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A"',
+            'curl http://httpbin.org/get -A "Mozilla/5.0 (Macintosh; ' +
+            'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 ' +
+            '(KHTML, like Gecko) Version/7.0.3 Safari/7046A194A"',
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
                 headers: Immutable.OrderedMap({
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; ' +
+                    'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 ' +
+                    '(KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
                 })
             }))
     }
 
     testUserAgentOverride() {
         this.__testRequest(
-            'curl http://httpbin.org/get -H "user-agent: Paw/2.2.7" -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A"',
+            'curl http://httpbin.org/get -H "user-agent: Paw/2.2.7"' +
+            ' -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) ' +
+            'AppleWebKit/537.75.14 (KHTML, like Gecko) ' +
+            'Version/7.0.3 Safari/7046A194A"',
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
                 headers: Immutable.OrderedMap({
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; ' +
+                    'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 ' +
+                    '(KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
                 })
             }))
     }
 
     testUserAgentOverridden() {
         this.__testRequest(
-            'curl http://httpbin.org/get -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A" -H "user-agent: Paw/2.2.7"',
+            'curl http://httpbin.org/get -A "Mozilla/5.0 (Macintosh; ' +
+            'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, ' +
+            'like Gecko) Version/7.0.3 Safari/7046A194A" ' +
+            '-H "user-agent: Paw/2.2.7"',
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
