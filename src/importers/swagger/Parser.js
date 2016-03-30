@@ -3,14 +3,14 @@ import yaml from 'yaml-js'
 import tv4 from 'tv4'
 import swaggerSchema from 'swagger-schema-official/schema.json'
 
-import Request, {
+import RequestContext, {
     KeyValue,
     Group,
     Schema,
     SchemaReference,
-    RequestContext,
+    Request,
     Response
-} from '../../immutables/RESTRequest'
+} from '../../immutables/RequestContext'
 
 export default class SwaggerParser {
     contructor() {

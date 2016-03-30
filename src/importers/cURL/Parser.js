@@ -1,10 +1,11 @@
 import Immutable from 'immutable'
 
 import ShellTokenizer from '../../utils/ShellTokenizer'
-import Request, {
+import {
+    Request,
     KeyValue,
     FileReference
-} from '../../immutables/RESTRequest'
+} from '../../immutables/RequestContext'
 
 export default class CurlParser {
     constructor() {

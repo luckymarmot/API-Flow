@@ -2,10 +2,11 @@ import { UnitTest, registerTest } from '../../../utils/TestUtils'
 import Immutable from 'immutable'
 
 import CurlParser from '../Parser'
-import Request, {
+import {
     KeyValue,
-    FileReference
-} from '../../../immutables/RESTRequest'
+    FileReference,
+    Request
+} from '../../../immutables/RequestContext'
 import {
     BasicAuth,
     DigestAuth,

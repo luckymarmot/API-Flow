@@ -1,11 +1,12 @@
 import Immutable from 'immutable'
 
-import Request, {
+import {
+    Request,
     KeyValue,
     Schema,
     SchemaReference,
     Response
-} from '../../../../immutables/RESTRequest'
+} from '../../../../immutables/RequestContext'
 import { BasicAuth, ApiKeyAuth, OAuth2Auth } from '../../../../immutables/Auth'
 
 export default class SwaggerFixtures {

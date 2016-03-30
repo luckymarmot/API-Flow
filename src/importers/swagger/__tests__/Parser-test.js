@@ -3,10 +3,11 @@ import Immutable from 'immutable'
 import fs from 'fs'
 
 import SwaggerParser from '../Parser'
-import Request, {
+import {
+    Request,
     Group,
     KeyValue
-} from '../../../immutables/RESTRequest'
+} from '../../../immutables/RequestContext'
 
 import SwaggerFixtures from './fixtures/Parser-fixtures'
 

@@ -145,7 +145,7 @@ export class Schema extends Immutable.Record({
     }
 }
 
-export class RequestContext extends Immutable.Record({
+export default class RequestContext extends Immutable.Record({
     schema: null,
     group: null
 }) { }
@@ -157,7 +157,7 @@ export class Response extends Immutable.Record({
     headers: Immutable.OrderedMap()
 }) { }
 
-export default class Request extends Immutable.Record({
+export class Request extends Immutable.Record({
     name: null,
     description: null,
     url: null,
