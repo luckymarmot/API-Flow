@@ -1,11 +1,10 @@
 import Immutable from 'immutable'
 
 import ShellTokenizer from '../../utils/ShellTokenizer'
-import {
+import RequestContext, {
     Request,
     KeyValue,
     FileReference,
-    RequestContext,
     Group
 } from '../../immutables/RequestContext'
 

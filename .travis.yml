@@ -1,15 +1,3 @@
 language: node_js
 before_script:
-- make build
-before_deploy:
-- make archive
-deploy:
-  provider: releases
-  api_key:
-    secure: WB1JXzJh/44TXVKjpNSLM3Nhf1lFJme+ODGGADBna/sYEHCRU1GiETekUy6OjJF/366yfzOqftkUIpv4z1oUrlHIiuIEl3jgQV/h5TeTykouQbvAPziCcYEMPzgfFX/TMx17MjcSG7pkF4FibAgZnbAtL1KF0V64CoajjYRqcfgMYlaoAJ4WLE0E5n6mqgsMSCQQQ1qf14JQ7WJUA4ypAiY9aQDysouAFnh84XrxUUev9Mtd1rS8Fo8NNSyoCBaKP/LTvAc4qU4gDxp6o7X60pj1vNvQ3crouACfi4oD7DEDTUP4B780H4ooJyr0u/bwdI3/ArlKSv++ELBia0Vpvsgd2jibs7woUBhJm81AJpsEm0nzIl2s9hvL67B1Vk2PDIeJBWibvx1hZKCUtznxzX16Thz+b91HSFTz7MCEr1ik79mIGSzqCAmLTnRqEn4yEBfqUvMrANkXb+zVQK3KPmkjQ5vLkUPS6WYABKCC9oueS+jjLdH13y0h5PivGf4dDARWDuEmJ8RoJZ7ExlU5mHPu3QquE/XNf3Vbqivx0vc4vGBaMG+uU2HCzSM7OPR0S50js3bNzYNYdh9cjNK0BHSAu34KkPxYSmDLuwdwDe4uJyXIf/uzslCieRuVmAQaX3OsvwS/8ga0KoomT7c99sChnrwTBnQ0hGACXQZKxnU=
-  file: build/cURLImporter.zip
-  skip_cleanup: true
-  on:
-    tags: true
-    all_branches: true
-    repo: luckymarmot/Paw-cURLImporter
+- npm run lint

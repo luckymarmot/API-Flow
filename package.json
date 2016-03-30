@@ -35,9 +35,8 @@
     "eslint-loader": "1.0.0"
   },
   "scripts": {
-    "build": "rm -rf dist/ && BUILD_ENV=build ./node_modules/.bin/webpack --bail --display-error-details",
     "test": "$npm_package_options_mocha \"src/**/__tests__/*-test.js\"",
-    "lint": "./node_modules/eslint/bin/eslint.js -c linting/dev.yaml src/"
+    "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
   },
   "options": {
     "mocha": "./node_modules/.bin/mocha --require mocha --compilers js:babel-register --reporter spec"
