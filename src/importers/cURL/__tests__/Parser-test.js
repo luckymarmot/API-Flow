@@ -233,7 +233,8 @@ class TestCurlParser extends UnitTest {
 
     testHeaderMultiple() {
         this.__testRequest(
-            'curl http://httpbin.org/get -H X-Paw:value --header X-Paw-2:\\ my-value',
+            `curl http://httpbin.org/get -H X-Paw:value --header \\
+            X-Paw-2:\\ my-value'`,
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
@@ -247,7 +248,8 @@ class TestCurlParser extends UnitTest {
 
     testHeaderNormalization() {
         this.__testRequest(
-            'curl http://httpbin.org/get -H x-paw:value --header CONTENT-TYPE:application/json',
+            `curl http://httpbin.org/get -H x-paw:value \\
+            --header CONTENT-TYPE:application/json`,
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
@@ -298,7 +300,7 @@ class TestCurlParser extends UnitTest {
                 method: 'POST',
                 bodyType: 'formData',
                 body: Immutable.List([
-                    new KeyValue({ key: 'key', value: '' })
+                    new KeyValue({ key: 'key', value: null })
                 ])
             }))
     }
@@ -452,7 +454,8 @@ class TestCurlParser extends UnitTest {
 
     testFormStringWithType() {
         this.__testRequest(
-            'curl http://httpbin.org/get --form-string $\'key=value;type=text/plain\'',
+            `curl http://httpbin.org/get --form-string \\
+            $\'key=value;type=text/plain\'`,
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
@@ -541,7 +544,7 @@ class TestCurlParser extends UnitTest {
                 method: 'POST',
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
-                    new KeyValue({ key: 'key', value: '' })
+                    new KeyValue({ key: 'key', value: null })
                 ])
             }))
     }
@@ -778,7 +781,8 @@ class TestCurlParser extends UnitTest {
 
     testFormDataKeyValueFileReferenceMultiple() {
         this.__testRequest(
-            'curl http://httpbin.org/get -d @filename.txt --data @filename2.txt',
+            `curl http://httpbin.org/get \\
+            -d @filename.txt --data @filename2.txt`,
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
@@ -804,7 +808,8 @@ class TestCurlParser extends UnitTest {
 
     testFormDataKeyValueFileReferenceAndParams() {
         this.__testRequest(
-            'curl http://httpbin.org/get -d @filename.txt -d @filename2.txt --data "name=Paw&key2=value2"',
+            `curl http://httpbin.org/get -d @filename.txt \\
+            -d @filename2.txt --data "name=Paw&key2=value2"`,
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
@@ -838,7 +843,10 @@ class TestCurlParser extends UnitTest {
 
     testFormDataKeyValueMixOfAll() {
         this.__testRequest(
-            'curl http://httpbin.org/get --data $\'toto\\ntiti\' --data-binary @myfile.txt --data-raw @myfile.txt --data-ascii @myfile.txt -d @myfile.txt -d name=Paw -d key2=value2 -H Content-Type:text/plain',
+            `curl http://httpbin.org/get --data $\'toto\\ntiti\' \\
+            --data-binary @myfile.txt --data-raw @myfile.txt \\
+            --data-ascii @myfile.txt -d @myfile.txt -d name=Paw \\
+            -d key2=value2 -H Content-Type:text/plain`,
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
@@ -1087,7 +1095,8 @@ class TestCurlParser extends UnitTest {
 
     testFormDataUrlEncodeNameContentWithSpecialCharacters() {
         this.__testRequest(
-            'curl http://httpbin.org/get --data-urlencode key=value=more@values',
+            `curl http://httpbin.org/get \\
+            --data-urlencode key=value=more@values`,
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
@@ -1483,73 +1492,86 @@ class TestCurlParser extends UnitTest {
     //
 
     testMultipleRequestsSimple() {
-        this.__testRequests('curl http://httpbin.org/get http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'GET'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get http://httpbin.org/post',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'GET'
+                })
+            ])
+        )
     }
 
     testMultipleRequestsSameOptions() {
-        this.__testRequests('curl -X POST http://httpbin.org/get http://httpbin.org/post -H X-Paw:value', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
+        this.__testRequests(
+            `curl -X POST http://httpbin.org/get http://httpbin.org/post \\
+            -H X-Paw:value`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
                 })
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
-                })
-            })
-        ]))
+            ]))
     }
 
     testMultipleRequestsSameOptionsUrlOption() {
-        this.__testRequests('curl -X POST --url http://httpbin.org/get --url http://httpbin.org/post -H X-Paw:value', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
+        this.__testRequests(
+            `curl -X POST --url http://httpbin.org/get \\
+            --url http://httpbin.org/post -H X-Paw:value`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
                 })
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
-                })
-            })
-        ]))
+            ]))
     }
 
     testMultipleRequestsSameOptionsUrlOptionAlternate() {
-        this.__testRequests('curl -X POST --url http://httpbin.org/get http://httpbin.org/post -H X-Paw:value', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
+        this.__testRequests(
+            `curl -X POST \\
+            --url http://httpbin.org/get http://httpbin.org/post \\
+            -H X-Paw:value`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
                 })
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
-                })
-            })
-        ]))
+            ]))
     }
 
     //
@@ -1558,69 +1580,79 @@ class TestCurlParser extends UnitTest {
     //
 
     testMultipleRequestsDifferentOptionsSimple() {
-        this.__testRequests('curl http://httpbin.org/get -: http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'GET'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get -: http://httpbin.org/post',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'GET'
+                })
+            ]))
     }
 
     testMultipleRequestsDifferentOptionsChangeHeaders() {
-        this.__testRequests('curl -X POST http://httpbin.org/post -H X-Paw2:value2 -: http://httpbin.org/get -H X-Paw:value', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw2': 'value2'
+        this.__testRequests(
+            `curl -X POST http://httpbin.org/post \\
+            -H X-Paw2:value2 -: http://httpbin.org/get \\
+            -H X-Paw:value`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw2': 'value2'
+                    })
+                }),
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
                 })
-            }),
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
-                })
-            })
-        ]))
+            ]))
     }
 
     testMultipleRequestsDifferentOptionsMultipleOfEach() {
-        this.__testRequests('curl -u foo:bar https://httpbin.org/get -H X-Paw2:value2 https://httpbin.org/get?key=value --next -H X-Paw:value http://httpbin.org/post -X POST', Immutable.List([
-            new Request({
-                url: 'https://httpbin.org/get',
-                method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'X-Paw2': 'value2'
+        this.__testRequests(
+            `curl -u foo:bar https://httpbin.org/get \\
+            -H X-Paw2:value2 https://httpbin.org/get?key=value --next \\
+            -H X-Paw:value http://httpbin.org/post -X POST`,
+            Immutable.List([
+                new Request({
+                    url: 'https://httpbin.org/get',
+                    method: 'GET',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw2': 'value2'
+                    }),
+                    auth: new BasicAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
                 }),
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
-            }),
-            new Request({
-                url: 'https://httpbin.org/get?key=value',
-                method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'X-Paw2': 'value2'
+                new Request({
+                    url: 'https://httpbin.org/get?key=value',
+                    method: 'GET',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw2': 'value2'
+                    }),
+                    auth: new BasicAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
                 }),
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: 'bar'
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
                 })
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
-                })
-            })
-        ]))
+            ]))
     }
 
     //
@@ -1646,131 +1678,156 @@ class TestCurlParser extends UnitTest {
     }
 
     testShellBreakAfterPipe() {
-        this.__testRequests('curl http://httpbin.org/get | cat -X POST', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get | cat -X POST',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                })
+            ]))
     }
 
     testShellBreakAfterPipeNoSpaces() {
-        this.__testRequests('curl http://httpbin.org/get|cat -X POST', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get|cat -X POST',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                })
+            ]))
     }
 
     testShellBreakAfterRedirect() {
-        this.__testRequests('curl http://httpbin.org/get > filename', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get > filename',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                })
+            ]))
     }
 
     testShellBreakAfterRedirectNoSpace() {
-        this.__testRequests('curl http://httpbin.org/get>filename', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get>filename',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                })
+            ]))
     }
 
     testShellOptionsAfterRedirect() {
-        this.__testRequests('curl httpbin.org/post -d key=value > filename -d key2=value2', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' }),
-                    new KeyValue({ key: 'key2', value: 'value2' })
-                ])
-            })
-        ]))
+        this.__testRequests(
+            'curl httpbin.org/post -d key=value > filename -d key2=value2',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST',
+                    bodyType: 'urlEncoded',
+                    body: Immutable.List([
+                        new KeyValue({ key: 'key', value: 'value' }),
+                        new KeyValue({ key: 'key2', value: 'value2' })
+                    ])
+                })
+            ]))
     }
 
     testShellChainWithSemiColon() {
-        this.__testRequests('curl http://httpbin.org/get ; curl -X POST http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST'
-            })
-        ]))
+        this.__testRequests(
+            `curl http://httpbin.org/get ; curl \\
+            -X POST http://httpbin.org/post`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST'
+                })
+            ]))
     }
 
     testShellChainWithSemiColonNoSpace() {
-        this.__testRequests('curl http://httpbin.org/get;curl -X POST http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get;curl -X POST http://httpbin.org/post',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST'
+                })
+            ]))
     }
 
     testShellChainWithSimpleAnd() {
-        this.__testRequests('curl http://httpbin.org/get & curl -X POST http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST'
-            })
-        ]))
+        this.__testRequests(
+            `curl http://httpbin.org/get & curl \\
+            -X POST http://httpbin.org/post`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST'
+                })
+            ]))
     }
 
     testShellChainWithSimpleAndNoSpace() {
-        this.__testRequests('curl http://httpbin.org/get&curl -X POST http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get&curl -X POST http://httpbin.org/post',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST'
+                })
+            ]))
     }
 
     testShellChainWithDoubleAnd() {
-        this.__testRequests('curl http://httpbin.org/get && curl -X POST http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST'
-            })
-        ]))
+        this.__testRequests(
+            `curl http://httpbin.org/get && curl \\
+            -X POST http://httpbin.org/post`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST'
+                })
+            ]))
     }
 
     testShellChainWithDoubleAndNoSpace() {
-        this.__testRequests('curl http://httpbin.org/get&&curl -X POST http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'GET'
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST'
-            })
-        ]))
+        this.__testRequests(
+            'curl http://httpbin.org/get&&curl -X POST http://httpbin.org/post',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'GET'
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST'
+                })
+            ]))
     }
 
     //
@@ -1778,54 +1835,65 @@ class TestCurlParser extends UnitTest {
     //
 
     testIgnoreUnknownOptionsBefore() {
-        this.__testRequests('curl --obscure-unknown-option http://httpbin.org/get -X POST', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'POST'
-            })
-        ]))
+        this.__testRequests(
+            'curl --obscure-unknown-option http://httpbin.org/get -X POST',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'POST'
+                })
+            ]))
     }
 
     testIgnoreUnknownOptionsAfter() {
-        this.__testRequests('curl http://httpbin.org/get -X POST --obscure-unknown-option -H X-Paw:value', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
+        this.__testRequests(
+            `curl http://httpbin.org/get -X POST --obscure-unknown-option \\
+            -H X-Paw:value`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value'
+                    })
                 })
-            })
-        ]))
+            ]))
     }
 
     testIgnoreUnknownOptionsMultipleUrls() {
-        this.__testRequests('curl http://httpbin.org/get -X POST -H X-Paw:value --obscure-unknown-option -H Content-Type:application/json http://httpbin.org/post', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value',
-                    'Content-Type': 'application/json'
+        this.__testRequests(
+            `curl http://httpbin.org/get -X POST -H X-Paw:value \\
+            --obscure-unknown-option \\
+            -H Content-Type:application/json http://httpbin.org/post`,
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value',
+                        'Content-Type': 'application/json'
+                    })
+                }),
+                new Request({
+                    url: 'http://httpbin.org/post',
+                    method: 'POST',
+                    headers: Immutable.OrderedMap({
+                        'X-Paw': 'value',
+                        'Content-Type': 'application/json'
+                    })
                 })
-            }),
-            new Request({
-                url: 'http://httpbin.org/post',
-                method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value',
-                    'Content-Type': 'application/json'
-                })
-            })
-        ]))
+            ]))
     }
 
     testIgnoreUnknownOptionOutput() {
-        this.__testRequests('curl --output outputfile.txt http://httpbin.org/get -X POST', Immutable.List([
-            new Request({
-                url: 'http://httpbin.org/get',
-                method: 'POST'
-            })
-        ]))
+        this.__testRequests(
+            'curl --output outputfile.txt http://httpbin.org/get -X POST',
+            Immutable.List([
+                new Request({
+                    url: 'http://httpbin.org/get',
+                    method: 'POST'
+                })
+            ]))
     }
 
     //
@@ -1862,7 +1930,8 @@ class TestCurlParser extends UnitTest {
     testExamplePOSTHeadersDataUrlEncodeTokenStartsWithSpace() {
         // note: this input isn't valid normally, but we try to support it as a
         // workaround to this common user mistake
-        const input = `curl -X "POST" "https://httpbin.org/post" \\ -H "locale: de_DE" \\
+        const input = `curl -X "POST" "https://httpbin.org/post" \\
+        -H "locale: de_DE" \\
         -H "apikey: MYAPIKEY" \\
         -H "Content-Type: application/x-www-form-urlencoded" \\
         -H "Accept: application/vnd.my-vendor.api+json;version=2.5.0" \\
@@ -1890,7 +1959,8 @@ class TestCurlParser extends UnitTest {
     testExamplePOSTHeadersDataUrlEncodeMissingNewLine() {
         // note: this input isn't valid normally, but we try to support it as a
         // workaround to this common user mistake
-        const input = `curl -X "POST" "https://httpbin.org/post" \\  -H "locale: de_DE" \\
+        const input = `curl -X "POST" "https://httpbin.org/post" \\
+        -H "locale: de_DE" \\
         -H "apikey: MYAPIKEY" \\
         -H "Content-Type: application/x-www-form-urlencoded" \\
         -H "Accept: application/vnd.my-vendor.api+json;version=2.5.0" \\
@@ -1920,7 +1990,11 @@ class TestCurlParser extends UnitTest {
     //
 
     __testRequest(input, expected, compareBodyString = false) {
-        this.__testRequests(input, Immutable.List([ expected ]), compareBodyString)
+        this.__testRequests(
+            input,
+            Immutable.List([ expected ]),
+            compareBodyString
+        )
     }
 
     __testRequests(input, expected, compareBodyString = false) {

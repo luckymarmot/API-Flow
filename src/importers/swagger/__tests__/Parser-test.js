@@ -274,10 +274,10 @@ class TestSwaggerParser extends UnitTest {
         const parser = new SwaggerParser()
         const filenames = SwaggerFixtures.getValidFilenames()
         try {
-            for (let i = 0, l = filenames.length; i < l; i++) {
+            for (let filename of filenames) {
                 let content = this.__loadSwaggerFile(
-                    filenames[i].name,
-                    filenames[i].extension
+                    filename.name,
+                    filename.extension
                 )
                 parser._loadSwaggerCollection(content)
             }
@@ -293,11 +293,11 @@ class TestSwaggerParser extends UnitTest {
         const parser = new SwaggerParser()
         const filenames = SwaggerFixtures.getMalformedFilenames()
 
-        for (let i = 0, l = filenames.length; i < l; i++) {
+        for (let filename of filenames) {
             try {
                 let content = this.__loadSwaggerFile(
-                    filenames[i].name,
-                    filenames[i].extension
+                    filename.name,
+                    filename.extension
                 )
                 parser._loadSwaggerCollection(content)
                 this.assertTrue(false)
@@ -311,10 +311,10 @@ class TestSwaggerParser extends UnitTest {
     testValidateSwaggerCollectionWithValidCollections() {
         const parser = new SwaggerParser()
         const filenames = SwaggerFixtures.getValidFilenames()
-        for (let i = 0, l = filenames.length; i < l; i++) {
+        for (let filename of filenames) {
             let content = this.__loadSwaggerFile(
-                filenames[i].name,
-                filenames[i].extension
+                filename.name,
+                filename.extension
             )
             let swaggerCollection = parser._loadSwaggerCollection(content)
             let valid = parser._validateSwaggerCollection(swaggerCollection)
@@ -325,10 +325,10 @@ class TestSwaggerParser extends UnitTest {
     testValidateSwaggerCollectionWithInvalidCollections() {
         const parser = new SwaggerParser()
         const filenames = SwaggerFixtures.getNonCompliantFilenames()
-        for (let i = 0, l = filenames.length; i < l; i++) {
+        for (let filename of filenames) {
             let content = this.__loadSwaggerFile(
-                filenames[i].name,
-                filenames[i].extension
+                filename.name,
+                filename.extension
             )
             let swaggerCollection = parser._loadSwaggerCollection(content)
             let valid = parser._validateSwaggerCollection(swaggerCollection)
@@ -374,7 +374,7 @@ class TestSwaggerParser extends UnitTest {
         let expected = 3
         let count = 0
 
-        parser._applyFuncOverPathArchitecture(collection, () => { count++ })
+        parser._applyFuncOverPathArchitecture(collection, () => { count += 1 })
         this.assertTrue(expected === count)
     }
 

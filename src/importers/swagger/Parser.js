@@ -340,15 +340,12 @@ export default class SwaggerParser {
             if (paths.hasOwnProperty(path)) {
                 let nodes = path.split('/')
 
-                let startIndex = 1
-                if (path.startsWith('/') === false) {
-                    startIndex = 0
+                if (path.startsWith('/') === true) {
+                    nodes.splice(0, 1)
                 }
 
                 let keyPath = []
-                for (let i = startIndex, l = nodes.length; i < l; i++) {
-                    let node = nodes[i]
-
+                for (let node of nodes) {
                     keyPath.push('children')
                     keyPath.push('/' + node)
 

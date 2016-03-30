@@ -1,7 +1,10 @@
 import Immutable from 'immutable'
 
 import ShellTokenizer from '../../utils/ShellTokenizer'
-import Request, { KeyValue, FileReference } from '../../immutables/RESTRequest'
+import Request, {
+    KeyValue,
+    FileReference
+} from '../../immutables/RESTRequest'
 
 export default class CurlParser {
     constructor() {
@@ -26,7 +29,9 @@ export default class CurlParser {
 
     _popArg() {
         if (this.idx < this.args.count()) {
-            return this.args.get(this.idx++)
+            let arg = this.args.get(this.idx)
+            this.idx += 1
+            return arg
         }
         return null
     }
@@ -41,27 +46,27 @@ export default class CurlParser {
         let cleanedArgs = []
         args.forEach(arg => {
             let m
-
+            let _arg = arg
             // cleanup spaces (if before an -x or --xxx option)
             // that is mostly to accept malformed inputs, with normal
             // valid inputs
             // this "cleanup spaces" shouldn't be required
-            m = arg.match(/^\s+(\-[\s\S]*)$/)
+            m = _arg.match(/^\s+(\-[\s\S]*)$/)
             if (m) {
-                arg = m[1]
+                _arg = m[1]
             }
-            if (arg.match(/^\s*$/)) {
+            if (_arg.match(/^\s*$/)) {
                 return
             }
 
             // try to detect -XPOST style options
-            m = arg.match(/^(\-\w)(.+)$/)
+            m = _arg.match(/^(\-\w)(.+)$/)
             if (m) {
                 cleanedArgs.push(m[1])
                 cleanedArgs.push(m[2])
             }
             else {
-                cleanedArgs.push(arg)
+                cleanedArgs.push(_arg)
             }
         })
         args = Immutable.List(cleanedArgs)
@@ -270,14 +275,15 @@ export default class CurlParser {
     _parseUrl(request, url) {
         const m = url
             .match(/^(\w+\:\/\/)?(?:([^\:\/]+)(?:\:([^\@]+)?)?\@)?([\s\S]*)$/)
-        if (m[2] && !request.getIn([ 'auth', 'password' ])) {
-            request = request.setAuthParams({
+        let _request = request
+        if (m[2] && !_request.getIn([ 'auth', 'password' ])) {
+            _request = _request.setAuthParams({
                 username: m[2],
                 password: m[3] ? m[3] : null
             })
         }
-        request = request.set('url', (m[1] ? m[1] : 'http://') + m[4])
-        return request
+        _request = _request.set('url', (m[1] ? m[1] : 'http://') + m[4])
+        return _request
     }
 
     _normalizeHeader(string) {
@@ -311,6 +317,7 @@ export default class CurlParser {
     }
 
     _parseCompressed(request) {
+        let _request = request
         let acceptEncoding = request.getIn([ 'headers', 'Accept-Encoding' ])
         if (!acceptEncoding) {
             acceptEncoding = ''
@@ -320,10 +327,10 @@ export default class CurlParser {
                 acceptEncoding += ';'
             }
             acceptEncoding += 'gzip'
-            request = request
+            _request = _request
                 .setIn([ 'headers', 'Accept-Encoding' ], acceptEncoding)
         }
-        return request
+        return _request
     }
 
     _parseUserAgent(request) {
@@ -364,11 +371,12 @@ export default class CurlParser {
 
     _parseMultipartFormData(request) {
         // switch bodyType
-        if (request.get('bodyType') !== 'formData') {
-            if (request.get('bodyType')) {
+        let _request = request
+        if (_request.get('bodyType') !== 'formData') {
+            if (_request.get('bodyType')) {
                 throw new Error('Different body types set in the same request')
             }
-            request = request.merge({
+            _request = _request.merge({
                 bodyType: 'formData',
                 body: Immutable.List()
             })
@@ -380,29 +388,30 @@ export default class CurlParser {
         }
 
         // set body param
-        const value = m[2] !== undefined ?
+        const value = m[2] ?
             this._resolveFileReference(m[2], null, /^[\@\<]([\s\S]*)$/) :
             null
-        request = request.set('body', request.get('body').push(new KeyValue({
+        _request = _request.set('body', _request.get('body').push(new KeyValue({
             key: m[1],
             value: value
         })))
 
         // set method if not set
-        if (request.get('method') === null) {
-            request = request.set('method', 'POST')
+        if (_request.get('method') === null) {
+            _request = _request.set('method', 'POST')
         }
 
-        return request
+        return _request
     }
 
     _parseMultipartFormString(request) {
+        let _request = request
         // switch bodyType
-        if (request.get('bodyType') !== 'formData') {
-            if (request.get('bodyType')) {
+        if (_request.get('bodyType') !== 'formData') {
+            if (_request.get('bodyType')) {
                 throw new Error('Different body types set in the same request')
             }
-            request = request.merge({
+            _request = _request.merge({
                 bodyType: 'formData',
                 body: Immutable.List()
             })
@@ -414,26 +423,27 @@ export default class CurlParser {
         }
 
         // set body param
-        request = request.set('body', request.get('body').push(new KeyValue({
+        _request = _request.set('body', _request.get('body').push(new KeyValue({
             key: m[1],
             value: m[2]
         })))
 
         // set method if not set
-        if (request.get('method') === null) {
-            request = request.set('method', 'POST')
+        if (_request.get('method') === null) {
+            _request = _request.set('method', 'POST')
         }
 
-        return request
+        return _request
     }
 
     _parseUrlEncodedData(request, option) {
+        let _request = request
         // switch bodyType
-        if (request.get('bodyType') !== 'urlEncoded') {
-            if (request.get('bodyType')) {
+        if (_request.get('bodyType') !== 'urlEncoded') {
+            if (_request.get('bodyType')) {
                 throw new Error('Different body types set in the same request')
             }
-            request = request.merge({
+            _request = _request.merge({
                 bodyType: 'urlEncoded',
                 body: Immutable.List(),
                 bodyString: ''
@@ -456,21 +466,20 @@ export default class CurlParser {
 
             // if file reference
             if (value instanceof FileReference) {
-                request = request
-                    .set('body', request.get('body').push(new KeyValue({
+                _request = _request
+                    .set('body', _request.get('body').push(new KeyValue({
                         key: value
                     })))
             }
             // otherwise, parse the parameters
             else {
                 let components = value.split('&')
-                for (let i = 0; i < components.length; i++) {
-                    const component = components[i]
+                for (let component of components) {
                     let m = component.match(/^([^\=]+)(?:\=([\s\S]*))?$/)
-                    request = request
-                        .set('body', request.get('body').push(new KeyValue({
+                    _request = _request
+                        .set('body', _request.get('body').push(new KeyValue({
                             key: decodeURIComponent(m[1]),
-                            value: m[2] !== undefined ?
+                            value: m[2] ?
                                 decodeURIComponent(m[2]) : null
                         })))
                 }
@@ -481,10 +490,10 @@ export default class CurlParser {
             // =content
             // name=content
             if (m) {
-                request = request
-                    .set('body', request.get('body').push(new KeyValue({
-                        key: m[1] !== undefined ? m[1] : m[2],
-                        value: m[1] !== undefined ? m[2] : null
+                _request = _request
+                    .set('body', _request.get('body').push(new KeyValue({
+                        key: m[1] ? m[1] : m[2],
+                        value: m[1] ? m[2] : null
                     })))
             }
             // content
@@ -492,12 +501,12 @@ export default class CurlParser {
             // name@filename
             else {
                 m = arg.match(/^([^\@]+)?([\s\S]+)?$/)
-                let value = m[2] !== undefined ?
+                let value = m[2] ?
                     this._resolveFileReference(m[2], 'urlEncode') : null
-                request = request
-                    .set('body', request.get('body').push(new KeyValue({
-                        key: m[1] !== undefined ? m[1] : value,
-                        value: m[1] !== undefined ? value : null
+                _request = _request
+                    .set('body', _request.get('body').push(new KeyValue({
+                        key: m[1] ? m[1] : value,
+                        value: m[1] ? value : null
                     })))
             }
         }
@@ -506,18 +515,18 @@ export default class CurlParser {
         }
 
         // add body as string
-        let bodyString = request.get('bodyString')
+        let bodyString = _request.get('bodyString')
         if (bodyString.length > 0) {
             bodyString += '&'
         }
         bodyString += arg
-        request = request.set('bodyString', bodyString)
+        _request = _request.set('bodyString', bodyString)
 
         // set method if not set
-        if (request.get('method') === null) {
-            request = request.set('method', 'POST')
+        if (_request.get('method') === null) {
+            _request = _request.set('method', 'POST')
         }
 
-        return request
+        return _request
     }
 }
