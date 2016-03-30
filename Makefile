@@ -15,5 +15,8 @@ install: clean build
 test:
 	npm test
 
+lint:
+	./node_modules/eslint/bin/eslint.js -c linting/dev.yaml src/
+
 archive: build
 	cd ./build/; zip -r API-Flow.zip "$(identifier)/"

@@ -1,0 +1,10 @@
+---
+extends: ./eslint_base.yaml
+
+rules:
+  no-debugger: 1
+  no-console: 1
+  no-unreachable: 1
+  no-unused-vars: 1
+  no-param-reassign: 1
+  max-len: 1
