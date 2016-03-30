@@ -4,12 +4,14 @@ import ShellTokenizer from '../../utils/ShellTokenizer'
 import {
     Request,
     KeyValue,
-    FileReference
+    FileReference,
+    RequestContext,
+    Group
 } from '../../immutables/RequestContext'
 
 export default class CurlParser {
     constructor() {
-        this.requests = Immutable.List()
+        this.context = new RequestContext()
         this.args = null
         this.idx = -1
     }
@@ -81,28 +83,35 @@ export default class CurlParser {
 
         // parse
         this.idx = 0
-        this._parseAll()
 
-        return this.requests
+        this.context = this.context
+            .set('group', new Group({
+                children: this._parseAll()
+            }))
+
+        return this.context
     }
 
     _parseAll() {
+        let requests = new Immutable.List()
         let arg
         while ((arg = this._popArg()) !== null) {
             if (arg.toLowerCase() === 'curl') {
-                this._parseCurlCommand()
+                requests = requests.concat(this._parseCurlCommand())
 
                 // if last argument was the -: --next option, continue
                 // parsing curl
                 const lastArg = this._getLastArg()
                 if (lastArg === '-:' || lastArg === '--next') {
-                    this._parseCurlCommand()
+                    requests = requests.concat(this._parseCurlCommand())
                 }
             }
         }
+        return requests
     }
 
     _parseCurlCommand() {
+        let requests = []
         let request = new Request()
 
         // assume BasicAuth for cURL requests
@@ -267,10 +276,12 @@ export default class CurlParser {
         if (request.get('method') === null) {
             request = request.set('method', 'GET')
         }
-        urls.forEach(url => {
-            const r = request.set('url', url)
-            this.requests = this.requests.push(r)
+
+        requests = urls.map(url => {
+            return request.set('url', url)
         })
+
+        return requests
     }
 
     _parseUrl(request, url) {
