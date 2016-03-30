@@ -84,10 +84,12 @@ export default class CurlParser {
         // parse
         this.idx = 0
 
-        this.context = this.context
-            .set('group', new Group({
+        this.context = this.context.set(
+            'group',
+            new Group({
                 children: this._parseAll()
-            }))
+            })
+        )
 
         return this.context
     }
