@@ -2000,7 +2000,8 @@ class TestCurlParser extends UnitTest {
 
     __testRequests(input, expected, compareBodyString = false) {
         const parser = new CurlParser()
-        let requests = parser.parse(input)
+        let context = parser.parse(input)
+        let requests = context.getIn([ 'group', 'children' ])
 
         // remove bodyString from request if we don't want to compare it here
         requests = requests.map(request => {
