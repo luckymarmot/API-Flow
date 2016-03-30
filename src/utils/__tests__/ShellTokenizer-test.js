@@ -130,7 +130,6 @@ class TestShellTokenizer extends UnitTest {
   __testSimpleSpaceSplit(input, output) {
     let tokenizer = new ShellTokenizer()
     let tokens = tokenizer.tokenize(input)
-    console.log('>>>>>>', input, output, tokens.toJS());
     this.assertEqual(tokens.count(), Immutable.fromJS(output).count())
     this.assertTrue(Immutable.is(tokens, Immutable.fromJS(output)))
   }

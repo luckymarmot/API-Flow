@@ -1,5 +1,5 @@
-import {describe, it, before, after, beforeEach, afterEach} from 'mocha'
-import {assert} from 'chai';
+import { describe, it, before, after, beforeEach, afterEach } from 'mocha'
+import { assert } from 'chai'
 import Immutable from 'immutable'
 
 
@@ -46,7 +46,7 @@ class UnitTest {
     }
 
     _parseFnName(name) {
-        return name.replace(/^test/, '');
+        return name.replace(/^test/, '')
     }
 
     assert(value) {
@@ -61,9 +61,11 @@ class UnitTest {
         assert.isFalse(value)
     }
 
-    assertEqual(a, b) {
-        assert.isTrue(Immutable.is(Immutable.fromJS(a), Immutable.fromJS(b)),
-                      `${a} !== ${b}`)
+    assertEqual(a, b, message) {
+        let warn = (message ? message + '\n' : '') + `\n${a} \n!== \n${b}`
+        assert.isTrue(
+            Immutable.is(Immutable.fromJS(a), Immutable.fromJS(b)), warn
+        )
     }
 
     assertNotEqual(a, b) {
@@ -72,21 +74,22 @@ class UnitTest {
     }
 
     assertEqualElements(a, b) {
-        assert.isTrue(Immutable.is(Immutable.Set(Immutable.fromJS(a)),
-                                   Immutable.Set(Immutable.fromJS(b))),
-                      `${a} !== ${b}`)
+        assert.isTrue(Immutable.is(
+            Immutable.Set(Immutable.fromJS(a)),
+                Immutable.Set(Immutable.fromJS(b))),
+                    `${a} !== ${b}`)
     }
 
     assertNotNull(value) {
-      this.assertTrue(value !== null)
+        this.assertTrue(value !== null)
     }
 
     assertNull(value) {
-      this.assertTrue(value === null)
+        this.assertTrue(value === null)
     }
 
     assertIsInstanceOf(value, cls) {
-      assert.isTrue(value instanceof cls, `${value} !instanceof ${cls}`)
+        assert.isTrue(value instanceof cls, `${value} !instanceof ${cls}`)
     }
 }
 
@@ -113,7 +116,7 @@ class MockedFunction {
     }
 
     setReturnValue(value) {
-      this.returnValue = value
+        this.returnValue = value
     }
 
     func() {
@@ -122,7 +125,7 @@ class MockedFunction {
     }
 
     getCallBack = ()=> {
-      return ::this.func
+        return ::this.func
     };
 }
 
@@ -136,4 +139,4 @@ function mockFunction(target, key, descriptor) {
     return descriptor
 }
 
-export {UnitTest, registerTest, mockFunction}
+export { UnitTest, registerTest, mockFunction }
