@@ -167,7 +167,7 @@ export default class Request extends Immutable.Record({
     bodyString: null,
     body: null,
     auth: null,
-    responses: Immutable.OrderedMap(),
+    responses: Immutable.List(),
     timeout: null
 }) {
 

@@ -70,7 +70,7 @@ export default class SwaggerParser {
             .set('url', url)
             .set('method', method.toUpperCase())
             .set('headers', new Immutable.OrderedMap(headerSet))
-            .set('responses', new Immutable.OrderedMap(responses))
+            .set('responses', new Immutable.List(responses))
     }
 
     // @NotTested
@@ -256,7 +256,7 @@ export default class SwaggerParser {
 
     // @tested
     _extractResponses(responses) {
-        let result = {}
+        let result = []
 
         if (responses) {
             for (let code in responses) {
@@ -273,7 +273,7 @@ export default class SwaggerParser {
                         schema: schema
                     })
 
-                    result[code] = response
+                    result.push(response)
                 }
             }
         }

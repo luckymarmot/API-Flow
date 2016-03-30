@@ -490,14 +490,14 @@ export default class SwaggerFixtures {
             {
                 name: 'NoArgsTest',
                 inputs: [],
-                output: {}
+                output: []
             },
             {
                 name: 'UndefinedResponsesObjectTest',
                 inputs: [
                     undefined
                 ],
-                output: {}
+                output: []
             },
             {
                 name: 'SingleCodeTest',
@@ -506,11 +506,11 @@ export default class SwaggerFixtures {
                         200: {}
                     }
                 ],
-                output: {
-                    200: new Response({
+                output: [
+                    new Response({
                         code: '200'
                     })
-                }
+                ]
             },
             {
                 name: 'MultipleCodeTest',
@@ -520,15 +520,14 @@ export default class SwaggerFixtures {
                         400: {}
                     }
                 ],
-                output: {
-                    200: new Response({
+                output: [
+                    new Response({
                         code: '200'
                     }),
-                    400: new Response({
+                    new Response({
                         code: '400'
                     })
-
-                }
+                ]
             },
             {
                 name: 'DescriptionInResponseTest',
@@ -539,12 +538,12 @@ export default class SwaggerFixtures {
                         }
                     }
                 ],
-                output: {
-                    200: new Response({
+                output: [
+                    new Response({
                         code: '200',
                         description: 'dummy description'
                     })
-                }
+                ]
             },
             {
                 name: 'SchemaInResponseTest',
@@ -560,8 +559,8 @@ export default class SwaggerFixtures {
                         }
                     }
                 ],
-                output: {
-                    200: new Response({
+                output: [
+                    new Response({
                         code: '200',
                         schema: (new Schema()).mergeSchema(
                             {
@@ -572,7 +571,7 @@ export default class SwaggerFixtures {
                             }
                         )
                     })
-                }
+                ]
             }
         ]
     }
@@ -696,7 +695,7 @@ export default class SwaggerFixtures {
                     'http://localhost/test/path',
                     'get',
                     [],
-                    {}
+                    []
                 ],
                 output: new Request({
                     url: 'http://localhost/test/path',
@@ -713,7 +712,7 @@ export default class SwaggerFixtures {
                     'http://localhost/test/path',
                     'get',
                     [],
-                    {}
+                    []
                 ],
                 output: new Request({
                     name: '/test/path',
@@ -743,7 +742,7 @@ export default class SwaggerFixtures {
                             valueType: 'string'
                         })
                     ],
-                    {}
+                    []
                 ],
                 output: new Request({
                     name: '/test/path',
@@ -766,24 +765,24 @@ export default class SwaggerFixtures {
                     'http://localhost/test/path',
                     'get',
                     [],
-                    {
-                        200: new Response(),
-                        400: new Response({
+                    [
+                        new Response(),
+                        new Response({
                             description: 'dummy description'
                         })
-                    }
+                    ]
                 ],
                 output: new Request({
                     name: '/test/path',
                     description: 'dummy description',
                     url: 'http://localhost/test/path',
                     method: 'GET',
-                    responses: new Immutable.OrderedMap({
-                        200: new Response(),
-                        400: new Response({
+                    responses: new Immutable.List([
+                        new Response(),
+                        new Response({
                             description: 'dummy description'
                         })
-                    })
+                    ])
                 })
             }
         ]
