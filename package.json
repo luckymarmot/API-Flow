@@ -1,9 +1,9 @@
 {
   "name": "API-Flow",
-  "version": "2.0.0",
-  "main": "src/CurlImporter.js",
+  "version": "0.0.1",
+  "main": "index.js",
   "license": "MIT",
-  "homepage": "https://github.com/luckymarmot/Paw-cURLImporter",
+  "homepage": "https://github.com/luckymarmot/API-Flow",
   "dependencies": {
     "babel-plugin-transform-flow-strip-types": "6.3.15",
     "babel-polyfill": "6.3.14",
@@ -44,6 +44,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:luckymarmot/Paw-cURLImporter.git"
+    "url": "git@github.com:luckymarmot/API-Flow.git"
   }
 }
