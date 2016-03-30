@@ -16,8 +16,8 @@ class TestSwaggerParser extends UnitTest {
     testSimpleGroupTree() {
         const parser = new SwaggerParser()
 
-        let request = new Request()
-        let pathsLinkedReqs = {
+        const request = new Request()
+        const pathsLinkedReqs = {
             '/test': {
                 get: request
             }
@@ -36,17 +36,17 @@ class TestSwaggerParser extends UnitTest {
         pathGroup = pathGroup.setIn([ 'children', 'get' ], request)
         expected = expected.setIn([ 'children', '/test' ], pathGroup)
 
-        let result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
+        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
         this.assertEqual(result, expected)
     }
 
     testMultipleMethodsGroupTree() {
         const parser = new SwaggerParser()
 
-        let getReq = new Request()
-        let postReq = new Request()
+        const getReq = new Request()
+        const postReq = new Request()
 
-        let pathsLinkedReqs = {
+        const pathsLinkedReqs = {
             '/test': {
                 get: getReq,
                 post: postReq
@@ -69,17 +69,17 @@ class TestSwaggerParser extends UnitTest {
         expected = expected
             .setIn([ 'children', '/test' ], pathGroup)
 
-        let result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
+        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
         this.assertTrue(Immutable.is(result, expected))
     }
 
     testMultiplePathsGroupTree() {
         const parser = new SwaggerParser()
 
-        let firstReq = new Request()
-        let secndReq = new Request()
+        const firstReq = new Request()
+        const secndReq = new Request()
 
-        let pathsLinkedReqs = {
+        const pathsLinkedReqs = {
             '/test': {
                 get: firstReq
             },
@@ -106,16 +106,16 @@ class TestSwaggerParser extends UnitTest {
         pathGroup = pathGroup.setIn([ 'children', 'post' ], secndReq)
         expected = expected.setIn([ 'children', '/anotherTest' ], pathGroup)
 
-        let result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
+        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
         this.assertTrue(Immutable.is(result, expected))
     }
 
     testLongPathGroupTree() {
         const parser = new SwaggerParser()
 
-        let req = new Request()
+        const req = new Request()
 
-        let pathsLinkedReqs = {
+        const pathsLinkedReqs = {
             '/path/to/test': {
                 get: req
             }
@@ -145,17 +145,17 @@ class TestSwaggerParser extends UnitTest {
             .setIn([ 'children', '/to' ], pathGroup)
         expected = expected.setIn([ 'children', '/path' ], parentGroup)
 
-        let result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
+        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
         this.assertTrue(Immutable.is(result, expected))
     }
 
     testRequestAndGroupOnSameDepthGroupTree() {
         const parser = new SwaggerParser()
 
-        let firstReq = new Request()
-        let secndReq = new Request()
+        const firstReq = new Request()
+        const secndReq = new Request()
 
-        let pathsLinkedReqs = {
+        const pathsLinkedReqs = {
             '/test': {
                 get: firstReq
             },
@@ -185,7 +185,7 @@ class TestSwaggerParser extends UnitTest {
 
         expected = expected.setIn([ 'children', '/test' ], pathGroup)
 
-        let result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
+        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
 
         this.assertTrue(Immutable.is(result, expected))
     }
@@ -193,9 +193,9 @@ class TestSwaggerParser extends UnitTest {
     testPathCanContainMethodKeywords() {
         const parser = new SwaggerParser()
 
-        let req = new Request()
+        const req = new Request()
 
-        let pathsLinkedReqs = {
+        const pathsLinkedReqs = {
             '/get/post/test': {
                 get: req
             }
@@ -225,17 +225,17 @@ class TestSwaggerParser extends UnitTest {
             .setIn([ 'children', '/post' ], pathGroup)
         expected = expected.setIn([ 'children', '/get' ], parentGroup)
 
-        let result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
+        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
         this.assertTrue(Immutable.is(result, expected))
     }
 
     testMethodKeywordsDoNotCauseConflict() {
         const parser = new SwaggerParser()
 
-        let firstReq = new Request()
-        let secndReq = new Request()
+        const firstReq = new Request()
+        const secndReq = new Request()
 
-        let pathsLinkedReqs = {
+        const pathsLinkedReqs = {
             '/test': {
                 get: firstReq
             },
@@ -265,7 +265,7 @@ class TestSwaggerParser extends UnitTest {
 
         expected = expected.setIn([ 'children', '/test' ], pathGroup)
 
-        let result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
+        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
 
         this.assertTrue(Immutable.is(result, expected))
     }
@@ -338,7 +338,7 @@ class TestSwaggerParser extends UnitTest {
 
     testParseShouldThrowOnInvalidSwaggerCollection() {
         const parser = new SwaggerParser()
-        let content = this.__loadSwaggerFile('bad-schema')
+        const content = this.__loadSwaggerFile('bad-schema')
 
         try {
             parser.parse(content)
@@ -371,7 +371,7 @@ class TestSwaggerParser extends UnitTest {
             }
         }
 
-        let expected = 3
+        const expected = 3
         let count = 0
 
         parser._applyFuncOverPathArchitecture(collection, () => { count += 1 })
@@ -444,7 +444,7 @@ class TestSwaggerParser extends UnitTest {
             }
         }
 
-        let result = parser._applyFuncOverPathArchitecture(
+        const result = parser._applyFuncOverPathArchitecture(
             collection,
             (coll, path, method, content) => {
                 return {
@@ -458,57 +458,57 @@ class TestSwaggerParser extends UnitTest {
 
     testSetSummaryWithASummaryContent() {
         const parser = new SwaggerParser()
-        let request = new Request()
-        let path = '/test/path'
-        let content = {
+        const request = new Request()
+        const path = '/test/path'
+        const content = {
             summary: 'dummy summary'
         }
 
-        let result = parser._setSummary(request, path, content)
+        const result = parser._setSummary(request, path, content)
 
         this.assertEqual(result.get('name'), content.summary)
     }
 
     testSetSummaryWithNoSummaryContent() {
         const parser = new SwaggerParser()
-        let request = new Request()
-        let path = '/test/path'
-        let content = {
+        const request = new Request()
+        const path = '/test/path'
+        const content = {
             notSummary: 'dummy summary'
         }
 
-        let result = parser._setSummary(request, path, content)
+        const result = parser._setSummary(request, path, content)
 
         this.assertEqual(result.get('name'), path)
     }
 
     testSetDescriptionWithADescriptionContent() {
         const parser = new SwaggerParser()
-        let request = new Request()
-        let content = {
+        const request = new Request()
+        const content = {
             description: 'dummy description'
         }
 
-        let result = parser._setDescription(request, content)
+        const result = parser._setDescription(request, content)
 
         this.assertEqual(result.get('description'), content.description)
     }
 
     testSetDescriptionWithNoDescriptionContent() {
         const parser = new SwaggerParser()
-        let request = new Request()
-        let content = {
+        const request = new Request()
+        const content = {
             notDescription: 'dummy description'
         }
 
-        let result = parser._setDescription(request, content)
+        const result = parser._setDescription(request, content)
 
         this.assertEqual(result.get('description'), null)
     }
 
     testConvertKeyValueListToSet() {
         const parser = new SwaggerParser()
-        let kvList = [
+        const kvList = [
             new KeyValue({
                 key: 'test',
                 value: 42
@@ -523,19 +523,19 @@ class TestSwaggerParser extends UnitTest {
             })
         ]
 
-        let expected = {
+        const expected = {
             test: 42,
             other: 'text',
             final: true
         }
 
-        let result = parser._convertKeyValueListToSet(kvList)
+        const result = parser._convertKeyValueListToSet(kvList)
         this.assertEqual(expected, result)
     }
 
     testConvertKeyValueListToSetWithDuplicateKeys() {
         const parser = new SwaggerParser()
-        let kvList = [
+        const kvList = [
             new KeyValue({
                 key: 'test',
                 value: 42
@@ -554,19 +554,19 @@ class TestSwaggerParser extends UnitTest {
             })
         ]
 
-        let expected = {
+        const expected = {
             test: 42,
             other: 'text',
             final: false
         }
 
-        let result = parser._convertKeyValueListToSet(kvList)
+        const result = parser._convertKeyValueListToSet(kvList)
         this.assertEqual(expected, result)
     }
 
     testExtractParamsThrowsOnBadlyFormedParameter() {
         const parser = new SwaggerParser()
-        let cases = SwaggerFixtures.getThrowingParametersCases()
+        const cases = SwaggerFixtures.getThrowingParametersCases()
         this.__warnProgress('ExtractParamsThrowsOnBadlyFormedParameter', true)
         for (let usecase of cases) {
             this.__warnProgress(usecase.name)
@@ -612,8 +612,8 @@ class TestSwaggerParser extends UnitTest {
     //
 
     __warnProgress(string, isTestCase = false) {
-        let offset = isTestCase ? '    ' : '      '
-        let warn =
+        const offset = isTestCase ? '    ' : '      '
+        const warn =
             offset + '\x1b[33m\u25CB\x1b[0m \x1b[90m' +
             string + '\x1b[0m'
         // eslint-disable-next-line
@@ -622,7 +622,7 @@ class TestSwaggerParser extends UnitTest {
 
     __loadTestSuite(testSuitName, functionName) {
         const parser = new SwaggerParser()
-        let cases = SwaggerFixtures['get' + testSuitName + 'Cases']()
+        const cases = SwaggerFixtures['get' + testSuitName + 'Cases']()
         this.__warnProgress(testSuitName, true)
         for (let usecase of cases) {
             this.__warnProgress(usecase.name)
@@ -632,7 +632,7 @@ class TestSwaggerParser extends UnitTest {
     }
 
     __loadSwaggerFile(fileName, extension = 'json') {
-        let path = __dirname + '/collections/' + fileName + '.' + extension
+        const path = __dirname + '/collections/' + fileName + '.' + extension
         return fs.readFileSync(path).toString()
     }
 }

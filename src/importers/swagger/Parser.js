@@ -19,11 +19,11 @@ export default class SwaggerParser {
 
     // @NotTested -> assumed valid
     parse(string) {
-        let swaggerCollection = this._loadSwaggerCollection(string)
-        let valid = this._validateSwaggerCollection(swaggerCollection)
+        const swaggerCollection = this._loadSwaggerCollection(string)
+        const valid = this._validateSwaggerCollection(swaggerCollection)
 
         if (!valid) {
-            let m = 'Invalid Swagger File (invalid schema / version < 2.0):\n'
+            const m = 'Invalid Swagger File (invalid schema / version < 2.0):\n'
             throw new Error(m + tv4.error)
         }
 
@@ -65,7 +65,7 @@ export default class SwaggerParser {
 
     // @tested
     _setBasicInfo(request, url, method, headers, responses) {
-        let headerSet = this._convertKeyValueListToSet(headers)
+        const headerSet = this._convertKeyValueListToSet(headers)
         return request
             .set('url', url)
             .set('method', method.toUpperCase())
@@ -99,7 +99,7 @@ export default class SwaggerParser {
             }
 
             if (content.consumes && content.comsumes[0]) {
-                let contentType = content.consumes[0]
+                const contentType = content.consumes[0]
                 if (
                     content.consumes.hasOwnProperty(contentType) &&
                     typeMapping[contentType]
@@ -118,7 +118,7 @@ export default class SwaggerParser {
     _setAuth(request, swaggerCollection, content) {
         if (content.security) {
             if (!swaggerCollection.securityDefinitions) {
-                let m = 'Swagger - expected a security definition to exist'
+                const m = 'Swagger - expected a security definition to exist'
                 throw new Error(m)
             }
             for (let security of content.security) {
@@ -142,11 +142,11 @@ export default class SwaggerParser {
     // @NotTested -> assumed valid
     _createRequest(swaggerCollection, path, method, content) {
         let request = new Request()
-        let [ headers, queries, formData, body ] = this._extractParams(
+        const [ headers, queries, formData, body ] = this._extractParams(
             content.parameters
         )
-        let responses = this._extractResponses(content.responses)
-        let url = this._generateURL(swaggerCollection, path, queries)
+        const responses = this._extractResponses(content.responses)
+        const url = this._generateURL(swaggerCollection, path, queries)
 
         request = this._setSummary(request, path, content)
         request = this._setDescription(request, content)
@@ -214,11 +214,11 @@ export default class SwaggerParser {
 
     // @tested
     _generateURL(swaggerCollection, path, queries) {
-        let protocol = (
+        const protocol = (
             swaggerCollection.schemes ?
             swaggerCollection.schemes[0] : 'http'
         ) + '://'
-        let domain = swaggerCollection.host || 'localhost'
+        const domain = swaggerCollection.host || 'localhost'
         let basePath = ''
         let subPath = ''
         let queryPath = ''
@@ -250,7 +250,7 @@ export default class SwaggerParser {
             }).join('&')
         }
 
-        let url = protocol + domain + basePath + subPath + queryPath
+        const url = protocol + domain + basePath + subPath + queryPath
         return url
     }
 
@@ -321,7 +321,7 @@ export default class SwaggerParser {
 
                 if (param.in === 'body') {
                     if (!param.schema || !param.schema.$ref) {
-                        let m = 'Expected a schema.$ref object in body param'
+                        const m = 'Expected a schema.$ref object in body param'
                         throw new Error(m)
                     }
                     body = new SchemaReference({
