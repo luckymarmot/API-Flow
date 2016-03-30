@@ -9,6 +9,8 @@ import {
 } from '../../../../immutables/RequestContext'
 import { BasicAuth, ApiKeyAuth, OAuth2Auth } from '../../../../immutables/Auth'
 
+/* eslint-disable no-undefined */
+
 export default class SwaggerFixtures {
     static getValidFilenames() {
         return [
@@ -968,3 +970,5 @@ export default class SwaggerFixtures {
         ]
     }
 }
+
+/* eslint-enabled no-undefined */

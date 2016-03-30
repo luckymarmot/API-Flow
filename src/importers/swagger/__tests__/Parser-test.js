@@ -12,7 +12,7 @@ import {
 import SwaggerFixtures from './fixtures/Parser-fixtures'
 
 @registerTest
-class TestSwaggerParser extends UnitTest {
+export class TestSwaggerParser extends UnitTest {
 
     testSimpleGroupTree() {
         const parser = new SwaggerParser()
@@ -617,8 +617,9 @@ class TestSwaggerParser extends UnitTest {
         const warn =
             offset + '\x1b[33m\u25CB\x1b[0m \x1b[90m' +
             string + '\x1b[0m'
-        // eslint-disable-next-line
+        /* eslint-disable no-console */
         console.log(warn)
+        /* eslint-enable no-console */
     }
 
     __loadTestSuite(testSuitName, functionName) {
