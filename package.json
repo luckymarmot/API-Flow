@@ -2,7 +2,7 @@
   "name": "api-flow",
   "description": "A flow written in ES6 using Immutable to convert between API description formats (Swagger, etc.) and other programs such as cURL command lines.",
   "keywords": ["api", "swagger", "paw", "curl", "api blueprint", "raml", "grape"],
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "index.js",
   "license": "MIT",
   "homepage": "https://github.com/luckymarmot/API-Flow",
