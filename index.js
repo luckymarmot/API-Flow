@@ -1,11 +1,11 @@
 import RequestContext, {
-	Request,
-	FileReference,
-	KeyValue,
-	SchemaReference,
-	Schema,
-	Response,
-	Group
+    Request,
+    FileReference,
+    KeyValue,
+    SchemaReference,
+    Schema,
+    Response,
+    Group
 } from './immutables/'
 
 import {
@@ -20,20 +20,20 @@ import {
 
 export default RequestContext
 export {
-	Request,
-	FileReference,
-	KeyValue,
-	SchemaReference,
-	Schema,
-	Response,
-	Group
+    Request,
+    FileReference,
+    KeyValue,
+    SchemaReference,
+    Schema,
+    Response,
+    Group
 }
-export {
-	BasicAuth,
-    DigestAuth,
-    NTLMAuth,
-    NegotiateAuth,
-    ApiKeyAuth,
-    OAuth1Auth,
-    OAuth2Auth
+export const Auth = {
+    Basic: BasicAuth,
+    Digest: DigestAuth,
+    NTLM: NTLMAuth,
+    Negotiate: NegotiateAuth,
+    ApiKey: ApiKeyAuth,
+    OAuth1: OAuth1Auth,
+    OAuth2: OAuth2Auth
 }
