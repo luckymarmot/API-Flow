@@ -1,3 +1,10 @@
 node_modules/
 src/
-
+linting/
+lib/**/__tests__/
+.babelrc
+.eslintignore
+.gitignore
+.travis.yml
+.npmignore
+Makefile
