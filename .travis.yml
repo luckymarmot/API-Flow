@@ -1,9 +1,7 @@
 language: node_js
 before_script:
 - make lint
-- make build
 install:
-- make dev-install
+- make install
 test:
 - make test
-
