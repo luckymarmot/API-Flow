@@ -1,6 +1,9 @@
 language: node_js
 before_script:
-- npm run lint
+- make lint
+- make build
 install:
-- npm install --only=dev
-- npm install
+- make dev-install
+test:
+- make test
+

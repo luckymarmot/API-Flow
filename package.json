@@ -38,7 +38,6 @@
   },
   "scripts": {
     "compile": "rm -rf lib/ && BUILD_ENV=lib ./node_modules/.bin/webpack --bail --display-error-details",
-    "prepublish": "npm run compile",
     "test": "$npm_package_options_mocha \"src/**/__tests__/*-test.js\"",
     "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
   },
