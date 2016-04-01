@@ -50,3 +50,5 @@ crashlytics-build.properties
 # Build
 build/
 node_modules/
+lib/
+

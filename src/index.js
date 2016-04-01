@@ -6,7 +6,7 @@ import RequestContext, {
     Schema,
     Response,
     Group
-} from './immutables/'
+} from './immutables/RequestContext'
 
 import {
     BasicAuth,

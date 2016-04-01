@@ -1,3 +1,7 @@
 language: node_js
 before_script:
-- npm run lint
+- make lint
+install:
+- make install
+test:
+- make test

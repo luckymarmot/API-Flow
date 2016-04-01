@@ -1,0 +1,11 @@
+node_modules/
+src/
+linting/
+.babelrc
+.eslintignore
+.gitignore
+.travis.yml
+.npmignore
+Makefile
+webpack.config.babel.js
+
