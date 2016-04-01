@@ -3,7 +3,7 @@
   "description": "A flow written in ES6 using Immutable to convert between API description formats (Swagger, etc.) and other programs such as cURL command lines.",
   "keywords": ["api", "swagger", "paw", "curl", "api blueprint", "raml", "grape"],
   "version": "0.0.3",
-  "main": "index.js",
+  "main": "lib/index.js",
   "license": "MIT",
   "homepage": "https://github.com/luckymarmot/API-Flow",
   "dependencies": {
@@ -37,6 +37,8 @@
     "eslint-loader": "1.0.0"
   },
   "scripts": {
+    "compile": "babel -d lib/ src/",
+    "prepublish": "npm run compile",
     "test": "$npm_package_options_mocha \"src/**/__tests__/*-test.js\"",
     "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
   },
