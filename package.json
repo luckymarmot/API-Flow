@@ -37,7 +37,7 @@
     "eslint-loader": "1.0.0"
   },
   "scripts": {
-    "compile": "rm -rf lib/ && BUILD_ENV=lib ./node_modules/.bin/webpack --bail --display-error-details",
+    "compile": "babel --ignore='**/__tests__/' -d lib/ src/",
     "test": "$npm_package_options_mocha \"src/**/__tests__/*-test.js\"",
     "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
   },
