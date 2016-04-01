@@ -2,5 +2,5 @@ language: node_js
 before_script:
 - npm run lint
 install:
-- npm install --dev
+- npm install --only=dev
 - npm install
