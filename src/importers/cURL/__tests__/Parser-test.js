@@ -480,8 +480,12 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
-            }))
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
+            })
+        )
     }
 
     testFormDataKeyValueMultiple() {
@@ -494,7 +498,10 @@ export class TestCurlParser extends UnitTest {
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' }),
                     new KeyValue({ key: 'key2', value: 'value2' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -507,7 +514,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -520,7 +530,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -533,7 +546,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'ke y', value: 'val ue' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -545,8 +561,11 @@ export class TestCurlParser extends UnitTest {
                 method: 'POST',
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
-                    new KeyValue({ key: 'key', value: null })
-                ])
+                    new KeyValue({ key: 'key', value: '' })
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -556,10 +575,11 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: null })
-                ])
+                bodyType: 'plain',
+                body: 'key',
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -569,10 +589,11 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'content', value: null })
-                ])
+                bodyType: 'plain',
+                body: 'content',
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -586,7 +607,10 @@ export class TestCurlParser extends UnitTest {
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' }),
                     new KeyValue({ key: 'key2', value: 'value2' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -600,7 +624,10 @@ export class TestCurlParser extends UnitTest {
                 body: Immutable.List([
                     new KeyValue({ key: 'ke y', value: 'value' }),
                     new KeyValue({ key: 'key2', value: 'value/2' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -613,7 +640,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -628,7 +658,10 @@ export class TestCurlParser extends UnitTest {
                     new KeyValue({ key: '{"key":"va', value: 'l' }),
                     new KeyValue({ key: 'u', value: 'e"}' })
                 ]),
-                bodyString: '{"key":"va=l&u=e"}'
+                bodyString: '{"key":"va=l&u=e"}',
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }), true)
     }
 
@@ -641,7 +674,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -651,10 +687,11 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'sometext', value: null })
-                ])
+                bodyType: 'plain',
+                body: 'sometext',
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -667,7 +704,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -677,10 +717,11 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'sometext', value: null })
-                ])
+                bodyType: 'plain',
+                body: 'sometext',
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -693,7 +734,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -703,10 +747,11 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'sometext', value: null })
-                ])
+                bodyType: 'plain',
+                body: 'sometext',
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -716,16 +761,14 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({
-                        key: new FileReference({
-                            filepath: 'filename.txt',
-                            convert: 'stripNewlines'
-                        }),
-                        value: null
-                    })
-                ])
+                bodyType: 'file',
+                body: new FileReference({
+                    filepath: 'filename.txt',
+                    convert: 'stripNewlines'
+                }),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -735,16 +778,14 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({
-                        key: new FileReference({
-                            filepath: 'filename.txt',
-                            convert: 'stripNewlines'
-                        }),
-                        value: null
-                    })
-                ])
+                bodyType: 'file',
+                body: new FileReference({
+                    filepath: 'filename.txt',
+                    convert: 'stripNewlines'
+                }),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -754,16 +795,14 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({
-                        key: new FileReference({
-                            filepath: 'filename.txt',
-                            convert: null
-                        }),
-                        value: null
-                    })
-                ])
+                bodyType: 'file',
+                body: new FileReference({
+                    filepath: 'filename.txt',
+                    convert: null
+                }),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -773,10 +812,11 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: '@filename.txt', value: null })
-                ])
+                bodyType: 'plain',
+                body: '@filename.txt',
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -803,7 +843,10 @@ export class TestCurlParser extends UnitTest {
                         }),
                         value: null
                     })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -838,7 +881,10 @@ export class TestCurlParser extends UnitTest {
                         key: 'key2',
                         value: 'value2'
                     })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -906,7 +952,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'val\nue' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -919,7 +968,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'val\nue' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -932,7 +984,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'val\nue' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -946,7 +1001,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -959,7 +1017,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'val\nue' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -978,7 +1039,10 @@ export class TestCurlParser extends UnitTest {
                             convert: 'urlEncode'
                         })
                     })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -995,8 +1059,11 @@ export class TestCurlParser extends UnitTest {
                 method: 'POST',
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
-                    new KeyValue({ key: 'value', value: null })
-                ])
+                    new KeyValue({ key: 'value', value: '' })
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1009,8 +1076,11 @@ export class TestCurlParser extends UnitTest {
                 method: 'POST',
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
-                    new KeyValue({ key: 'value', value: null })
-                ])
+                    new KeyValue({ key: 'value', value: '' })
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1024,7 +1094,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1042,9 +1115,12 @@ export class TestCurlParser extends UnitTest {
                             filepath: 'filename.txt',
                             convert: 'urlEncode'
                         }),
-                        value: null
+                        value: ''
                     })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1064,7 +1140,10 @@ export class TestCurlParser extends UnitTest {
                             convert: 'urlEncode'
                         })
                     })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1076,8 +1155,11 @@ export class TestCurlParser extends UnitTest {
                 method: 'POST',
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
-                    new KeyValue({ key: '@filename', value: null })
-                ])
+                    new KeyValue({ key: '@filename', value: '' })
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1089,8 +1171,11 @@ export class TestCurlParser extends UnitTest {
                 method: 'POST',
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
-                    new KeyValue({ key: 'value=more@values', value: null })
-                ])
+                    new KeyValue({ key: 'value=more@values', value: '' })
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1104,7 +1189,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'key', value: 'value=more@values' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1117,7 +1205,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'name@file', value: 'path' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1130,7 +1221,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: '@file', value: 'path' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1143,7 +1237,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: 'name', value: '@value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1157,7 +1254,10 @@ export class TestCurlParser extends UnitTest {
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({ key: ' key', value: 'value' })
-                ])
+                ]),
+                headers: Immutable.OrderedMap({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
             }))
     }
 
@@ -1750,7 +1850,10 @@ export class TestCurlParser extends UnitTest {
                     body: Immutable.List([
                         new KeyValue({ key: 'key', value: 'value' }),
                         new KeyValue({ key: 'key2', value: 'value2' })
-                    ])
+                    ]),
+                    headers: Immutable.OrderedMap({
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    })
                 })
             ]))
     }
@@ -2007,15 +2110,21 @@ export class TestCurlParser extends UnitTest {
     // helpers
     //
 
-    __testRequest(input, expected, compareBodyString = false) {
+    __testRequest(input, expected, compareBodyString = false, verbose = false) {
         this.__testRequests(
             input,
             Immutable.List([ expected ]),
-            compareBodyString
+            compareBodyString,
+            verbose
         )
     }
 
-    __testRequests(input, expected, compareBodyString = false) {
+    __testRequests(
+        input,
+        expected,
+        compareBodyString = false,
+        verbose = false
+    ) {
         const parser = new CurlParser()
         let context = parser.parse(input)
         let requests = context.getIn([ 'group', 'children' ])
@@ -2028,6 +2137,13 @@ export class TestCurlParser extends UnitTest {
             return request
         })
 
-        this.assertTrue(Immutable.is(requests, expected))
+        /* eslint-disable  no-console */
+        if (verbose) {
+            console.log(requests)
+            console.log(expected)
+        }
+        /* eslint-enable  no-console */
+
+        this.assertEqual(requests, expected)
     }
 }
