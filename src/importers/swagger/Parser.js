@@ -133,7 +133,7 @@ export default class SwaggerParser {
                             'scopes', new Immutable.List(security[key])
                         )
                         return request
-                            .setAuthType(definition.type, definition)
+                            .setAuthType(definition.get('type'), definition)
                     }
                 }
             }
