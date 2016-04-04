@@ -35,5 +35,6 @@ export class OAuth1Auth extends Immutable.Record({
 export class OAuth2Auth extends Immutable.Record({
     flow: null,
     authorizationUrl: null,
-    tokenUrl: null
+    tokenUrl: null,
+    scopes: Immutable.List()
 }) { }

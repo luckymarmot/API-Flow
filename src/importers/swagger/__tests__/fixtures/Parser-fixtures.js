@@ -944,7 +944,10 @@ export default class SwaggerFixtures {
                 output: new Request({
                     auth: new OAuth2Auth({
                         flow: 'implicit',
-                        authorizationUrl: 'http://s.com/oauth'
+                        authorizationUrl: 'http://s.com/oauth',
+                        scopes: new Immutable.List(
+                            [ 'write_pets', 'read_pets' ]
+                        )
                     })
                 })
             }
