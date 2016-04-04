@@ -278,11 +278,61 @@ export default class CurlParser {
             request = request.set('method', 'GET')
         }
 
+        request = this._updateRequest(request)
         requests = urls.map(url => {
             return request.set('url', url)
         })
 
         return requests
+    }
+
+    _updateRequest(request) {
+        let _request = request
+        const bodyType = request.get('bodyType')
+        const body = request.get('body')
+        const contentType = request.getIn([ 'headers', 'Content-Type' ])
+
+        if (bodyType === 'urlEncoded') {
+            // this is not form url encoded, but a plain body string or file
+            if (body.count() === 1 && body.getIn([ 0, 'value' ]) === null) {
+                if (body.getIn([ 0, 'key' ]) instanceof FileReference) {
+                    _request = _request
+                        .set('bodyType', 'file')
+                        .set('body', body.getIn([ 0, 'key' ]))
+                }
+                else {
+                    _request = _request
+                        .set('bodyType', 'plain')
+                        .set('body', body.getIn([ 0, 'key' ]))
+                }
+            }
+            // if no Content-Type is set, or not set to
+            // application/x-www-form-urlencoded consider the body as
+            // a plain string
+            else if (
+                contentType && contentType !== 'application/x-www-form-urlencoded'
+            ) {
+                const bodyString = _request.get('bodyString')
+                if (contentType && contentType.indexOf('json') >= 0) {
+                    try {
+                        let jsonBody = JSON.parse(bodyString)
+                        _request = _request
+                            .set('bodyType', 'json')
+                            .set('body', jsonBody)
+                    }
+                    catch (e) {
+                        const m = 'Request seems to have a JSON body, ' +
+                        'but JSON parsing failed'
+                        console.error(m) // eslint-disable-line
+                        _request = _request
+                            .set('bodyType', 'plain')
+                            .set('body', bodyString)
+                    }
+                }
+            }
+        }
+
+        return _request
     }
 
     _parseUrl(request, url) {
@@ -470,6 +520,13 @@ export default class CurlParser {
             option === '--data-raw' ||
             option === '--data-binary'
         ) {
+            _request = _request
+                .setIn(
+                    [ 'headers', 'Content-Type' ],
+                    _request.getIn([ 'headers', 'Content-Type' ]) ||
+                    'application/x-www-form-urlencoded'
+                )
+
             let value = arg
 
             // resolve file reference @filename
@@ -494,13 +551,20 @@ export default class CurlParser {
                     _request = _request
                         .set('body', _request.get('body').push(new KeyValue({
                             key: decodeURIComponent(m[1]),
-                            value: m[2] ?
+                            value: typeof m[2] === 'string' ?
                                 decodeURIComponent(m[2]) : null
                         })))
                 }
             }
         }
         else if (option === '--data-urlencode') {
+            _request = _request
+                .setIn(
+                    [ 'headers', 'Content-Type' ],
+                    _request.getIn([ 'headers', 'Content-Type' ]) ||
+                    'application/x-www-form-urlencoded'
+                )
+
             let m = arg.match(/^([^\=]+)?\=([\s\S]*)$/)
             // =content
             // name=content
@@ -508,7 +572,7 @@ export default class CurlParser {
                 _request = _request
                     .set('body', _request.get('body').push(new KeyValue({
                         key: m[1] ? m[1] : m[2],
-                        value: m[1] ? m[2] : null
+                        value: m[1] ? m[2] : ''
                     })))
             }
             // content
@@ -517,11 +581,11 @@ export default class CurlParser {
             else {
                 m = arg.match(/^([^\@]+)?([\s\S]+)?$/)
                 let value = m[2] ?
-                    this._resolveFileReference(m[2], 'urlEncode') : null
+                    this._resolveFileReference(m[2], 'urlEncode') : ''
                 _request = _request
                     .set('body', _request.get('body').push(new KeyValue({
                         key: m[1] ? m[1] : value,
-                        value: m[1] ? value : null
+                        value: m[1] ? value : ''
                     })))
             }
         }
