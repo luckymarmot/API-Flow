@@ -515,18 +515,18 @@ export default class CurlParser {
 
         const arg = this._popArg()
 
+        _request = _request
+            .setIn(
+                [ 'headers', 'Content-Type' ],
+                _request.getIn([ 'headers', 'Content-Type' ]) ||
+                'application/x-www-form-urlencoded'
+            )
+
         if (
             option === '--data' ||
             option === '--data-raw' ||
             option === '--data-binary'
         ) {
-            _request = _request
-                .setIn(
-                    [ 'headers', 'Content-Type' ],
-                    _request.getIn([ 'headers', 'Content-Type' ]) ||
-                    'application/x-www-form-urlencoded'
-                )
-
             let value = arg
 
             // resolve file reference @filename
@@ -558,13 +558,6 @@ export default class CurlParser {
             }
         }
         else if (option === '--data-urlencode') {
-            _request = _request
-                .setIn(
-                    [ 'headers', 'Content-Type' ],
-                    _request.getIn([ 'headers', 'Content-Type' ]) ||
-                    'application/x-www-form-urlencoded'
-                )
-
             let m = arg.match(/^([^\=]+)?\=([\s\S]*)$/)
             // =content
             // name=content
