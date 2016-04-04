@@ -18,6 +18,9 @@ import {
     OAuth2Auth
 } from './immutables/Auth'
 
+import SwaggerParser from 'importers/swagger/Parser'
+import CurlParser from 'importers/swagger/Parser'
+
 export default RequestContext
 export {
     Request,
@@ -36,4 +39,8 @@ export const Auth = {
     ApiKey: ApiKeyAuth,
     OAuth1: OAuth1Auth,
     OAuth2: OAuth2Auth
+}
+export const Parser = {
+    Swagger: SwaggerParser,
+    Curl: CurlParser
 }
