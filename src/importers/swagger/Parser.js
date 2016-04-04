@@ -127,8 +127,11 @@ export default class SwaggerParser {
                         security.hasOwnProperty(key) &&
                         swaggerCollection.securityDefinitions[key]
                     ) {
-                        let definition = swaggerCollection
-                            .securityDefinitions[key]
+                        let definition = Immutable.fromJS(swaggerCollection
+                            .securityDefinitions[key])
+                        definition = definition.set(
+                            'scopes', new Immutable.List(security[key])
+                        )
                         return request
                             .setAuthType(definition.type, definition)
                     }
