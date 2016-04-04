@@ -939,10 +939,7 @@ export class TestCurlParser extends UnitTest {
                         key: 'key2',
                         value: 'value2'
                     })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'text/plain'
-                })
+                ])
             }))
     }
 
@@ -2139,10 +2136,14 @@ export class TestCurlParser extends UnitTest {
             }
             return request
         })
+
+        /* eslint-disable  no-console */
         if (verbose) {
             console.log(requests)
             console.log(expected)
         }
+        /* eslint-enable  no-console */
+
         this.assertEqual(requests, expected)
     }
 }

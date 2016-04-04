@@ -310,7 +310,8 @@ export default class CurlParser {
             // application/x-www-form-urlencoded consider the body as
             // a plain string
             else if (
-                contentType && contentType !== 'application/x-www-form-urlencoded'
+                contentType &&
+                contentType !== 'application/x-www-form-urlencoded'
             ) {
                 const bodyString = _request.get('bodyString')
                 if (contentType && contentType.indexOf('json') >= 0) {
