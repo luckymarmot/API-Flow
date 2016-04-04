@@ -18,8 +18,8 @@ import {
     OAuth2Auth
 } from './immutables/Auth'
 
-import SwaggerParser from 'importers/swagger/Parser'
-import CurlParser from 'importers/swagger/Parser'
+import SwaggerParser from './importers/swagger/Parser'
+import CurlParser from './importers/swagger/Parser'
 
 export default RequestContext
 export {
