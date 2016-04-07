@@ -159,12 +159,7 @@ export class Schema extends Immutable.Record({
         }
 
         let subSchema = this.get('map') || Immutable.OrderedMap()
-        let obj = {}
-        subSchema.forEach((value, key) => {
-            obj[key] = value.toJS()
-        })
-
-        return obj
+        return subSchema.toJS()
     }
 }
 
@@ -217,7 +212,8 @@ export class Request extends Immutable.Record({
     }
 
     setAuthParams(authParams) {
-        let auth = this.get('auth').last()
+        let auths = this.get('auth')
+        let auth = auths.last()
 
         // If AuthType was not set beforehand, assume BasicAuth
         if (auth === null || typeof auth === 'undefined') {
@@ -225,7 +221,7 @@ export class Request extends Immutable.Record({
         }
 
         auth = auth.merge(authParams)
-        return this.set('auth', this.get('auth').pop().push(auth))
+        return this.set('auth', auths.set(-1, auth))
     }
 }
 

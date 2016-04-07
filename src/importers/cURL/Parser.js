@@ -340,7 +340,7 @@ export default class CurlParser {
         const m = url
             .match(/^(\w+\:\/\/)?(?:([^\:\/]+)(?:\:([^\@]+)?)?\@)?([\s\S]*)$/)
         let _request = request
-        if (m[2] && !_request.getIn([ 'auth', '0', 'password' ])) {
+        if (m[2] && !_request.getIn([ 'auth', 0, 'password' ])) {
             _request = _request.setAuthParams({
                 username: m[2],
                 password: m[3] ? m[3] : null
