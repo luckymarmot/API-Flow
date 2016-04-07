@@ -1412,10 +1412,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1425,10 +1427,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: null
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: null
+                    })
+                ])
             }))
     }
 
@@ -1438,10 +1442,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1451,10 +1457,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new DigestAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new DigestAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1464,10 +1472,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new NTLMAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new NTLMAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1477,10 +1487,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new NegotiateAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new NegotiateAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1494,10 +1506,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1507,10 +1521,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: null
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: null
+                    })
+                ])
             }))
     }
 
@@ -1520,10 +1536,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1533,10 +1551,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: null
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: null
+                    })
+                ])
             }))
     }
 
@@ -1546,10 +1566,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'myuser',
-                    password: 'mypassword'
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'myuser',
+                        password: 'mypassword'
+                    })
+                ])
             }))
     }
 
@@ -1559,10 +1581,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'myuser',
-                    password: 'mypassword'
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'myuser',
+                        password: 'mypassword'
+                    })
+                ])
             }))
     }
 
@@ -1572,10 +1596,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1585,10 +1611,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new BasicAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new BasicAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1598,10 +1626,12 @@ export class TestCurlParser extends UnitTest {
             new Request({
                 url: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new DigestAuth({
-                    username: 'foo',
-                    password: 'bar'
-                })
+                auth: new Immutable.List([
+                    new DigestAuth({
+                        username: 'foo',
+                        password: 'bar'
+                    })
+                ])
             }))
     }
 
@@ -1747,10 +1777,12 @@ export class TestCurlParser extends UnitTest {
                     headers: Immutable.OrderedMap({
                         'X-Paw2': 'value2'
                     }),
-                    auth: new BasicAuth({
-                        username: 'foo',
-                        password: 'bar'
-                    })
+                    auth: new Immutable.List([
+                        new BasicAuth({
+                            username: 'foo',
+                            password: 'bar'
+                        })
+                    ])
                 }),
                 new Request({
                     url: 'https://httpbin.org/get?key=value',
@@ -1758,10 +1790,12 @@ export class TestCurlParser extends UnitTest {
                     headers: Immutable.OrderedMap({
                         'X-Paw2': 'value2'
                     }),
-                    auth: new BasicAuth({
-                        username: 'foo',
-                        password: 'bar'
-                    })
+                    auth: new Immutable.List([
+                        new BasicAuth({
+                            username: 'foo',
+                            password: 'bar'
+                        })
+                    ])
                 }),
                 new Request({
                     url: 'http://httpbin.org/post',

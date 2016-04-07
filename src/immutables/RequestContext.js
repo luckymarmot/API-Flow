@@ -57,6 +57,15 @@ export class SchemaReference extends Immutable.Record({
     setResolvedSchema(schema) {
         return this.set('value', schema)
     }
+
+    toJS() {
+        if (this.get('resolved')) {
+            return this.get('value').toJS()
+        }
+        else {
+            return this.get('reference')
+        }
+    }
 }
 
 export class Schema extends Immutable.Record({
@@ -111,7 +120,7 @@ export class Schema extends Immutable.Record({
         }
     }
 
-    resolveReferences(depth = 0, baseSchema = this) {
+    resolve(depth = 0, baseSchema = this) {
         if (this.get('value')) {
             return this
         }
@@ -124,12 +133,12 @@ export class Schema extends Immutable.Record({
                 _value = _value.resolve(baseSchema)
                 if (depth > 0) {
                     let schema = _value.getResolvedSchema()
-                        .resolveReferences(depth - 1, baseSchema)
+                        .resolve(depth - 1, baseSchema)
                     _value = _value.setResolvedSchema(schema)
                 }
             }
             else {
-                _value = _value.resolveReferences(depth, baseSchema)
+                _value = _value.resolve(depth, baseSchema)
             }
             auxSchema = auxSchema.set(key, _value)
         })
@@ -142,6 +151,15 @@ export class Schema extends Immutable.Record({
             return _path.concat([ 'map', elt ])
         }, [])
         return this.getIn(path, notSetValue)
+    }
+
+    toJS() {
+        if (this.get('value')) {
+            return this.get('value')
+        }
+
+        let subSchema = this.get('map') || Immutable.OrderedMap()
+        return subSchema.toJS()
     }
 }
 
@@ -163,10 +181,11 @@ export class Request extends Immutable.Record({
     url: null,
     method: null,
     headers: Immutable.OrderedMap(),
+    queries: null,
     bodyType: null,
     bodyString: null,
     body: null,
-    auth: null,
+    auth: Immutable.List(),
     responses: Immutable.List(),
     timeout: null
 }) {
@@ -189,19 +208,20 @@ export class Request extends Immutable.Record({
         }
 
         auth = new authMethods[authType](params)
-        return this.set('auth', auth)
+        return this.set('auth', this.get('auth').push(auth))
     }
 
     setAuthParams(authParams) {
-        let auth = this.get('auth')
+        let auths = this.get('auth')
+        let auth = auths.last()
 
         // If AuthType was not set beforehand, assume BasicAuth
-        if (auth === null) {
+        if (auth === null || typeof auth === 'undefined') {
             auth = new BasicAuth()
         }
 
         auth = auth.merge(authParams)
-        return this.set('auth', auth)
+        return this.set('auth', auths.set(-1, auth))
     }
 }
 

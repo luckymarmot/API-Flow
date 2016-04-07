@@ -264,8 +264,12 @@ export default class SwaggerFixtures {
                     [],
                     [],
                     [],
-                    new SchemaReference({
-                        reference: '#/definitions/Pet'
+                    new Schema({
+                        map: Immutable.OrderedMap({
+                            $ref: new SchemaReference({
+                                reference: '#/definitions/Pet'
+                            })
+                        })
                     })
                 ]
             },
@@ -650,41 +654,6 @@ export default class SwaggerFixtures {
                     []
                 ],
                 output: 'http://localhost/~test/simple/path'
-            },
-            {
-                name: 'DefinedSingleQueryTest',
-                inputs: [
-                    {},
-                    '/simple/path',
-                    [
-                        new KeyValue({
-                            key: 'test',
-                            value: 'content'
-                        })
-                    ]
-                ],
-                output: 'http://localhost/simple/path?test=content'
-            },
-            {
-                name: 'DefinedMultipleQueryTest',
-                inputs: [
-                    {},
-                    '/simple/path',
-                    [
-                        new KeyValue({
-                            key: 'test',
-                            value: 'c'
-                        }),
-                        new KeyValue({
-                            key: 's'
-                        }),
-                        new KeyValue({
-                            key: 'third',
-                            value: 'rand'
-                        })
-                    ]
-                ],
-                output: 'http://localhost/simple/path?test=c&s=&third=rand'
             }
         ]
     }
@@ -809,16 +778,24 @@ export default class SwaggerFixtures {
                 inputs: [
                     new Request(),
                     {},
-                    new SchemaReference({
-                        reference: '#/definitions/Test'
+                    new Schema({
+                        map: new Immutable.OrderedMap({
+                            $ref: new SchemaReference({
+                                reference: '#/definitions/Test'
+                            })
+                        })
                     }),
                     [],
                     undefined
                 ],
                 output: new Request({
                     bodyType: 'schema',
-                    body: new SchemaReference({
-                        reference: '#/definitions/Test'
+                    body: new Schema({
+                        map: new Immutable.OrderedMap({
+                            $ref: new SchemaReference({
+                                reference: '#/definitions/Test'
+                            })
+                        })
                     })
                 })
             },
@@ -882,7 +859,7 @@ export default class SwaggerFixtures {
                     }
                 ],
                 output: new Request({
-                    auth: new BasicAuth()
+                    auth: new Immutable.List([ new BasicAuth() ])
                 })
             },
             {
@@ -907,10 +884,12 @@ export default class SwaggerFixtures {
                     }
                 ],
                 output: new Request({
-                    auth: new ApiKeyAuth({
-                        name: 'api_key',
-                        in: 'header'
-                    })
+                    auth: new Immutable.List([
+                        new ApiKeyAuth({
+                            name: 'api_key',
+                            in: 'header'
+                        })
+                    ])
                 })
             },
             {
@@ -942,13 +921,15 @@ export default class SwaggerFixtures {
                     }
                 ],
                 output: new Request({
-                    auth: new OAuth2Auth({
-                        flow: 'implicit',
-                        authorizationUrl: 'http://s.com/oauth',
-                        scopes: new Immutable.List(
-                            [ 'write_pets', 'read_pets' ]
-                        )
-                    })
+                    auth: new Immutable.List([
+                        new OAuth2Auth({
+                            flow: 'implicit',
+                            authorizationUrl: 'http://s.com/oauth',
+                            scopes: new Immutable.List(
+                                [ 'write_pets', 'read_pets' ]
+                            )
+                        })
+                    ])
                 })
             }
         ]
