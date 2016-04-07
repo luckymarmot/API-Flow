@@ -1,5 +1,5 @@
 import Immutable from 'immutable'
-import yaml from 'yaml-js'
+import yaml from 'js-yaml'
 import tv4 from 'tv4'
 import swaggerSchema from 'swagger-schema-official/schema.json'
 
@@ -7,7 +7,6 @@ import RequestContext, {
     KeyValue,
     Group,
     Schema,
-    SchemaReference,
     Request,
     Response
 } from '../../immutables/RequestContext'
@@ -32,18 +31,22 @@ export default class SwaggerParser {
             baseSchema = baseSchema.mergeSchema(swaggerCollection)
 
             let rootGroup = new Group()
-            rootGroup.set('name', swaggerCollection.info.title)
+            rootGroup = rootGroup.set('name', swaggerCollection.info.title)
             let pathLinkedRequests = this._applyFuncOverPathArchitecture(
                 swaggerCollection,
-                this._createRequest
+                ::this._createRequest
             )
 
             rootGroup = this._createGroupTree(rootGroup, pathLinkedRequests)
-            this.context = this.context
+
+            let reqContext = new RequestContext()
+            reqContext = reqContext
                 .set('group', rootGroup)
                 .set('schema', baseSchema)
 
-            return this.context
+            this.context = reqContext
+
+            return reqContext
         }
     }
 
@@ -77,8 +80,8 @@ export default class SwaggerParser {
     _setBody(request, swaggerCollection, body, formData, content) {
         let _request = request
         if (body) {
-            if (!(body instanceof SchemaReference)) {
-                throw new Error('expected SchemaReference Object as a body')
+            if (!(body instanceof Schema)) {
+                throw new Error('expected Schema Object as a body')
             }
             _request = _request
                 .set('bodyType', 'schema')
@@ -98,13 +101,14 @@ export default class SwaggerParser {
                 content.consumes = swaggerCollection.consumes
             }
 
-            if (content.consumes && content.comsumes[0]) {
+            if (content.consumes && content.consumes[0]) {
                 const contentType = content.consumes[0]
                 if (
-                    content.consumes.hasOwnProperty(contentType) &&
                     typeMapping[contentType]
                 ) {
-                    _request = _request.set('bodyType', contentType)
+                    _request = _request.set(
+                        'bodyType', typeMapping[contentType]
+                    )
                 }
             }
 
@@ -116,6 +120,7 @@ export default class SwaggerParser {
 
     // @Tested
     _setAuth(request, swaggerCollection, content) {
+        let _request = request
         if (content.security) {
             if (!swaggerCollection.securityDefinitions) {
                 const m = 'Swagger - expected a security definition to exist'
@@ -132,13 +137,29 @@ export default class SwaggerParser {
                         definition = definition.set(
                             'scopes', new Immutable.List(security[key])
                         )
-                        return request
+                        _request = _request
                             .setAuthType(definition.get('type'), definition)
                     }
                 }
             }
         }
 
+        return _request
+    }
+
+    _uriEncodeKeyValueList(kvList) {
+        return kvList.map((kv) => {
+            return kv
+                .set('key', encodeURI(kv.get('key') || ''))
+                .set('value', encodeURI(kv.get('value') || ''))
+        })
+    }
+
+    _setQueries(request, queries) {
+        let _queries = this._uriEncodeKeyValueList(queries)
+        if (queries.length > 0) {
+            return request.set('queries', new Immutable.List(_queries))
+        }
         return request
     }
 
@@ -149,7 +170,7 @@ export default class SwaggerParser {
             content.parameters
         )
         const responses = this._extractResponses(content.responses)
-        const url = this._generateURL(swaggerCollection, path, queries)
+        const url = this._generateURL(swaggerCollection, path)
 
         request = this._setSummary(request, path, content)
         request = this._setDescription(request, content)
@@ -160,7 +181,14 @@ export default class SwaggerParser {
             headers,
             responses
         )
-        request = this._setBody(request, swaggerCollection, body, formData)
+        request = ::this._setQueries(request, queries)
+        request = this._setBody(
+            request,
+            swaggerCollection,
+            body,
+            formData,
+            content
+        )
         request = this._setAuth(request, swaggerCollection, content)
 
         return request
@@ -174,7 +202,7 @@ export default class SwaggerParser {
         }
         catch (jsonParseError) {
             try {
-                swaggerCollection = yaml.load(string)
+                swaggerCollection = yaml.safeLoad(string)
             }
             catch (yamlParseError) {
                 let m = 'Invalid Swagger File format (invalid JSON or YAML)'
@@ -216,7 +244,7 @@ export default class SwaggerParser {
     }
 
     // @tested
-    _generateURL(swaggerCollection, path, queries) {
+    _generateURL(swaggerCollection, path) {
         const protocol = (
             swaggerCollection.schemes ?
             swaggerCollection.schemes[0] : 'http'
@@ -224,7 +252,6 @@ export default class SwaggerParser {
         const domain = swaggerCollection.host || 'localhost'
         let basePath = ''
         let subPath = ''
-        let queryPath = ''
 
         if (
             swaggerCollection.basePath &&
@@ -247,13 +274,7 @@ export default class SwaggerParser {
             subPath = path
         }
 
-        if (queries.length > 0) {
-            queryPath = '?' + queries.map(pair => {
-                return pair.get('key') + '=' + (pair.get('value') || '')
-            }).join('&')
-        }
-
-        const url = protocol + domain + basePath + subPath + queryPath
+        const url = protocol + domain + basePath + subPath
         return url
     }
 
@@ -323,13 +344,11 @@ export default class SwaggerParser {
                 }
 
                 if (param.in === 'body') {
-                    if (!param.schema || !param.schema.$ref) {
-                        const m = 'Expected a schema.$ref object in body param'
+                    if (!param.schema) {
+                        const m = 'Expected a schema object in body param'
                         throw new Error(m)
                     }
-                    body = new SchemaReference({
-                        reference: param.schema.$ref
-                    })
+                    body = (new Schema()).mergeSchema(param.schema)
                 }
             }
         }
