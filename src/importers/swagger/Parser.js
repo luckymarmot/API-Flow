@@ -76,6 +76,21 @@ export default class SwaggerParser {
             .set('responses', new Immutable.List(responses))
     }
 
+    _extractContentType(swaggerCollection, content) {
+        let contentType
+        if (content.consumes && content.consumes.length > 0) {
+            contentType = content.consumes[0]
+        }
+        else if (
+            swaggerCollection.consumes &&
+            swaggerCollection.consumes.length > 0
+        ) {
+            contentType = swaggerCollection.consumes[0]
+        }
+
+        return contentType
+    }
+
     // @NotTested
     _setBody(request, swaggerCollection, body, formData, content) {
         let _request = request
@@ -89,27 +104,20 @@ export default class SwaggerParser {
         }
 
         if (formData.length > 0) {
+            let contentType = this
+                ._extractContentType(swaggerCollection, content)
+
             const typeMapping = {
                 'application/x-www-form-urlencoded': 'urlEncoded',
                 'multipart/form-data': 'formData'
             }
 
             if (
-                !(content.consumes && content.consumes.length > 0) &&
-                swaggerCollection.consumes
+                typeMapping[contentType]
             ) {
-                content.consumes = swaggerCollection.consumes
-            }
-
-            if (content.consumes && content.consumes[0]) {
-                const contentType = content.consumes[0]
-                if (
-                    typeMapping[contentType]
-                ) {
-                    _request = _request.set(
-                        'bodyType', typeMapping[contentType]
-                    )
-                }
+                _request = _request.set(
+                    'bodyType', typeMapping[contentType]
+                )
             }
 
             _request = _request.set('body', new Immutable.List(formData))
@@ -172,6 +180,16 @@ export default class SwaggerParser {
         const responses = this._extractResponses(content.responses)
         const url = this._generateURL(swaggerCollection, path)
 
+        const contentType = this
+            ._extractContentType(swaggerCollection, content)
+
+        if (contentType) {
+            headers.push(new KeyValue({
+                key: 'Content-Type',
+                value: contentType
+            }))
+        }
+
         request = this._setSummary(request, path, content)
         request = this._setDescription(request, content)
         request = this._setBasicInfo(
@@ -182,7 +200,7 @@ export default class SwaggerParser {
             responses
         )
         request = ::this._setQueries(request, queries)
-        request = this._setBody(
+        request = ::this._setBody(
             request,
             swaggerCollection,
             body,
