@@ -218,7 +218,6 @@ export class Request extends Immutable.Record({
 
     setAuthParams(authParams) {
         let auth = this.get('auth').last()
-        console.log(authParams, auth)
 
         // If AuthType was not set beforehand, assume BasicAuth
         if (auth === null || typeof auth === 'undefined') {
