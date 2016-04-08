@@ -2,7 +2,8 @@ import Immutable from 'immutable'
 
 export class BasicAuth extends Immutable.Record({
     username: null,
-    password: null
+    password: null,
+    raw: null
 }) { }
 
 export class DigestAuth extends Immutable.Record({
@@ -27,8 +28,17 @@ export class ApiKeyAuth extends Immutable.Record({
 
 // TODO set correct fields
 export class OAuth1Auth extends Immutable.Record({
-    username: null,
-    password: null
+    callback: null,
+    consumerSecret: null,
+    tokenSecret: null,
+    consumerKey: null,
+    algorithm: null,
+    nonce: null,
+    additionalParameters: null,
+    timestamp: null,
+    token: null,
+    version: null,
+    signature: null
 }) { }
 
 // TODO missing scope manipulation
@@ -37,4 +47,17 @@ export class OAuth2Auth extends Immutable.Record({
     authorizationUrl: null,
     tokenUrl: null,
     scopes: Immutable.List()
+}) { }
+
+export class AWSSig4Auth extends Immutable.Record({
+    key: null,
+    secret: null,
+    region: null,
+    service: null
+}) { }
+
+export class HawkAuth extends Immutable.Record({
+    id: null,
+    key: null,
+    algorithm: null
 }) { }
