@@ -165,7 +165,8 @@ export class Schema extends Immutable.Record({
 
 export default class RequestContext extends Immutable.Record({
     schema: null,
-    group: null
+    group: null,
+    environments: null
 }) { }
 
 export class Response extends Immutable.Record({
@@ -176,6 +177,7 @@ export class Response extends Immutable.Record({
 }) { }
 
 export class Request extends Immutable.Record({
+    id: null,
     name: null,
     description: null,
     url: null,
@@ -226,6 +228,17 @@ export class Request extends Immutable.Record({
 }
 
 export class Group extends Immutable.Record({
+    id: null,
     name: null,
     children: Immutable.OrderedMap()
+}) { }
+
+export class Environment extends Immutable.Record({
+    name: null,
+    variables: Immutable.OrderedMap
+}) { }
+
+export class EnvironmentReference extends Immutable.Record({
+    environmentName: null,
+    referenceName: null
 }) { }
