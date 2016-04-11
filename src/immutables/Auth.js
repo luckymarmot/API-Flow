@@ -26,7 +26,6 @@ export class ApiKeyAuth extends Immutable.Record({
     in: null
 }) { }
 
-// TODO set correct fields
 export class OAuth1Auth extends Immutable.Record({
     callback: null,
     consumerSecret: null,
@@ -41,7 +40,6 @@ export class OAuth1Auth extends Immutable.Record({
     signature: null
 }) { }
 
-// TODO missing scope manipulation
 export class OAuth2Auth extends Immutable.Record({
     flow: null,
     authorizationUrl: null,

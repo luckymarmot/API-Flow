@@ -203,14 +203,14 @@ export class Request extends Immutable.Record({
             oauth2: OAuth2Auth
         }
 
-        let auth = this.get('auth')
+        let auths = this.get('auth').pop()
 
         if (!authMethods[authType]) {
             throw new Error('Unsupported Authentication Method : ' + authType)
         }
 
-        auth = new authMethods[authType](params)
-        return this.set('auth', this.get('auth').push(auth))
+        let auth = new authMethods[authType](params)
+        return this.set('auth', auths.push(auth))
     }
 
     setAuthParams(authParams) {
@@ -235,10 +235,10 @@ export class Group extends Immutable.Record({
 
 export class Environment extends Immutable.Record({
     name: null,
-    variables: Immutable.OrderedMap
+    variables: Immutable.OrderedMap()
 }) { }
 
 export class EnvironmentReference extends Immutable.Record({
     environmentName: null,
-    referenceName: null
+    referenceName: Immutable.List()
 }) { }

@@ -20,7 +20,6 @@ export default class SwaggerParser {
         this.context = new RequestContext()
     }
 
-    // @NotTested -> assumed valid
     parse(string) {
         let collections = []
         let environments = []
@@ -100,8 +99,8 @@ export default class SwaggerParser {
                     value.key,
                     new KeyValue({
                         key: value.key,
-                        value: value.value,
-                        valueType: value.type
+                        value: this._referenceEnvironmentVariable(value.value),
+                        valueType: value.type || null
                     })
                 )
             }
@@ -117,7 +116,7 @@ export default class SwaggerParser {
 
         let requestsById = {}
         for (let req of collection.requests) {
-            let request = this.createRequest(collection, req)
+            let request = this._createRequest(collection, req)
             requestsById[req.id] = request
         }
 
@@ -130,16 +129,89 @@ export default class SwaggerParser {
         if (string === null) {
             return null
         }
-        else {
-            let match = string.match(/^\{\{([^\n\}]+)\}\}$/)
-            if (match.length < 2) {
-                return string
+
+        let groups = []
+        let stack = [
+            {
+                start: -1,
+                end: string.length,
+                depth: 0,
+                ref: new EnvironmentReference()
             }
-            else {
-                return new EnvironmentReference({
-                    referenceName: this._referenceEnvironmentVariable(match[1])
+        ]
+        let group
+        let level = 0
+        let prevChar = ''
+        let i = 0
+        for (let char of string) {
+            if (char === '{' && prevChar === '{') {
+                level += 1
+                char = ''
+
+                let parentGroup = stack.pop()
+                let component = string.substring(parentGroup.start + 1, i - 1)
+
+                if (component.length > 0) {
+                    parentGroup.ref = parentGroup.ref
+                        .set(
+                            'referenceName',
+                            parentGroup.ref.referenceName.push(component)
+                        )
+                }
+
+                stack.push(parentGroup)
+                stack.push({
+                    start: i,
+                    depth: level,
+                    components: [],
+                    ref: new EnvironmentReference()
                 })
             }
+
+            if (char === '}' && prevChar === '}' && level > 0) {
+                group = stack.pop()
+                group.end = i
+                group.str = string.substring(group.start + 1, group.end - 1)
+
+                if (group.ref.get('referenceName').size === 0) {
+                    group.ref = new EnvironmentReference({
+                        referenceName: new Immutable.List([
+                            string.substring(group.start + 1, group.end - 1)
+                        ])
+                    })
+                }
+
+                groups.push(group)
+
+                let parentGroup = stack.pop()
+                parentGroup.ref = parentGroup.ref
+                    .set(
+                        'referenceName',
+                        parentGroup.ref.referenceName.push(group)
+                    )
+                parentGroup.start = i
+                stack.push(parentGroup)
+
+                char = ''
+                level -= 1
+            }
+
+            i += 1
+            prevChar = char
+        }
+
+        if (stack.length > 1) {
+            // unbalanced parenthesis -- too weird to work with
+            return string
+        }
+
+        let result = stack.pop()
+
+        if (result.start < 0 && result.end >= string.length) {
+            return string
+        }
+        else {
+            return result
         }
     }
 
@@ -298,7 +370,7 @@ export default class SwaggerParser {
             Hawk: this._extractHawkAuth
         }
 
-        let setup = schemeSetupMap[scheme] || () => { return null }
+        let setup = schemeSetupMap[scheme] || (() => { return null })
 
         return setup(params, helper)
     }
