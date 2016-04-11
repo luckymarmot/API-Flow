@@ -158,8 +158,8 @@ export default class SwaggerParser {
     _uriEncodeKeyValueList(kvList) {
         return kvList.map((kv) => {
             return kv
-                .set('key', encodeURI(kv.get('key') || ''))
-                .set('value', encodeURI(kv.get('value') || ''))
+                .set('key', kv.get('key'))
+                .set('value', kv.get('value'))
         })
     }
 
@@ -246,7 +246,10 @@ export default class SwaggerParser {
                 architecture[path] = architecture[path] || {}
                 let methods = collection.paths[path]
                 for (let method in methods) {
-                    if (methods.hasOwnProperty(method)) {
+                    if (
+                        methods.hasOwnProperty(method) &&
+                        method !== 'parameters'
+                    ) {
                         architecture[path][method] = func(
                             collection,
                             path,
