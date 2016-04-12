@@ -1280,13 +1280,21 @@
 						},
 						{
 							"key": "client_id",
+<<<<<<< HEAD
 							"value": "ti{{abc123}}to{{abc123}}tuto",
+=======
+							"value": "abc123",
+>>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
 							"type": "text",
 							"enabled": true
 						},
 						{
 							"key": "client_secret",
+<<<<<<< HEAD
 							"value": "{{ssh-secret}}",
+=======
+							"value": "ssh-secret",
+>>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
 							"type": "text",
 							"enabled": true
 						}

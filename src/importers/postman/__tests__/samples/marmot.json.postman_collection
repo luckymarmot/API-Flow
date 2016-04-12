@@ -49,7 +49,7 @@
 		{
 			"id": "7223a806-d85d-7f1e-3610-e21add2dc16b",
 			"headers": "Content-Type: application/x-www-form-urlencoded\nHost: httpbin.org\nX-Amz-Date: 20160408T135349Z\nAuthorization: AWS4-HMAC-SHA256 Credential=ae23/20160408/us-east-1/execute-api/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=5074f6baa1a7e9bd15eaab744c3f4faf18a5bcb2d721da90b126d14b51e82c20\n",
-			"url": "https://httpbin.org/headers/23",
+			"url": "https://httpbin.org/headers",
 			"pathVariables": {},
 			"preRequestScript": null,
 			"method": "GET",
@@ -74,7 +74,7 @@
 		{
 			"id": "f0d4df6a-f649-d656-ded8-d19b84a98a83",
 			"headers": "",
-			"url": "https://httpbin.org/headers/22",
+			"url": "",
 			"pathVariables": {},
 			"preRequestScript": null,
 			"method": "GET",
