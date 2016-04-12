@@ -7,7 +7,9 @@ import {
     NegotiateAuth,
     ApiKeyAuth,
     OAuth1Auth,
-    OAuth2Auth
+    OAuth2Auth,
+    AWSSig4Auth,
+    HawkAuth
 } from './Auth'
 
 export class FileReference extends Immutable.Record({
@@ -45,6 +47,10 @@ export class SchemaReference extends Immutable.Record({
         }).slice(1)
 
         let resolved = schema.getInSchema(path)
+
+        if (!resolved) {
+            return this
+        }
         return this
             .set('resolved', true)
             .set('value', resolved)
@@ -131,7 +137,13 @@ export class Schema extends Immutable.Record({
             let _value = value
             if (_value instanceof SchemaReference) {
                 _value = _value.resolve(baseSchema)
-                if (depth > 0) {
+                if (
+                    !Immutable.is(
+                        Immutable.fromJS(_value),
+                        Immutable.fromJS(value)
+                    ) &&
+                    depth > 0
+                ) {
                     let schema = _value.getResolvedSchema()
                         .resolve(depth - 1, baseSchema)
                     _value = _value.setResolvedSchema(schema)
@@ -167,7 +179,39 @@ export default class RequestContext extends Immutable.Record({
     schema: null,
     group: null,
     environments: null
-}) { }
+}) {
+    mergeEnvironments(environments) {
+        let localEnvs = this.get('environments')
+
+        if (!localEnvs) {
+            return this.set('environments', environments)
+        }
+
+        let envs = environments
+        localEnvs.forEach((env) => {
+            let localEnv = env
+            let merged = false
+            environments.forEach((_env) => {
+                if (localEnv.get('id') === _env.get('id')) {
+                    localEnv = localEnv.mergeDeep(_env)
+                    merged = true
+                }
+            })
+
+            if (!merged) {
+                envs = envs.push(env)
+            }
+        })
+
+        return this.set('environments', envs)
+    }
+
+    mergeGroup(group) {
+        let localGroup = this.get('group')
+        localGroup = localGroup.mergeWithGroup(group)
+        return this.set('group', localGroup)
+    }
+}
 
 export class Response extends Immutable.Record({
     code: null,
@@ -200,7 +244,9 @@ export class Request extends Immutable.Record({
             negotiate: NegotiateAuth,
             apiKey: ApiKeyAuth,
             oauth1: OAuth1Auth,
-            oauth2: OAuth2Auth
+            oauth2: OAuth2Auth,
+            awssig4: AWSSig4Auth,
+            hawk: HawkAuth
         }
 
         let auths = this.get('auth').pop()
@@ -231,9 +277,21 @@ export class Group extends Immutable.Record({
     id: null,
     name: null,
     children: Immutable.OrderedMap()
-}) { }
+}) {
+    mergeWithGroup(group) {
+        let child = this.getIn([ 'children', group.get('name') ])
+        if (child) {
+            child = child.mergeDeep(group)
+        }
+        else {
+            child = group
+        }
+        return this.setIn([ 'children', group.get('name') ], child)
+    }
+}
 
 export class Environment extends Immutable.Record({
+    id: null,
     name: null,
     variables: Immutable.OrderedMap()
 }) { }

@@ -900,7 +900,7 @@
 					"headers": "",
 					"method": "GET",
 					"pathVariables": {},
-					"url": "https://echo.getpostman.com/cookies/set?foo1=bar1&foo2=bar2",
+					"url": "https://echo.getpostman.com/cookies/set?foo1={{bar1}}&{{foo2}}=bar2",
 					"preRequestScript": "",
 					"tests": "var responseJSON;\ntry {\n    tests[\"Body contains cookies\"] = responseBody.has(\"cookies\");\n    responseJSON = JSON.parse(responseBody);\n    tests[\"Body contains cookie foo1\"] = 'foo1' in responseJSON.cookies;\n    tests[\"Body contains cookie foo2\"] = 'foo2' in responseJSON.cookies;    \n}\ncatch (e) { }\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\n",
 					"currentHelper": "normal",
@@ -1280,13 +1280,13 @@
 						},
 						{
 							"key": "client_id",
-							"value": "abc123",
+							"value": "ti{{abc123}}to{{abc123}}tuto",
 							"type": "text",
 							"enabled": true
 						},
 						{
 							"key": "client_secret",
-							"value": "ssh-secret",
+							"value": "{{ssh-secret}}",
 							"type": "text",
 							"enabled": true
 						}
@@ -1773,6 +1773,12 @@
 			"values": [
 				{
 					"key": "test",
+					"value": "toto",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "client_id",
 					"value": "toto",
 					"type": "text",
 					"enabled": true

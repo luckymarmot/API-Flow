@@ -10,6 +10,7 @@ import RequestContext, {
 
 import {
     BasicAuth,
+    DigestAuth,
     OAuth1Auth,
     AWSSig4Auth,
     HawkAuth
@@ -41,7 +42,7 @@ export default class SwaggerParser {
             }
             if (obj.environments) {
                 for (let environment of obj.environments) {
-                    collections.push(environment)
+                    environments.push(environment)
                 }
             }
         }
@@ -90,13 +91,14 @@ export default class SwaggerParser {
 
     _importEnvironment(environment) {
         let env = new Environment({
+            id: environment.id,
             name: environment.name
         })
 
         if (environment.values) {
             for (let value of environment.values) {
-                env = env.set(
-                    value.key,
+                env = env.setIn(
+                    [ 'variables', value.key ],
                     new KeyValue({
                         key: value.key,
                         value: this._referenceEnvironmentVariable(value.value),
@@ -116,7 +118,7 @@ export default class SwaggerParser {
 
         let requestsById = {}
         for (let req of collection.requests) {
-            let request = this._createRequest(collection, req)
+            let request = ::this._createRequest(collection, req)
             requestsById[req.id] = request
         }
 
@@ -126,7 +128,7 @@ export default class SwaggerParser {
     }
 
     _referenceEnvironmentVariable(string) {
-        if (string === null) {
+        if (typeof string === 'undefined' || string === null) {
             return null
         }
 
@@ -142,6 +144,7 @@ export default class SwaggerParser {
         let group
         let level = 0
         let prevChar = ''
+        let notEvaluatedIndex = 0
         let i = 0
         for (let char of string) {
             if (char === '{' && prevChar === '{') {
@@ -171,6 +174,7 @@ export default class SwaggerParser {
             if (char === '}' && prevChar === '}' && level > 0) {
                 group = stack.pop()
                 group.end = i
+                notEvaluatedIndex = i
                 group.str = string.substring(group.start + 1, group.end - 1)
 
                 if (group.ref.get('referenceName').size === 0) {
@@ -187,7 +191,7 @@ export default class SwaggerParser {
                 parentGroup.ref = parentGroup.ref
                     .set(
                         'referenceName',
-                        parentGroup.ref.referenceName.push(group)
+                        parentGroup.ref.referenceName.push(group.ref)
                     )
                 parentGroup.start = i
                 stack.push(parentGroup)
@@ -211,7 +215,12 @@ export default class SwaggerParser {
             return string
         }
         else {
-            return result
+            let ref = result.ref
+            if (notEvaluatedIndex + 1 < string.length) {
+                let trailing = string.substring(notEvaluatedIndex + 1)
+                ref = ref.set('referenceName', ref.referenceName.push(trailing))
+            }
+            return ref
         }
     }
 
@@ -243,7 +252,7 @@ export default class SwaggerParser {
             password: true
         }
 
-        let auth = new BasicAuth()
+        let auth = new DigestAuth()
         if (helper) {
             return auth
                 .set(
@@ -307,6 +316,7 @@ export default class SwaggerParser {
 
     _extractHawkAuth(params, helper) {
         let auth = new HawkAuth()
+        console.log('in Hawk Auth ->', params, helper)
         if (helper) {
             return auth
             .set(
@@ -360,19 +370,63 @@ export default class SwaggerParser {
         return auth
     }
 
-    _extractAuth(authLine, helper) {
-        let [ scheme, params ] = authLine.match(/([^\s]+) (.*)/)
+    _extractAuth(authLine, helperType, helper) {
+        let [ match, scheme, params ] = authLine.match(/([^\s]+)\s(.*)/)
 
-        const schemeSetupMap = {
-            Basic: this._extractBasicAuth,
-            OAuth: this._extractOAuth1,
-            'AWS4-HMAC-SHA256': this._extractAWSS4Auth,
-            Hawk: this._extractHawkAuth
+        let helperMap = {
+            basicAuth: ::this._extractBasicAuth,
+            digestAuth: ::this._extractDigestAuth,
+            awsSigV4: ::this._extractAWSS4Auth,
+            hawkAuth: ::this._extractHawkAuth
         }
 
-        let setup = schemeSetupMap[scheme] || (() => { return null })
+        console.log('helper ->', helperType, helper, helperMap[helperType])
 
-        return setup(params, helper)
+        let rule = helperMap[helperType]
+        if (rule) {
+            return rule(params, helper)
+        }
+
+        const schemeSetupMap = {
+            Basic: ::this._extractBasicAuth,
+            Digest: ::this._extractDigestAuth,
+            OAuth: ::this._extractOAuth1,
+            'AWS4-HMAC-SHA256': ::this._extractAWSS4Auth,
+            Hawk: ::this._extractHawkAuth
+        }
+
+        let setup = schemeSetupMap[scheme]
+        if (setup) {
+            return setup(params, helper)
+        }
+
+        return null
+    }
+
+    _extractQueriesFromUrl(url) {
+        let _url = url
+        let queries = []
+
+        let match = _url.match(/([^?]+)\?(.*)/)
+        if (match) {
+            _url = match[1]
+            let components = match[2].split('&')
+            for (let component of components) {
+                let m = component.match(/^([^\=]+)(?:\=([\s\S]*))?$/)
+                queries.push(new KeyValue({
+                    key: this._referenceEnvironmentVariable(
+                        decodeURIComponent(m[1])
+                    ),
+                    value: typeof m[2] === 'string' ?
+                        this._referenceEnvironmentVariable(
+                            decodeURIComponent(m[2])
+                        ) : null
+                }))
+            }
+        }
+
+        let _queries = new Immutable.List(queries)
+        return [ _url, _queries ]
     }
 
     _createRequest(collection, req) {
@@ -381,11 +435,19 @@ export default class SwaggerParser {
         let headerLines = req.headers.split('\n')
         let headers = new Immutable.OrderedMap()
         let auths = new Immutable.List()
+        console.log(req.url)
         for (let headerLine of headerLines) {
             let match = headerLine.match(/^([^\s\:]*)\s*\:\s*(.*)$/)
             if (match) {
                 if (match[1] === 'Authorization') {
-                    auths = auths.push(this._extractAuth(match[2]))
+                    let auth = ::this._extractAuth(
+                        match[2],
+                        req.currentHelper,
+                        req.helperAttributes
+                    )
+                    if (auth) {
+                        auths = auths.push(auth)
+                    }
                 }
                 else {
                     headers.set(match[1],
@@ -424,6 +486,12 @@ export default class SwaggerParser {
                     /* eslint-enable no-console */
                 }
             }
+            else {
+                bodyType = 'plain'
+                if (rawReqBody) {
+                    body = rawReqBody
+                }
+            }
         }
         else if (req.dataMode === 'urlencoded' || req.dataMode === 'params') {
             if (req.dataMode === 'urlencoded') {
@@ -433,21 +501,26 @@ export default class SwaggerParser {
                 bodyType = 'formData'
             }
             body = new Immutable.List()
-            for (let param of req.data) {
-                body = body.push(new KeyValue({
-                    key: this._referenceEnvironmentVariable(param.key),
-                    value: this._referenceEnvironmentVariable(param.value),
-                    valueType: param.type
-                }))
+            if (req.data) {
+                for (let param of req.data) {
+                    body = body.push(new KeyValue({
+                        key: this._referenceEnvironmentVariable(param.key),
+                        value: this._referenceEnvironmentVariable(param.value),
+                        valueType: param.type
+                    }))
+                }
             }
         }
+
+        let [ url, queries ] = this._extractQueriesFromUrl(req.url)
 
         let request = new Request({
             id: req.id,
             name: req.name,
             description: req.description,
             method: req.method,
-            url: req.url,
+            url: url,
+            queries: queries,
             headers: headers,
             bodyType: bodyType,
             body: body,
@@ -459,6 +532,7 @@ export default class SwaggerParser {
 
     _createGroupFromCollection(collection, requests) {
         let rootGroup = new Group({
+            id: collection.id,
             name: collection.name
         })
         if (collection.folders || collection.order) {
@@ -499,7 +573,6 @@ export default class SwaggerParser {
                 }
             }
         }
-
         return rootGroup
     }
 }
