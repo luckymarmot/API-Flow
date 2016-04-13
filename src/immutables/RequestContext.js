@@ -296,6 +296,7 @@ export class Environment extends Immutable.Record({
     variables: Immutable.OrderedMap()
 }) { }
 
+// TODO change referenceName to a more suited name, like components
 export class EnvironmentReference extends Immutable.Record({
     environmentName: null,
     referenceName: Immutable.List()

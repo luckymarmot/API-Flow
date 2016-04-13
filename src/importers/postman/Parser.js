@@ -16,11 +16,12 @@ import {
     HawkAuth
 } from '../../immutables/Auth'
 
-export default class SwaggerParser {
+export default class PostmanParser {
     contructor() {
         this.context = new RequestContext()
     }
 
+    // @tested
     parse(string) {
         let collections = []
         let environments = []
@@ -62,6 +63,7 @@ export default class SwaggerParser {
         return this.context
     }
 
+    // @tested
     _createContext(environments, collections) {
         let envs = new Immutable.List(
             environments.map(
@@ -89,6 +91,7 @@ export default class SwaggerParser {
         return context
     }
 
+    // @tested
     _importEnvironment(environment) {
         let env = new Environment({
             id: environment.id,
@@ -111,6 +114,7 @@ export default class SwaggerParser {
         return env
     }
 
+    // @tested
     _importCollection(collection) {
         if (!collection.requests) {
             throw new Error('Invalid Postman file (missing data)')
@@ -127,6 +131,7 @@ export default class SwaggerParser {
         )
     }
 
+    // @tested
     _referenceEnvironmentVariable(string) {
         if (typeof string === 'undefined' || string === null) {
             return null
@@ -224,6 +229,7 @@ export default class SwaggerParser {
         }
     }
 
+    // @tested
     _extractBasicAuth(params, helper) {
         let auth = new BasicAuth()
         if (helper) {

@@ -23,7 +23,8 @@ export class NegotiateAuth extends Immutable.Record({
 
 export class ApiKeyAuth extends Immutable.Record({
     name: null,
-    in: null
+    in: null,
+    key: null
 }) { }
 
 export class OAuth1Auth extends Immutable.Record({
