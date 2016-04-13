@@ -10,10 +10,7 @@ import RequestContext, {
 
 import {
     BasicAuth,
-<<<<<<< HEAD
     DigestAuth,
-=======
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
     OAuth1Auth,
     AWSSig4Auth,
     HawkAuth
@@ -45,11 +42,7 @@ export default class SwaggerParser {
             }
             if (obj.environments) {
                 for (let environment of obj.environments) {
-<<<<<<< HEAD
                     environments.push(environment)
-=======
-                    collections.push(environment)
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
                 }
             }
         }
@@ -98,22 +91,14 @@ export default class SwaggerParser {
 
     _importEnvironment(environment) {
         let env = new Environment({
-<<<<<<< HEAD
             id: environment.id,
-=======
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
             name: environment.name
         })
 
         if (environment.values) {
             for (let value of environment.values) {
-<<<<<<< HEAD
                 env = env.setIn(
                     [ 'variables', value.key ],
-=======
-                env = env.set(
-                    value.key,
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
                     new KeyValue({
                         key: value.key,
                         value: this._referenceEnvironmentVariable(value.value),
@@ -133,11 +118,7 @@ export default class SwaggerParser {
 
         let requestsById = {}
         for (let req of collection.requests) {
-<<<<<<< HEAD
             let request = ::this._createRequest(collection, req)
-=======
-            let request = this._createRequest(collection, req)
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
             requestsById[req.id] = request
         }
 
@@ -147,11 +128,7 @@ export default class SwaggerParser {
     }
 
     _referenceEnvironmentVariable(string) {
-<<<<<<< HEAD
         if (typeof string === 'undefined' || string === null) {
-=======
-        if (string === null) {
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
             return null
         }
 
@@ -167,10 +144,7 @@ export default class SwaggerParser {
         let group
         let level = 0
         let prevChar = ''
-<<<<<<< HEAD
         let notEvaluatedIndex = 0
-=======
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
         let i = 0
         for (let char of string) {
             if (char === '{' && prevChar === '{') {
@@ -200,10 +174,7 @@ export default class SwaggerParser {
             if (char === '}' && prevChar === '}' && level > 0) {
                 group = stack.pop()
                 group.end = i
-<<<<<<< HEAD
                 notEvaluatedIndex = i
-=======
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
                 group.str = string.substring(group.start + 1, group.end - 1)
 
                 if (group.ref.get('referenceName').size === 0) {
@@ -220,11 +191,7 @@ export default class SwaggerParser {
                 parentGroup.ref = parentGroup.ref
                     .set(
                         'referenceName',
-<<<<<<< HEAD
                         parentGroup.ref.referenceName.push(group.ref)
-=======
-                        parentGroup.ref.referenceName.push(group)
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
                     )
                 parentGroup.start = i
                 stack.push(parentGroup)
@@ -248,16 +215,12 @@ export default class SwaggerParser {
             return string
         }
         else {
-<<<<<<< HEAD
             let ref = result.ref
             if (notEvaluatedIndex + 1 < string.length) {
                 let trailing = string.substring(notEvaluatedIndex + 1)
                 ref = ref.set('referenceName', ref.referenceName.push(trailing))
             }
             return ref
-=======
-            return result
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
         }
     }
 
@@ -289,11 +252,7 @@ export default class SwaggerParser {
             password: true
         }
 
-<<<<<<< HEAD
         let auth = new DigestAuth()
-=======
-        let auth = new BasicAuth()
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
         if (helper) {
             return auth
                 .set(
@@ -357,10 +316,7 @@ export default class SwaggerParser {
 
     _extractHawkAuth(params, helper) {
         let auth = new HawkAuth()
-<<<<<<< HEAD
-        console.log('in Hawk Auth ->', params, helper)
-=======
->>>>>>> cdbcb4af2775fc56e37279fdbcac56e168ac58f8
+
         if (helper) {
             return auth
             .set(
@@ -415,7 +371,7 @@ export default class SwaggerParser {
     }
 
     _extractAuth(authLine, helperType, helper) {
-        let [ match, scheme, params ] = authLine.match(/([^\s]+)\s(.*)/)
+        let [ , scheme, params ] = authLine.match(/([^\s]+)\s(.*)/)
 
         let helperMap = {
             basicAuth: ::this._extractBasicAuth,
@@ -423,8 +379,6 @@ export default class SwaggerParser {
             awsSigV4: ::this._extractAWSS4Auth,
             hawkAuth: ::this._extractHawkAuth
         }
-
-        console.log('helper ->', helperType, helper, helperMap[helperType])
 
         let rule = helperMap[helperType]
         if (rule) {
