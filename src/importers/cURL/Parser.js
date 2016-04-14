@@ -422,10 +422,8 @@ export default class CurlParser {
     _parseAuth(request, arg) {
         const m = arg.match(/\-{2}(\w+)/)
 
-        let auth = request.get('Auth')
-        request.setAuthType(m[1])
-
-        return request.setAuthParams(auth)
+        let auth = request.get('auth').last()
+        return request.setAuthType(m[1], auth)
     }
 
     _parseMaxTime(request) {

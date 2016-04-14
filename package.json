@@ -10,7 +10,7 @@
     "raml",
     "grape"
   ],
-  "version": "0.0.20",
+  "version": "0.0.21",
   "main": "lib/index.js",
   "license": "MIT",
   "homepage": "https://github.com/luckymarmot/API-Flow",
