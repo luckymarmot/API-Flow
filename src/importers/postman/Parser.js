@@ -386,9 +386,19 @@ export default class PostmanParser {
             hawkAuth: ::this._extractHawkAuth
         }
 
+        let _helper = helper
+        if (typeof _helper === 'string') {
+            try {
+                _helper = JSON.parse(_helper)
+            }
+            catch (e) {
+                console.error('We found a weird looking helper that we couldn\'t parse')
+            }
+        }
+
         let rule = helperMap[helperType]
         if (rule) {
-            return rule(params, helper)
+            return rule(params, _helper)
         }
 
         const schemeSetupMap = {
@@ -401,7 +411,7 @@ export default class PostmanParser {
 
         let setup = schemeSetupMap[scheme]
         if (setup) {
-            return setup(params, helper)
+            return setup(params, _helper)
         }
 
         return null
@@ -413,19 +423,21 @@ export default class PostmanParser {
 
         let match = _url.match(/([^?]+)\?(.*)/)
         if (match) {
-            _url = match[1]
+            _url = this._referenceEnvironmentVariable(match[1])
             let components = match[2].split('&')
             for (let component of components) {
                 let m = component.match(/^([^\=]+)(?:\=([\s\S]*))?$/)
-                queries.push(new KeyValue({
-                    key: this._referenceEnvironmentVariable(
-                        decodeURIComponent(m[1])
-                    ),
-                    value: typeof m[2] === 'string' ?
-                        this._referenceEnvironmentVariable(
-                            decodeURIComponent(m[2])
-                        ) : null
-                }))
+                if (m) {
+                    queries.push(new KeyValue({
+                        key: this._referenceEnvironmentVariable(
+                            decodeURIComponent(m[1])
+                        ),
+                        value: typeof m[2] === 'string' ?
+                            this._referenceEnvironmentVariable(
+                                decodeURIComponent(m[2])
+                            ) : null
+                    }))
+                }
             }
         }
 
@@ -454,7 +466,7 @@ export default class PostmanParser {
                     }
                 }
                 else {
-                    headers.set(match[1],
+                    headers = headers.set(match[1],
                         this._referenceEnvironmentVariable(match[2])
                     )
                 }
@@ -463,7 +475,7 @@ export default class PostmanParser {
 
         if (req.dataMode === 'raw') {
             let contentType = headers.get('Content-Type')
-            let rawReqBody = req.rawModeData
+            let rawReqBody = req.rawModeData || req.data
 
             if (
                 contentType &&
@@ -485,7 +497,8 @@ export default class PostmanParser {
                     /* eslint-disable no-console */
                     console.error(
                         'failed to parse JSON ' +
-                        'body despite header claiming it is JSON'
+                        'body despite header claiming it is JSON' +
+                        req.name
                     )
                     /* eslint-enable no-console */
                 }
@@ -499,7 +512,7 @@ export default class PostmanParser {
         }
         else if (req.dataMode === 'urlencoded' || req.dataMode === 'params') {
             if (req.dataMode === 'urlencoded') {
-                bodyType = 'urlEncode'
+                bodyType = 'urlEncoded'
             }
             else if (req.dataMode === 'params') {
                 bodyType = 'formData'
@@ -534,6 +547,24 @@ export default class PostmanParser {
         return request
     }
 
+    _putRequestsInGroup(group, ids, requests) {
+        let _group = group
+        for (let id of ids) {
+            let req = requests[id]
+            if (req) {
+                _group = _group.setIn(
+                    [
+                        'children', req.get('name') ||
+                        req.get('url')
+                    ],
+                    req
+                )
+            }
+        }
+
+        return _group
+    }
+
     _createGroupFromCollection(collection, requests) {
         let rootGroup = new Group({
             id: collection.id,
@@ -547,13 +578,11 @@ export default class PostmanParser {
                         name: folder.name
                     })
 
-                    for (let id of folder.order || []) {
-                        let req = requests[id]
-                        group = group.setIn(
-                            [ 'children', req.get('name') || req.get('url') ],
-                            req
-                        )
-                    }
+                    group = this._putRequestsInGroup(
+                        group,
+                        folder.order || [],
+                        requests
+                    )
 
                     rootGroup = rootGroup
                         .setIn([ 'children', group.get('name') ], group)
