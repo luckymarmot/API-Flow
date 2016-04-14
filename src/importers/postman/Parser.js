@@ -392,7 +392,11 @@ export default class PostmanParser {
                 _helper = JSON.parse(_helper)
             }
             catch (e) {
-                console.error('We found a weird looking helper that we couldn\'t parse')
+                /* eslint-disable no-console */
+                console.error(
+                    'We found a weird looking helper that we couldn\'t parse'
+                )
+                /* eslint-enable no-console */
             }
         }
 
