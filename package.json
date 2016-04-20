@@ -19,9 +19,10 @@
     "babel-polyfill": "6.3.14",
     "babel-runtime": "6.3.19",
     "immutable": "3.7.6",
+    "js-yaml": "3.5.5",
+    "raml-parser": "0.8.16",
     "swagger-schema-official": "2.0.0-bab6bed",
-    "tv4": "1.2.7",
-    "js-yaml": "3.5.5"
+    "tv4": "1.2.7"
   },
   "devDependencies": {
     "babel-cli": "6.6.5",

@@ -20,7 +20,8 @@ export class FileReference extends Immutable.Record({
 export class KeyValue extends Immutable.Record({
     key: null,
     value: null,
-    valueType: null
+    valueType: null,
+    description: null
 }) { }
 
 export class SchemaReference extends Immutable.Record({
@@ -77,7 +78,8 @@ export class SchemaReference extends Immutable.Record({
 export class Schema extends Immutable.Record({
     uri: '#',
     value: null,
-    map: null
+    map: null,
+    raw: null
 }) {
 
     /*
@@ -127,6 +129,10 @@ export class Schema extends Immutable.Record({
     }
 
     resolve(depth = 0, baseSchema = this) {
+        if (this.get('raw')) {
+            return this
+        }
+
         if (this.get('value')) {
             return this
         }
@@ -166,6 +172,9 @@ export class Schema extends Immutable.Record({
     }
 
     toJS() {
+        if (this.get('raw')) {
+            return this.get('raw')
+        }
         if (this.get('value')) {
             return this.get('value')
         }

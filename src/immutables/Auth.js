@@ -38,7 +38,10 @@ export class OAuth1Auth extends Immutable.Record({
     timestamp: null,
     token: null,
     version: null,
-    signature: null
+    signature: null,
+    tokenCredentialsUri: null,
+    requestTokenUri: null,
+    authorizationUri: null
 }) { }
 
 export class OAuth2Auth extends Immutable.Record({

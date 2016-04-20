@@ -20,7 +20,7 @@ export class Mock {
             return (...args) => {
                 this[prefix + 'spy'][field].count += 1
                 this[prefix + 'spy'][field].calls.push(args)
-                return this[prefix + 'spy'][field].func(...args)
+                return this[prefix + 'spy'][field].func.apply(this, args)
             }
         }
 

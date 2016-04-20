@@ -1,0 +1,16 @@
+#%RAML 0.8
+title: GitHub API
+version: v3
+baseUri: https://api.github.com
+schemas:
+  - song: !include ./dummy-schema.json
+  - meta: !include ./dummy-schema.xml
+/jobs:
+  displayName: Jobs
+  post:
+    description: Create a Job
+    body:
+      text/xml:
+        schema: meta
+      application/json:
+        schema: song

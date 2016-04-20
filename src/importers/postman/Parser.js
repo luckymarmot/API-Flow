@@ -501,7 +501,7 @@ export default class PostmanParser {
                     /* eslint-disable no-console */
                     console.error(
                         'failed to parse JSON ' +
-                        'body despite header claiming it is JSON' +
+                        'body despite header claiming it is JSON: ' +
                         req.name
                     )
                     /* eslint-enable no-console */

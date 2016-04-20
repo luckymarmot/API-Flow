@@ -1,7 +1,7 @@
-import BaseImporter from 'paw-base-importer'
+import BaseImporter from '../base-importer/BaseImporter'
 import {
     Parser
-} from 'api-flow'
+} from '../../immutables/RequestContext'
 
 import path from 'path-browserify'
 

@@ -586,6 +586,12 @@ export default class BaseImporter {
 
     // @tested
     _setFormDataBody(pawReq, body) {
+        if (!pawReq.getHeaderByName('Content-Type')) {
+            pawReq.setHeader(
+                'Content-Type',
+                'multipart/form-data'
+            )
+        }
         let keyValues = []
         for (let keyValue of body) {
             keyValues.push([
@@ -611,6 +617,12 @@ export default class BaseImporter {
 
     // @tested
     _setJSONBody(pawReq, body) {
+        if (!pawReq.getHeaderByName('Content-Type')) {
+            pawReq.setHeader(
+                'Content-Type',
+                'application/json'
+            )
+        }
         if (typeof body === 'string') {
             try {
                 pawReq.jsonBody = JSON.parse(body)
@@ -645,6 +657,12 @@ export default class BaseImporter {
 
     // @tested
     _setUrlEncodedBody(pawReq, body) {
+        if (!pawReq.getHeaderByName('Content-Type')) {
+            pawReq.setHeader(
+                'Content-Type',
+                'application/x-www-form-urlencoded'
+            )
+        }
         const keyValues = body.map(keyValue => {
             let key = this._toDynamicString(
                 keyValue.get('key'), true, true
