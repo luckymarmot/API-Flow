@@ -66,9 +66,7 @@ class UnitTest {
         let B = Immutable.fromJS(b)
         let comparison = Immutable.is(A, B)
         let warn = (message ? message + '\n' : '') + `\n${A} \n!== \n${B}`
-        assert.isTrue(
-            comparison, warn
-        )
+        assert.isTrue(comparison, warn)
     }
 
     assertNotEqual(a, b) {

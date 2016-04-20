@@ -6,7 +6,8 @@ import SwaggerParser from '../Parser'
 import {
     Request,
     Group,
-    KeyValue
+    KeyValue,
+    Schema
 } from '../../../immutables/RequestContext'
 
 import SwaggerFixtures from './fixtures/Parser-fixtures'
@@ -375,7 +376,11 @@ export class TestSwaggerParser extends UnitTest {
         const expected = 3
         let count = 0
 
-        parser._applyFuncOverPathArchitecture(collection, () => { count += 1 })
+        parser._applyFuncOverPathArchitecture(
+            collection,
+            new Schema(),
+            () => { count += 1 }
+        )
         this.assertTrue(expected === count)
     }
 
@@ -402,6 +407,7 @@ export class TestSwaggerParser extends UnitTest {
 
         parser._applyFuncOverPathArchitecture(
             collection,
+            new Schema(),
             (coll, path, method, content) => {
                 this.assertEqual(coll.paths[path][method], content)
             }
@@ -447,10 +453,156 @@ export class TestSwaggerParser extends UnitTest {
 
         const result = parser._applyFuncOverPathArchitecture(
             collection,
+            new Schema(),
             (coll, path, method, content) => {
                 return {
                     value: content.value * 2
                 }
+            }
+        )
+
+        this.assertEqual(expected, result)
+    }
+
+    testApplyFuncOverPathArchitectureUpdatesMethodParams() {
+        const parser = new SwaggerParser()
+
+        const collection = {
+            paths: {
+                '/test': {
+                    get: {
+                        value: 12
+                    },
+                    post: {
+                        value: 21
+                    }
+                },
+                '/test/nested': {
+                    parameters: [
+                        {
+                            name: 'alt',
+                            in: 'query'
+                        }
+                    ],
+                    get: {
+                        value: 45
+                    }
+                }
+            }
+        }
+
+        const expected = {
+            '/test': {
+                get: {
+                    value: 24
+                },
+                post: {
+                    value: 42
+                }
+            },
+            '/test/nested': {
+                get: {
+                    value: 90,
+                    parameters: [
+                        {
+                            name: 'alt',
+                            in: 'query'
+                        }
+                    ]
+                }
+            }
+        }
+
+        const result = parser._applyFuncOverPathArchitecture(
+            collection,
+            new Schema(),
+            (coll, path, method, content) => {
+                let _result = {
+                    value: content.value * 2
+                }
+                if (content.parameters) {
+                    _result.parameters = content.parameters
+                }
+                return _result
+            }
+        )
+
+        this.assertEqual(expected, result)
+    }
+
+    testApplyFuncOverPathArchitectureUpdatesMethodParamsWithOverride() {
+        const parser = new SwaggerParser()
+
+        const collection = {
+            paths: {
+                '/test': {
+                    get: {
+                        value: 12
+                    },
+                    post: {
+                        value: 21
+                    }
+                },
+                '/test/nested': {
+                    parameters: [
+                        {
+                            name: 'alt',
+                            in: 'query'
+                        }, {
+                            name: 'fields',
+                            in: 'body',
+                            example: 'ignored'
+                        }
+                    ],
+                    get: {
+                        value: 45,
+                        parameters: [
+                            {
+                                name: 'fields',
+                                in: 'path'
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        const expected = {
+            '/test': {
+                get: {
+                    value: 24
+                },
+                post: {
+                    value: 42
+                }
+            },
+            '/test/nested': {
+                get: {
+                    value: 90,
+                    parameters: [
+                        {
+                            name: 'alt',
+                            in: 'query'
+                        }, {
+                            name: 'fields',
+                            in: 'path'
+                        }
+                    ]
+                }
+            }
+        }
+
+        const result = parser._applyFuncOverPathArchitecture(
+            collection,
+            new Schema(),
+            (coll, path, method, content) => {
+                let _result = {
+                    value: content.value * 2
+                }
+                if (content.parameters) {
+                    _result.parameters = content.parameters
+                }
+                return _result
             }
         )
 
