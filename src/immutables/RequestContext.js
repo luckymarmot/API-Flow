@@ -97,12 +97,32 @@ export class Schema extends Immutable.Record({
     }
 
     mergeSchema(schema) {
-        let mergedSchema = this.get('map') || Immutable.OrderedMap()
+        let mergedSchema = this.get('map')
         if (typeof schema === 'object') {
-            for (let prop in schema) {
-                if (schema.hasOwnProperty(prop)) {
+            if (
+                (
+                    !mergedSchema ||
+                    mergedSchema instanceof Immutable.List
+                ) && (
+                    Array.isArray(schema) ||
+                    schema instanceof Immutable.List
+                )
+            ) {
+                mergedSchema = mergedSchema || new Immutable.List()
+                let index = 0
+                for (let prop of schema) {
+                    let subSchema = new Schema()
+                    let uri = this.get('uri') + '/' + index
+                    subSchema = subSchema
+                        .set('uri', uri)
+                        .mergeSchema(prop)
+                    mergedSchema = mergedSchema.push(subSchema)
+                }
+            }
+            else {
+                mergedSchema = this.get('map') || new Immutable.OrderedMap()
+                for (let prop of Object.keys(schema)) {
                     if (prop === '$ref') {
-                        // TODO update schema
                         let schemaReference = new SchemaReference({
                             reference: schema[prop]
                         })
@@ -131,8 +151,14 @@ export class Schema extends Immutable.Record({
             return this
         }
 
-        let subSchema = this.get('map') || Immutable.OrderedMap()
-        let auxSchema = Immutable.OrderedMap()
+        let subSchema = this.get('map') || new Immutable.OrderedMap()
+        let auxSchema
+        if (subSchema instanceof Immutable.List) {
+            auxSchema = new Immutable.List()
+        }
+        else {
+            auxSchema = new Immutable.OrderedMap()
+        }
         subSchema.forEach((value, key) => {
             let _value = value
             if (_value instanceof SchemaReference) {
@@ -152,7 +178,12 @@ export class Schema extends Immutable.Record({
             else {
                 _value = _value.resolve(depth, baseSchema)
             }
-            auxSchema = auxSchema.set(key, _value)
+            if (auxSchema instanceof Immutable.List) {
+                auxSchema = auxSchema.push(_value)
+            }
+            else {
+                auxSchema = auxSchema.set(key, _value)
+            }
         })
 
         return this.set('map', auxSchema)
