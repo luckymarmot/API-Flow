@@ -269,6 +269,7 @@ export default class SwaggerParser {
             if (collection.paths.hasOwnProperty(path)) {
                 architecture[path] = architecture[path] || {}
                 let methods = collection.paths[path]
+                let _methods = Object.keys(methods)
                 if (methods.parameters) {
                     let _params = new Schema()
                     _params = _params
@@ -276,10 +277,10 @@ export default class SwaggerParser {
                         .resolve(schema)
                         .toJS()
 
-                    let _methods = Object.keys(methods)
                     let paramKey = _methods.indexOf('parameters')
                     // remove paramKey
                     _methods.splice(paramKey, 1)
+
                     for (let method of _methods) {
                         let params = this._updateParametersInMethod(
                             methods[method],
@@ -288,18 +289,13 @@ export default class SwaggerParser {
                         methods[method].parameters = params
                     }
                 }
-                for (let method in methods) {
-                    if (
-                        methods.hasOwnProperty(method) &&
-                        method !== 'parameters'
-                    ) {
-                        architecture[path][method] = func(
-                            collection,
-                            path,
-                            method,
-                            methods[method]
-                        )
-                    }
+                for (let method of _methods) {
+                    architecture[path][method] = func(
+                        collection,
+                        path,
+                        method,
+                        methods[method]
+                    )
                 }
             }
         }
