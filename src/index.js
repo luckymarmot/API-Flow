@@ -8,7 +8,7 @@ import RequestContext, {
     Group,
     Environment,
     EnvironmentReference
-} from './immutables/RequestContext'
+} from './models/RequestContext'
 
 import {
     BasicAuth,
@@ -20,7 +20,7 @@ import {
     OAuth2Auth,
     AWSSig4Auth,
     HawkAuth
-} from './immutables/Auth'
+} from './models/Auth'
 
 import SwaggerParser from './importers/swagger/Parser'
 import CurlParser from './importers/cURL/Parser'
