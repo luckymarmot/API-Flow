@@ -34,6 +34,7 @@ export default class SwaggerParser {
             rootGroup = rootGroup.set('name', swaggerCollection.info.title)
             let pathLinkedRequests = this._applyFuncOverPathArchitecture(
                 swaggerCollection,
+                baseSchema,
                 ::this._createRequest
             )
 
@@ -238,25 +239,63 @@ export default class SwaggerParser {
         return tv4.validate(swag, swaggerSchema)
     }
 
+    _updateParametersInMethod(content, baseParams) {
+        // shallow copy
+        let params = (baseParams || []).map(d => { return d })
+        let contentParams = content.parameters || []
+        for (let param of contentParams) {
+            let name = param.name
+            let index = 0
+            let used = false
+            for (let _param of baseParams || []) {
+                let _name = _param.name
+                if (name === _name) {
+                    params[index] = param
+                    used = true
+                }
+                index += 1
+            }
+            if (!used) {
+                params.push(param)
+            }
+        }
+        return params
+    }
+
     // @tested
-    _applyFuncOverPathArchitecture(collection, func) {
+    _applyFuncOverPathArchitecture(collection, schema, func) {
         let architecture = {}
         for (let path in collection.paths) {
             if (collection.paths.hasOwnProperty(path)) {
                 architecture[path] = architecture[path] || {}
                 let methods = collection.paths[path]
-                for (let method in methods) {
-                    if (
-                        methods.hasOwnProperty(method) &&
-                        method !== 'parameters'
-                    ) {
-                        architecture[path][method] = func(
-                            collection,
-                            path,
-                            method,
-                            methods[method]
+                let _methods = Object.keys(methods)
+                if (methods.parameters) {
+                    let _params = new Schema()
+                    _params = _params
+                        .mergeSchema(methods.parameters)
+                        .resolve(schema)
+                        .toJS()
+
+                    let paramKey = _methods.indexOf('parameters')
+                    // remove paramKey
+                    _methods.splice(paramKey, 1)
+
+                    for (let method of _methods) {
+                        let params = this._updateParametersInMethod(
+                            methods[method],
+                            _params
                         )
+                        methods[method].parameters = params
                     }
+                }
+                for (let method of _methods) {
+                    architecture[path][method] = func(
+                        collection,
+                        path,
+                        method,
+                        methods[method]
+                    )
                 }
             }
         }
