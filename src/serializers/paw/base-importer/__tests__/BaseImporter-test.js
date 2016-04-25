@@ -35,7 +35,9 @@ import BaseImporter from '../BaseImporter'
 
 @registerTest
 @targetClass(BaseImporter, [
+    // This function is abstract
     'createRequestContexts',
+    // I'm lazy
     'importString',
     'createRequestContextFromString',
     '__import__',

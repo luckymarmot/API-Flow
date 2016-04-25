@@ -37,7 +37,6 @@ export default class BaseImporter {
         return this.createRequestContexts(context, { content: string }, {})[0]
     }
 
-    // @not tested
     importString(context, string) {
         const requestContext = this.createRequestContextFromString(
             context,
@@ -63,7 +62,6 @@ export default class BaseImporter {
         throw new Error('BaseImporter is an abstract class')
     }
 
-    // @tested 70%
     import(context, items, options) {
         let requestContexts = this.createRequestContexts(
             context,
@@ -132,7 +130,6 @@ export default class BaseImporter {
         return importPromise
     }
 
-    // @not tested
     _importPawRequests(requestContext, item, options) {
         const group = requestContext.get('group')
         const schema = requestContext.get('schema')
@@ -196,7 +193,6 @@ export default class BaseImporter {
         )
     }
 
-    // @tested
     _importEnvironments(environments) {
         let environmentDomain = this._getEnvironmentDomain()
 
@@ -212,7 +208,6 @@ export default class BaseImporter {
         }
     }
 
-    // @tested
     _getEnvironmentDomain() {
         let env = this.context.getEnvironmentDomainByName(
             this.ENVIRONMENT_DOMAIN_NAME
@@ -224,7 +219,6 @@ export default class BaseImporter {
         return env
     }
 
-    // @tested
     _getEnvironment(domain, environmentName = 'Default Environment') {
         let env = domain.getEnvironmentByName(environmentName)
         if (typeof env === 'undefined') {
@@ -233,7 +227,6 @@ export default class BaseImporter {
         return env
     }
 
-    // @tested
     _getEnvironmentVariable(name) {
         let domain = this._getEnvironmentDomain()
         let variable = domain.getVariableByName(name)
@@ -247,7 +240,6 @@ export default class BaseImporter {
         return variable
     }
 
-    // @tested 80%
     _importPawRequest(options, parent, request, schema) {
         let container = request.get('parameters')
         let bodies = request.get('bodies')
@@ -296,7 +288,6 @@ export default class BaseImporter {
         return pawRequest
     }
 
-    // @tested
     _applyFuncOverGroupTree(group, leafFunc, nodeFunc, pawGroup) {
         let calls = []
         let currentPawGroup = nodeFunc(group.get('name') || '', pawGroup)
@@ -318,7 +309,6 @@ export default class BaseImporter {
         return calls
     }
 
-    // @tested
     _createPawRequest(request, container) {
         let url = ::this._generateUrl(
             request.get('url'),
@@ -332,7 +322,6 @@ export default class BaseImporter {
         )
     }
 
-    // @tested 70% (encodeURI behavior not tested)
     _generateUrl(url, queries, auths) {
         let _url = this._toDynamicString(url.getUrl(), true, true)
 
@@ -376,7 +365,6 @@ export default class BaseImporter {
         return _url
     }
 
-    // @tested
     _extractQueryParamsFromAuth(auths) {
         return (auths || []).filter((auth) => {
             return auth instanceof ApiKeyAuth && auth.get('in') === 'query'
@@ -388,7 +376,6 @@ export default class BaseImporter {
         }).toArray()
     }
 
-    // @tested
     _setHeaders(pawReq, container) {
         let headers = container.getHeadersSet()
         headers.forEach((param) => {
@@ -400,7 +387,6 @@ export default class BaseImporter {
         return pawReq
     }
 
-    // @tested
     _setBasicAuth(auth) {
         return new DynamicValue(
             'com.luckymarmot.BasicAuthDynamicValue',
@@ -415,7 +401,6 @@ export default class BaseImporter {
         )
     }
 
-    // @tested
     _setDigestAuth(auth) {
         return new DynamicValue(
             'com.luckymarmot.PawExtensions.DigestAuthDynamicValue',
@@ -430,7 +415,6 @@ export default class BaseImporter {
         )
     }
 
-    // @tested
     _setOAuth1Auth(auth) {
         return new DynamicValue(
             'com.luckymarmot.OAuth1HeaderDynamicValue',
@@ -463,7 +447,6 @@ export default class BaseImporter {
         )
     }
 
-    // @tested
     _setOAuth2Auth(auth) {
         const grantMap = {
             accessCode: 0,
@@ -486,7 +469,6 @@ export default class BaseImporter {
         )
     }
 
-    // @tested
     _setAWSSig4Auth(auth) {
         return new DynamicValue(
             'com.shigeoka.PawExtensions.AWSSignature4DynamicValue',
@@ -507,7 +489,6 @@ export default class BaseImporter {
         )
     }
 
-    // @tested
     _setHawkAuth(auth) {
         return new DynamicValue(
             'uk.co.jalada.PawExtensions.HawkDynamicValue',
@@ -525,7 +506,6 @@ export default class BaseImporter {
         )
     }
 
-    // @tested
     _setAuth(pawReq, auths) {
         const authTypeMap = {
             BasicAuth: ::this._setBasicAuth,
@@ -564,7 +544,6 @@ export default class BaseImporter {
         return pawReq
     }
 
-    // @tested
     _setBody(pawReq, bodyType, container, schema) {
         let body = container.get('body')
         const bodyRules = {
@@ -598,7 +577,6 @@ export default class BaseImporter {
         return _pawReq
     }
 
-    // @tested
     _setFormDataBody(pawReq, body) {
         if (!pawReq.getHeaderByName('Content-Type')) {
             pawReq.setHeader(
@@ -624,7 +602,6 @@ export default class BaseImporter {
         return pawReq
     }
 
-    // @tested
     _setPlainBody(pawReq, body) {
         if (body.size > 0) {
             let content = body.getIn([ 0, 'value' ]) || ''
@@ -636,7 +613,6 @@ export default class BaseImporter {
         return pawReq
     }
 
-    // @tested
     _setJSONBody(pawReq, body) {
         if (!pawReq.getHeaderByName('Content-Type')) {
             pawReq.setHeader(
@@ -671,7 +647,6 @@ export default class BaseImporter {
         return pawReq
     }
 
-    // @tested
     _setSchemaBody(pawReq, body, schema) {
         if (body.size === 0) {
             return pawReq
@@ -697,7 +672,6 @@ export default class BaseImporter {
         return _pawReq
     }
 
-    // @tested
     _setUrlEncodedBody(pawReq, body) {
         if (!pawReq.getHeaderByName('Content-Type')) {
             pawReq.setHeader(
@@ -723,7 +697,6 @@ export default class BaseImporter {
         return pawReq
     }
 
-    // @tested
     _toDynamicString(string, defaultToEmpty, resolveFileRefs) {
         if (!string) {
             if (defaultToEmpty) {
@@ -780,7 +753,6 @@ export default class BaseImporter {
         return new DynamicString(...components)
     }
 
-    // @tested
     _resolveFileReference(value) {
         if (value instanceof FileReference) {
             const dv = new DynamicValue(
@@ -792,7 +764,6 @@ export default class BaseImporter {
         return value
     }
 
-    // @tested
     _convertCharToHex(char) {
         let hexChar = char.charCodeAt(0).toString(16)
         if (hexChar.length === 1) {
@@ -801,7 +772,6 @@ export default class BaseImporter {
         return hexChar
     }
 
-    // @tested
     _escapeCharSequence(seq) {
         const escapedChars = {
             '\n': '\\n',
@@ -817,7 +787,6 @@ export default class BaseImporter {
         return escapeSequence
     }
 
-    // @tested
     _escapeSequenceDynamicValue(seq) {
         let escapeSequence = this._escapeCharSequence(seq)
         return new DynamicValue('com.luckymarmot.EscapeSequenceDynamicValue', {
@@ -825,7 +794,6 @@ export default class BaseImporter {
         })
     }
 
-    // @tested
     _castReferenceToDynamicString(reference) {
         let components = reference.get('referenceName')
         let dynStr = []
@@ -853,7 +821,6 @@ export default class BaseImporter {
         know if they exist, as {{number}} can be changed
         on the fly by the user.
     */
-    // @tested
     _extractReferenceComponent(component) {
         if (typeof component === 'string') {
             return component

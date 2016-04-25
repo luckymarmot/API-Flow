@@ -140,8 +140,18 @@ function targetClass(Against, ignores = []) {
                 }
             }
 
+            let superfluousTests = []
+            for (let target of Object.keys(Class.__targets)) {
+                if (names.indexOf(target) < 0) {
+                    superfluousTests.push(Class.__targets[target])
+                }
+            }
+
             const test = new Class()
             test.assertEqual(missingTests, [], 'Some methods are not tested')
+            test.assertEqual(superfluousTests, [],
+                'some non-existing methods are being tested'
+            )
         }
         return Class
     }
