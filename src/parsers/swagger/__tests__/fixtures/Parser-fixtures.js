@@ -1,12 +1,21 @@
 import Immutable from 'immutable'
 
+import Constraint from '../../../../models/Constraint'
+
 import {
+    Parameter,
+    ParameterContainer,
     Request,
-    KeyValue,
+    Response,
+    Body
+} from '../../../../models/Core'
+
+import {
+    URL,
     Schema,
-    SchemaReference,
-    Response
-} from '../../../../models/RequestContext'
+    SchemaReference
+} from '../../../../models/Utils'
+
 import Auth from '../../../../models/Auth'
 
 /* eslint-disable no-undefined */
@@ -71,387 +80,728 @@ export default class SwaggerFixtures {
             {
                 name: 'NoArgsTest',
                 inputs: [],
-                output: [ [], [], [], undefined ]
+                output: new ParameterContainer()
             },
             {
                 name: 'UndefinedDefaultValueWithTypeStringQueryFieldTest',
                 inputs: [
-                    [
-                        {
-                            in: 'query',
-                            name: 'status',
-                            description: 'Status values',
-                            required: false,
-                            type: 'string'
-                        }
-                    ]
+                    null,
+                    {
+                        parameters: [
+                            {
+                                in: 'query',
+                                name: 'status',
+                                description: 'Status values',
+                                required: false,
+                                type: 'string'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [],
-                    [
-                        new KeyValue({
+                output: new ParameterContainer({
+                    queries: new Immutable.List([
+                        new Parameter({
                             key: 'status',
-                            value: 'status',
-                            valueType: 'string'
+                            type: 'string',
+                            description: 'Status values'
                         })
-                    ],
-                    [],
-                    undefined
-                ]
+                    ])
+                })
             },
             {
                 name: 'DefaultValueSetWithTypeStringQueryFieldTest',
                 inputs: [
-                    [
-                        {
-                            in: 'query',
-                            name: 'status',
-                            description: 'Status values',
-                            required: false,
-                            type: 'string',
-                            default: 'content'
-                        }
-                    ]
+                    null,
+                    {
+                        parameters: [
+                            {
+                                in: 'query',
+                                name: 'status',
+                                description: 'Status values',
+                                required: false,
+                                type: 'string',
+                                default: 'content'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [],
-                    [
-                        new KeyValue({
+                output: new ParameterContainer({
+                    queries: new Immutable.List([
+                        new Parameter({
                             key: 'status',
                             value: 'content',
-                            valueType: 'string'
+                            type: 'string',
+                            description: 'Status values'
                         })
-                    ],
-                    [],
-                    undefined
-                ]
+                    ])
+                })
             },
             {
                 name: 'MultipleQueryFieldsTest',
                 inputs: [
-                    [
-                        {
-                            in: 'query',
-                            name: 'status',
-                            description: 'Status values',
-                            required: false,
-                            type: 'string'
-                        },
-                        {
-                            in: 'query',
-                            name: 'second',
-                            description: 'Status values',
-                            required: true,
-                            type: 'string',
-                            default: 'Ipsum'
-                        }
-                    ]
+                    null,
+                    {
+                        parameters: [
+                            {
+                                in: 'query',
+                                name: 'status',
+                                description: 'Status values',
+                                required: false,
+                                type: 'string'
+                            },
+                            {
+                                in: 'query',
+                                name: 'second',
+                                description: 'Status values',
+                                required: true,
+                                type: 'string',
+                                default: 'Ipsum'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [],
-                    [
-                        new KeyValue({
+                output: new ParameterContainer({
+                    queries: new Immutable.List([
+                        new Parameter({
                             key: 'status',
-                            value: 'status',
-                            valueType: 'string'
+                            type: 'string',
+                            description: 'Status values'
                         }),
-                        new KeyValue({
+                        new Parameter({
                             key: 'second',
                             value: 'Ipsum',
-                            valueType: 'string'
+                            type: 'string',
+                            description: 'Status values'
                         })
-                    ],
-                    [],
-                    undefined
-                ]
+                    ])
+                })
+            },
+            {
+                name: 'ConsumesValuesCreateHeaders',
+                inputs: [
+                    null,
+                    {
+                        consumes: [ 'application/x-www-form-urlencoded' ]
+                    }
+                ],
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ])
+                })
+            },
+            {
+                name: 'MultipleConsumesValuesCreateMultipleHeaders',
+                inputs: [
+                    null,
+                    {
+                        consumes: [
+                            'application/x-www-form-urlencoded',
+                            'multipart/form-data'
+                        ]
+                    }
+                ],
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'multipart/form-data',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ])
+                })
             },
             {
                 name: 'UndefinedDefaultValueWithTypeStringformDataFieldTest',
                 inputs: [
-                    [
-                        {
-                            in: 'formData',
-                            name: 'name',
-                            description: 'Updated name of the pet',
-                            required: true,
-                            type: 'string'
-                        }
-                    ]
+                    null,
+                    {
+                        consumes: [ 'application/x-www-form-urlencoded' ],
+                        parameters: [
+                            {
+                                in: 'formData',
+                                name: 'name',
+                                description: 'Updated name of the pet',
+                                required: true,
+                                type: 'string'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [],
-                    [],
-                    [
-                        new KeyValue({
-                            key: 'name',
-                            value: 'name',
-                            valueType: 'string'
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded'
+                                        ])
+                                    ])
+                                })
+                            ])
                         })
-                    ],
-                    undefined
-                ]
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'name',
+                            type: 'string',
+                            description: 'Updated name of the pet',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ])
+                })
             },
             {
                 name: 'DefaultValueSetWithTypeStringformDataFieldTest',
                 inputs: [
-                    [
-                        {
-                            in: 'formData',
-                            name: 'name',
-                            description: 'Updated name of the pet',
-                            required: true,
-                            type: 'string',
-                            default: 'content'
-                        }
-                    ]
+                    null,
+                    {
+                        consumes: [
+                            'application/x-www-form-urlencoded',
+                            'multipart/form-data'
+                        ],
+                        parameters: [
+                            {
+                                in: 'formData',
+                                name: 'name',
+                                description: 'Updated name of the pet',
+                                required: true,
+                                type: 'string',
+                                default: 'content'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [],
-                    [],
-                    [
-                        new KeyValue({
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'multipart/form-data',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
                             key: 'name',
                             value: 'content',
-                            valueType: 'string'
-                        })
-                    ],
-                    undefined
-                ]
-            },
-            {
-                name: 'DefaultValueSetWithTypeNumberformDataFieldTest',
-                inputs: [
-                    [
-                        {
-                            in: 'formData',
-                            name: 'count',
+                            type: 'string',
                             description: 'Updated name of the pet',
-                            required: true,
-                            type: 'number',
-                            default: 1
-                        }
-                    ]
-                ],
-                output: [
-                    [],
-                    [],
-                    [
-                        new KeyValue({
-                            key: 'count',
-                            value: 1,
-                            valueType: 'number'
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded',
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
                         })
-                    ],
-                    undefined
-                ]
+                    ])
+                })
             },
             {
                 name: 'SimpleBodyFieldTest',
                 inputs: [
-                    [
-                        {
-                            in: 'body',
-                            name: 'body',
-                            description: 'Pet object',
-                            required: false,
-                            schema: {
-                                $ref: '#/definitions/Pet'
+                    null,
+                    {
+                        parameters: [
+                            {
+                                in: 'body',
+                                name: 'body',
+                                description: 'Pet object',
+                                required: false,
+                                schema: {
+                                    $ref: '#/definitions/Pet'
+                                }
                             }
-                        }
-                    ]
+                        ]
+                    }
                 ],
-                output: [
-                    [],
-                    [],
-                    [],
-                    new Schema({
-                        map: Immutable.OrderedMap({
-                            $ref: new SchemaReference({
-                                reference: '#/definitions/Pet'
-                            })
+                output: new ParameterContainer({
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'body',
+                            value: new Schema({
+                                map: Immutable.OrderedMap({
+                                    $ref: new SchemaReference({
+                                        reference: '#/definitions/Pet'
+                                    })
+                                })
+                            }),
+                            type: 'schema',
+                            description: 'Pet object'
                         })
-                    })
-                ]
+                    ])
+                })
             },
             {
                 name: 'MultipleFormDataFieldsTest',
                 inputs: [
-                    [
-                        {
-                            in: 'formData',
-                            name: 'status',
-                            description: 'Status values',
-                            required: false,
-                            type: 'string'
-                        },
-                        {
-                            in: 'formData',
-                            name: 'second',
-                            description: 'Status values',
-                            required: true,
-                            type: 'string',
-                            default: 'Ipsum'
-                        }
-                    ]
+                    null,
+                    {
+                        consumes: [
+                            'application/x-www-form-urlencoded',
+                            'multipart/form-data'
+                        ],
+                        parameters: [
+                            {
+                                in: 'formData',
+                                name: 'status',
+                                description: 'Status values',
+                                required: false,
+                                type: 'string'
+                            },
+                            {
+                                in: 'formData',
+                                name: 'second',
+                                description: 'Status values',
+                                required: true,
+                                type: 'string',
+                                default: 'Ipsum'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [],
-                    [],
-                    [
-                        new KeyValue({
-                            key: 'status', value: 'status', valueType: 'string'
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded'
+                                        ])
+                                    ])
+                                })
+                            ])
                         }),
-                        new KeyValue({
-                            key: 'second', value: 'Ipsum', valueType: 'string'
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'multipart/form-data',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
                         })
-                    ],
-                    undefined
-                ]
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'status',
+                            type: 'string',
+                            description: 'Status values',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded',
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'second',
+                            value: 'Ipsum',
+                            type: 'string',
+                            description: 'Status values',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded',
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ])
+                })
             },
             {
                 name: 'UndefinedDefaultValueWithTypeStringHeaderFieldTest',
                 inputs: [
-                    [
-                        {
-                            in: 'header',
-                            name: 'api_key',
-                            description: '',
-                            required: true,
-                            type: 'string'
-                        }
-                    ]
+                    null,
+                    {
+                        parameters: [
+                            {
+                                in: 'header',
+                                name: 'api_key',
+                                description: '',
+                                required: true,
+                                type: 'string'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [
-                        new KeyValue({
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
                             key: 'api_key',
-                            value: 'api_key',
-                            valueType: 'string'
+                            type: 'string'
                         })
-                    ],
-                    [],
-                    [],
-                    undefined
-                ]
+                    ])
+                })
             },
             {
                 name: 'DefaultValueSetWithTypeStringHeaderFieldTest',
                 inputs: [
-                    [
-                        {
-                            in: 'header',
-                            name: 'api_key',
-                            description: '',
-                            required: true,
-                            type: 'string',
-                            default: 'content'
-                        }
-                    ]
+                    null,
+                    {
+                        parameters: [
+                            {
+                                in: 'header',
+                                name: 'api_key',
+                                description: '',
+                                required: true,
+                                type: 'string',
+                                default: 'content'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [
-                        new KeyValue({
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
                             key: 'api_key',
                             value: 'content',
-                            valueType: 'string'
+                            type: 'string'
                         })
-                    ],
-                    [],
-                    [],
-                    undefined
-                ]
+                    ])
+                })
+            },
+            {
+                name: 'ConsumesAreCombinedWithHeaders',
+                inputs: [
+                    null,
+                    {
+                        consumes: [ 'application/json' ],
+                        parameters: [
+                            {
+                                in: 'header',
+                                name: 'api_key',
+                                description: '',
+                                required: true,
+                                type: 'string',
+                                default: 'content'
+                            }
+                        ]
+                    }
+                ],
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'application/json',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'api_key',
+                            value: 'content',
+                            type: 'string',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ])
+                })
             },
             {
                 name: 'MultipleFormDataFieldsTest',
                 inputs: [
-                    [
-                        {
-                            in: 'header',
-                            name: 'status',
-                            description: 'Status values',
-                            required: false,
-                            type: 'string'
-                        },
-                        {
-                            in: 'header',
-                            name: 'second',
-                            description: 'Status values',
-                            required: true,
-                            type: 'string',
-                            default: 'Ipsum'
-                        }
-                    ]
+                    null,
+                    {
+                        consumes: [ 'application/json' ],
+                        parameters: [
+                            {
+                                in: 'header',
+                                name: 'status',
+                                description: 'Status values',
+                                required: false,
+                                type: 'string'
+                            },
+                            {
+                                in: 'header',
+                                name: 'second',
+                                description: 'Status values',
+                                required: true,
+                                type: 'string',
+                                default: 'Ipsum'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [
-                        new KeyValue({
-                            key: 'status',
-                            value: 'status',
-                            valueType: 'string'
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'application/json',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
                         }),
-                        new KeyValue({
+                        new Parameter({
+                            key: 'status',
+                            type: 'string',
+                            description: 'Status values',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        }),
+                        new Parameter({
                             key: 'second',
                             value: 'Ipsum',
-                            valueType: 'string'
+                            type: 'string',
+                            description: 'Status values',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
                         })
-                    ],
-                    [],
-                    [],
-                    undefined
-                ]
+                    ])
+                })
             },
             {
                 name: 'MixedFieldsTest',
                 inputs: [
-                    [
-                        {
-                            in: 'header',
-                            name: 'api_key',
-                            description: '',
-                            required: true,
-                            type: 'string'
-                        },
-                        {
-                            in: 'formData',
-                            name: 'status',
-                            description: 'Status values',
-                            required: false,
-                            type: 'string'
-                        },
-                        {
-                            in: 'query',
-                            name: 'second',
-                            description: 'Status values',
-                            required: true,
-                            type: 'string',
-                            default: 'Ipsum'
-                        }
-                    ]
+                    null,
+                    {
+                        consumes: [
+                            'application/x-www-form-urlencoded',
+                            'multipart/form-data'
+                        ],
+                        parameters: [
+                            {
+                                in: 'header',
+                                name: 'api_key',
+                                description: '',
+                                required: true,
+                                type: 'string'
+                            },
+                            {
+                                in: 'formData',
+                                name: 'status',
+                                description: 'Status values',
+                                required: false,
+                                type: 'string'
+                            },
+                            {
+                                in: 'query',
+                                name: 'second',
+                                description: 'Status values',
+                                required: true,
+                                type: 'string',
+                                default: 'Ipsum'
+                            }
+                        ]
+                    }
                 ],
-                output: [
-                    [
-                        new KeyValue({
+                output: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            value: 'multipart/form-data',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        }),
+                        new Parameter({
                             key: 'api_key',
-                            value: 'api_key',
-                            valueType: 'string'
+                            type: 'string',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded',
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
                         })
-                    ],
-                    [
-                        new KeyValue({
+                    ]),
+                    queries: new Immutable.List([
+                        new Parameter({
                             key: 'second',
+                            type: 'string',
                             value: 'Ipsum',
-                            valueType: 'string'
+                            description: 'Status values',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded',
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
                         })
-                    ],
-                    [
-                        new KeyValue({
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
                             key: 'status',
-                            value: 'status',
-                            valueType: 'string'
+                            type: 'string',
+                            description: 'Status values',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded',
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
                         })
-                    ],
-                    undefined
-                ]
+                    ])
+                })
             }
         ]
     }
@@ -509,22 +859,28 @@ export default class SwaggerFixtures {
             {
                 name: 'SingleCodeTest',
                 inputs: [
+                    null,
                     {
-                        200: {}
+                        responses: {
+                            200: {}
+                        }
                     }
                 ],
-                output: [
+                output: new Immutable.List([
                     new Response({
                         code: '200'
                     })
-                ]
+                ])
             },
             {
                 name: 'MultipleCodeTest',
                 inputs: [
+                    null,
                     {
-                        200: {},
-                        400: {}
+                        responses: {
+                            200: {},
+                            400: {}
+                        }
                     }
                 ],
                 output: [
@@ -539,9 +895,12 @@ export default class SwaggerFixtures {
             {
                 name: 'DescriptionInResponseTest',
                 inputs: [
+                    null,
                     {
-                        200: {
-                            description: 'dummy description'
+                        responses: {
+                            200: {
+                                description: 'dummy description'
+                            }
                         }
                     }
                 ],
@@ -555,12 +914,17 @@ export default class SwaggerFixtures {
             {
                 name: 'SchemaInResponseTest',
                 inputs: [
+                    null,
                     {
-                        200: {
-                            schema: {
-                                type: 'array',
-                                items: {
-                                    $ref: '#/definitions/Pet'
+                        responses: {
+                            200: {
+                                schema: {
+                                    type: 'array',
+                                    items: [
+                                        {
+                                            $ref: '#/definitions/Pet'
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -569,91 +933,38 @@ export default class SwaggerFixtures {
                 output: [
                     new Response({
                         code: '200',
-                        schema: (new Schema()).mergeSchema(
-                            {
-                                type: 'array',
-                                items: {
-                                    $ref: '#/definitions/Pet'
-                                }
-                            }
-                        )
+                        parameters: new ParameterContainer({
+                            body: new Immutable.List([
+                                new Parameter({
+                                    key: 'schema',
+                                    value: new Schema({
+                                        map: new Immutable.OrderedMap({
+                                            type: new Schema({
+                                                uri: '#/type',
+                                                value: 'array'
+                                            }),
+                                            /* eslint-disable max-len */
+                                            items: new Schema({
+                                                uri: '#/items',
+                                                map: new Immutable.List([
+                                                    new Schema({
+                                                        uri: '#/items/0',
+                                                        map: new Immutable.OrderedMap({
+                                                            $ref: new SchemaReference({
+                                                                reference: '#/definitions/Pet'
+                                                            })
+                                                        })
+                                                    })
+                                                ])
+                                            })
+                                            /* eslint-enable max-leng */
+                                        })
+                                    })
+                                })
+                            ])
+                        })
                     })
                 ]
-            }
-        ]
-    }
-
-    static getGenerateURLCases() {
-        return [
-            {
-                name: 'SimpleTest',
-                inputs: [
-                    {
-                    },
-                    '/test/path',
-                    []
-                ],
-                output: 'http://localhost/test/path'
-            },
-            {
-                name: 'DefinedSchemeTest',
-                inputs: [
-                    {
-                        schemes: [
-                            'smtp',
-                            'https'
-                        ]
-                    },
-                    '/test/path',
-                    []
-                ],
-                output: 'smtp://localhost/test/path'
-            },
-            {
-                name: 'DefinedHostTest',
-                inputs: [
-                    {
-                        host: [
-                            'test.luckymarmot.com'
-                        ]
-                    },
-                    '/test/path',
-                    []
-                ],
-                output: 'http://test.luckymarmot.com/test/path'
-            },
-            {
-                name: 'DefinedBasePathWithNoSlashesTest',
-                inputs: [
-                    {
-                        basePath: '~test'
-                    },
-                    '/simple/path',
-                    []
-                ],
-                output: 'http://localhost/~test/simple/path'
-            },
-            {
-                name: 'DefinedBasePathStartingWithSlashTest',
-                inputs: [
-                    {
-                        basePath: '/~test'
-                    },
-                    '/simple/path',
-                    []
-                ],
-                output: 'http://localhost/~test/simple/path'
-            },
-            {
-                name: 'DefinedBasePathEndingWithSlashTest',
-                inputs: [
-                    {
-                        basePath: '~test/'
-                    },
-                    '/simple/path',
-                    []
-                ],
-                output: 'http://localhost/~test/simple/path'
             }
         ]
     }
@@ -665,9 +976,7 @@ export default class SwaggerFixtures {
                 inputs: [
                     new Request(),
                     'http://localhost/test/path',
-                    'get',
-                    [],
-                    []
+                    'get'
                 ],
                 output: new Request({
                     url: 'http://localhost/test/path',
@@ -683,8 +992,9 @@ export default class SwaggerFixtures {
                     }),
                     'http://localhost/test/path',
                     'get',
-                    [],
-                    []
+                    new ParameterContainer(),
+                    new Immutable.List(),
+                    new Immutable.List()
                 ],
                 output: new Request({
                     name: '/test/path',
@@ -694,7 +1004,7 @@ export default class SwaggerFixtures {
                 })
             },
             {
-                name: 'AddsHeaderTest',
+                name: 'AddsAllTest',
                 inputs: [
                     new Request({
                         name: '/test/path',
@@ -702,124 +1012,62 @@ export default class SwaggerFixtures {
                     }),
                     'http://localhost/test/path',
                     'get',
-                    [
-                        new KeyValue({
-                            key: 'test',
-                            value: 'dummy',
-                            valueType: 'string'
-                        }),
-                        new KeyValue({
-                            key: 'second',
-                            value: 'Ipsum',
-                            valueType: 'string'
-                        })
-                    ],
-                    []
-                ],
-                output: new Request({
-                    name: '/test/path',
-                    description: 'dummy description',
-                    url: 'http://localhost/test/path',
-                    method: 'GET',
-                    headers: new Immutable.OrderedMap({
-                        test: 'dummy',
-                        second: 'Ipsum'
-                    })
-                })
-            },
-            {
-                name: 'AddsResponsesTest',
-                inputs: [
-                    new Request({
-                        name: '/test/path',
-                        description: 'dummy description'
+                    new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'api_key',
+                                value: 'api_key',
+                                type: 'string'
+                            })
+                        ])
                     }),
-                    'http://localhost/test/path',
-                    'get',
-                    [],
-                    [
-                        new Response(),
-                        new Response({
-                            description: 'dummy description'
+                    new Immutable.List([
+                        new Body({
+                            type: 'urlEncoded',
+                            constraints: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    value: 'x-www-form-urlencoded'
+                                })
+                            ])
                         })
-                    ]
-                ],
-                output: new Request({
-                    name: '/test/path',
-                    description: 'dummy description',
-                    url: 'http://localhost/test/path',
-                    method: 'GET',
-                    responses: new Immutable.List([
-                        new Response(),
+                    ]),
+                    new Immutable.List([
                         new Response({
-                            description: 'dummy description'
+                            code: 200,
+                            description: 'standard response'
                         })
                     ])
-                })
-            }
-        ]
-    }
-
-    static getSetBodyCases() {
-        return [
-            {
-                name: 'SimpleTest',
-                inputs: [
-                    new Request(),
-                    {},
-                    undefined,
-                    [],
-                    undefined
                 ],
-                output: new Request()
-            },
-            {
-                name: 'WithBodyTest',
-                inputs: [
-                    new Request(),
-                    {},
-                    new Schema({
-                        map: new Immutable.OrderedMap({
-                            $ref: new SchemaReference({
-                                reference: '#/definitions/Test'
+                output: new Request({
+                    name: '/test/path',
+                    description: 'dummy description',
+                    url: 'http://localhost/test/path',
+                    method: 'GET',
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'api_key',
+                                value: 'api_key',
+                                type: 'string'
                             })
-                        })
+                        ])
                     }),
-                    [],
-                    undefined
-                ],
-                output: new Request({
-                    bodyType: 'schema',
-                    body: new Schema({
-                        map: new Immutable.OrderedMap({
-                            $ref: new SchemaReference({
-                                reference: '#/definitions/Test'
-                            })
+                    bodies: new Immutable.List([
+                        new Body({
+                            type: 'urlEncoded',
+                            constraints: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    value: 'x-www-form-urlencoded'
+                                })
+                            ])
                         })
-                    })
-                })
-            },
-            {
-                name: 'WithFormDataAsURLEncodedTest',
-                inputs: [
-                    new Request(),
-                    {},
-                    undefined,
-                    [
-                        new KeyValue({
-                            key: 'test',
-                            value: 'dummy',
-                            valueType: 'string'
-                        })
-                    ],
-                    {}
-                ],
-                output: new Request({
-                    body: Immutable.List([
-                        new KeyValue({
-                            key: 'test',
-                            value: 'dummy',
-                            valueType: 'string'
+                    ]),
+                    responses: new Immutable.List([
+                        new Response({
+                            code: 200,
+                            description: 'standard response'
                         })
                     ])
                 })
@@ -859,7 +1107,7 @@ export default class SwaggerFixtures {
                     }
                 ],
                 output: new Request({
-                    auth: new Immutable.List([ new Auth.Basic() ])
+                    auths: new Immutable.List([ new Auth.Basic() ])
                 })
             },
             {
@@ -884,7 +1132,7 @@ export default class SwaggerFixtures {
                     }
                 ],
                 output: new Request({
-                    auth: new Immutable.List([
+                    auths: new Immutable.List([
                         new Auth.ApiKey({
                             name: 'api_key',
                             in: 'header'
@@ -921,13 +1169,51 @@ export default class SwaggerFixtures {
                     }
                 ],
                 output: new Request({
-                    auth: new Immutable.List([
+                    auths: new Immutable.List([
                         new Auth.OAuth2({
                             flow: 'implicit',
                             authorizationUrl: 'http://s.com/oauth',
                             scopes: new Immutable.List(
                                 [ 'write_pets', 'read_pets' ]
                             )
+                        })
+                    ])
+                })
+            },
+            {
+                name: 'MultipleAuthsTest',
+                inputs: [
+                    new Request(),
+                    {
+                        securityDefinitions: {
+                            api_key: {
+                                type: 'apiKey',
+                                name: 'api_key',
+                                in: 'header'
+                            },
+                            basicAuth: {
+                                type: 'basic',
+                                description: 'HTTP Basic Authentication'
+                            }
+                        }
+                    },
+                    {
+                        security: [
+                            {
+                                basicAuth: []
+                            },
+                            {
+                                api_key: []
+                            }
+                        ]
+                    }
+                ],
+                output: new Request({
+                    auths: new Immutable.List([
+                        new Auth.Basic(),
+                        new Auth.ApiKey({
+                            name: 'api_key',
+                            in: 'header'
                         })
                     ])
                 })
@@ -947,7 +1233,11 @@ export default class SwaggerFixtures {
                 ],
                 output: new Request({
                     name: '/test/path',
-                    url: 'http://localhost/test/path',
+                    url: new URL({
+                        schemes: new Immutable.List([ 'http' ]),
+                        host: 'localhost',
+                        path: '/test/path'
+                    }),
                     method: 'GET'
                 })
             }

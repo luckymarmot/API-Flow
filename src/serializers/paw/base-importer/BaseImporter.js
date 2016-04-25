@@ -334,7 +334,7 @@ export default class BaseImporter {
 
     // @tested 70% (encodeURI behavior not tested)
     _generateUrl(url, queries, auths) {
-        let _url = this._toDynamicString(url, true, true)
+        let _url = this._toDynamicString(url.getUrl(), true, true)
 
         let queryParams = (queries || []).concat(
             this._extractQueryParamsFromAuth(auths)

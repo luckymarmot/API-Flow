@@ -10,19 +10,23 @@ export class TestParameter extends UnitTest {
     testGenerate() {
         let param = new Parameter({
             key: 'testKey',
-            type: 'number',
+            type: 'integer',
             name: 'Simple Value',
-            description: 'returns a value between 0 and 1',
-            example: '0.45890142',
-            internal: new Immutable.List([
+            description: 'returns an even value between 0 and 10',
+            example: '6',
+            internals: new Immutable.List([
                 new Constraint.Minimum(0),
-                new Constraint.ExclusiveMaximum(1)
+                new Constraint.ExclusiveMaximum(10),
+                new Constraint.MultipleOf(2)
             ])
         })
 
-        let result = param.generate()
-
-        this.assertEqual(param, result)
+        let i = 0
+        let limit = 100
+        while (i < limit) {
+            this.assertTrue([ 0, 2, 4, 6, 8 ].indexOf(param.generate()) >= 0)
+            i += 1
+        }
     }
 
     testValidateWithSimpleNumberConstraints() {
@@ -32,7 +36,7 @@ export class TestParameter extends UnitTest {
             name: 'Simple Value',
             description: 'returns a value between 0 and 1',
             example: '0.45890142',
-            internal: new Immutable.List([
+            internals: new Immutable.List([
                 new Constraint.Minimum(0),
                 new Constraint.ExclusiveMaximum(1)
             ])
@@ -51,7 +55,7 @@ export class TestParameter extends UnitTest {
             name: 'Simple Value',
             description: 'returns a value between 0 and 1',
             example: '0.45890142',
-            internal: new Immutable.List([
+            internals: new Immutable.List([
                 new Constraint.Minimum(0),
                 new Constraint.ExclusiveMaximum(10),
                 new Constraint.MultipleOf(2),
@@ -73,7 +77,7 @@ export class TestParameter extends UnitTest {
             name: 'Simple Value',
             description: 'returns a string of length 6-9, respecting a pattern',
             example: 'hello',
-            internal: new Immutable.List([
+            internals: new Immutable.List([
                 new Constraint.MinimumLength(6),
                 new Constraint.MaximumLength(9),
                 new Constraint.Pattern(/he+llo/)
@@ -95,10 +99,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'headerKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json' ])
                             ])
                         })
@@ -107,10 +111,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'headerKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/xml' ])
                             ])
                         })
@@ -119,10 +123,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'headerSecondKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json' ])
                             ])
                         })
@@ -133,10 +137,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'queryKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/xml' ])
                             ])
                         })
@@ -145,16 +149,16 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'secureKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'oauth2' ])
                             ])
                         }),
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json' ])
                             ])
                         })
@@ -163,10 +167,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'querySecondKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json', 'app/xml' ])
                             ])
                         })
@@ -177,10 +181,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'xmlSchemaKey',
                     type: 'schema',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/xml' ])
                             ])
                         })
@@ -189,10 +193,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'jsonSchemaKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json' ])
                             ])
                         })
@@ -213,10 +217,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'headerKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json' ])
                             ])
                         })
@@ -225,10 +229,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'headerSecondKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json' ])
                             ])
                         })
@@ -239,16 +243,16 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'secureKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'oauth2' ])
                             ])
                         }),
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json' ])
                             ])
                         })
@@ -257,10 +261,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'querySecondKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json', 'app/xml' ])
                             ])
                         })
@@ -271,10 +275,10 @@ export class TestParameterContainer extends UnitTest {
                 new Parameter({
                     key: 'jsonSchemaKey',
                     type: 'string',
-                    external: new Immutable.List([
+                    externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
-                            internal: new Immutable.List([
+                            internals: new Immutable.List([
                                 new Constraint.Enum([ 'app/json' ])
                             ])
                         })

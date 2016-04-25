@@ -3,12 +3,19 @@ import Immutable from 'immutable'
 import fs from 'fs'
 
 import SwaggerParser from '../Parser'
+
 import {
-    Request,
+    Request
+} from '../../../models/Core'
+
+import {
     Group,
-    KeyValue,
     Schema
-} from '../../../models/RequestContext'
+} from '../../../models/Utils'
+
+import {
+    ClassMock
+} from '../../../mocks/PawMocks'
 
 import SwaggerFixtures from './fixtures/Parser-fixtures'
 
@@ -659,64 +666,6 @@ export class TestSwaggerParser extends UnitTest {
         this.assertEqual(result.get('description'), null)
     }
 
-    testConvertKeyValueListToSet() {
-        const parser = new SwaggerParser()
-        const kvList = [
-            new KeyValue({
-                key: 'test',
-                value: 42
-            }),
-            new KeyValue({
-                key: 'other',
-                value: 'text'
-            }),
-            new KeyValue({
-                key: 'final',
-                value: true
-            })
-        ]
-
-        const expected = {
-            test: 42,
-            other: 'text',
-            final: true
-        }
-
-        const result = parser._convertKeyValueListToSet(kvList)
-        this.assertEqual(expected, result)
-    }
-
-    testConvertKeyValueListToSetWithDuplicateKeys() {
-        const parser = new SwaggerParser()
-        const kvList = [
-            new KeyValue({
-                key: 'test',
-                value: 42
-            }),
-            new KeyValue({
-                key: 'other',
-                value: 'text'
-            }),
-            new KeyValue({
-                key: 'final',
-                value: true
-            }),
-            new KeyValue({
-                key: 'final',
-                value: false
-            })
-        ]
-
-        const expected = {
-            test: 42,
-            other: 'text',
-            final: false
-        }
-
-        const result = parser._convertKeyValueListToSet(kvList)
-        this.assertEqual(expected, result)
-    }
-
     testExtractParamsThrowsOnBadlyFormedParameter() {
         const parser = new SwaggerParser()
         const cases = SwaggerFixtures.getThrowingParametersCases()
@@ -733,6 +682,48 @@ export class TestSwaggerParser extends UnitTest {
         }
     }
 
+    testExtractParamsCallsExtractContentTypes() {
+        const parser = this.__init()
+
+        const collection = {
+            value: 12
+        }
+        const content = {
+            value: 42
+        }
+
+        parser.spyOn('_extractContentTypes', (_collection, _content) => {
+            this.assertEqual(collection, _collection)
+            this.assertEqual(content, _content)
+            return []
+        })
+
+        parser._extractParams(collection, content)
+
+        this.assertEqual(parser.spy._extractContentTypes.count, 1)
+    }
+
+    testExtractParamsCallsExtractExternals() {
+        const parser = this.__init()
+
+        const collection = {
+            value: 12
+        }
+        const content = {
+            value: 42
+        }
+
+        parser.spyOn('_extractExternals', (_collection, _content) => {
+            this.assertEqual(collection, _collection)
+            this.assertEqual(content, _content)
+            return new Immutable.List()
+        })
+
+        parser._extractParams(collection, content)
+
+        this.assertEqual(parser.spy._extractExternals.count, 1)
+    }
+
     testExtractParams() {
         this.__loadTestSuite('ExtractParams', '_extractParams')
     }
@@ -741,16 +732,8 @@ export class TestSwaggerParser extends UnitTest {
         this.__loadTestSuite('ExtractResponses', '_extractResponses')
     }
 
-    testGenerateURL() {
-        this.__loadTestSuite('GenerateURL', '_generateURL')
-    }
-
     testSetBasicInfo() {
         this.__loadTestSuite('SetBasicInfo', '_setBasicInfo')
-    }
-
-    testSetBody() {
-        this.__loadTestSuite('SetBody', '_setBody')
     }
 
     testSetAuth() {
@@ -763,6 +746,13 @@ export class TestSwaggerParser extends UnitTest {
     //
     // helpers
     //
+
+    __init(prefix = '') {
+        let parser = new SwaggerParser()
+        let mockedParser = new ClassMock(parser, prefix)
+
+        return mockedParser
+    }
 
     __warnProgress(string, isTestCase = false) {
         const offset = isTestCase ? '    ' : '      '
@@ -781,7 +771,11 @@ export class TestSwaggerParser extends UnitTest {
         for (let usecase of cases) {
             this.__warnProgress(usecase.name)
             let output = parser[functionName].apply(parser, usecase.inputs)
-            this.assertEqual(output, usecase.output, 'in ' + usecase.name)
+            this.assertEqual(
+                JSON.stringify(output, null, '  '),
+                JSON.stringify(usecase.output, null, '  '),
+                'in ' + usecase.name
+            )
         }
     }
 

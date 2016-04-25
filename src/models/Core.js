@@ -1,27 +1,69 @@
 import Immutable from 'immutable'
+import jsf from 'json-schema-faker'
+
+import { URL, Info } from './Utils'
 
 export class Parameter extends Immutable.Record({
     key: null,
     value: null,
     type: null,
+    format: null,
     name: null,
     description: null,
     example: null,
-    internal: Immutable.List(),
-    external: Immutable.List()
+    internals: Immutable.List(),
+    externals: Immutable.List()
 }) {
-    generate() {
-        return this
+    generate(useDefault) {
+        if (useDefault && this.get('value')) {
+            return this.get('value')
+        }
+        let constraintSet = this.get('internals').reduce((set, constraint) => {
+            let obj = constraint.toJS()
+            Object.assign(set, obj)
+            return set
+        }, {
+            type: this.get('type')
+        })
+
+        let format = this.get('format')
+        const fakerFormatMap = {
+            email: {
+                faker: 'internet.email'
+            },
+            // base64 endoded
+            byte: {
+                pattern: '^(?:[A-Za-z0-9+/]{4})*' +
+                         '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'
+            },
+            // not really binary but who cares
+            binary: {
+                pattern: '^.*$'
+            },
+            'date-time': {
+                faker: 'date.recent'
+            },
+            password: {
+                pattern: '^.*$'
+            }
+        }
+
+        if (fakerFormatMap[format]) {
+            let constraint = fakerFormatMap[format]
+            Object.assign(constraintSet, constraint)
+        }
+
+        return jsf(constraintSet)
     }
 
     validate(value) {
-        return this.get('internal').reduce((bool, cond) => {
+        return this.get('internals').reduce((bool, cond) => {
             return bool && cond.evaluate(value)
         }, true)
     }
 
     isValid(param) {
-        let list = this.get('external')
+        let list = this.get('externals')
         return list.reduce((bool, _param) => {
             // && has precedence on ||
             return bool ||
@@ -107,23 +149,41 @@ export class Body extends Immutable.Record({
     }
 }
 
+export class Response extends Immutable.Record({
+    code: null,
+    description: null,
+    parameters: new ParameterContainer(),
+    bodies: Immutable.List(),
+    schema: null,
+    headers: Immutable.OrderedMap()
+}) { }
+
 export class Request extends Immutable.Record({
     id: null,
     name: null,
     description: null,
-    url: null,
+    url: new URL(),
     method: null,
     parameters: new ParameterContainer(),
     bodies: Immutable.List(),
     auths: Immutable.List(),
     responses: Immutable.List(),
     timeout: null
-}) { }
+}) {
+    getUrl(scheme) {
+        return this.get('url').getUrl(scheme)
+    }
+
+    decomposeUrl(url) {
+        return this.get('url').decomposeUrl(url)
+    }
+}
 
 export default class Context extends Immutable.Record({
     schema: null,
     group: null,
-    environments: null
+    environments: null,
+    info: new Info()
 }) {
     mergeEnvironments(environments) {
         let localEnvs = this.get('environments')

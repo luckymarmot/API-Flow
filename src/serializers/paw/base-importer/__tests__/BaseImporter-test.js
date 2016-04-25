@@ -2,31 +2,25 @@ import Immutable from 'immutable'
 
 import RequestContext, {
     Request,
-    Body,
     Parameter,
     ParameterContainer
 } from '../../../../models/Core'
 
 import {
+    URL,
     FileReference,
     Environment,
     EnvironmentReference,
-    SchemaReference,
-    Schema
+    SchemaReference
 } from '../../../../models/Utils'
-
-//import RequestContext, {
- //   FileReference,
- //   Request,
- //   KeyValue,
- //   SchemaReference,
- //   Environment,
- //   EnvironmentReference
-//} from '../../../../models/RequestContext'
 
 import Auth from '../../../../models/Auth'
 
-import { UnitTest, registerTest } from '../../../../utils/TestUtils'
+import {
+    UnitTest,
+    registerTest,
+    targets, targetClass
+} from '../../../../utils/TestUtils'
 import BaseImporterFixtures from './fixtures/BaseImporter-fixtures'
 import {
     DynamicString,
@@ -40,8 +34,16 @@ import {
 import BaseImporter from '../BaseImporter'
 
 @registerTest
+@targetClass(BaseImporter, [
+    'createRequestContexts',
+    'importString',
+    'createRequestContextFromString',
+    '__import__',
+    '_importPawRequest'
+])
 export class TestBaseImporter extends UnitTest {
-    // TODO
+
+    @targets('_resolveFileReference')
     testResolveFileReferenceReturnsValue() {
         const importer = new BaseImporter()
 
@@ -51,6 +53,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result, input)
     }
 
+    @targets('_resolveFileReference')
     testResolveFileReferenceReturnsDynamicString() {
         const importer = new BaseImporter()
 
@@ -66,6 +69,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_convertCharToHex')
     testConvertCharToHex() {
         const importer = new BaseImporter()
 
@@ -82,6 +86,7 @@ export class TestBaseImporter extends UnitTest {
         })
     }
 
+    @targets('_escapeCharSequence')
     testEscapeCharSequence() {
         const importer = new BaseImporter()
 
@@ -103,6 +108,7 @@ export class TestBaseImporter extends UnitTest {
         })
     }
 
+    @targets('_escapeSequenceDynamicValue')
     testEscapeSequenceDynamicValue() {
         const importer = new BaseImporter()
 
@@ -118,6 +124,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result.escapeSequence, expected)
     }
 
+    @targets('_toDynamicString')
     testSimpleToDynamicString() {
         const importer = new BaseImporter()
         const input = 'Some\nText'
@@ -141,6 +148,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result.components[2], expected[2])
     }
 
+    @targets('_toDynamicString')
     testNoDefaultToDynamicString() {
         const importer = new BaseImporter()
         const expected = null
@@ -149,6 +157,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result, expected)
     }
 
+    @targets('_toDynamicString')
     testDefaultToEmptyToDynamicString() {
         const importer = new BaseImporter()
         const input = new FileReference({
@@ -173,6 +182,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_toDynamicString')
     testEnvironmentReferenceToDynamicString() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -218,6 +228,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result.components[0], 'value')
     }
 
+    @targets('_toDynamicString')
     testResolveFileRefsToDynamicString() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -264,6 +275,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result, output)
     }
 
+    @targets('_extractReferenceComponent')
     testExtractReferenceComponentWithString() {
         const importer = new BaseImporter()
         const input = 'testString'
@@ -272,6 +284,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(input, result)
     }
 
+    @targets('_extractReferenceComponent')
     testExtractReferenceComponentWithSimpleReference() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -310,6 +323,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_extractReferenceComponent')
     testExtractReferenceComponentWithComplexReference() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -335,6 +349,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_castReferenceToDynamicString')
     testCastReferenceToDynamicStringWithSimpleReference() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -359,6 +374,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(expected.components, result.components)
     }
 
+    @targets('_castReferenceToDynamicString')
     testCastReferenceToDynamicStringWithRichReference() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -396,6 +412,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(expected.components, result.components)
     }
 
+    @targets('_castReferenceToDynamicString')
     testCastReferenceToDynamicStringWithTooComplexReference() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -436,6 +453,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(expected.components, result.components)
     }
 
+    @targets('_getEnvironmentDomain')
     testGetEnvironmentDomainNoDomainFound() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -471,6 +489,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_getEnvironmentDomain')
     testGetEnvironmentDomainWithDomainFound() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -505,6 +524,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_getEnvironment')
     testGetEnvironmentWithNoEnvironmentFound() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -544,6 +564,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_getEnvironment')
     testGetEnvironmentWithEnvironmentFound() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -580,6 +601,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_getEnvironmentVariable')
     testGetEnvironmentVariableNoVariableFound() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -626,6 +648,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_getEnvironmentVariable')
     testGetEnvironmentVariableWithVariableFound() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -672,6 +695,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_importEnvironments')
     testImportEnvironments() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -726,6 +750,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_importEnvironments')
     testImportEnvironmentsWithMultipleEnvironments() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -779,12 +804,17 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_createPawRequest')
     testSimpleCreatePawRequest() {
         const importer = new BaseImporter()
 
         const contextMock = new PawContextMock(null, '')
         const input = new Request({
-            url: 'http://fakeurl.com'
+            url: new URL({
+                schemes: [ 'http' ],
+                host: 'fakeurl.com',
+                path: ''
+            })
         })
 
         importer.context = contextMock
@@ -801,6 +831,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_createPawRequest')
     testCreatePawRequestWithRequestData() {
         const importer = new BaseImporter()
 
@@ -808,7 +839,11 @@ export class TestBaseImporter extends UnitTest {
         const input = new Request({
             name: 'testReq',
             method: 'GET',
-            url: 'http://fakeurl.com'
+            url: new URL({
+                schemes: [ 'http' ],
+                host: 'fakeurl.com',
+                path: ''
+            })
         })
 
         importer.context = contextMock
@@ -825,6 +860,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_createPawRequest')
     testCreatePawRequest() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -855,7 +891,7 @@ export class TestBaseImporter extends UnitTest {
 
         this.assertEqual(
             mockedImporter.spy._generateUrl.calls[0],
-            [ null, new Immutable.List(), new Immutable.List() ]
+            [ new URL(), new Immutable.List(), new Immutable.List() ]
         )
 
         this.assertEqual(
@@ -864,6 +900,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setHeaders')
     testSimpleSetHeaders() {
         const importer = new BaseImporter()
 
@@ -875,6 +912,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertTrue(requestMock.spy.setHeader.count === 0)
     }
 
+    @targets('_setHeaders')
     testSetHeadersWithHeaders() {
         const importer = new BaseImporter()
 
@@ -917,6 +955,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setBasicAuth')
     testSetBasicAuth() {
         const importer = new BaseImporter()
 
@@ -936,6 +975,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.password.components, [ '' ])
     }
 
+    @targets('_setBasicAuth')
     testSetBasicAuthWithInitializedValues() {
         const importer = new BaseImporter()
 
@@ -955,6 +995,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.password.components, [ 'stub' ])
     }
 
+    @targets('_setDigestAuth')
     testSetDigestAuth() {
         const importer = new BaseImporter()
 
@@ -974,6 +1015,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.password.components, [ '' ])
     }
 
+    @targets('_setDigestAuth')
     testSetDigestAuthWithInitializedValues() {
         const importer = new BaseImporter()
 
@@ -993,6 +1035,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.password.components, [ 'stub' ])
     }
 
+    @targets('_setOAuth1Auth')
     testSetOAuth1Auth() {
         const importer = new BaseImporter()
 
@@ -1015,6 +1058,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.token.components, [ '' ])
     }
 
+    @targets('_setOAuth1Auth')
     testSetOAuth1AuthWithInitialValues() {
         const importer = new BaseImporter()
 
@@ -1046,6 +1090,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.token.components, [ 'token' ])
     }
 
+    @targets('_setOAuth2Auth')
     testSetOAuth2Auth() {
         const importer = new BaseImporter()
 
@@ -1064,6 +1109,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.scope, '')
     }
 
+    @targets('_setOAuth2Auth')
     testSetOAuth2AuthWithInitialValues() {
         const importer = new BaseImporter()
 
@@ -1093,6 +1139,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.scope, 'user:write user:read')
     }
 
+    @targets('_setAWSSig4Auth')
     testSetAWSSig4Auth() {
         const importer = new BaseImporter()
 
@@ -1111,6 +1158,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.service.components, [ '' ])
     }
 
+    @targets('_setAWSSig4Auth')
     testSetAWSSig4AuthWithInitialValues() {
         const importer = new BaseImporter()
 
@@ -1134,6 +1182,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.service.components, [ 'execute-api' ])
     }
 
+    @targets('_setHawkAuth')
     testSetHawkAuth() {
         const importer = new BaseImporter()
 
@@ -1151,6 +1200,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.algorithm.components, [ '' ])
     }
 
+    @targets('_setHawkAuth')
     testSetHawkAuthWithInitialValues() {
         const importer = new BaseImporter()
 
@@ -1172,6 +1222,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(dv.algorithm.components, [ 'MD5' ])
     }
 
+    @targets('_setAuth')
     testSetAuthwithBasicAuth() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1196,6 +1247,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setAuth')
     testSetAuthwithDigestAuth() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1220,6 +1272,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setAuth')
     testSetAuthwithOAuth1Auth() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1244,6 +1297,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setAuth')
     testSetAuthwithOAuth2Auth() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1268,6 +1322,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setAuth')
     testSetAuthwithAWSSig4Auth() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1292,6 +1347,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setAuth')
     testSetAuthwithHawkAuth() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1316,6 +1372,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setAuth')
     testSetAuthwithApiKeyAuth() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1344,6 +1401,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setAuth')
     testSetAuthwithUnknownAuth() {
         class UnknownAuth {
 
@@ -1364,6 +1422,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertTrue(requestMock.spy.setHeader.count === 0)
     }
 
+    @targets('_setAuth')
     testSetAuthwithMultipleAuth() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1404,6 +1463,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setFormDataBody')
     testSetFormDataBodyWithSimpleBody() {
         const importer = new BaseImporter()
 
@@ -1437,6 +1497,7 @@ export class TestBaseImporter extends UnitTest {
         this.__compareSimpleDynamicStrings(kv[0][1], ekv[0][1])
     }
 
+    @targets('_setFormDataBody')
     testSetFormDataBodyWithRichBody() {
         const importer = new BaseImporter()
 
@@ -1477,6 +1538,7 @@ export class TestBaseImporter extends UnitTest {
         this.__compareSimpleDynamicStrings(kv[1][1], ekv[1][1])
     }
 
+    @targets('_setPlainBody')
     testSetPlainBody() {
         const importer = new BaseImporter()
 
@@ -1496,6 +1558,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(requestMock.body, body.getIn([ 0, 'value' ]))
     }
 
+    @targets('_setJSONBody')
     testSetJSONBody() {
         const importer = new BaseImporter()
         const body = new Immutable.List([
@@ -1514,6 +1577,7 @@ export class TestBaseImporter extends UnitTest {
         })
     }
 
+    @targets('_setSchemaBody')
     testSetSchemaBody() {
         const importer = new BaseImporter()
         const schemaRef = new SchemaReference()
@@ -1561,6 +1625,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result.description, '### Schema ###\n\n12')
     }
 
+    @targets('_setUrlEncodedBody')
     testSetUrlEncodedBody() {
         const importer = new BaseImporter()
 
@@ -1602,6 +1667,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setBody')
     testSetBodyWithformDataBodyType() {
         const importer = new BaseImporter()
 
@@ -1623,6 +1689,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setBody')
     testSetBodyWithurlEncodedBodyType() {
         const importer = new BaseImporter()
 
@@ -1644,6 +1711,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setBody')
     testSetBodyWithJSONBodyType() {
         const importer = new BaseImporter()
 
@@ -1665,6 +1733,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setBody')
     testSetBodyWithPlainBodyType() {
         const importer = new BaseImporter()
 
@@ -1686,6 +1755,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setBody')
     testSetBodyWithFileBodyType() {
         const importer = new BaseImporter()
 
@@ -1707,6 +1777,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_setBody')
     testSetBodyWithSchemaBodyType() {
         const importer = new BaseImporter()
 
@@ -1728,6 +1799,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('_extractQueryParamsFromAuth')
     testExtractQueryParamsFromAuthWithNoAuth() {
         const importer = new BaseImporter()
         const auths = new Immutable.List()
@@ -1737,6 +1809,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result, [])
     }
 
+    @targets('_extractQueryParamsFromAuth')
     testExtractQueryParamsFromAuthWithIrrelevantAuth() {
         const importer = new BaseImporter()
         const auths = new Immutable.List([
@@ -1748,6 +1821,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result, [])
     }
 
+    @targets('_extractQueryParamsFromAuth')
     testExtractQueryParamsFromAuthWithRelevantAuthTypeButNotInQuery() {
         const importer = new BaseImporter()
         const auths = new Immutable.List([
@@ -1763,6 +1837,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(result, [])
     }
 
+    @targets('_extractQueryParamsFromAuth')
     testExtractQueryParamsFromAuthWithRelevantAuthTypeAndInQuery() {
         const importer = new BaseImporter()
         const auths = new Immutable.List([
@@ -1783,6 +1858,7 @@ export class TestBaseImporter extends UnitTest {
         ])
     }
 
+    @targets('_generateUrl')
     testGenerateUrlWithSimpleUrl() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1795,16 +1871,21 @@ export class TestBaseImporter extends UnitTest {
             return []
         })
 
-        const url = 'fakeurl.com/fake/path'
+        const url = new URL({
+            schemes: null,
+            host: 'fakeurl.com',
+            path: '/fake/path'
+        })
 
         const result = importer._generateUrl.apply(
             mockedImporter,
             [ url ]
         )
 
-        this.assertEqual(url, result)
+        this.assertEqual('http://fakeurl.com/fake/path', result)
     }
 
+    @targets('_generateUrl')
     testGenerateUrlWithSimpleQueryParams() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1821,7 +1902,11 @@ export class TestBaseImporter extends UnitTest {
             return []
         })
 
-        const url = 'fakeurl.com/fake/path'
+        const url = new URL({
+            schemes: null,
+            host: 'fakeurl.com',
+            path: '/fake/path'
+        })
         const queries = new Immutable.List([
             new Parameter({
                 key: 'test',
@@ -1834,11 +1919,14 @@ export class TestBaseImporter extends UnitTest {
             [ url, queries ]
         )
 
-        const expected = new DynamicString(url, '?', 'test', '=', 'new')
+        const expected = new DynamicString(
+            'http://fakeurl.com/fake/path', '?', 'test', '=', 'new'
+        )
 
         this.assertEqual(expected.components, result.components)
     }
 
+    @targets('_generateUrl')
     testGenerateUrlWithQueriesAndAuthParams() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -1860,7 +1948,11 @@ export class TestBaseImporter extends UnitTest {
             ]
         })
 
-        const url = 'fakeurl.com/fake/path'
+        const url = new URL({
+            schemes: null,
+            host: 'fakeurl.com',
+            path: '/fake/path'
+        })
         const queries = new Immutable.List([
             new Parameter({
                 key: 'test',
@@ -1881,12 +1973,14 @@ export class TestBaseImporter extends UnitTest {
         )
 
         const expected = new DynamicString(
-            url, '?', 'test', '=', 'new', '&', 'api-key', '=', '123123123'
+            'http://fakeurl.com/fake/path',
+            '?', 'test', '=', 'new', '&', 'api-key', '=', '123123123'
         )
 
         this.assertEqual(expected.components, result.components)
     }
 
+    @targets('_importPawRequests')
     testImportPawRequest() {
         const importer = new BaseImporter()
 
@@ -1948,7 +2042,7 @@ export class TestBaseImporter extends UnitTest {
         mockedImporter.spyOn('_setBody',
             (req, bodyType, _container, schema) => {
                 this.assertEqual(
-                    bodyType, undefined
+                    typeof bodyType, 'undefined'
                 )
                 this.assertEqual(
                     _container, container
@@ -1976,6 +2070,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(mockedImporter.spy._setBody.count, 1)
     }
 
+    @targets('_applyFuncOverGroupTree')
     testApplyFuncOverGroupTree() {
         this.__loadTestSuite(
             'ApplyFuncOverGroupTree',
@@ -1983,6 +2078,7 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
+    @targets('import')
     testImport() {
         const importer = new BaseImporter()
 

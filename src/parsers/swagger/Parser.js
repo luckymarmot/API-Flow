@@ -3,17 +3,26 @@ import yaml from 'js-yaml'
 import tv4 from 'tv4'
 import swaggerSchema from 'swagger-schema-official/schema.json'
 
-import RequestContext, {
-    KeyValue,
-    Group,
-    Schema,
-    Request,
-    Response
-} from '../../models/RequestContext'
+import Constraint from '../../models/Constraint'
+
+import Context, {
+    Parameter,
+    ParameterContainer,
+    Body,
+    Response,
+    Request
+} from '../../models/Core'
+
+import {
+    Info, Contact, License,
+    URL, Group, Schema
+} from '../../models/Utils'
+
+import Auth from '../../models/Auth'
 
 export default class SwaggerParser {
     contructor() {
-        this.context = new RequestContext()
+        this.context = new Context()
     }
 
     // @NotTested -> assumed valid
@@ -40,15 +49,83 @@ export default class SwaggerParser {
 
             rootGroup = this._createGroupTree(rootGroup, pathLinkedRequests)
 
-            let reqContext = new RequestContext()
+            let info = this._extractContextInfo(swaggerCollection)
+
+            let reqContext = new Context()
             reqContext = reqContext
                 .set('group', rootGroup)
                 .set('schema', baseSchema)
+                .set('info', info)
 
             this.context = reqContext
 
             return reqContext
         }
+    }
+
+    _extractContextInfo(collection) {
+        let contact = null
+        if (collection.contact) {
+            contact = new Contact({
+                name: collection.contact.name || null,
+                url: collection.contact.url || null,
+                email: collection.contact.email || null
+            })
+        }
+
+        let license = null
+        if (collection.license) {
+            license = new License({
+                name: collection.license.name || null,
+                url: collection.license.url || null
+            })
+        }
+
+        let info = new Info({
+            title: collection.title || null,
+            description: collection.description || null,
+            tos: collection.termsOfServive || null,
+            contact: contact,
+            license: license,
+            version: collection.version || null
+        })
+
+        return info
+    }
+
+    // @NotTested -> assumed valid
+    _createRequest(swaggerCollection, path, method, content) {
+        const url = this._extractUrlInfo(
+            swaggerCollection,
+            path,
+            content
+        )
+
+        const container = this._extractParams(
+            swaggerCollection,
+            content
+        )
+
+        const responses = this._extractResponses(
+            swaggerCollection, content
+        )
+
+        const bodies = this._extractBodies(swaggerCollection, content)
+
+        let request = new Request()
+        request = this._setSummary(request, path, content)
+        request = this._setDescription(request, content)
+        request = this._setBasicInfo(
+            request,
+            url,
+            method,
+            container,
+            bodies,
+            responses
+        )
+        request = this._setAuth(request, swaggerCollection, content)
+
+        return request
     }
 
     // @tested
@@ -68,149 +145,81 @@ export default class SwaggerParser {
     }
 
     // @tested
-    _setBasicInfo(request, url, method, headers, responses) {
-        const headerSet = this._convertKeyValueListToSet(headers)
+    _setBasicInfo(request, url, method, container, bodies, responses) {
+        let _container = container || new ParameterContainer()
+        let _bodies = bodies || new Immutable.List()
+        let _responses = responses || new Immutable.List()
+
         return request
             .set('url', url)
             .set('method', method.toUpperCase())
-            .set('headers', new Immutable.OrderedMap(headerSet))
-            .set('responses', new Immutable.List(responses))
-    }
-
-    _extractContentType(swaggerCollection, content) {
-        let contentType
-        if (content.consumes && content.consumes.length > 0) {
-            contentType = content.consumes[0]
-        }
-        else if (
-            swaggerCollection.consumes &&
-            swaggerCollection.consumes.length > 0
-        ) {
-            contentType = swaggerCollection.consumes[0]
-        }
-
-        return contentType
-    }
-
-    // @NotTested
-    _setBody(request, swaggerCollection, body, formData, content) {
-        let _request = request
-        if (body) {
-            if (!(body instanceof Schema)) {
-                throw new Error('expected Schema Object as a body')
-            }
-            _request = _request
-                .set('bodyType', 'schema')
-                .set('body', body)
-        }
-
-        if (formData.length > 0) {
-            let contentType = this
-                ._extractContentType(swaggerCollection, content)
-
-            const typeMapping = {
-                'application/x-www-form-urlencoded': 'urlEncoded',
-                'multipart/form-data': 'formData'
-            }
-
-            if (
-                typeMapping[contentType]
-            ) {
-                _request = _request.set(
-                    'bodyType', typeMapping[contentType]
-                )
-            }
-
-            _request = _request.set('body', new Immutable.List(formData))
-        }
-
-        return _request
+            .set('parameters', _container)
+            .set('bodies', _bodies)
+            .set('responses', _responses)
     }
 
     // @Tested
     _setAuth(request, swaggerCollection, content) {
         let _request = request
-        if (content.security) {
-            if (!swaggerCollection.securityDefinitions) {
-                const m = 'Swagger - expected a security definition to exist'
-                throw new Error(m)
-            }
-            for (let security of content.security) {
-                for (let key in security) {
-                    if (
-                        security.hasOwnProperty(key) &&
-                        swaggerCollection.securityDefinitions[key]
-                    ) {
-                        let definition = Immutable.fromJS(swaggerCollection
-                            .securityDefinitions[key])
-                        definition = definition.set(
-                            'scopes', new Immutable.List(security[key])
-                        )
-                        _request = _request
-                            .setAuthType(definition.get('type'), definition)
+
+        const typeMap = {
+            basic: this._setBasicAuth,
+            apiKey: this._setApiKeyAuth,
+            oauth2: this._setOAuth2Auth
+        }
+
+        if (!content.security) {
+            return _request
+        }
+
+        if (!swaggerCollection.securityDefinitions) {
+            const m = 'Swagger - expected a security definition to exist'
+            throw new Error(m)
+        }
+
+        let auths = []
+        for (let security of content.security) {
+            for (let key in security) {
+                if (
+                    security.hasOwnProperty(key) &&
+                    swaggerCollection.securityDefinitions[key]
+                ) {
+                    let definition = Immutable.fromJS(swaggerCollection
+                        .securityDefinitions[key])
+                    definition = definition.set(
+                        'scopes', new Immutable.List(security[key])
+                    )
+
+                    if (typeMap[definition.get('type')]) {
+                        let auth = typeMap[definition.get('type')](definition)
+                        auths.push(auth)
                     }
                 }
             }
         }
 
-        return _request
+        auths = new Immutable.List(auths)
+        return _request.set('auths', auths)
     }
 
-    _uriEncodeKeyValueList(kvList) {
-        return kvList.map((kv) => {
-            return kv
-                .set('key', kv.get('key'))
-                .set('value', kv.get('value'))
+    _setBasicAuth() {
+        return new Auth.Basic()
+    }
+
+    _setApiKeyAuth(definition) {
+        return new Auth.ApiKey({
+            in: definition.get('in'),
+            name: definition.get('name')
         })
     }
 
-    _setQueries(request, queries) {
-        let _queries = this._uriEncodeKeyValueList(queries)
-        if (queries.length > 0) {
-            return request.set('queries', new Immutable.List(_queries))
-        }
-        return request
-    }
-
-    // @NotTested -> assumed valid
-    _createRequest(swaggerCollection, path, method, content) {
-        let request = new Request()
-        const [ headers, queries, formData, body ] = this._extractParams(
-            content.parameters
-        )
-        const responses = this._extractResponses(content.responses)
-        const url = this._generateURL(swaggerCollection, path)
-
-        const contentType = this
-            ._extractContentType(swaggerCollection, content)
-
-        if (contentType) {
-            headers.push(new KeyValue({
-                key: 'Content-Type',
-                value: contentType
-            }))
-        }
-
-        request = this._setSummary(request, path, content)
-        request = this._setDescription(request, content)
-        request = this._setBasicInfo(
-            request,
-            url,
-            method,
-            headers,
-            responses
-        )
-        request = ::this._setQueries(request, queries)
-        request = ::this._setBody(
-            request,
-            swaggerCollection,
-            body,
-            formData,
-            content
-        )
-        request = this._setAuth(request, swaggerCollection, content)
-
-        return request
+    _setOAuth2Auth(definition) {
+        return new Auth.OAuth2({
+            flow: definition.get('flow', null),
+            authorizationUrl: definition.get('authorizationUrl', null),
+            tokenUrl: definition.get('tokenUrl', null),
+            scopes: definition.get('scopes')
+        })
     }
 
     // @tested
@@ -303,21 +312,20 @@ export default class SwaggerParser {
         return architecture
     }
 
-    // @tested
-    _generateURL(swaggerCollection, path) {
-        const protocol = (
-            swaggerCollection.schemes ?
-            swaggerCollection.schemes[0] : 'http'
-        ) + '://'
-        const domain = swaggerCollection.host || 'localhost'
+    _extractUrlInfo(collection, path, content) {
+        let rootSchemes = collection.schemes || [ 'http' ]
+        let schemes = content.schemes || rootSchemes
+
+        let host = collection.host || 'localhost'
+
         let basePath = ''
         let subPath = ''
 
         if (
-            swaggerCollection.basePath &&
-            swaggerCollection.basePath.length > 0
+            collection.basePath &&
+            collection.basePath.length > 0
         ) {
-            basePath = swaggerCollection.basePath
+            basePath = collection.basePath
             if (!basePath.startsWith('/')) {
                 basePath = '/' + basePath
             }
@@ -334,56 +342,177 @@ export default class SwaggerParser {
             subPath = path
         }
 
-        const url = protocol + domain + basePath + subPath
+        let url = new URL({
+            schemes: schemes,
+            host: host,
+            path: basePath + subPath
+        })
+
         return url
     }
 
-    // @tested
-    _extractResponses(responses) {
-        let result = []
+    _extractResponseExternals(collection, content) {
+        let produces = content.produces || collection.produces
 
-        if (responses) {
-            for (let code in responses) {
-                if (responses.hasOwnProperty(code)) {
-                    let schema = null
-                    if (responses[code].schema) {
-                        schema = new Schema()
-                        schema = schema.mergeSchema(responses[code].schema)
-                    }
-
-                    let response = new Response({
-                        code: code,
-                        description: responses[code].description || null,
-                        schema: schema
-                    })
-
-                    result.push(response)
-                }
-            }
+        if (!produces) {
+            return new Immutable.List()
         }
 
+        return new Immutable.List([
+            new Parameter({
+                key: 'Content-Type',
+                internals: new Immutable.List([
+                    new Constraint.Enum(produces)
+                ])
+            })
+        ])
+    }
+
+    _extractResponseBodies(collection, content) {
+        let produces = content.produces || collection.produces
+
+        if (!produces) {
+            return new Immutable.List()
+        }
+
+        let bodies = produces.map(mime => {
+            return new Body({
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: mime
+                    })
+                ])
+            })
+        })
+
+        return new Immutable.List(bodies)
+    }
+
+    _extractResponses(collection, content) {
+        let _collection = collection || {}
+        let _content = content || {}
+
+        let result = []
+
+        let responses = _content.responses
+
+        const externals = this._extractResponseExternals(
+            _collection, _content
+        )
+
+        const bodies = this._extractResponseBodies(
+            _collection, _content
+        )
+
+        let codes = Object.keys(responses || {})
+        for (let code of codes) {
+            let body = new Immutable.List()
+            if (responses[code].schema) {
+                let schema = new Schema()
+                schema = schema.mergeSchema(responses[code].schema)
+
+                body = body.push(new Parameter({
+                    key: 'schema',
+                    value: schema,
+                    externals: externals
+                }))
+            }
+
+            let headers = new Immutable.List()
+            if (responses[code].headers) {
+                let headerNames = Object.keys(responses[code].headers)
+                for (let header of headerNames) {
+                    let param = this._extractParam(
+                        responses[code].headers[header]
+                    )
+                    headers = headers.push(param)
+                }
+            }
+
+            let container = new ParameterContainer({
+                body: body,
+                headers: headers
+            })
+            let response = new Response({
+                code: code,
+                description: responses[code].description || null,
+                parameters: container,
+                bodies: bodies
+            })
+
+            result.push(response)
+        }
+
+        result = new Immutable.List(result)
         return result
     }
 
-    // @tested
-    _convertKeyValueListToSet(kvList) {
-        return kvList.reduce((set, pair) => {
-            set[pair.get('key')] = pair.get('value')
-            return set
-        }, {})
+    _extractExternals(collection, content) {
+        let consumes = content.consumes || collection.consumes
+
+        if (!consumes) {
+            return new Immutable.List()
+        }
+
+        return new Immutable.List([
+            new Parameter({
+                key: 'Content-Type',
+                internals: new Immutable.List([
+                    new Constraint.Enum(consumes)
+                ])
+            })
+        ])
     }
 
-    // @tested
-    _extractParams(parameters) {
+    _extractContentTypes(collection, content) {
+        let _content = content || {}
+        let _collection = collection || {}
+
+        let contentTypes = []
+
+        if (_content.consumes && _content.consumes.length > 0) {
+            contentTypes = _content.consumes
+        }
+        else if (
+            _collection.consumes &&
+            _collection.consumes.length > 0
+        ) {
+            contentTypes = _collection.consumes
+        }
+        return contentTypes
+    }
+
+    _extractParams(collection, content) {
+        let _content = content || {}
+        let _collection = collection || {}
+
+        let contentTypes = this._extractContentTypes(_collection, _content)
+        let parameters = _content.parameters || []
         let headers = []
         let queries = []
-        let formData = []
-        let body
+        let body = []
+        let externals = this._extractExternals(_collection, _content)
+
+        for (let contentType of contentTypes) {
+            headers.push(new Parameter({
+                key: 'Content-Type',
+                value: contentType,
+                externals: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ contentType ])
+                        ])
+                    })
+                ])
+            }))
+        }
 
         const mapping = {
             query: queries,
             header: headers,
-            formData: formData
+            formData: body
         }
 
         if (
@@ -393,14 +522,8 @@ export default class SwaggerParser {
             for (let param of parameters) {
                 let fieldList = mapping[param.in]
                 if (fieldList) {
-                    let value = param.default ? param.default : param.name
-                    fieldList.push(new KeyValue(
-                        {
-                            key: param.name,
-                            value: value,
-                            valueType: param.type
-                        }
-                    ))
+                    let _param = this._extractParam(param, externals)
+                    fieldList.push(_param)
                 }
 
                 if (param.in === 'body') {
@@ -408,11 +531,110 @@ export default class SwaggerParser {
                         const m = 'Expected a schema object in body param'
                         throw new Error(m)
                     }
-                    body = (new Schema()).mergeSchema(param.schema)
+                    body.push(
+                        new Parameter({
+                            key: 'body',
+                            value: (new Schema())
+                                .mergeSchema(param.schema),
+                            type: 'schema',
+                            description: param.description || null,
+                            externals: externals
+                        })
+                    )
                 }
             }
         }
-        return [ headers, queries, formData, body ]
+
+        let container = new ParameterContainer({
+            headers: new Immutable.List(headers),
+            queries: new Immutable.List(queries),
+            body: new Immutable.List(body)
+        })
+        return container
+    }
+
+    _extractParam(param, externals) {
+        let value = param.default
+
+        if (typeof value === 'undefined') {
+            value = null
+        }
+
+        let internalsMap = {
+            maximum: Constraint.Maximum,
+            minimum: Constraint.Minimum,
+            maxLength: Constraint.MaxLength,
+            minLength: Constraint.MinLength,
+            pattern: Constraint.Pattern,
+            maxItems: Constraint.MaxItems,
+            minItems: Constraint.MinItems,
+            uniqueItems: Constraint.UniqueItems,
+            enum: Constraint.Enum,
+            multipleOf: Constraint.MultipleOf
+        }
+
+        let internals = new Immutable.List()
+        for (let key of Object.keys(param)) {
+            if (internalsMap[key]) {
+                let constraint = new internalsMap[key](param[key])
+                internals = internals.push(constraint)
+            }
+
+            if (key === 'exclusiveMaximum') {
+                internals = internals.push(
+                    new Constraint.ExclusiveMaximum(param.maximum)
+                )
+            }
+
+            if (key === 'exclusiveMinimum') {
+                internals = internals.push(
+                    new Constraint.ExclusiveMinimum(param.maximum)
+                )
+            }
+        }
+
+        let _param = new Parameter({
+            key: param.name || null,
+            value: value,
+            type: param.type || null,
+            format: param.format || null,
+            description: param.description || null,
+            internals: internals,
+            externals: externals
+        })
+
+        return _param
+    }
+
+    _extractBodies(collection, content) {
+        let bodies = new Immutable.List()
+        let contentTypes = this._extractContentTypes(collection, content)
+
+        const typeMapping = {
+            'application/x-www-form-urlencoded': 'urlEncoded',
+            'multipart/form-data': 'formData'
+        }
+        for (let contentType of contentTypes) {
+            let bodyType = null
+            if (
+                typeMapping[contentType]
+            ) {
+                bodyType = typeMapping[contentType]
+            }
+            let body = new Body({
+                type: bodyType,
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: contentType
+                    })
+                ])
+            })
+
+            bodies = bodies.push(body)
+        }
+
+        return bodies
     }
 
     // @tested

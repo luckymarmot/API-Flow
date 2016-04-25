@@ -1,5 +1,62 @@
 import Immutable from 'immutable'
 
+export class URL extends Immutable.Record({
+    schemes: null,
+    host: null,
+    path: null
+}) {
+    getUrl(scheme) {
+        let _scheme
+        if (this.get('schemes') && this.get('schemes').indexOf(scheme) >= 0) {
+            _scheme = scheme
+        }
+        else {
+            _scheme = (this.get('schemes') || [ 'http' ])[0]
+        }
+        return _scheme + '://' + this.get('host') + this.get('path')
+    }
+
+    decomposeUrl(url) {
+        let fragments = url.match(/((.*):\/\/)?([^\/]*)(.*)/)
+        if (!fragments) {
+            const msg = 'failed to decompose ' + url + 'as a url'
+            throw new Error(msg)
+        }
+
+        // no scheme provided
+        if (fragments.length < 3) {
+            fragments.unshift('')
+        }
+        else {
+            fragments.shift()
+        }
+
+        // clarity
+        let [ scheme, host, path ] = fragments
+        return [ scheme, host, path ]
+    }
+}
+
+export class Info extends Immutable.Record({
+    title: null,
+    description: null,
+    tos: null,
+    contact: null,
+    license: null,
+    version: null
+}) { }
+
+export class Contact extends Immutable.Record({
+    name: null,
+    url: null,
+    email: null
+}) { }
+
+export class License extends Immutable.Record({
+    name: null,
+    url: null
+}) { }
+
 
 export class Reference extends Immutable.Record({
     reference: null,
@@ -98,7 +155,7 @@ export class Schema extends Immutable.Record({
                 mergedSchema = this.get('map') || new Immutable.OrderedMap()
                 for (let prop of Object.keys(schema)) {
                     if (prop === '$ref') {
-                        let schemaReference = new JSONReference({
+                        let schemaReference = new SchemaReference({
                             reference: schema[prop]
                         })
                         mergedSchema = mergedSchema.set(prop, schemaReference)
@@ -140,7 +197,7 @@ export class Schema extends Immutable.Record({
         }
         subSchema.forEach((value, key) => {
             let _value = value
-            if (_value instanceof JSONReference) {
+            if (_value instanceof SchemaReference) {
                 _value = _value.resolve(baseSchema)
                 if (
                     !Immutable.is(

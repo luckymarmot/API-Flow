@@ -109,6 +109,43 @@ function registerTest(Class) {
     })
 }
 
+function targets(name) {
+    return function(target, key, descriptor) {
+        if (!target.constructor.__targets) {
+            target.constructor.__targets = {}
+        }
+        if (!target.constructor.__targets[name]) {
+            target.constructor.__targets[name] = []
+        }
+        target.constructor.__targets[name].push(key)
+        return descriptor
+    }
+}
+
+function targetClass(Against, ignores = []) {
+    return function(Class) {
+        Class.__against = Against
+        Class.prototype.testAllMethodsAreTested = () => {
+            const names = Object.getOwnPropertyNames(
+                Object.getPrototypeOf(new Against())
+            )
+
+            let missingTests = []
+            for (let name of names) {
+                if (
+                    typeof Class.__targets[name] === 'undefined' &&
+                    ignores.indexOf(name) < 0
+                ) {
+                    missingTests.push(name)
+                }
+            }
+
+            const test = new Class()
+            test.assertEqual(missingTests, [], 'Some methods are not tested')
+        }
+        return Class
+    }
+}
 
 class MockedFunction {
     constructor() {
@@ -140,4 +177,4 @@ function mockFunction(target, key, descriptor) {
     return descriptor
 }
 
-export { UnitTest, registerTest, mockFunction }
+export { UnitTest, registerTest, targets, targetClass, mockFunction }
