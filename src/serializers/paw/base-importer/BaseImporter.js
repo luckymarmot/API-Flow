@@ -17,7 +17,7 @@ import {
 import {
     DynamicValue,
     DynamicString
-} from '../../../Mocks/PawShims'
+} from '../../../mocks/PawShims'
 
 export default class BaseImporter {
     static fileExtensions = [];

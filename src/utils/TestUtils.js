@@ -122,7 +122,7 @@ function targets(name) {
     }
 }
 
-function targetClass(Against, ignores = []) {
+function against(Against, ignores = []) {
     return function(Class) {
         Class.__against = Against
         Class.prototype.testAllMethodsAreTested = () => {
@@ -187,4 +187,4 @@ function mockFunction(target, key, descriptor) {
     return descriptor
 }
 
-export { UnitTest, registerTest, targets, targetClass, mockFunction }
+export { UnitTest, registerTest, targets, against, mockFunction }

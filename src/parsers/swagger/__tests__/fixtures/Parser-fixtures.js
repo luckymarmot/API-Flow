@@ -3,6 +3,7 @@ import Immutable from 'immutable'
 import Constraint from '../../../../models/Constraint'
 
 import {
+    Context,
     Parameter,
     ParameterContainer,
     Request,
@@ -1242,6 +1243,12 @@ export default class SwaggerFixtures {
                 })
             }
         ]
+    }
+
+    static parseCase() {
+        return new Context({
+
+        })
     }
 }
 

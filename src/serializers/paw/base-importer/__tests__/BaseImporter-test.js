@@ -19,7 +19,7 @@ import Auth from '../../../../models/Auth'
 import {
     UnitTest,
     registerTest,
-    targets, targetClass
+    targets, against
 } from '../../../../utils/TestUtils'
 import BaseImporterFixtures from './fixtures/BaseImporter-fixtures'
 import {
@@ -29,12 +29,12 @@ import {
     PawRequestMock,
     ClassMock,
     Mock
-} from '../../../../Mocks/PawMocks'
+} from '../../../../mocks/PawMocks'
 
 import BaseImporter from '../BaseImporter'
 
 @registerTest
-@targetClass(BaseImporter, [
+@against(BaseImporter, [
     // This function is abstract
     'createRequestContexts',
     // I'm lazy

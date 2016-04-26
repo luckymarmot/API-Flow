@@ -21,7 +21,7 @@ import {
 import Auth from '../../models/Auth'
 
 export default class SwaggerParser {
-    contructor() {
+    constructor() {
         this.context = new Context()
     }
 
@@ -49,7 +49,7 @@ export default class SwaggerParser {
 
             rootGroup = this._createGroupTree(rootGroup, pathLinkedRequests)
 
-            let info = this._extractContextInfo(swaggerCollection)
+            let info = this._extractContextInfo(swaggerCollection.info)
 
             let reqContext = new Context()
             reqContext = reqContext
@@ -63,31 +63,35 @@ export default class SwaggerParser {
         }
     }
 
-    _extractContextInfo(collection) {
+    _extractContextInfo(_info) {
+        if (!_info) {
+            return new Info()
+        }
+
         let contact = null
-        if (collection.contact) {
+        if (_info.contact) {
             contact = new Contact({
-                name: collection.contact.name || null,
-                url: collection.contact.url || null,
-                email: collection.contact.email || null
+                name: _info.contact.name || null,
+                url: _info.contact.url || null,
+                email: _info.contact.email || null
             })
         }
 
         let license = null
-        if (collection.license) {
+        if (_info.license) {
             license = new License({
-                name: collection.license.name || null,
-                url: collection.license.url || null
+                name: _info.license.name || null,
+                url: _info.license.url || null
             })
         }
 
         let info = new Info({
-            title: collection.title || null,
-            description: collection.description || null,
-            tos: collection.termsOfServive || null,
+            title: _info.title || null,
+            description: _info.description || null,
+            tos: _info.termsOfService || null,
             contact: contact,
             license: license,
-            version: collection.version || null
+            version: _info.version || null
         })
 
         return info
@@ -343,7 +347,7 @@ export default class SwaggerParser {
         }
 
         let url = new URL({
-            schemes: schemes,
+            schemes: new Immutable.List(schemes),
             host: host,
             path: basePath + subPath
         })
@@ -588,7 +592,7 @@ export default class SwaggerParser {
 
             if (key === 'exclusiveMinimum') {
                 internals = internals.push(
-                    new Constraint.ExclusiveMinimum(param.maximum)
+                    new Constraint.ExclusiveMinimum(param.minimum)
                 )
             }
         }
