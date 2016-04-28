@@ -15,7 +15,7 @@ export class Parameter extends Immutable.Record({
     externals: Immutable.List()
 }) {
     generate(useDefault) {
-        if (useDefault && this.get('value')) {
+        if (useDefault && this.get('value') !== null) {
             return this.get('value')
         }
         let constraintSet = this.get('internals').reduce((set, constraint) => {
@@ -64,6 +64,12 @@ export class Parameter extends Immutable.Record({
 
     isValid(param) {
         let list = this.get('externals')
+
+        // No external constraint
+        if (list.size === 0) {
+            return true
+        }
+
         return list.reduce((bool, _param) => {
             // && has precedence on ||
             return bool ||
@@ -153,9 +159,7 @@ export class Response extends Immutable.Record({
     code: null,
     description: null,
     parameters: new ParameterContainer(),
-    bodies: Immutable.List(),
-    schema: null,
-    headers: Immutable.OrderedMap()
+    bodies: Immutable.List()
 }) { }
 
 export class Request extends Immutable.Record({

@@ -7,12 +7,17 @@ export class URL extends Immutable.Record({
 }) {
     getUrl(scheme) {
         let _scheme
-        if (this.get('schemes') && this.get('schemes').indexOf(scheme) >= 0) {
+        if (
+            scheme &&
+            this.get('schemes') &&
+            this.get('schemes').indexOf(scheme) >= 0
+        ) {
             _scheme = scheme
         }
         else {
             _scheme = (this.get('schemes') || [ 'http' ])[0]
         }
+
         return _scheme + '://' + this.get('host') + this.get('path')
     }
 

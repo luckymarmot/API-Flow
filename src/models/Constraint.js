@@ -169,7 +169,6 @@ export class MinimumItemsConstraint extends Constraint {
     }
 }
 
-
 export class UniqueItemsConstraint extends Constraint {
     constructor(value = false) {
         let obj = {

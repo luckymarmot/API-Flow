@@ -1,24 +1,38 @@
 import fs from 'fs'
 import Immutable from 'immutable'
 
-import { UnitTest, registerTest } from '../../../utils/TestUtils'
+import {
+    UnitTest,
+    registerTest,
+    against,
+    targets
+} from '../../../utils/TestUtils'
+
 import {
     ClassMock
 } from '../../../mocks/PawMocks'
 
+import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
 
-import RequestContext, {
+import Context, {
+    Body,
     Request,
     Response,
-    KeyValue,
-    Schema
-} from '../../../models/RequestContext'
+    Parameter,
+    ParameterContainer
+} from '../../../models/Core'
+
+import {
+    Schema,
+    URL
+} from '../../../models/Utils'
 
 import RAMLParser from '../Parser'
 import ShimmingFileReader from '../FileReader'
 
 @registerTest
+@against(RAMLParser)
 export class TestRAMLParser extends UnitTest {
     testConstructor() {
         let items = [ 1, 2, 3, 'test' ]
@@ -29,6 +43,7 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(parser.reader.items, items)
     }
 
+    @targets('parse')
     testParseWithCustomReader(done) {
         const items = [
             {
@@ -79,6 +94,7 @@ export class TestRAMLParser extends UnitTest {
         })
     }
 
+    @targets('parse')
     testParseWithCustomReaderAndFileReference(done) {
         const items = [
             {
@@ -138,6 +154,7 @@ export class TestRAMLParser extends UnitTest {
         })
     }
 
+    @targets('parse')
     testParseWithCustomReaderAndMissingFileReference(done) {
         const items = [
             {
@@ -197,6 +214,7 @@ export class TestRAMLParser extends UnitTest {
         })
     }
 
+    @targets('parse')
     testParseCallsCreateContext(done) {
         const items = [
             {
@@ -251,6 +269,7 @@ export class TestRAMLParser extends UnitTest {
         })
     }
 
+    @targets('parse')
     testParseWithBadRAMLThrows(done) {
         const items = [
             {
@@ -291,6 +310,7 @@ export class TestRAMLParser extends UnitTest {
         })
     }
 
+    @targets('_createContext')
     testCreateContextCallsCreateGroupTree() {
         const raml = {
             title: 'GitHub API',
@@ -314,10 +334,11 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(mockedParser.spy._createGroupTree.count, 1)
         this.assertEqual(
             mockedParser.spy._createGroupTree.calls[0],
-            [ raml, raml, raml.title, raml.baseUri ]
+            [ raml, raml, raml.title ]
         )
     }
 
+    @targets('_createContext')
     testCreateContextCallsReturnsRequestContextObject() {
         const raml = {
             title: 'GitHub API',
@@ -333,7 +354,7 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
-        const expected = new RequestContext({
+        const expected = new Context({
             group: 12
         })
 
@@ -345,6 +366,7 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(result, expected)
     }
 
+    @targets('_createGroupTree')
     testCreateGroupTreeWithNoResourcesNorMethods() {
         const raml = {
             title: 'GitHub API',
@@ -362,12 +384,13 @@ export class TestRAMLParser extends UnitTest {
 
         let result = parser._createGroupTree.apply(
             mockedParser,
-            [ raml, raml, raml.title, raml.baseUri ]
+            [ raml, raml, raml.title ]
         )
 
         this.assertNull(result)
     }
 
+    @targets('_createGroupTree')
     testCreateGroupTreeWithResources() {
         let raml = this.__loadRAMLObject('jukebox-api')
 
@@ -378,7 +401,7 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
-        mockedParser._createGroupTree(raml, raml, raml.title, raml.baseUri)
+        mockedParser._createGroupTree(raml, raml, raml.title)
 
         this.assertEqual(
             mockedParser.spy._createGroupTree.count, 10
@@ -389,6 +412,7 @@ export class TestRAMLParser extends UnitTest {
         )
     }
 
+    @targets('_createGroupTree')
     testCreateGroupTreeCallsCreateRequestsWithCorrectURLs() {
         let raml = this.__loadRAMLObject('jukebox-api')
 
@@ -399,7 +423,7 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
-        mockedParser._createGroupTree(raml, raml, raml.title, raml.baseUri)
+        mockedParser._createGroupTree(raml, raml, raml.title)
 
         this.assertEqual(
             mockedParser.spy._createRequest.count, 13
@@ -415,19 +439,19 @@ export class TestRAMLParser extends UnitTest {
 
         let index = 0
         const urls = [
-            'http://jukebox.api.com/songs/{songId}/file-content',
-            'http://jukebox.api.com/songs/{songId}/file-content',
-            'http://jukebox.api.com/songs/{songId}',
-            'http://jukebox.api.com/songs',
-            'http://jukebox.api.com/songs',
-            'http://jukebox.api.com/artists/{artistId}/albums',
-            'http://jukebox.api.com/artists/{artistId}',
-            'http://jukebox.api.com/artists',
-            'http://jukebox.api.com/artists',
-            'http://jukebox.api.com/albums/{albumId}/songs',
-            'http://jukebox.api.com/albums/{albumId}',
-            'http://jukebox.api.com/albums',
-            'http://jukebox.api.com/albums'
+            '/songs/{songId}/file-content',
+            '/songs/{songId}/file-content',
+            '/songs/{songId}',
+            '/songs',
+            '/songs',
+            '/artists/{artistId}/albums',
+            '/artists/{artistId}',
+            '/artists',
+            '/artists',
+            '/albums/{albumId}/songs',
+            '/albums/{albumId}',
+            '/albums',
+            '/albums'
         ]
         for (let call of mockedParser.spy._createRequest.calls) {
             this.assertTrue(compareURLCalls(call, urls[index]))
@@ -435,6 +459,7 @@ export class TestRAMLParser extends UnitTest {
         }
     }
 
+    @targets('_createGroupTree')
     testCreateGroupTreeCallsCreateRequestsWithCorrectMethods() {
         let raml = this.__loadRAMLObject('jukebox-api')
 
@@ -445,7 +470,7 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
-        mockedParser._createGroupTree(raml, raml, raml.title, raml.baseUri)
+        mockedParser._createGroupTree(raml, raml, raml.title)
 
         this.assertEqual(
             mockedParser.spy._createRequest.count, 13
@@ -481,6 +506,7 @@ export class TestRAMLParser extends UnitTest {
         }
     }
 
+    @targets('_createGroupTree')
     testCreateGroupTreeCallsCreateRequestsWithBaseRAMLObject() {
         let raml = this.__loadRAMLObject('jukebox-api')
 
@@ -491,7 +517,7 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
-        mockedParser._createGroupTree(raml, raml, raml.title, raml.baseUri)
+        mockedParser._createGroupTree(raml, raml, raml.title)
 
         this.assertEqual(
             mockedParser.spy._createRequest.count, 13
@@ -510,6 +536,7 @@ export class TestRAMLParser extends UnitTest {
         }
     }
 
+    @targets('_createRequest')
     testCreateRequestCallsAllSubExtractors() {
         const [ parser, raml ] = this.__init('jukebox-api')
 
@@ -529,7 +556,7 @@ export class TestRAMLParser extends UnitTest {
             return new Immutable.List()
         })
 
-        parser.spyOn('_extractBody', () => {
+        parser.spyOn('_extractBodies', () => {
             return [ null, null ]
         })
 
@@ -542,10 +569,11 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(parser.spy._extractHeaders.count, 1)
         this.assertEqual(parser.spy._extractQueries.count, 1)
         this.assertEqual(parser.spy._extractAuth.count, 1)
-        this.assertEqual(parser.spy._extractBody.count, 1)
+        this.assertEqual(parser.spy._extractBodies.count, 1)
         this.assertEqual(parser.spy._extractResponses.count, 1)
     }
 
+    @targets('_createRequest')
     testCreateRequestReturnsARequest() {
         const [ parser, raml ] = this.__init('jukebox-api')
 
@@ -565,7 +593,7 @@ export class TestRAMLParser extends UnitTest {
             return new Immutable.List()
         })
 
-        parser.spyOn('_extractBody', () => {
+        parser.spyOn('_extractBodies', () => {
             return [ null, null ]
         })
 
@@ -577,11 +605,12 @@ export class TestRAMLParser extends UnitTest {
         this.assertTrue(request instanceof Request)
     }
 
+    @targets('_createRequest')
     testCreateRequestCombinesDataFromSubExtractors() {
         const [ parser, raml ] = this.__init('jukebox-api')
 
         const req = raml.resources[0].methods[0]
-        const url = 'http://jukebox.api.com/songs'
+        const url = '/songs'
         const method = 'get'
 
         parser.spyOn('_extractHeaders', () => {
@@ -591,15 +620,17 @@ export class TestRAMLParser extends UnitTest {
         })
 
         parser.spyOn('_extractQueries', () => {
-            return 12
+            return new ParameterContainer({
+                queries: 12
+            })
         })
 
         parser.spyOn('_extractAuth', () => {
             return new Immutable.List([ 1, 2, 3 ])
         })
 
-        parser.spyOn('_extractBody', () => {
-            return [ 'plain', 'Lorem Ipsum' ]
+        parser.spyOn('_extractBodies', (_, __, container) => {
+            return [ container, 'Lorem Ipsum' ]
         })
 
         parser.spyOn('_extractResponses', () => {
@@ -611,20 +642,181 @@ export class TestRAMLParser extends UnitTest {
             headers: new Immutable.OrderedMap({
                 'Content-Type': 'application/json'
             }),
-            url: url,
+            url: new URL({
+                schemes: [ 'http' ],
+                host: 'jukebox.api.com',
+                path: '/songs'
+            }),
             method: method,
-            name: url,
+            name: 'http://jukebox.api.com' + url,
             description: req.description,
-            queries: 12,
-            bodyType: 'plain',
-            body: 'Lorem Ipsum',
-            auth: new Immutable.List([ 1, 2, 3 ]),
+            parameters: new ParameterContainer({
+                queries: 12
+            }),
+            bodies: 'Lorem Ipsum',
+            auths: new Immutable.List([ 1, 2, 3 ]),
             responses: new Immutable.List([ true, false ])
         })
 
-        this.assertEqual(expected, request)
+        this.assertEqual(
+            JSON.stringify(expected),
+            JSON.stringify(request)
+        )
     }
 
+    @targets('_extractParam')
+    testExtractParamSimpleParam() {
+        const [ parser ] = this.__init('jukebox-api')
+
+        const expected = null
+
+        const result = parser._extractParam()
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractParam')
+    testExtractParamSimpleParamNoExternals() {
+        const [ parser ] = this.__init('jukebox-api')
+
+        const input = {
+            description: 'Skip over a number of elements',
+            type: 'integer',
+            required: false,
+            example: 20,
+            default: 0,
+            displayName: 'Offset'
+        }
+        const expected = new Parameter({
+            key: 'offset',
+            description: 'Skip over a number of elements',
+            type: 'integer',
+            example: 20,
+            value: 0,
+            name: 'Offset'
+        })
+
+        const result = parser._extractParam('offset', input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractParam')
+    testExtractParamParamWithInternalsNoExternals() {
+        const [ parser ] = this.__init('jukebox-api')
+
+        const input = {
+            description: 'Skip over a number of elements',
+            type: 'integer',
+            example: 20,
+            default: 0,
+            maximum: 50,
+            minimum: 0,
+            displayName: 'Offset'
+        }
+        const expected = new Parameter({
+            key: 'offset',
+            description: 'Skip over a number of elements',
+            type: 'integer',
+            example: 20,
+            value: 0,
+            name: 'Offset',
+            internals: new Immutable.List([
+                new Constraint.Maximum(50),
+                new Constraint.Minimum(0)
+            ])
+        })
+
+        const result = parser._extractParam('offset', input)
+
+        this.assertEqual(
+            JSON.stringify(expected),
+            JSON.stringify(result)
+        )
+    }
+
+    @targets('_extractParam')
+    testExtractParamParamWithStringInternalsNoExternals() {
+        const [ parser ] = this.__init('jukebox-api')
+
+        const input = {
+            description: 'A nice file path',
+            type: 'string',
+            example: '~/path/to/file.ext',
+            displayName: 'File path',
+            enum: [
+                '~/some/path/to/dest.ext',
+                '~/some/other/path/to/dest.ext'
+            ],
+            pattern: '/~\/([^/]\/)*([^.]*)\.(.+)/',
+            minLength: 12,
+            maxLength: 42
+        }
+        const expected = new Parameter({
+            key: 'path',
+            description: 'A nice file path',
+            type: 'string',
+            example: '~/path/to/file.ext',
+            name: 'File path',
+            internals: new Immutable.List([
+                new Constraint.Enum([
+                    '~/some/path/to/dest.ext',
+                    '~/some/other/path/to/dest.ext'
+                ]),
+                new Constraint.Pattern('/~\/([^/]\/)*([^.]*)\.(.+)/'),
+                new Constraint.MinimumLength(12),
+                new Constraint.MaximumLength(42)
+            ])
+        })
+
+        const result = parser._extractParam('path', input)
+
+        this.assertEqual(
+            JSON.stringify(expected),
+            JSON.stringify(result)
+        )
+    }
+
+    @targets('_extractParam')
+    testExtractParamSimpleParamWithExternals() {
+        const [ parser ] = this.__init('jukebox-api')
+
+        const input = {
+            description: 'Skip over a number of elements',
+            type: 'integer',
+            required: false,
+            example: 20,
+            default: 0,
+            displayName: 'Offset'
+        }
+
+        const externals = new Immutable.List([
+            new Parameter({
+                key: 'Content-Type',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'application/json'
+                    ])
+                ])
+            })
+        ])
+
+        const expected = new Parameter({
+            key: 'offset',
+            description: 'Skip over a number of elements',
+            type: 'integer',
+            example: 20,
+            value: 0,
+            name: 'Offset',
+            externals: externals
+        })
+
+        const result = parser._extractParam('offset', input, externals)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractHeaders')
     testExtractHeaders() {
         const [ parser, raml ] = this.__init('jukebox-api')
         const req = {
@@ -641,30 +833,85 @@ export class TestRAMLParser extends UnitTest {
                 }
             }
         }
+        const container = new ParameterContainer()
 
-        const expected = new Immutable.OrderedMap({
-            'Content-MD5': new KeyValue({
-                key: 'Content-MD5',
-                value: null,
-                valueType: 'string',
-                description: 'Content-MD5 -- The SHA1 hash of the file.'
-            }),
-            'Content-Type': new KeyValue({
-                key: 'Content-Type',
-                value: 'application/json',
-                valueType: 'string',
-                description: 'Content-Type'
-            })
+        const expected = new ParameterContainer({
+            headers: new Immutable.List([
+                new Parameter({
+                    key: 'Content-MD5',
+                    type: 'string',
+                    name: 'Content-MD5',
+                    description: 'The SHA1 hash of the file.'
+                }),
+                new Parameter({
+                    key: 'Content-Type',
+                    value: 'application/json',
+                    type: 'string',
+                    name: 'Content-Type'
+                })
+            ])
         })
 
-        const result = parser._extractHeaders(raml, req)
+        const result = parser._extractHeaders(raml, req, container)
 
         this.assertEqual(expected, result)
     }
 
-    testExtractQueries() {
+    @targets('_extractHeaders')
+    testExtractHeadersCallsExtractParam() {
         const [ parser, raml ] = this.__init('jukebox-api')
+        const req = {
+            headers: {
+                'Content-MD5': {
+                    description: 'The SHA1 hash of the file.',
+                    type: 'string',
+                    displayName: 'Content-MD5'
+                },
+                'Content-Type': {
+                    type: 'string',
+                    displayName: 'Content-Type',
+                    default: 'application/json'
+                }
+            }
+        }
 
+        const container = new ParameterContainer()
+
+        parser.spyOn('_extractParam', () => {
+            return 12
+        })
+
+        parser._extractHeaders(raml, req, container)
+
+        this.assertEqual(parser.spy._extractParam.count, 2)
+        this.assertEqual(
+            parser.spy._extractParam.calls[0],
+            [
+                'Content-MD5',
+                {
+                    description: 'The SHA1 hash of the file.',
+                    type: 'string',
+                    displayName: 'Content-MD5'
+                }
+            ]
+        )
+
+        this.assertEqual(
+            parser.spy._extractParam.calls[1],
+            [
+                'Content-Type',
+                {
+                    type: 'string',
+                    displayName: 'Content-Type',
+                    default: 'application/json'
+                }
+            ]
+        )
+    }
+
+    @targets('_extractQueries')
+    testExtractQueriesCallsExtractParam() {
+        const [ parser, raml ] = this.__init('jukebox-api')
         const req = {
             queryParameters: {
                 fields: {
@@ -688,32 +935,63 @@ export class TestRAMLParser extends UnitTest {
             }
         }
 
-        const expected = new Immutable.List([
-            new KeyValue({
-                key: 'fields',
-                value: null,
-                valueType: 'string',
-                description: 'fields -- Attribute(s) to include in the response'
-            }),
-            new KeyValue({
-                key: 'limit',
-                value: 100,
-                valueType: 'integer',
-                description: 'limit -- The number of items to return'
-            }),
-            new KeyValue({
-                key: 'offset',
-                value: 0,
-                valueType: 'integer',
-                description: 'offset -- The item at which to begin the response'
-            })
-        ])
+        const container = new ParameterContainer()
 
-        const result = parser._extractQueries(raml, req)
+        parser.spyOn('_extractParam', () => {
+            return 12
+        })
 
-        this.assertEqual(expected, result)
+        const result = parser._extractQueries(raml, req, container)
+
+        this.assertEqual(parser.spy._extractParam.count, 3)
+        this.assertEqual(
+            parser.spy._extractParam.calls[0],
+            [
+                'fields',
+                {
+                    description: 'Attribute(s) to include in the response',
+                    type: 'string',
+                    displayName: 'fields'
+                }
+            ]
+        )
+
+        this.assertEqual(
+            parser.spy._extractParam.calls[1],
+            [
+                'limit',
+                {
+                    description: 'The number of items to return',
+                    type: 'integer',
+                    default: 100,
+                    maximum: 1000,
+                    displayName: 'limit'
+                }
+            ]
+        )
+
+        this.assertEqual(
+            parser.spy._extractParam.calls[2],
+            [
+                'offset',
+                {
+                    description: 'The item at which to begin the response',
+                    type: 'integer',
+                    default: 0,
+                    displayName: 'offset'
+                }
+            ]
+        )
+
+        this.assertEqual(
+            new ParameterContainer({
+                queries: new Immutable.List([ 12, 12, 12 ])
+            }),
+            result
+        )
     }
 
+    @targets('_extractAuth')
     testExtractAuth() {
         const [ parser, raml ] = this.__init('large-raml')
 
@@ -784,6 +1062,7 @@ export class TestRAMLParser extends UnitTest {
         )
     }
 
+    @targets('_extractAuth')
     testExtractAuthWithAllAuthsPossible() {
         const [ parser, raml ] = this.__init('resource-example')
 
@@ -837,6 +1116,7 @@ export class TestRAMLParser extends UnitTest {
         )
     }
 
+    @targets('_extractAuth')
     testExtractAuthWithMissingSchemes() {
         const [ parser, raml ] = this.__init('large-raml')
 
@@ -890,6 +1170,7 @@ export class TestRAMLParser extends UnitTest {
         )
     }
 
+    @targets('_extractOAuth2Auth')
     testExtractOAuth2Auth() {
         const [ parser, raml ] = this.__init('large-raml')
 
@@ -944,6 +1225,7 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_extractOAuth1Auth')
     testExtractOAuth1Auth() {
         const [ parser, raml ] = this.__init('large-raml')
 
@@ -967,6 +1249,7 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_extractBasicAuth')
     testExtractBasicAuth() {
         const [ parser, raml ] = this.__init('large-raml')
 
@@ -976,6 +1259,7 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_extractDigestAuth')
     testExtractDigestAuth() {
         const [ parser, raml ] = this.__init('large-raml')
 
@@ -985,7 +1269,8 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
-    testExtractBodyWithSchema() {
+    @targets('_extractBodies')
+    testExtractBodiesWithSchema() {
         const [ parser, raml ] = this.__init('large-raml')
 
         const req = {
@@ -1006,19 +1291,59 @@ export class TestRAMLParser extends UnitTest {
             }
         }
 
-        const expected = [
-            'schema',
-            new Schema({
-                raw: req.body['application/json'].schema
+        const container = new ParameterContainer()
+        const bodies = new Immutable.List()
+
+        const expectedContainer = new ParameterContainer({
+            body: new Immutable.List([
+                new Parameter({
+                    key: 'body',
+                    value: new Schema({
+                        raw: req.body['application/json'].schema
+                    }),
+                    type: 'schema',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ])
+                        })
+                    ])
+                })
+            ])
+        })
+
+        const expectedBodies = new Immutable.List([
+            new Body({
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: 'application/json'
+                    })
+                ])
             })
-        ]
+        ])
 
-        const result = parser._extractBody(raml, req)
+        const [ resContainer, resBodies ] = parser._extractBodies(
+            raml, req, container, bodies
+        )
 
-        this.assertEqual(expected, result)
+        this.assertEqual(
+            JSON.stringify(expectedContainer),
+            JSON.stringify(resContainer)
+        )
+
+        this.assertEqual(
+            JSON.stringify(expectedBodies),
+            JSON.stringify(resBodies)
+        )
     }
 
-    testExtractBodyWithMultipart() {
+    @targets('_extractBodies')
+    testExtractBodiesWithMultipart() {
         const [ parser, raml ] = this.__init('jukebox-api')
 
         const req = {
@@ -1037,24 +1362,67 @@ export class TestRAMLParser extends UnitTest {
             }
         }
 
-        const expected = [
-            'formData',
-            new Immutable.List([
-                new KeyValue({
+        const container = new ParameterContainer()
+        const bodies = new Immutable.List()
+
+        const expectedContainer = new ParameterContainer({
+            body: new Immutable.List([
+                new Parameter({
                     key: 'file',
-                    value: null,
-                    valueType: 'file',
-                    description: 'The file to be uploaded'
+                    description: 'The file to be uploaded',
+                    type: 'file',
+                    name: 'file',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             ])
-        ]
+        })
 
-        const result = parser._extractBody(raml, req)
+        const expectedBodies = new Immutable.List([
+            new Body({
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: 'binary/octet-stream'
+                    })
+                ])
+            }),
+            new Body({
+                type: 'formData',
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: 'multipart/form-data'
+                    })
+                ])
+            })
+        ])
 
-        this.assertEqual(expected, result)
+        const [ resContainer, resBodies ] = parser._extractBodies(
+            raml, req, container, bodies
+        )
+
+        this.assertEqual(
+            JSON.stringify(expectedContainer),
+            JSON.stringify(resContainer)
+        )
+
+        this.assertEqual(
+            JSON.stringify(expectedBodies),
+            JSON.stringify(resBodies)
+        )
     }
 
-    testExtractBodyWithWeirdKey() {
+    @targets('_extractBodies')
+    testExtractBodiesWithWeirdKey() {
         const [ parser, raml ] = this.__init('jukebox-api')
 
         const req = {
@@ -1068,16 +1436,63 @@ export class TestRAMLParser extends UnitTest {
                             displayName: 'file'
                         }
                     }
+                },
+                'multipart/form-data': {
+                    schema: '{\n\t\"$schema\": ' +
+                    '\"http://json-schema.org/draft-03/schema\",' +
+                    '\n\t\"type\": \"object\" ,\n\t\"properties\": ' +
+                    '{\n\t\t\"name\": {\n\t\t\t\"description\": ' +
+                    '\"The new name for this item.\",\n\t\t\t\"type\": ' +
+                    '\"string\"\n\t\t},\n\t\t\"parent\": ' +
+                    '{\n\t\t\t\"description\": \"The new parent folder ' +
+                    'for this item.\",\n\t\t\t\"type\": ' +
+                    '\"object\"\n\t\t},\n\t\t\"id\": ' +
+                    '{\n\t\t\t\"description\": \"The id of the new parent ' +
+                    'folder.\",\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}\n'
                 }
             }
         }
 
-        const expected = [ null, null ]
-        const result = parser._extractBody(raml, req)
+        const container = new ParameterContainer()
+        const bodies = new Immutable.List()
 
-        this.assertEqual(expected, result)
+        const expectedContainer = new ParameterContainer()
+        const expectedBodies = new Immutable.List([
+            new Body({
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: 'someweird/key'
+                    })
+                ])
+            }),
+            new Body({
+                type: 'formData',
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: 'multipart/form-data'
+                    })
+                ])
+            })
+        ])
+
+        const [ resContainer, resBodies ] = parser._extractBodies(
+            raml, req, container, bodies
+        )
+
+        this.assertEqual(
+            JSON.stringify(expectedContainer),
+            JSON.stringify(resContainer)
+        )
+
+        this.assertEqual(
+            JSON.stringify(expectedBodies),
+            JSON.stringify(resBodies)
+        )
     }
 
+    @targets('_extractResponses')
     testExtractResponses() {
         const [ parser, raml ] = this.__init('jukebox-api')
 
@@ -1104,18 +1519,42 @@ export class TestRAMLParser extends UnitTest {
 
         const expected = new Immutable.List([
             new Response({
-                code: '200'
+                code: '200',
+                bodies: new Immutable.List([
+                    new Body({
+                        constraints: new Immutable.List([
+                            new Parameter({
+                                key: 'Content-Type',
+                                value: 'application/json'
+                            })
+                        ])
+                    })
+                ])
             }),
             new Response({
-                code: '404'
+                code: '404',
+                bodies: new Immutable.List([
+                    new Body({
+                        constraints: new Immutable.List([
+                            new Parameter({
+                                key: 'Content-Type',
+                                value: 'application/json'
+                            })
+                        ])
+                    })
+                ])
             })
         ])
         const result = parser._extractResponses(raml, req)
 
-        this.assertEqual(expected, result)
+        this.assertEqual(
+            JSON.stringify(expected, null, '  '),
+            JSON.stringify(result, null, '  ')
+        )
     }
 
-    testExtractResponses() {
+    @targets('_extractResponses')
+    testExtractResponsesWithComplexResponses() {
         const [ parser, raml ] = this.__init('jukebox-api')
 
         /* eslint-disable max-len */
@@ -1161,11 +1600,39 @@ export class TestRAMLParser extends UnitTest {
                     'The request has succeeded. The information ' +
                     'returned with the response\nis dependent on the ' +
                     'method used in the request.\n',
-                schema: new Schema({
-                    /* eslint-disable max-len */
-                    raw: '{\n\t\"$schema\": \"http://json-schema.org/draft-03/schema\",\n\t\"type\": \"object\" ,\n\t\"properties\": {\n\t\t\"type\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"id\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"item\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"sequence_id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"etag\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"sha1\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t},\n\t\t\"assigned_to\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"login\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t},\n\t\t\"message\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"completed_at\": {\n\t\t\t\"type\": \"timestamp\"\n\t\t},\n\t\t\"assigned_at\": {\n\t\t\t\"type\": \"timestamp\"\n\t\t},\n\t\t\"reminded_at\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"resolution_state\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"assigned_by\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"login\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t}\n\t}\n}\n'
-                    /* eslint-enable max-len */
-                })
+                parameters: new ParameterContainer({
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'body',
+                            value: new Schema({
+                                /* eslint-disable max-len */
+                                raw: '{\n\t\"$schema\": \"http://json-schema.org/draft-03/schema\",\n\t\"type\": \"object\" ,\n\t\"properties\": {\n\t\t\"type\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"id\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"item\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"sequence_id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"etag\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"sha1\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t},\n\t\t\"assigned_to\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"login\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t},\n\t\t\"message\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"completed_at\": {\n\t\t\t\"type\": \"timestamp\"\n\t\t},\n\t\t\"assigned_at\": {\n\t\t\t\"type\": \"timestamp\"\n\t\t},\n\t\t\"reminded_at\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"resolution_state\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"assigned_by\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"login\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t}\n\t}\n}\n'
+                                /* eslint-enable max-len */
+                            }),
+                            type: 'schema',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ])
+                }),
+                bodies: new Immutable.List([
+                    new Body({
+                        constraints: new Immutable.List([
+                            new Parameter({
+                                key: 'Content-Type',
+                                value: 'application/json'
+                            })
+                        ])
+                    })
+                ])
             }),
             new Response({
                 code: '400',
@@ -1194,7 +1661,30 @@ export class TestRAMLParser extends UnitTest {
         ])
         const result = parser._extractResponses(raml, req)
 
-        this.assertEqual(expected, result)
+        this.assertEqual(
+            JSON.stringify(expected),
+            JSON.stringify(result)
+        )
+    }
+
+    @targets('_extractURL')
+    testExtractURL() {
+        const [ parser, raml ] = this.__init('jukebox-api')
+        const req = raml.resources[0].methods[0]
+        const path = '/songs'
+
+        const expected = new URL({
+            schemes: [ 'http' ],
+            host: 'jukebox.api.com',
+            path: '/songs'
+        })
+
+        const result = parser._extractURL(raml, req, path)
+
+        this.assertEqual(
+            JSON.stringify(expected),
+            JSON.stringify(result)
+        )
     }
 
     __init(file) {

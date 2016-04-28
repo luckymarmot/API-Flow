@@ -1,14 +1,21 @@
 import Immutable from 'immutable'
 import RAML from 'raml-parser'
 
-import RequestContext, {
-    Group,
+import Context, {
+    Body,
     Request,
-    KeyValue,
-    Schema,
-    Response
-} from '../../models/RequestContext'
+    Response,
+    Parameter,
+    ParameterContainer
+} from '../../models/Core'
 
+import {
+    Group,
+    URL,
+    Schema
+} from '../../models/Utils'
+
+import Constraint from '../../models/Constraint'
 import Auth from '../../models/Auth'
 
 import ShimmingFileReader from './FileReader'
@@ -16,7 +23,7 @@ import ShimmingFileReader from './FileReader'
 export default class RAMLParser {
     constructor(items) {
         this.reader = new ShimmingFileReader(items)
-        this.context = new RequestContext()
+        this.context = new Context()
     }
 
     // @tested
@@ -36,13 +43,12 @@ export default class RAMLParser {
 
     // @tested
     _createContext(raml) {
-        let context = new RequestContext()
+        let context = new Context()
 
         let group = this._createGroupTree(
             raml,
             raml,
-            raml.title || null,
-            raml.baseUri
+            raml.title || null
         )
 
         if (group) {
@@ -52,7 +58,7 @@ export default class RAMLParser {
     }
 
     // @tested
-    _createGroupTree(baseTree, tree, baseName, url) {
+    _createGroupTree(baseTree, tree, baseName, url = '') {
         let _url = url
         // ignore the first group name
         _url += tree.relativeUri || ''
@@ -92,91 +98,222 @@ export default class RAMLParser {
 
     // @tested
     _createRequest(raml, req, url, method) {
-        let headers = this._extractHeaders(raml, req)
-        let queries = this._extractQueries(raml, req)
-        let auth = this._extractAuth(raml, req)
-        let [ bodyType, body ] = this._extractBody(raml, req)
+        let _url = this._extractURL(raml, req, url)
+        let container = new ParameterContainer()
+
+        container = this._extractHeaders(raml, req, container)
+        container = this._extractQueries(raml, req, container)
+
+        let bodies
+        [ container, bodies ] = this._extractBodies(raml, req, container)
+
+        let auths = this._extractAuth(raml, req)
         let responses = this._extractResponses(raml, req)
 
         let request = new Request({
-            url: url,
+            url: _url,
             method: method,
-            name: url,
+            name: _url.getUrl(),
             description: req.description || null,
-            headers: headers,
-            queries: queries,
-            bodyType: bodyType,
-            body: body,
-            auth: auth,
+            parameters: container,
+            bodies: bodies,
+            auths: auths,
             responses: responses
         })
         return request
     }
 
-    // @tested
-    _extractHeaders(raml, req) {
-        let headers = {}
+    _extractURL(raml, req, path) {
+        let baseUri = raml.baseUri
+        let match = (baseUri || '').match(/(.*):\/\/(.*)/)
+        let domain
+        let schemes = []
+        if (!match) {
+            domain = baseUri
+        }
+        else {
+            schemes = [ match[1].toLowerCase() ]
+            domain = match[2]
+        }
 
-        for (let header in req.headers || {}) {
-            if (req.headers.hasOwnProperty(header)) {
-                let description = req.headers[header].displayName || ''
-                if (description && req.headers[header].description) {
-                    description += ' -- '
-                }
-                description += req.headers[header].description || ''
+        if (req.protocols && req.protocols !== []) {
+            schemes = req.protocols.map(protocol => {
+                return protocol.toLowerCase()
+            })
+        }
+        let _url = new URL({
+            schemes: schemes,
+            host: domain,
+            path: path
+        })
+        return _url
+    }
 
-                let value
-                if (typeof req.headers[header].default === 'undefined') {
-                    value = null
-                }
-                else {
-                    value = req.headers[header].default
-                }
+    _extractParam(name, param, externals) {
+        if (typeof param === 'undefined') {
+            return null
+        }
 
-                headers[header] = new KeyValue({
-                    key: header,
-                    value: value,
-                    valueType: req.headers[header].type,
-                    description: description
+        let type = param.type
+        let value
 
-                })
+        let _name = null
+        if (typeof name !== 'undefined') {
+            _name = name
+        }
+
+        let description = param.description || null
+
+        if (param.schema) {
+            return new Parameter({
+                key: _name,
+                name: param.displayName || null,
+                value: new Schema({
+                    raw: param.schema
+                }),
+                type: 'schema',
+                description: description,
+                example: param.example || null,
+                externals: externals || new Immutable.List()
+            })
+        }
+
+        if (param && typeof param[Symbol.iterator] === 'function') {
+            value = new Immutable.List()
+            type = 'multi'
+            for (let subparam of param) {
+                value = value.push(this._extractParam(name, subparam))
+            }
+        }
+        else if (typeof param.default !== 'undefined') {
+            value = param.default
+        }
+        else {
+            value = null
+        }
+
+        let internalsMap = {
+            maximum: Constraint.Maximum,
+            minimum: Constraint.Minimum,
+            maxLength: Constraint.MaximumLength,
+            minLength: Constraint.MinimumLength,
+            pattern: Constraint.Pattern,
+            enum: Constraint.Enum
+        }
+
+        let internals = new Immutable.List()
+        for (let key of Object.keys(param)) {
+            if (internalsMap[key]) {
+                let constraint = new internalsMap[key](param[key])
+                internals = internals.push(constraint)
             }
         }
 
-        headers = new Immutable.OrderedMap(headers)
-        return headers
+        return new Parameter({
+            key: _name,
+            name: param.displayName || null,
+            value: value,
+            type: type,
+            description: description,
+            example: param.example || null,
+            internals: internals,
+            externals: externals || new Immutable.List()
+        })
     }
 
     // @tested
-    _extractQueries(raml, req) {
-        let queries = []
-        for (let param in req.queryParameters || {}) {
-            if (req.queryParameters.hasOwnProperty(param)) {
-                let description = req.queryParameters[param].displayName || ''
-                if (description && req.queryParameters[param].description) {
-                    description += ' -- '
-                }
-                description += req.queryParameters[param].description || ''
+    _extractHeaders(raml, req, container) {
+        let headers = container.get('headers')
 
-                let value
-                if (typeof req.queryParameters[param].default === 'undefined') {
-                    value = null
-                }
-                else {
-                    value = req.queryParameters[param].default
-                }
-
-                queries.push(new KeyValue({
-                    key: param,
-                    value: value,
-                    valueType: req.queryParameters[param].type,
-                    description: description
-                }))
+        for (let header in req.headers || {}) {
+            if (req.headers.hasOwnProperty(header)) {
+                let param = req.headers[header]
+                headers = headers.push(this._extractParam(header, param))
             }
         }
 
-        queries = new Immutable.List(queries)
-        return queries
+        return container.set('headers', headers)
+    }
+
+    // @tested
+    _extractQueries(raml, req, container) {
+        let queries = container.get('queries')
+        for (let paramName in req.queryParameters || {}) {
+            if (req.queryParameters.hasOwnProperty(paramName)) {
+                let param = req.queryParameters[paramName]
+                queries = queries.push(this._extractParam(paramName, param))
+            }
+        }
+
+        return container.set('queries', queries)
+    }
+
+    _extractBodies(raml, req, container, bodies) {
+        let _body = req.body || {}
+        let _bodies = bodies
+        let _container = container
+
+        let bodyParams = container.get('body')
+
+        if (_body.schema) {
+            bodyParams = bodyParams.push(this._extractParam('body', _body))
+            _bodies = _bodies.push(new Body())
+            _container = _container.set('body', bodyParams)
+            return [ _container, _bodies ]
+        }
+
+        const bodyTypeMap = {
+            'application/x-www-form-urlencoded': 'urlEncoded',
+            'multipart/form-data': 'formData'
+        }
+
+        for (let contentType of Object.keys(_body)) {
+            let externals = new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ contentType ])
+                    ])
+                })
+            ])
+
+            let bodyType = bodyTypeMap[contentType] || null
+
+            let body = new Body({
+                type: bodyType,
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: contentType
+                    })
+                ])
+            })
+
+            _bodies = _bodies.push(body)
+
+            let formParameters = (_body[contentType] || {}).formParameters
+            if (bodyType && formParameters) {
+                for (let param of Object.keys(formParameters)) {
+                    bodyParams = bodyParams.push(
+                        this._extractParam(
+                            param,
+                            formParameters[param],
+                            externals
+                        )
+                    )
+                }
+            }
+
+            if (!bodyType && (_body[contentType] || {}).schema) {
+                bodyParams = bodyParams.push(
+                    this._extractParam('body', _body[contentType], externals)
+                )
+            }
+        }
+
+        _container = _container.set('body', bodyParams)
+
+        return [ _container, _bodies ]
     }
 
     // @tested
@@ -247,7 +384,7 @@ export default class RAMLParser {
             scopes:
                 new Immutable.List(
                     _params.scopes ||
-                    security.settings.scopes || null
+                    security.settings.scopes || []
                 )
         })
 
@@ -288,101 +425,25 @@ export default class RAMLParser {
     }
 
     // @tested 70%
-    _extractBody(raml, req) {
-        let bodyType = null
-        let body = null
-
-        if (!req.body) {
-            return [ bodyType, body ]
-        }
-
-        let _body = req.body
-
-        let schema = _body.schema ||
-            (_body['application/json'] || {}).schema ||
-            (_body['application/xml'] || {}).schema ||
-            null
-        if (schema) {
-            bodyType = 'schema'
-            body = new Schema({
-                raw: schema
-            })
-            return [ bodyType, body ]
-        }
-
-        const bodyTypeMap = {
-            'application/x-www-form-urlencoded': 'urlEncoded',
-            'multipart/form-data': 'formData'
-        }
-
-        let relevantBodyKeys = Object.keys(_body).filter(k => {
-            return Object.keys(bodyTypeMap).indexOf(k) >= 0
-        })
-
-        let format = relevantBodyKeys[0]
-
-        if (format) {
-            bodyType = bodyTypeMap[format]
-            let params = _body[format].formParameters
-            body = new Immutable.List()
-            if (params) {
-                for (let param in params) {
-                    if (params.hasOwnProperty(param)) {
-                        // TODO
-                        body = body.push(new KeyValue({
-                            key: param,
-                            value: params[param].default || null,
-                            valueType: params[param].type || null,
-                            description: params[param].description || null
-                        }))
-                    }
-                }
-            }
-        }
-
-        return [ bodyType, body ]
-    }
-
-    // @tested 70%
     _extractResponses(raml, req) {
         let responses = new Immutable.List()
 
-        for (let code in req.responses) {
-            if (req.responses.hasOwnProperty(code)) {
-                let response = req.responses[code]
-                let schema = response.schema || null
-                if (!schema && response.body) {
-                    schema = (response.body['application/json'] || {}).schema ||
-                    (response.body['application/xml'] || {}).schema ||
-                    null
-                }
-                if (schema) {
-                    schema = new Schema({
-                        raw: schema
-                    })
-                }
-                let headers = {}
+        for (let code of Object.keys(req.responses)) {
+            let response = req.responses[code]
+            let description = response.description || null
 
-                for (let header in response.headers || {}) {
-                    if (response.headers.hasOwnProperty(header)) {
-                        headers[header] = new KeyValue({
-                            key: header,
-                            value: response.headers[header].default || null,
-                            valueType: response.headers[header].type || null,
-                            description:
-                                response.headers[header].description || null
-                        })
-                    }
-                }
-                responses = responses.push(
-                    new Response({
-                        code: code,
-                        description: req.responses[code].description || null,
-                        schema: schema,
-                        headers: new Immutable.OrderedMap(headers)
-                    })
-                )
-            }
+            let [ _container, _bodies ] = this._extractBodies(
+                raml, response, new ParameterContainer(), new Immutable.List()
+            )
+
+            let _response = new Response({
+                code: code,
+                description: description,
+                parameters: _container,
+                bodies: _bodies
+            })
+
+            responses = responses.push(_response)
         }
 
         return responses
