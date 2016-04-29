@@ -189,6 +189,10 @@ export default class Context extends Immutable.Record({
     environments: null,
     info: new Info()
 }) {
+    getRequests() {
+        return this.get('group').getRequests()
+    }
+
     mergeEnvironments(environments) {
         let localEnvs = this.get('environments')
 

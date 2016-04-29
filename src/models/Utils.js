@@ -1,5 +1,7 @@
 import Immutable from 'immutable'
 
+import { Request } from './Core'
+
 export class URL extends Immutable.Record({
     schemes: null,
     host: null,
@@ -331,6 +333,23 @@ export class Group extends Immutable.Record({
     name: null,
     children: Immutable.OrderedMap()
 }) {
+    getRequests() {
+        let children = this.get('children')
+
+        let reqs = new Immutable.List()
+
+        children.forEach(child => {
+            if (child instanceof Request) {
+                reqs = reqs.push(child)
+            }
+            else {
+                reqs = reqs.concat(child.getRequests())
+            }
+        })
+
+        return reqs
+    }
+
     mergeWithGroup(group) {
         let child = this.getIn([ 'children', group.get('name') ])
         if (child) {
