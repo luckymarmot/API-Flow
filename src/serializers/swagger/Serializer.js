@@ -123,6 +123,10 @@ export default class SwaggerSerializer extends BaseSerializer {
             _content.description = request.get('description')
         }
 
+        if (request.get('tags').size > 0) {
+            _content.tags = request.get('tags').toJS()
+        }
+
         if (request.get('id')) {
             _content.operationId = request.get('id')
         }
@@ -242,9 +246,8 @@ export default class SwaggerSerializer extends BaseSerializer {
             let constraint = {
                 name: external.get('key')
             }
-            external.get('internals').forEach(_constraint => {
-                Object.assign(constraint, _constraint.toJS())
-            })
+            let schema = external.getJSONSchema()
+            Object.assign(constraint, schema)
             param['x-use-with'].push(constraint)
         })
 

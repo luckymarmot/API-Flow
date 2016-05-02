@@ -162,6 +162,28 @@
       }
     }
   ],
+  "traits": [
+    {
+      "secured": {
+        "queryParameters": {
+          "<<tokenName>>": {
+            "description": "A valid <<tokenName>> is required",
+            "displayName": "<<tokenName>>",
+            "type": "string"
+          }
+        }
+      },
+      "paged": {
+        "queryParameters": {
+          "numPages": {
+            "description": "The number of pages to return, not to exceed <<maxPages>>",
+            "displayName": "numPages",
+            "type": "string"
+          }
+        }
+      }
+    }
+  ],
   "protocols": [
     "HTTPS"
   ],
@@ -207,6 +229,18 @@
           "method": "get"
         },
         {
+          "queryParameters": {
+            "numPages": {
+              "description": "The number of pages to return, not to exceed 10",
+              "displayName": "numPages",
+              "type": "string"
+            },
+            "access_token": {
+              "description": "A valid access_token is required",
+              "displayName": "access_token",
+              "type": "string"
+            }
+          },
           "headers": {
             "Content-MD5": {
               "description": "The SHA1 hash of the file.",
@@ -236,6 +270,18 @@
               "description": "Your application is sending too many simultaneous requests."
             }
           },
+          "is": [
+            {
+              "secured": {
+                "tokenName": "access_token"
+              }
+            },
+            {
+              "paged": {
+                "maxPages": 10
+              }
+            }
+          ],
           "description": "Used to create a new empty folder. The new folder will be created\ninside of the specified parent folder\n",
           "body": {
             "application/json": {

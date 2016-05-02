@@ -117,6 +117,7 @@ export default class SwaggerParser {
         const bodies = this._extractBodies(swaggerCollection, content)
 
         let request = new Request()
+        request = this._setTagsAndId(request, content)
         request = this._setSummary(request, path, content)
         request = this._setDescription(request, content)
         request = this._setBasicInfo(
@@ -128,6 +129,20 @@ export default class SwaggerParser {
             responses
         )
         request = this._setAuth(request, swaggerCollection, content)
+
+        return request
+    }
+
+    _setTagsAndId(_request, content) {
+        let request = _request
+        if (content.tags) {
+            let tags = new Immutable.List(content.tags)
+            request = request.set('tags', tags)
+        }
+
+        if (content.operationId) {
+            request = request.set('id', content.operationId)
+        }
 
         return request
     }
@@ -206,8 +221,19 @@ export default class SwaggerParser {
         return _request.set('auths', auths)
     }
 
-    _setBasicAuth() {
-        return new Auth.Basic()
+    _setBasicAuth(definition) {
+        let username = null
+        let password = null
+
+        if (definition) {
+            username = definition['x-username'] || null
+            password = definition['x-password'] || null
+        }
+
+        return new Auth.Basic({
+            username: username,
+            password: password
+        })
     }
 
     _setApiKeyAuth(definition) {
@@ -355,44 +381,6 @@ export default class SwaggerParser {
         return url
     }
 
-    _extractResponseExternals(collection, content) {
-        let produces = content.produces || collection.produces
-
-        if (!produces) {
-            return new Immutable.List()
-        }
-
-        return new Immutable.List([
-            new Parameter({
-                key: 'Content-Type',
-                internals: new Immutable.List([
-                    new Constraint.Enum(produces)
-                ])
-            })
-        ])
-    }
-
-    _extractResponseBodies(collection, content) {
-        let produces = content.produces || collection.produces
-
-        if (!produces) {
-            return new Immutable.List()
-        }
-
-        let bodies = produces.map(mime => {
-            return new Body({
-                constraints: new Immutable.List([
-                    new Parameter({
-                        key: 'Content-Type',
-                        value: mime
-                    })
-                ])
-            })
-        })
-
-        return new Immutable.List(bodies)
-    }
-
     _extractResponses(collection, content) {
         let _collection = collection || {}
         let _content = content || {}
@@ -401,8 +389,8 @@ export default class SwaggerParser {
 
         let responses = _content.responses
 
-        const externals = this._extractResponseExternals(
-            _collection, _content
+        const externals = this._extractExternals(
+            _collection, _content, false
         )
 
         const bodies = this._extractResponseBodies(
@@ -452,8 +440,14 @@ export default class SwaggerParser {
         return result
     }
 
-    _extractExternals(collection, content) {
-        let consumes = content.consumes || collection.consumes
+    _extractExternals(collection, content, consume = true) {
+        let consumes
+        if (consume) {
+            consumes = content.consumes || collection.consumes
+        }
+        else {
+            consumes = content.produces || collection.produces
+        }
 
         if (!consumes) {
             return new Immutable.List()
@@ -496,6 +490,7 @@ export default class SwaggerParser {
         let headers = []
         let queries = []
         let body = []
+        let path = []
         let externals = this._extractExternals(_collection, _content)
 
         for (let contentType of contentTypes) {
@@ -516,7 +511,8 @@ export default class SwaggerParser {
         const mapping = {
             query: queries,
             header: headers,
-            formData: body
+            formData: body,
+            path: path
         }
 
         if (
@@ -559,6 +555,8 @@ export default class SwaggerParser {
 
     _extractParam(param, externals) {
         let value = param.default
+        let format = param.format || param['x-format'] || null
+        let _externals = externals
 
         if (typeof value === 'undefined') {
             value = null
@@ -597,14 +595,27 @@ export default class SwaggerParser {
             }
         }
 
+        if (param.type === 'array') {
+            value = this._extractParam(param.items)
+            format = param.collectionFormat
+        }
+
+        if (param['x-use-with']) {
+            _externals = new Immutable.List()
+            for (let external of param['x-use-with']) {
+                _externals = _externals.push(this._extractParam(external))
+            }
+        }
+
         let _param = new Parameter({
             key: param.name || null,
             value: value,
             type: param.type || null,
-            format: param.format || null,
+            format: format,
             description: param.description || null,
             internals: internals,
-            externals: externals
+            externals: _externals,
+            example: param['x-example'] || null
         })
 
         return _param
@@ -620,11 +631,11 @@ export default class SwaggerParser {
         }
         for (let contentType of contentTypes) {
             let bodyType = null
-            if (
-                typeMapping[contentType]
-            ) {
+
+            if (typeMapping[contentType]) {
                 bodyType = typeMapping[contentType]
             }
+
             let body = new Body({
                 type: bodyType,
                 constraints: new Immutable.List([
@@ -639,6 +650,27 @@ export default class SwaggerParser {
         }
 
         return bodies
+    }
+
+    _extractResponseBodies(collection, content) {
+        let produces = content.produces || collection.produces
+
+        if (!produces) {
+            return new Immutable.List()
+        }
+
+        let bodies = produces.map(mime => {
+            return new Body({
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        value: mime
+                    })
+                ])
+            })
+        })
+
+        return new Immutable.List(bodies)
     }
 
     // @tested

@@ -140,9 +140,19 @@ resourceTypes:
                 server.
           429:
             description: "Your application is sending too many simultaneous requests."
+traits:
+  - secured:
+      queryParameters:
+        <<tokenName>>:
+          description: A valid <<tokenName>> is required
+    paged:
+      queryParameters:
+        numPages:
+          description: The number of pages to return, not to exceed <<maxPages>>
 /folders:
   type: base
   post:
+    is: [ secured: { tokenName: access_token }, paged: { maxPages: 10 } ]
     description: |
       Used to create a new empty folder. The new folder will be created
       inside of the specified parent folder

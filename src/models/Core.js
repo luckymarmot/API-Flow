@@ -14,10 +14,7 @@ export class Parameter extends Immutable.Record({
     internals: Immutable.List(),
     externals: Immutable.List()
 }) {
-    generate(useDefault) {
-        if (useDefault && this.get('value') !== null) {
-            return this.get('value')
-        }
+    getJSONSchema() {
         let constraintSet = this.get('internals').reduce((set, constraint) => {
             let obj = constraint.toJS()
             Object.assign(set, obj)
@@ -25,6 +22,13 @@ export class Parameter extends Immutable.Record({
         }, {
             type: this.get('type')
         })
+
+        if (this.get('type') === 'array') {
+            let items = this.get('value')
+            if (items instanceof Parameter) {
+                constraintSet.items = items.getJSONSchema()
+            }
+        }
 
         let format = this.get('format')
         const fakerFormatMap = {
@@ -52,6 +56,16 @@ export class Parameter extends Immutable.Record({
             let constraint = fakerFormatMap[format]
             Object.assign(constraintSet, constraint)
         }
+
+        return constraintSet
+    }
+
+    generate(useDefault) {
+        if (useDefault && this.get('value') !== null) {
+            return this.get('value')
+        }
+
+        let constraintSet = this.getJSONSchema()
 
         return jsf(constraintSet)
     }
@@ -82,7 +96,8 @@ export class Parameter extends Immutable.Record({
 export class ParameterContainer extends Immutable.Record({
     headers: Immutable.List(),
     queries: Immutable.List(),
-    body: Immutable.List()
+    body: Immutable.List(),
+    path: Immutable.List()
 }) {
     getHeadersSet() {
         let headers = this.get('headers')
@@ -172,7 +187,8 @@ export class Request extends Immutable.Record({
     bodies: Immutable.List(),
     auths: Immutable.List(),
     responses: Immutable.List(),
-    timeout: null
+    timeout: null,
+    tags: Immutable.List()
 }) {
     getUrl(scheme) {
         return this.get('url').getUrl(scheme)

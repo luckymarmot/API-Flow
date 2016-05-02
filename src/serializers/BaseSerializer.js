@@ -12,7 +12,11 @@ export default class BaseSerializer {
         }
     }
 
-    serialize(context) {
+    /*
+        @params:
+            - context: A Context Object as defined in API-Flow's Core models
+    */
+    serialize() {
         const msg =
             'Method serialize must be implemented ' +
             'by extensions of BaseSerializer'

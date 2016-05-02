@@ -646,6 +646,34 @@ export class TestSwaggerParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_setTagsAndId')
+    testSetTagsAndIdyWithTagsAndId() {
+        const parser = new SwaggerParser()
+        const request = new Request()
+        const content = {
+            tags: [ 'dummy', 'tag', 'list' ],
+            operationId: 'ae256'
+        }
+
+        const result = parser._setTagsAndId(request, content)
+
+        this.assertEqual(result.get('tags'), content.tags)
+        this.assertEqual(result.get('id'), content.operationId)
+    }
+
+    @targets('_setTagsAndId')
+    testSetTagsAndIdyWithNoTagsOrId() {
+        const parser = new SwaggerParser()
+        const request = new Request()
+        const content = {
+        }
+
+        const result = parser._setTagsAndId(request, content)
+
+        this.assertEqual(result.get('tags'), [])
+        this.assertEqual(result.get('id'), null)
+    }
+
     @targets('_setSummary')
     testSetSummaryWithASummaryContent() {
         const parser = new SwaggerParser()
@@ -1010,106 +1038,6 @@ export class TestSwaggerParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
-    @targets('_extractResponseExternals')
-    testExtractResponseExternalsOnlyCollection() {
-        const parser = this.__init()
-
-        const collection = {
-            produces: [
-                'app/json',
-                'app/xml'
-            ]
-        }
-        const content = {}
-
-        const expected = new Immutable.List([
-            new Parameter({
-                key: 'Content-Type',
-                internals: new Immutable.List([
-                    new Constraint.Enum([
-                        'app/json',
-                        'app/xml'
-                    ])
-                ])
-            })
-        ])
-
-        const result = parser._extractResponseExternals(collection, content)
-
-        this.assertEqual(
-            JSON.stringify(expected, null, '  '),
-            JSON.stringify(result, null, '  ')
-        )
-    }
-
-    @targets('_extractResponseExternals')
-    testExtractResponseExternalsOnlyContent() {
-        const parser = this.__init()
-
-        const collection = {}
-        const content = {
-            produces: [
-                'app/json',
-                'app/xml'
-            ]
-        }
-
-        const expected = new Immutable.List([
-            new Parameter({
-                key: 'Content-Type',
-                internals: new Immutable.List([
-                    new Constraint.Enum([
-                        'app/json',
-                        'app/xml'
-                    ])
-                ])
-            })
-        ])
-
-        const result = parser._extractResponseExternals(collection, content)
-
-        this.assertEqual(
-            JSON.stringify(expected, null, '  '),
-            JSON.stringify(result, null, '  ')
-        )
-    }
-
-    @targets('_extractResponseExternals')
-    testExtractResponseExternalsWithCollectionAndContent() {
-        const parser = this.__init()
-
-        const collection = {
-            produces: [
-                'app/overriden'
-            ]
-        }
-        const content = {
-            produces: [
-                'app/json',
-                'app/xml'
-            ]
-        }
-
-        const expected = new Immutable.List([
-            new Parameter({
-                key: 'Content-Type',
-                internals: new Immutable.List([
-                    new Constraint.Enum([
-                        'app/json',
-                        'app/xml'
-                    ])
-                ])
-            })
-        ])
-
-        const result = parser._extractResponseExternals(collection, content)
-
-        this.assertEqual(
-            JSON.stringify(expected, null, '  '),
-            JSON.stringify(result, null, '  ')
-        )
-    }
-
     @targets('_extractResponseBodies')
     testExtractResponseBodiesOnlyCollection() {
         const parser = this.__init()
@@ -1256,6 +1184,38 @@ export class TestSwaggerParser extends UnitTest {
         ])
 
         const result = parser._extractExternals(collection, content)
+
+        this.assertEqual(
+            JSON.stringify(expected, null, '  '),
+            JSON.stringify(result, null, '  ')
+        )
+    }
+
+    @targets('_extractExternals')
+    testExtractExternalsForResponses() {
+        const parser = this.__init()
+
+        const collection = {
+            produces: [
+                'app/json',
+                'app/xml'
+            ]
+        }
+        const content = {}
+
+        const expected = new Immutable.List([
+            new Parameter({
+                key: 'Content-Type',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'app/json',
+                        'app/xml'
+                    ])
+                ])
+            })
+        ])
+
+        const result = parser._extractExternals(collection, content, false)
 
         this.assertEqual(
             JSON.stringify(expected, null, '  '),
