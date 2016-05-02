@@ -7,17 +7,24 @@ export default class SwaggerSerializer extends BaseSerializer {
 
         let requests = context.getRequests()
         let [ host, schemes ] = this._formatHost(requests)
+        let [ paths, securityDefs ] = this._formatPaths(
+            context, requests, schemes
+        )
 
         let swagger = {
             swagger: '2.0',
             info: info,
-            host: host
+            host: host,
+            paths: paths
         }
 
         if (schemes !== []) {
             swagger.schemes = schemes
         }
 
+        if (securityDefs) {
+            swagger.securityDefinitions = securityDefs
+        }
 
         return JSON.stringify(swagger, null, '  ')
     }
@@ -73,11 +80,11 @@ export default class SwaggerSerializer extends BaseSerializer {
     }
 
     _formatHost(requests) {
-        if (requests.size === 0) {
-            return 'localhost'
+        if (!requests || requests.size === 0) {
+            return [ 'localhost', [] ]
         }
 
-        let url = requests[0].get('url')
+        let url = requests.getIn([ 0, 'url' ])
         let schemes = [ 'http', 'https', 'ws', 'wss' ]
         let usedSchemes = []
         for (let scheme of schemes) {
@@ -93,27 +100,31 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        return [ url.get('host') || 'localhost' ]
+        return [ url.get('host') || 'localhost', usedSchemes ]
     }
 
     _formatPaths(context, requests, schemes) {
         let securityDefs = {}
-        let request = {}
+        let paths = {}
         requests.forEach(req => {
-            let [ _defs, _req ] = this.
+            let [ _defs, path, _req ] = this.
                 _formatRequest(context, req, schemes)
+            let request = paths[path] || {}
             Object.assign(securityDefs, _defs)
             Object.assign(request, _req)
+            paths[path] = request
         })
+        return [ paths, securityDefs ]
     }
 
     _formatRequest(context, request, schemes) {
         let req = {}
+        let path = request.getIn([ 'url', 'path' ])
         let [ security, content ] = ::this.
             _formatContent(context, request, schemes)
 
         req[request.get('method')] = content
-        return [ security, req ]
+        return [ security, path, req ]
     }
 
     _formatContent(context, request, schemes) {
@@ -160,7 +171,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                 constraints.forEach(constraint => {
                     if (
                         constraint.get('key') === 'Content-Type' &&
-                        consumeMap[constraint.get('value')]
+                        constraint.get('value')
                     ) {
                         consumeMap[constraint.get('value')] = true
                     }
@@ -185,11 +196,12 @@ export default class SwaggerSerializer extends BaseSerializer {
     }
 
     _formatParameters(context, request) {
-        let container = request.get('container')
+        let container = request.get('parameters')
 
         let headers = container.get('headers')
         let queries = container.get('queries')
         let body = container.get('body')
+        let path = container.get('path')
 
         return headers.map(param => {
             return this._formatParam('headers', param)
@@ -200,6 +212,10 @@ export default class SwaggerSerializer extends BaseSerializer {
         ).concat(
         body.map(param => {
             return this._formatParam('body', param)
+        })
+        ).concat(
+        path.map(param => {
+            return this._formatParam('path', param)
         })
         )
     }
@@ -226,8 +242,7 @@ export default class SwaggerSerializer extends BaseSerializer {
             string: 'string',
             number: 'number',
             integer: 'integer',
-            boolean: 'boolean',
-            array: 'array'
+            boolean: 'boolean'
         }
 
         if (stdTypes[_param.get('type')]) {
@@ -236,20 +251,20 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        _param.get('internals').forEach(constraint => {
-            Object.assign(param, constraint.toJS())
-        })
+        Object.assign(param, _param.getJSONSchema(false))
 
-        param['x-use-with'] = []
+        if (_param.get('externals').size > 0) {
+            param['x-use-with'] = []
 
-        _param.get('externals').forEach(external => {
-            let constraint = {
-                name: external.get('key')
-            }
-            let schema = external.getJSONSchema()
-            Object.assign(constraint, schema)
-            param['x-use-with'].push(constraint)
-        })
+            _param.get('externals').forEach(external => {
+                let constraint = {
+                    name: external.get('key')
+                }
+                let schema = external.getJSONSchema()
+                Object.assign(constraint, schema)
+                param['x-use-with'].push(constraint)
+            })
+        }
 
         if (description) {
             param.description = description
@@ -292,12 +307,17 @@ export default class SwaggerSerializer extends BaseSerializer {
         let _definitions = {}
         let _security = []
 
-        request.get('auth').forEach(auth => {
-            let rule = securityMap[auth.constructor.name]
-            if (rule) {
-                let [ definition, security ] = rule(context, auth)
-                _security.push(security)
-                Object.assign(_definitions, definition)
+        request.get('auths').forEach(auth => {
+            if (!auth) {
+                _security.push(null)
+            }
+            else {
+                let rule = securityMap[auth.constructor.name]
+                if (rule) {
+                    let [ definition, security ] = rule(context, auth)
+                    _security.push(security)
+                    Object.assign(_definitions, definition)
+                }
             }
         })
 
@@ -340,6 +360,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                 type: 'oauth2',
                 authorizationUrl: auth.get('authorizationUrl'),
                 tokenUrl: auth.get('tokenUrl'),
+                flow: auth.get('flow'),
                 scopes: scopes
             }
         }

@@ -159,7 +159,7 @@ export class MaximumItemsConstraint extends Constraint {
 export class MinimumItemsConstraint extends Constraint {
     constructor(value = 0) {
         let obj = {
-            name: 'maximumItems',
+            name: 'minimumItems',
             value: value,
             expression: d => {
                 return (d.length || d.size) >= value

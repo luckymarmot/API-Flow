@@ -14,7 +14,7 @@ export class Parameter extends Immutable.Record({
     internals: Immutable.List(),
     externals: Immutable.List()
 }) {
-    getJSONSchema() {
+    getJSONSchema(useFaker = true) {
         let constraintSet = this.get('internals').reduce((set, constraint) => {
             let obj = constraint.toJS()
             Object.assign(set, obj)
@@ -52,7 +52,7 @@ export class Parameter extends Immutable.Record({
             }
         }
 
-        if (fakerFormatMap[format]) {
+        if (useFaker && fakerFormatMap[format]) {
             let constraint = fakerFormatMap[format]
             Object.assign(constraintSet, constraint)
         }
@@ -206,6 +206,9 @@ export default class Context extends Immutable.Record({
     info: new Info()
 }) {
     getRequests() {
+        if (!this.get('group')) {
+            return null
+        }
         return this.get('group').getRequests()
     }
 
