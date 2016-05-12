@@ -15,18 +15,25 @@ import Context, {
 
 import {
     Info, Contact, License,
-    URL, Group, Schema
+    Group
 } from '../../models/Utils'
 
 import Auth from '../../models/Auth'
+import URL from '../../models/URL'
+
+import ReferenceContainer from '../../models/Reference'
+import JSONSchemaReference from '../../models/references/JSONSchema'
 
 export default class SwaggerParser {
     constructor() {
         this.context = new Context()
+        this.item = null
     }
 
     // @NotTested -> assumed valid
-    parse(string) {
+    parse(item) {
+        this.item = item
+        const string = item.content
         const swaggerCollection = this._loadSwaggerCollection(string)
         const valid = this._validateSwaggerCollection(swaggerCollection)
 
@@ -36,14 +43,13 @@ export default class SwaggerParser {
         }
 
         if (swaggerCollection) {
-            let baseSchema = new Schema()
-            baseSchema = baseSchema.mergeSchema(swaggerCollection)
+            let refs = new ReferenceContainer()
+            refs = refs.create(this._extractReferences(this.item))
 
             let rootGroup = new Group()
             rootGroup = rootGroup.set('name', swaggerCollection.info.title)
             let pathLinkedRequests = this._applyFuncOverPathArchitecture(
                 swaggerCollection,
-                baseSchema,
                 ::this._createRequest
             )
 
@@ -54,7 +60,7 @@ export default class SwaggerParser {
             let reqContext = new Context()
             reqContext = reqContext
                 .set('group', rootGroup)
-                .set('schema', baseSchema)
+                .set('references', refs)
                 .set('info', info)
 
             this.context = reqContext
@@ -302,7 +308,7 @@ export default class SwaggerParser {
     }
 
     // @tested
-    _applyFuncOverPathArchitecture(collection, schema, func) {
+    _applyFuncOverPathArchitecture(collection, func) {
         let architecture = {}
         for (let path in collection.paths) {
             if (collection.paths.hasOwnProperty(path)) {
@@ -310,11 +316,13 @@ export default class SwaggerParser {
                 let methods = collection.paths[path]
                 let _methods = Object.keys(methods)
                 if (methods.parameters) {
-                    let _params = new Schema()
-                    _params = _params
-                        .mergeSchema(methods.parameters)
-                        .resolve(schema)
-                        .toJS()
+                    let _params = methods.parameters
+                    if (methods.parameters.$ref) {
+                        _params = ::this._extractSubTree(
+                            collection,
+                            methods.parameters.$ref
+                        )
+                    }
 
                     let paramKey = _methods.indexOf('parameters')
                     // remove paramKey
@@ -340,6 +348,31 @@ export default class SwaggerParser {
         }
 
         return architecture
+    }
+
+    _unescapeURIFragment(uriFragment) {
+        return uriFragment.replace('~1', '/').replace('~0', '~')
+    }
+
+    _extractSubTree(collection, ref) {
+        let path = ref.split('/').slice(1).map((d) => {
+            return this._unescapeURIFragment(d)
+        })
+
+        let subTree = collection
+        for (let key of path) {
+            subTree = subTree[key]
+        }
+
+        return subTree
+    }
+
+    _extractReferences(item) {
+        let ref = new JSONSchemaReference()
+        let refs = ref
+            .resolve(item)
+            .get('dependencies')
+        return refs
     }
 
     _extractUrlInfo(collection, path, content) {
@@ -373,9 +406,9 @@ export default class SwaggerParser {
         }
 
         let url = new URL({
-            schemes: new Immutable.List(schemes),
+            protocol: schemes,
             host: host,
-            path: basePath + subPath
+            pathname: basePath + subPath
         })
 
         return url
@@ -401,17 +434,41 @@ export default class SwaggerParser {
         for (let code of codes) {
             let body = new Immutable.List()
             if (responses[code].schema) {
-                let schema = new Schema()
-                schema = schema.mergeSchema(responses[code].schema)
+                let ref = new JSONSchemaReference()
+                    .resolve({
+                        content: JSON.stringify(responses[code].schema)
+                    })
+                    .get('value')
 
                 body = body.push(new Parameter({
                     key: 'schema',
-                    value: schema,
+                    value: ref,
                     externals: externals
                 }))
             }
 
+            let contentTypes = this._extractContentTypes(
+                _collection, _content, false
+            )
+
             let headers = new Immutable.List()
+            for (let contentType of contentTypes) {
+                headers.push(new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    value: contentType,
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ contentType ])
+                            ])
+                        })
+                    ])
+                }))
+            }
+
             if (responses[code].headers) {
                 let headerNames = Object.keys(responses[code].headers)
                 for (let header of headerNames) {
@@ -456,6 +513,7 @@ export default class SwaggerParser {
         return new Immutable.List([
             new Parameter({
                 key: 'Content-Type',
+                type: 'string',
                 internals: new Immutable.List([
                     new Constraint.Enum(consumes)
                 ])
@@ -463,20 +521,21 @@ export default class SwaggerParser {
         ])
     }
 
-    _extractContentTypes(collection, content) {
+    _extractContentTypes(collection, content, consume = true) {
+        let consumeKey = consume ? 'consumes' : 'produces'
         let _content = content || {}
         let _collection = collection || {}
 
         let contentTypes = []
 
-        if (_content.consumes && _content.consumes.length > 0) {
-            contentTypes = _content.consumes
+        if (_content[consumeKey] && _content[consumeKey].length > 0) {
+            contentTypes = _content[consumeKey]
         }
         else if (
-            _collection.consumes &&
-            _collection.consumes.length > 0
+            _collection[consumeKey] &&
+            _collection[consumeKey].length > 0
         ) {
-            contentTypes = _collection.consumes
+            contentTypes = _collection[consumeKey]
         }
         return contentTypes
     }
@@ -496,10 +555,12 @@ export default class SwaggerParser {
         for (let contentType of contentTypes) {
             headers.push(new Parameter({
                 key: 'Content-Type',
+                type: 'string',
                 value: contentType,
                 externals: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         internals: new Immutable.List([
                             new Constraint.Enum([ contentType ])
                         ])
@@ -531,11 +592,17 @@ export default class SwaggerParser {
                         const m = 'Expected a schema object in body param'
                         throw new Error(m)
                     }
+
+                    let ref = (new JSONSchemaReference())
+                        .resolve({
+                            content: JSON.stringify(param.schema)
+                        })
+                        .get('value')
+
                     body.push(
                         new Parameter({
                             key: 'body',
-                            value: (new Schema())
-                                .mergeSchema(param.schema),
+                            value: ref,
                             type: 'schema',
                             description: param.description || null,
                             externals: externals
@@ -556,6 +623,7 @@ export default class SwaggerParser {
     _extractParam(param, externals) {
         let value = param.default
         let format = param.format || param['x-format'] || null
+        let required = param.required || false
         let _externals = externals
 
         if (typeof value === 'undefined') {
@@ -612,6 +680,7 @@ export default class SwaggerParser {
             value: value,
             type: param.type || null,
             format: format,
+            required: required,
             description: param.description || null,
             internals: internals,
             externals: _externals,
@@ -641,6 +710,7 @@ export default class SwaggerParser {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: contentType
                     })
                 ])
@@ -664,6 +734,7 @@ export default class SwaggerParser {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: mime
                     })
                 ])

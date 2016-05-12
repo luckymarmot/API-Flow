@@ -1,6 +1,10 @@
 import Immutable from 'immutable'
 import BaseSerializer from '../BaseSerializer'
 
+import {
+    JSONSchemaReference
+} from '../../models/references/Reference'
+
 export default class SwaggerSerializer extends BaseSerializer {
     serialize(context) {
         let info = this._formatInfo(context)
@@ -90,7 +94,8 @@ export default class SwaggerSerializer extends BaseSerializer {
         for (let scheme of schemes) {
             let used = requests.reduce((bool, req) => {
                 let value = req
-                    .getIn([ 'url', 'schemes' ])
+                    .get('url')
+                    ._getParamValue('protocol')
                     .indexOf(scheme) >= 0
                 return bool && value
             }, true)
@@ -100,7 +105,7 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        return [ url.get('host') || 'localhost', usedSchemes ]
+        return [ url.get('host').generate() || 'localhost', usedSchemes ]
     }
 
     _formatPaths(context, requests, schemes) {
@@ -119,7 +124,7 @@ export default class SwaggerSerializer extends BaseSerializer {
 
     _formatRequest(context, request, schemes) {
         let req = {}
-        let path = request.getIn([ 'url', 'path' ])
+        let path = request.getIn([ 'url', 'pathname' ]).generate(true)
         let [ security, content ] = ::this.
             _formatContent(context, request, schemes)
 
@@ -142,7 +147,7 @@ export default class SwaggerSerializer extends BaseSerializer {
             _content.operationId = request.get('id')
         }
 
-        let _schemes = request.getIn([ 'url', 'schemes' ])
+        let _schemes = request.get('url')._getParamValue('protocol')
 
         if (!Immutable.is(
             Immutable.fromJS(schemes),
@@ -156,7 +161,7 @@ export default class SwaggerSerializer extends BaseSerializer {
 
         _content.parameters = ::this._formatParameters(context, request)
         let [ definitions, security ] = ::this._formatSecurity(context, request)
-
+        _content.responses = ::this._formatResponses(context, request)
         _content.security = security
 
         return [ definitions, _content ]
@@ -195,7 +200,59 @@ export default class SwaggerSerializer extends BaseSerializer {
         return Object.keys(produceMap)
     }
 
+    _formatResponses(context, request) {
+        let responses = request.get('responses')
+        let _responseMap = {}
+        responses.forEach(response => {
+            Object.assign(
+                _responseMap,
+                this._formatResponse(context, response)
+            )
+        })
+
+        return _responseMap
+    }
+
+    _formatResponse(context, response) {
+        let _responseMap = {}
+        let content = {
+            description: response.get('description') || null
+        }
+
+        let container = response.get('parameters')
+        let headers = container.get('headers')
+        let body = container.get('body')
+
+        if (headers.size > 0) {
+            content.headers = {}
+            headers.forEach(param => {
+                let _param = this._formatParam(null, param)
+                let name = _param.name
+                delete _param.name
+                let final = {}
+                final[name] = _param
+                Object.assign(content.headers, final)
+            })
+        }
+
+        if (body.size > 0) {
+            body.forEach(param => {
+                let _param = this._formatParam('body', param)
+                delete _param.in
+                delete _param.name
+                delete _param.type
+                delete _param.required
+                Object.assign(content, _param)
+            })
+        }
+
+        _responseMap[response.get('code')] = content
+
+        return _responseMap
+    }
+
     _formatParameters(context, request) {
+        let references = context.get('references')
         let container = request.get('parameters')
 
         let headers = container.get('headers')
@@ -204,38 +261,50 @@ export default class SwaggerSerializer extends BaseSerializer {
         let path = container.get('path')
 
         return headers.map(param => {
-            return this._formatParam('headers', param)
+            return this._formatParam('header', param, references)
         }).concat(
         queries.map(param => {
-            return this._formatParam('query', param)
+            return this._formatParam('query', param, references)
         })
         ).concat(
         body.map(param => {
-            return this._formatParam('body', param)
+            return this._formatParam('body', param, references)
         })
         ).concat(
         path.map(param => {
-            return this._formatParam('path', param)
+            return this._formatParam('path', param, references)
         })
         )
     }
 
-    _formatParam(source, _param) {
+    _formatParam(source, _param, references) {
         let description = _param.get('description')
         let example = _param.get('example')
         let format = _param.get('format')
 
         let param = {
-            in: source,
-            name: _param.get('key')
+            name: _param.get('key'),
+            required: _param.get('required')
+        }
+
+        if (source) {
+            param.in = source
         }
 
         if (source === 'path') {
             param.required = true
         }
 
-        if (source === 'body' && _param.get('type') === 'schema') {
-            param.schema = _param.get('value').toJS()
+        if (source === 'body' && _param.get('key') === 'schema') {
+            let schema = _param.get('value')
+            let depth = 0
+            let ref = new JSONSchemaReference()
+            if (schema.$ref) {
+                depth = 1
+            }
+            param.schema = Immutable
+                .fromJS(ref.resolve(references, schema, depth))
+                .toJS()
         }
 
         const stdTypes = {
@@ -366,5 +435,37 @@ export default class SwaggerSerializer extends BaseSerializer {
         }
 
         return [ definition, 'oauth_2_auth' ]
+    }
+
+    _unescapeURIFragment(uriFragment) {
+        return uriFragment.replace('~1', '/').replace('~0', '~')
+    }
+
+    _formatDefinitions(context) {
+        let schemas = {}
+        let references = context.get('references')
+        references.forEach((cache, key) => {
+            if (key.startsWith('#/')) {
+                let pathFragments = key.split('/').slice(1).map(fragment => {
+                    return this._unescapeURIFragment(fragment)
+                })
+                // pointer assignement
+                // we're moving the subTree pointer to modify schemas
+                let subTree = schemas
+                for (let fragment of pathFragments) {
+                    subTree[fragment] =
+                        typeof subTree[fragment] === 'undefined' ?
+                        {} :
+                        subTree[fragment]
+                    subTree = subTree[fragment]
+                }
+                let ref = Immutable.fromJS(cache.getReference()).toJS()
+
+                // object assignement
+                Object.assign(subTree, ref)
+            }
+        })
+
+        return schemas
     }
 }

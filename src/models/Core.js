@@ -1,7 +1,8 @@
 import Immutable from 'immutable'
 import jsf from 'json-schema-faker'
 
-import { URL, Info } from './Utils'
+import { Info } from './Utils'
+import URL from './URL'
 
 export class Parameter extends Immutable.Record({
     key: null,
@@ -9,6 +10,7 @@ export class Parameter extends Immutable.Record({
     type: null,
     format: null,
     name: null,
+    required: false,
     description: null,
     example: null,
     internals: Immutable.List(),
@@ -140,6 +142,7 @@ export class ParameterContainer extends Immutable.Record({
         let headers = this.get('headers')
         let queries = this.get('queries')
         let body = this.get('body')
+        let path = this.get('path')
 
         paramList.forEach(param => {
             headers = headers.filter(d => {
@@ -151,11 +154,15 @@ export class ParameterContainer extends Immutable.Record({
             body = body.filter(d => {
                 return d.isValid(param)
             })
+            path = path.filter(d => {
+                return d.isValid(param)
+            })
         })
         return this
             .set('headers', headers)
             .set('queries', queries)
             .set('body', body)
+            .set('path', path)
     }
 }
 
@@ -200,9 +207,8 @@ export class Request extends Immutable.Record({
 }
 
 export default class Context extends Immutable.Record({
-    schema: null,
     group: null,
-    environments: null,
+    references: null,
     info: new Info()
 }) {
     getRequests() {

@@ -323,7 +323,7 @@ export default class BaseImporter {
     }
 
     _generateUrl(url, queries, auths) {
-        let _url = this._toDynamicString(url.getUrl(), true, true)
+        let _url = this._toDynamicString(url.href(), true, true)
 
         let queryParams = (queries || []).concat(
             this._extractQueryParamsFromAuth(auths)

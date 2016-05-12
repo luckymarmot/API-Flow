@@ -64,6 +64,16 @@ export class License extends Immutable.Record({
     url: null
 }) { }
 
+export class ReferenceContainer extends Immutable.Record({
+    references: new Immutable.OrderedMap()
+}) {
+    resolve(referenceURI) {
+        let ref = this.get(referenceURI)
+        if (ref) {
+            return ref.resolve(this)
+        }
+    }
+}
 
 export class Reference extends Immutable.Record({
     reference: null,
@@ -109,6 +119,13 @@ export class SchemaReference extends Reference {
         return this
             .set('resolved', true)
             .set('value', resolved)
+    }
+
+    toJS() {
+        if (!this.get('resolved')) {
+            return this.get('reference')
+        }
+        return this.get('value').toJS()
     }
 }
 

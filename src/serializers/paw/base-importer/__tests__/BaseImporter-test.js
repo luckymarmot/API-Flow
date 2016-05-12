@@ -7,13 +7,14 @@ import RequestContext, {
 } from '../../../../models/Core'
 
 import {
-    URL,
     FileReference,
     Environment,
     EnvironmentReference,
     SchemaReference
 } from '../../../../models/Utils'
 
+import Constraint from '../../../../models/Constraint'
+import URL from '../../../../models/URL'
 import Auth from '../../../../models/Auth'
 
 import {
@@ -813,9 +814,24 @@ export class TestBaseImporter extends UnitTest {
         const contextMock = new PawContextMock(null, '')
         const input = new Request({
             url: new URL({
-                schemes: [ 'http' ],
-                host: 'fakeurl.com',
-                path: ''
+                protocol: new Parameter({
+                    key: 'protocol',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'http'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'fakeurl.com'
+                        ])
+                    ])
+                })
             })
         })
 
@@ -842,9 +858,24 @@ export class TestBaseImporter extends UnitTest {
             name: 'testReq',
             method: 'GET',
             url: new URL({
-                schemes: [ 'http' ],
-                host: 'fakeurl.com',
-                path: ''
+                protocol: new Parameter({
+                    key: 'protocol',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'http'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'fakeurl.com'
+                        ])
+                    ])
+                })
             })
         })
 
@@ -1874,9 +1905,24 @@ export class TestBaseImporter extends UnitTest {
         })
 
         const url = new URL({
-            schemes: null,
-            host: 'fakeurl.com',
-            path: '/fake/path'
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'fakeurl.com'
+                    ])
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'pathname',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        '/fake/path'
+                    ])
+                ])
+            })
         })
 
         const result = importer._generateUrl.apply(
@@ -1905,9 +1951,24 @@ export class TestBaseImporter extends UnitTest {
         })
 
         const url = new URL({
-            schemes: null,
-            host: 'fakeurl.com',
-            path: '/fake/path'
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'fakeurl.com'
+                    ])
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'pathname',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        '/fake/path'
+                    ])
+                ])
+            })
         })
         const queries = new Immutable.List([
             new Parameter({
@@ -1951,9 +2012,24 @@ export class TestBaseImporter extends UnitTest {
         })
 
         const url = new URL({
-            schemes: null,
-            host: 'fakeurl.com',
-            path: '/fake/path'
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'fakeurl.com'
+                    ])
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'pathname',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        '/fake/path'
+                    ])
+                ])
+            })
         })
         const queries = new Immutable.List([
             new Parameter({

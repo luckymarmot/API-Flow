@@ -16,7 +16,6 @@ import {
 } from '../../../models/Core'
 
 import {
-    URL,
     Group,
     Schema,
     Info, Contact, License
@@ -24,6 +23,7 @@ import {
 
 import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
+import URL from '../../../models/URL'
 
 import {
     ClassMock
@@ -411,7 +411,6 @@ export class TestSwaggerParser extends UnitTest {
 
         parser._applyFuncOverPathArchitecture(
             collection,
-            new Schema(),
             () => { count += 1 }
         )
         this.assertTrue(expected === count)
@@ -441,7 +440,6 @@ export class TestSwaggerParser extends UnitTest {
 
         parser._applyFuncOverPathArchitecture(
             collection,
-            new Schema(),
             (coll, path, method, content) => {
                 this.assertEqual(coll.paths[path][method], content)
             }
@@ -488,7 +486,6 @@ export class TestSwaggerParser extends UnitTest {
 
         const result = parser._applyFuncOverPathArchitecture(
             collection,
-            new Schema(),
             (coll, path, method, content) => {
                 return {
                     value: content.value * 2
@@ -551,7 +548,6 @@ export class TestSwaggerParser extends UnitTest {
 
         const result = parser._applyFuncOverPathArchitecture(
             collection,
-            new Schema(),
             (coll, path, method, content) => {
                 let _result = {
                     value: content.value * 2
@@ -631,7 +627,6 @@ export class TestSwaggerParser extends UnitTest {
 
         const result = parser._applyFuncOverPathArchitecture(
             collection,
-            new Schema(),
             (coll, path, method, content) => {
                 let _result = {
                     value: content.value * 2
@@ -1003,14 +998,38 @@ export class TestSwaggerParser extends UnitTest {
         const content = {}
 
         const expected = new URL({
-            schemes: new Immutable.List([ 'http', 'https' ]),
-            host: 'echo.luckymarmot.com',
-            path: '/tests/path/to/request'
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'http', 'https'
+                    ])
+                ])
+            }),
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'echo.luckymarmot.com'
+                    ])
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'pathname',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        '/tests/path/to/request'
+                    ])
+                ])
+            })
         })
 
         const result = parser._extractUrlInfo(collection, path, content)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_extractUrlInfo')
@@ -1028,14 +1047,38 @@ export class TestSwaggerParser extends UnitTest {
         }
 
         const expected = new URL({
-            schemes: new Immutable.List([ 'https' ]),
-            host: 'echo.luckymarmot.com',
-            path: '/tests/path/to/request'
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'https'
+                    ])
+                ])
+            }),
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'echo.luckymarmot.com'
+                    ])
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'pathname',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        '/tests/path/to/request'
+                    ])
+                ])
+            })
         })
 
         const result = parser._extractUrlInfo(collection, path, content)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_extractResponseBodies')
@@ -1055,6 +1098,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/json'
                     })
                 ])
@@ -1063,6 +1107,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/xml'
                     })
                 ])
@@ -1094,6 +1139,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/json'
                     })
                 ])
@@ -1102,6 +1148,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/xml'
                     })
                 ])
@@ -1137,6 +1184,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/json'
                     })
                 ])
@@ -1145,6 +1193,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/xml'
                     })
                 ])
@@ -1174,6 +1223,7 @@ export class TestSwaggerParser extends UnitTest {
         const expected = new Immutable.List([
             new Parameter({
                 key: 'Content-Type',
+                type: 'string',
                 internals: new Immutable.List([
                     new Constraint.Enum([
                         'app/json',
@@ -1206,6 +1256,7 @@ export class TestSwaggerParser extends UnitTest {
         const expected = new Immutable.List([
             new Parameter({
                 key: 'Content-Type',
+                type: 'string',
                 internals: new Immutable.List([
                     new Constraint.Enum([
                         'app/json',
@@ -1238,6 +1289,7 @@ export class TestSwaggerParser extends UnitTest {
         const expected = new Immutable.List([
             new Parameter({
                 key: 'Content-Type',
+                type: 'string',
                 internals: new Immutable.List([
                     new Constraint.Enum([
                         'app/json',
@@ -1274,6 +1326,7 @@ export class TestSwaggerParser extends UnitTest {
         const expected = new Immutable.List([
             new Parameter({
                 key: 'Content-Type',
+                type: 'string',
                 internals: new Immutable.List([
                     new Constraint.Enum([
                         'app/json',
@@ -1415,6 +1468,7 @@ export class TestSwaggerParser extends UnitTest {
         const externals = new Immutable.List([
             new Parameter({
                 key: 'Content-Type',
+                type: 'string',
                 value: 'app/json'
             })
         ])
@@ -1489,6 +1543,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/json'
                     })
                 ])
@@ -1497,6 +1552,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/xml'
                     })
                 ])
@@ -1528,6 +1584,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/json'
                     })
                 ])
@@ -1536,6 +1593,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/xml'
                     })
                 ])
@@ -1571,6 +1629,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/json'
                     })
                 ])
@@ -1579,6 +1638,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'app/xml'
                     })
                 ])
@@ -1615,6 +1675,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'application/json+xml'
                     })
                 ])
@@ -1624,6 +1685,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'application/x-www-form-urlencoded'
                     })
                 ])
@@ -1633,6 +1695,7 @@ export class TestSwaggerParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'multipart/form-data'
                     })
                 ])

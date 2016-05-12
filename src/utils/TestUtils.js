@@ -53,8 +53,9 @@ class UnitTest {
         assert(value)
     }
 
-    assertTrue(value) {
-        assert.isTrue(value)
+    assertTrue(value, message) {
+        let warn = (message ? message + '\n' : '') + '\n'
+        assert.isTrue(value, warn)
     }
 
     assertFalse(value) {
@@ -69,9 +70,18 @@ class UnitTest {
         assert.isTrue(comparison, warn)
     }
 
-    assertNotEqual(a, b) {
-        assert.isFalse(Immutable.is(Immutable.fromJS(a), Immutable.fromJS(b)),
-        `${a} === ${b}`)
+    assertJSONEqual(a, b, message) {
+        let A = JSON.stringify(a, null, '  ')
+        let B = JSON.stringify(b, null, '  ')
+        this.assertEqual(A, B, message)
+    }
+
+    assertNotEqual(a, b, message) {
+        let A = Immutable.fromJS(a)
+        let B = Immutable.fromJS(b)
+        let comparison = Immutable.is(A, B)
+        let warn = (message ? message + '\n' : '') + `\n${A} \n!== \n${B}`
+        assert.isFalse(comparison, warn)
     }
 
     assertEqualElements(a, b) {

@@ -1,0 +1,233 @@
+{
+  "tests": {
+    "group": [
+      {
+        "name": "simple urls",
+        "test": [
+          {
+            "id": "0",
+            "name": "complete url",
+            "url": "http://www.example.com/path/to/doc.json?user=me#/definitions/User",
+            "expect": {
+              "href": "http://www.example.com/path/to/doc.json?user=me#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=me",
+              "pathname": "/path/to/doc.json",
+              "host": "www.example.com",
+              "protocol": "http"
+            }
+          },
+          {
+            "id": "1",
+            "name": "no protocol",
+            "url": "www.example.com/path/to/doc.json?user=me#/definitions/User",
+            "expect": {
+              "href": "www.example.com/path/to/doc.json?user=me#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=me",
+              "pathname": "www.example.com/path/to/doc.json",
+              "host": "",
+              "protocol": ""
+            }
+          },
+          {
+            "id": "2",
+            "name": "port",
+            "url": "http://www.example.com:443/path/to/doc.json?user=me#/definitions/User",
+            "expect": {
+              "href": "http://www.example.com:443/path/to/doc.json?user=me#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=me",
+              "pathname": "/path/to/doc.json",
+              "host": "www.example.com:443",
+              "hostname": "www.example.com",
+              "protocol": "http",
+              "port": "443"
+            }
+          },
+          {
+            "id": "3",
+            "name": "port and no protocol is treated as path",
+            "url": "www.example.com:443/path/to/doc.json?user=me#/definitions/User",
+            "expect": {
+              "href": "www.example.com:443/path/to/doc.json?user=me#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=me",
+              "pathname": "www.example.com:443/path/to/doc.json",
+              "host": "",
+              "hostname": "",
+              "protocol": "",
+              "port": ""
+            }
+          },
+          {
+            "id": "4",
+            "name": "no host - absolute path",
+            "url": "/path/to/doc.json?user=me#/definitions/User",
+            "expect": {
+              "href": "/path/to/doc.json?user=me#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=me",
+              "pathname": "/path/to/doc.json",
+              "host": "",
+              "hostname": "",
+              "protocol": "",
+              "port": ""
+            }
+          },
+          {
+            "id": "5",
+            "name": "no host - relative path",
+            "url": "../path/to/doc.json?user=me#/definitions/User",
+            "expect": {
+              "href": "../path/to/doc.json?user=me#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=me",
+              "pathname": "../path/to/doc.json",
+              "host": "",
+              "hostname": "",
+              "protocol": "",
+              "port": ""
+            }
+          }
+        ]
+      },
+      {
+        "name": "relative urls",
+        "test": [
+          {
+            "id": "0",
+            "name": "complete url do not use base",
+            "url": "https://com.plete.ly/different/from/base.json?user=micha#/definitions/User",
+            "base": "http://www.example.com/path/to/doc.json?user=me#/definitions/User",
+            "expect": {
+              "href": "https://com.plete.ly/different/from/base.json?user=micha#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=micha",
+              "pathname": "/different/from/base.json",
+              "host": "com.plete.ly",
+              "protocol": "https"
+            }
+          },
+          {
+            "id": "1",
+            "name": "different path - full url",
+            "url": "https://com.plete.ly/similar/to/base.json?user=micha#/definitions/User",
+            "base": "https://com.plete.ly/different/from/base.json?user=micha#/definitions/User",
+            "expect": {
+              "href": "https://com.plete.ly/similar/to/base.json?user=micha#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=micha",
+              "pathname": "/similar/to/base.json",
+              "host": "com.plete.ly",
+              "protocol": "https"
+            }
+          },
+          {
+            "id": "2",
+            "name": "different path - only path",
+            "url": "/similar/to/base.json?user=micha#/definitions/User",
+            "base": "https://com.plete.ly/different/from/base.json?user=micha#/definitions/User",
+            "expect": {
+              "href": "https://com.plete.ly/similar/to/base.json?user=micha#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=micha",
+              "pathname": "/similar/to/base.json",
+              "host": "com.plete.ly",
+              "protocol": "https"
+            }
+          },
+          {
+            "id": "3",
+            "name": "different path - relative path",
+            "url": "../from/other.json?user=micha#/definitions/User",
+            "base": "https://com.plete.ly/different/from/base.json?user=micha#/definitions/User",
+            "expect": {
+              "href": "https://com.plete.ly/different/from/other.json?user=micha#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=micha",
+              "pathname": "/different/from/other.json",
+              "host": "com.plete.ly",
+              "protocol": "https"
+            }
+          },
+          {
+            "id": "4",
+            "name": "different path - relative path discards search and hash fron base",
+            "url": "../from/other.json#/definitions/API",
+            "base": "https://com.plete.ly/different/from/base.json?user=micha#/definitions/User",
+            "expect": {
+              "href": "https://com.plete.ly/different/from/other.json#/definitions/API",
+              "hash": "#/definitions/API",
+              "search": "",
+              "pathname": "/different/from/other.json",
+              "host": "com.plete.ly",
+              "protocol": "https"
+            }
+          }
+        ]
+      },
+      {
+        "name": "relative paths",
+        "test": [
+          {
+            "id": "0",
+            "name": "absolute path do not use base",
+            "url": "/different/from/base.json?user=micha#/definitions/User",
+            "base": "/path/to/doc.json?user=me#/definitions/User",
+            "expect": {
+              "href": "/different/from/base.json?user=micha#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=micha",
+              "pathname": "/different/from/base.json",
+              "host": "",
+              "protocol": ""
+            }
+          },
+          {
+            "id": "1",
+            "name": "different path - relative path to absolute",
+            "url": "../from/other.json?user=micha#/definitions/User",
+            "base": "/different/from/base.json?user=micha#/definitions/User",
+            "expect": {
+              "href": "/different/from/other.json?user=micha#/definitions/User",
+              "hash": "#/definitions/User",
+              "search": "?user=micha",
+              "pathname": "/different/from/other.json",
+              "host": "",
+              "protocol": ""
+            }
+          },
+          {
+            "id": "2",
+            "name": "different path - relative path discards search and hash fron base",
+            "url": "../from/other.json#/definitions/API",
+            "base": "/different/from/base.json?user=micha#/definitions/User",
+            "expect": {
+              "href": "/different/from/other.json#/definitions/API",
+              "hash": "#/definitions/API",
+              "search": "",
+              "pathname": "/different/from/other.json",
+              "host": "",
+              "protocol": ""
+            }
+          },
+          {
+            "id": "3",
+            "name": "different path - relative path to relative path",
+            "url": "../from/other.json#/definitions/API",
+            "base": "./different/from/base.json?user=micha#/definitions/User",
+            "expect": {
+              "href": "different/from/other.json#/definitions/API",
+              "hash": "#/definitions/API",
+              "search": "",
+              "pathname": "different/from/other.json",
+              "host": "",
+              "protocol": ""
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

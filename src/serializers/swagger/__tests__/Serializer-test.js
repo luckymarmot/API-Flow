@@ -17,17 +17,20 @@ import Context, {
 } from '../../../models/Core'
 
 import {
-    URL,
     Info, Contact, License
 } from '../../../models/Utils'
 
 
 import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
+import URL from '../../../models/URL'
 
 import {
     ClassMock
 } from '../../../mocks/PawMocks'
+
+import SwaggerParser from '../../../parsers/swagger/Parser'
+import fs from 'fs'
 
 @registerTest
 @against(SwaggerSerializer)
@@ -163,9 +166,33 @@ export class TestSwaggerSerializer extends UnitTest {
         const requests = new Immutable.List([
             new Request({
                 url: new URL({
-                    schemes: [ 'http', 'https', 'weird-scheme' ],
-                    host: 'test.com',
-                    path: '/path/to/req'
+                    protocol: new Parameter({
+                        key: 'protocol',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'http', 'https', 'weird-scheme'
+                            ])
+                        ])
+                    }),
+                    host: new Parameter({
+                        key: 'host',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'test.com'
+                            ])
+                        ])
+                    }),
+                    pathname: new Parameter({
+                        key: 'pathname',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                '/path/to/req'
+                            ])
+                        ])
+                    })
                 }),
                 method: 'GET'
             })
@@ -188,9 +215,33 @@ export class TestSwaggerSerializer extends UnitTest {
         const requests = new Immutable.List([
             new Request({
                 url: new URL({
-                    schemes: [ 'http', 'https', 'weird-scheme' ],
-                    host: 'test.com',
-                    path: '/path/to/req'
+                    protocol: new Parameter({
+                        key: 'protocol',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'http', 'https', 'weird-scheme'
+                            ])
+                        ])
+                    }),
+                    host: new Parameter({
+                        key: 'host',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'test.com'
+                            ])
+                        ])
+                    }),
+                    pathname: new Parameter({
+                        key: 'pathname',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                '/path/to/req'
+                            ])
+                        ])
+                    })
                 }),
                 method: 'GET'
             })
@@ -222,25 +273,97 @@ export class TestSwaggerSerializer extends UnitTest {
         const requests = new Immutable.List([
             new Request({
                 url: new URL({
-                    schemes: [ 'http', 'https', 'weird-scheme' ],
-                    host: 'securityDefs#1',
-                    path: '/path/to/req'
+                    protocol: new Parameter({
+                        key: 'protocol',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'http', 'https', 'weird-scheme'
+                            ])
+                        ])
+                    }),
+                    host: new Parameter({
+                        key: 'host',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'securityDefs#1'
+                            ])
+                        ])
+                    }),
+                    pathname: new Parameter({
+                        key: 'pathname',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                '/path/to/req'
+                            ])
+                        ])
+                    })
                 }),
                 method: 'GET'
             }),
             new Request({
                 url: new URL({
-                    schemes: [ 'http', 'https', 'weird-scheme' ],
-                    host: 'securityDefs#2',
-                    path: '/path/to/req'
+                    protocol: new Parameter({
+                        key: 'protocol',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'http', 'https', 'weird-scheme'
+                            ])
+                        ])
+                    }),
+                    host: new Parameter({
+                        key: 'host',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'securityDefs#2'
+                            ])
+                        ])
+                    }),
+                    pathname: new Parameter({
+                        key: 'pathname',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                '/path/to/req'
+                            ])
+                        ])
+                    })
                 }),
                 method: 'POST'
             }),
             new Request({
                 url: new URL({
-                    schemes: [ 'http', 'https', 'weird-scheme' ],
-                    host: 'securityDefs#2',
-                    path: '/path/to/other/req'
+                    protocol: new Parameter({
+                        key: 'protocol',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'http', 'https', 'weird-scheme'
+                            ])
+                        ])
+                    }),
+                    host: new Parameter({
+                        key: 'host',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'securityDefs#2'
+                            ])
+                        ])
+                    }),
+                    pathname: new Parameter({
+                        key: 'pathname',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                '/path/to/other/req'
+                            ])
+                        ])
+                    })
                 }),
                 method: 'POST'
             })
@@ -251,8 +374,13 @@ export class TestSwaggerSerializer extends UnitTest {
             let content = {}
             content[req.get('method')] = 'test request'
             let securityDefs = {}
-            securityDefs[req.getIn([ 'url', 'host' ])] = 'test definition'
-            return [ securityDefs, req.getIn([ 'url', 'path' ]), content ]
+            let def = req.getIn([ 'url', 'host' ]).generate(true)
+            securityDefs[def] = 'test definition'
+            return [
+                securityDefs,
+                req.getIn([ 'url', 'pathname' ]).generate(),
+                content
+            ]
         })
 
         const expected = [
@@ -282,9 +410,33 @@ export class TestSwaggerSerializer extends UnitTest {
         const context = new Context()
         const request = new Request({
             url: new URL({
-                schemes: [ 'http', 'https' ],
-                host: 'test.com',
-                path: '/path/to/req'
+                protocol: new Parameter({
+                    key: 'protocol',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'http', 'https'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'test.com'
+                        ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    key: 'pathname',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path/to/req'
+                        ])
+                    ])
+                })
             }),
             method: 'GET'
         })
@@ -312,9 +464,33 @@ export class TestSwaggerSerializer extends UnitTest {
             tags: new Immutable.List([ 'first', 'second' ]),
             id: 'ae256',
             url: new URL({
-                schemes: [ 'https', 'ws' ],
-                host: 'test.com',
-                path: '/path/to/req'
+                protocol: new Parameter({
+                    key: 'protocol',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'https', 'ws'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'test.com'
+                        ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    key: 'pathname',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path/to/req'
+                        ])
+                    ])
+                })
             })
         })
         const schemes = [ 'http' ]
@@ -344,6 +520,7 @@ export class TestSwaggerSerializer extends UnitTest {
                 schemes: [ 'https', 'ws' ],
                 produces: [],
                 consumes: [],
+                responses: {},
                 parameters: [],
                 security: null
             }
@@ -363,9 +540,33 @@ export class TestSwaggerSerializer extends UnitTest {
             tags: new Immutable.List([ 'first', 'second' ]),
             id: 'ae256',
             url: new URL({
-                schemes: [ 'https', 'ws' ],
-                host: 'test.com',
-                path: '/path/to/req'
+                protocol: new Parameter({
+                    key: 'protocol',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'https', 'ws'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'test.com'
+                        ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    key: 'pathname',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path/to/req'
+                        ])
+                    ])
+                })
             })
         })
         const schemes = [ 'http' ]
@@ -396,6 +597,7 @@ export class TestSwaggerSerializer extends UnitTest {
                 produces: [ 'application/json' ],
                 consumes: [ 'application/json', 'application/xml' ],
                 parameters: [ 'params' ],
+                responses: {},
                 security: 'security scheme'
             }
         ]
@@ -556,7 +758,8 @@ export class TestSwaggerSerializer extends UnitTest {
         const expected = {
             in: 'query',
             name: null,
-            type: null
+            type: null,
+            required: false
         }
 
         const result = parser._formatParam(source, param)
@@ -591,8 +794,9 @@ export class TestSwaggerSerializer extends UnitTest {
         })
 
         const expected = {
-            in: 'header',
             name: 'Content-Type',
+            required: false,
+            in: 'header',
             default: 'default value',
             type: 'string',
             minimumLength: 10,
@@ -650,8 +854,9 @@ export class TestSwaggerSerializer extends UnitTest {
         })
 
         const expected = {
-            in: 'header',
             name: 'Content-Type',
+            required: false,
+            in: 'header',
             type: 'array',
             minimumItems: 2,
             maximumItems: 4,
@@ -814,6 +1019,21 @@ export class TestSwaggerSerializer extends UnitTest {
             JSON.stringify(expected, null, '  '),
             JSON.stringify(result, null, '  ')
         )
+    }
+
+    testFull() {
+        const parser = new SwaggerParser()
+        const content = fs
+            .readFileSync(__dirname + '/collections/uber.json')
+            .toString()
+
+        const context = parser.parse({
+            content: content
+        })
+        const serializer = this.__init()
+        const result = serializer.serialize(context)
+
+        this.assertEqual(result, '')
     }
 
     //
