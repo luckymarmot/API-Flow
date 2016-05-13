@@ -11,13 +11,9 @@ import {
     Body
 } from '../../../../models/Core'
 
-import {
-    Schema,
-    SchemaReference
-} from '../../../../models/Utils'
-
 import Auth from '../../../../models/Auth'
 import URL from '../../../../models/URL'
+import JSONSchemaReference from '../../../../models/references/JSONSchema'
 
 /* eslint-disable no-undefined */
 
@@ -413,14 +409,10 @@ export default class SwaggerFixtures {
                     body: new Immutable.List([
                         new Parameter({
                             key: 'body',
-                            value: new Schema({
-                                map: Immutable.OrderedMap({
-                                    $ref: new SchemaReference({
-                                        reference: '#/definitions/Pet'
-                                    })
-                                })
+                            value: new JSONSchemaReference({
+                                uri: '#/definitions/Pet'
                             }),
-                            type: 'schema',
+                            type: 'reference',
                             description: 'Pet object'
                         })
                     ])
@@ -965,11 +957,9 @@ export default class SwaggerFixtures {
                             200: {
                                 schema: {
                                     type: 'array',
-                                    items: [
-                                        {
-                                            $ref: '#/definitions/Pet'
-                                        }
-                                    ]
+                                    items: {
+                                        $ref: '#/definitions/Pet'
+                                    }
                                 }
                             }
                         }
@@ -982,27 +972,11 @@ export default class SwaggerFixtures {
                             body: new Immutable.List([
                                 new Parameter({
                                     key: 'schema',
-                                    value: new Schema({
-                                        map: new Immutable.OrderedMap({
-                                            type: new Schema({
-                                                uri: '#/type',
-                                                value: 'array'
-                                            }),
-                                            /* eslint-disable max-len */
-                                            items: new Schema({
-                                                uri: '#/items',
-                                                map: new Immutable.List([
-                                                    new Schema({
-                                                        uri: '#/items/0',
-                                                        map: new Immutable.OrderedMap({
-                                                            $ref: new SchemaReference({
-                                                                reference: '#/definitions/Pet'
-                                                            })
-                                                        })
-                                                    })
-                                                ])
-                                            })
-                                            /* eslint-enable max-leng */
+                                    type: 'array',
+                                    value: new Parameter({
+                                        type: 'reference',
+                                        value: new JSONSchemaReference({
+                                            uri: '#/definitions/Pet'
                                         })
                                     })
                                 })

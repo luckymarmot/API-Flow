@@ -1,9 +1,7 @@
 import Immutable from 'immutable'
 import BaseSerializer from '../BaseSerializer'
 
-import {
-    JSONSchemaReference
-} from '../../models/references/Reference'
+import JSONSchemaReference from '../../models/references/JSONSchema'
 
 export default class SwaggerSerializer extends BaseSerializer {
     serialize(context) {
@@ -215,8 +213,9 @@ export default class SwaggerSerializer extends BaseSerializer {
 
     _formatResponse(context, response) {
         let _responseMap = {}
-        let content = {
-            description: response.get('description') || null
+        let content = {}
+        if (response.get('description')) {
+            content.description = response.get('description')
         }
 
         let container = response.get('parameters')
@@ -231,6 +230,10 @@ export default class SwaggerSerializer extends BaseSerializer {
                 delete _param.name
                 let final = {}
                 final[name] = _param
+
+                if (!content.headers) {
+                    content.headers = {}
+                }
                 Object.assign(content.headers, final)
             })
         }
@@ -238,11 +241,22 @@ export default class SwaggerSerializer extends BaseSerializer {
         if (body.size > 0) {
             body.forEach(param => {
                 let _param = this._formatParam('body', param)
+                if (_param.type !== 'array') {
+                    delete _param.type
+                }
                 delete _param.in
                 delete _param.name
-                delete _param.type
                 delete _param.required
-                Object.assign(content, _param)
+                delete _param.description
+
+                if (!content.schema) {
+                    content.schema = {}
+                }
+
+                content['x-use-with'] = _param['x-use-with']
+
+                delete _param['x-use-with']
+                Object.assign(content.schema, _param)
             })
         }
 
@@ -277,7 +291,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         )
     }
 
-    _formatParam(source, _param, references) {
+    _formatParam(source, _param) {
         let description = _param.get('description')
         let example = _param.get('example')
         let format = _param.get('format')
@@ -293,18 +307,6 @@ export default class SwaggerSerializer extends BaseSerializer {
 
         if (source === 'path') {
             param.required = true
-        }
-
-        if (source === 'body' && _param.get('key') === 'schema') {
-            let schema = _param.get('value')
-            let depth = 0
-            let ref = new JSONSchemaReference()
-            if (schema.$ref) {
-                depth = 1
-            }
-            param.schema = Immutable
-                .fromJS(ref.resolve(references, schema, depth))
-                .toJS()
         }
 
         const stdTypes = {
@@ -459,7 +461,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                         subTree[fragment]
                     subTree = subTree[fragment]
                 }
-                let ref = Immutable.fromJS(cache.getReference()).toJS()
+                let ref = references.resolve(key)
 
                 // object assignement
                 Object.assign(subTree, ref)

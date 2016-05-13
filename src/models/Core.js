@@ -3,6 +3,7 @@ import jsf from 'json-schema-faker'
 
 import { Info } from './Utils'
 import URL from './URL'
+import Reference from './references/Reference'
 
 export class Parameter extends Immutable.Record({
     key: null,
@@ -29,6 +30,15 @@ export class Parameter extends Immutable.Record({
             let items = this.get('value')
             if (items instanceof Parameter) {
                 constraintSet.items = items.getJSONSchema()
+            }
+        }
+
+        if (this.get('type') === 'reference') {
+            let ref = this.get('value')
+            if (ref instanceof Reference) {
+                constraintSet.$ref = this
+                    .getIn([ 'value', 'uri' ])
+                delete constraintSet.type
             }
         }
 

@@ -5,8 +5,7 @@ import Reference from './Reference'
 import URL from '../URL'
 
 export default class JSONSchemaReference extends Reference {
-    resolve(item) {
-        let string = item.content
+    resolve(string) {
         let obj
         try {
             obj = JSON.parse(string)
@@ -58,10 +57,6 @@ export default class JSONSchemaReference extends Reference {
         else {
             return match[1]
         }
-    }
-
-    toJS() {
-        return this.get('uri')
     }
 
     _unescapeURIFragment(uriFragment) {
@@ -132,7 +127,8 @@ export default class JSONSchemaReference extends Reference {
                     if (key === '$ref') {
                         let uri = this.get('uri')
                         let reference = new JSONSchemaReference({
-                            uri: (new URL(obj.$ref, uri)).href()
+                            uri: (new URL(obj.$ref, uri)).href(),
+                            context: this.get('context')
                         })
                         refs = refs.push(reference)
                     }

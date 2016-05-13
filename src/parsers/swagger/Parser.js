@@ -20,6 +20,7 @@ import {
 
 import Auth from '../../models/Auth'
 import URL from '../../models/URL'
+import Item from '../../models/Item'
 
 import ReferenceContainer from '../../models/Reference'
 import JSONSchemaReference from '../../models/references/JSONSchema'
@@ -27,12 +28,12 @@ import JSONSchemaReference from '../../models/references/JSONSchema'
 export default class SwaggerParser {
     constructor() {
         this.context = new Context()
-        this.item = null
+        this.item = new Item()
     }
 
     // @NotTested -> assumed valid
     parse(item) {
-        this.item = item
+        this.item = new Item(item)
         const string = item.content
         const swaggerCollection = this._loadSwaggerCollection(string)
         const valid = this._validateSwaggerCollection(swaggerCollection)
@@ -44,7 +45,9 @@ export default class SwaggerParser {
 
         if (swaggerCollection) {
             let refs = new ReferenceContainer()
-            refs = refs.create(this._extractReferences(this.item))
+            refs = refs.create(
+                this._extractReferences(this.item, swaggerCollection)
+            )
 
             let rootGroup = new Group()
             rootGroup = rootGroup.set('name', swaggerCollection.info.title)
@@ -367,10 +370,12 @@ export default class SwaggerParser {
         return subTree
     }
 
-    _extractReferences(item) {
-        let ref = new JSONSchemaReference()
+    _extractReferences(item, collection) {
+        let ref = new JSONSchemaReference({
+            context: item
+        })
         let refs = ref
-            .resolve(item)
+            .resolve(JSON.stringify(collection))
             .get('dependencies')
         return refs
     }
@@ -434,17 +439,12 @@ export default class SwaggerParser {
         for (let code of codes) {
             let body = new Immutable.List()
             if (responses[code].schema) {
-                let ref = new JSONSchemaReference()
-                    .resolve({
-                        content: JSON.stringify(responses[code].schema)
-                    })
-                    .get('value')
+                let param = this._extractParam(
+                    responses[code],
+                    externals
+                )
 
-                body = body.push(new Parameter({
-                    key: 'schema',
-                    value: ref,
-                    externals: externals
-                }))
+                body = body.push(param)
             }
 
             let contentTypes = this._extractContentTypes(
@@ -543,13 +543,14 @@ export default class SwaggerParser {
     _extractParams(collection, content) {
         let _content = content || {}
         let _collection = collection || {}
-
-        let contentTypes = this._extractContentTypes(_collection, _content)
         let parameters = _content.parameters || []
+
         let headers = []
         let queries = []
         let body = []
         let path = []
+
+        let contentTypes = this._extractContentTypes(_collection, _content)
         let externals = this._extractExternals(_collection, _content)
 
         for (let contentType of contentTypes) {
@@ -573,6 +574,7 @@ export default class SwaggerParser {
             query: queries,
             header: headers,
             formData: body,
+            body: body,
             path: path
         }
 
@@ -585,29 +587,6 @@ export default class SwaggerParser {
                 if (fieldList) {
                     let _param = this._extractParam(param, externals)
                     fieldList.push(_param)
-                }
-
-                if (param.in === 'body') {
-                    if (!param.schema) {
-                        const m = 'Expected a schema object in body param'
-                        throw new Error(m)
-                    }
-
-                    let ref = (new JSONSchemaReference())
-                        .resolve({
-                            content: JSON.stringify(param.schema)
-                        })
-                        .get('value')
-
-                    body.push(
-                        new Parameter({
-                            key: 'body',
-                            value: ref,
-                            type: 'schema',
-                            description: param.description || null,
-                            externals: externals
-                        })
-                    )
                 }
             }
         }
@@ -643,6 +622,13 @@ export default class SwaggerParser {
             multipleOf: Constraint.MultipleOf
         }
 
+        if (param.schema) {
+            Object.assign(param, param.schema)
+            param.name = param.name || 'schema'
+        }
+
+        let type = param.type || null
+
         let internals = new Immutable.List()
         for (let key of Object.keys(param)) {
             if (internalsMap[key]) {
@@ -663,9 +649,18 @@ export default class SwaggerParser {
             }
         }
 
+        if (param.$ref) {
+            let currentURI = this.item.getPath()
+            let uri = (new URL(param.$ref, currentURI)).href()
+            value = new JSONSchemaReference({
+                uri: uri
+            })
+            type = 'reference'
+        }
+
         if (param.type === 'array') {
-            value = this._extractParam(param.items)
-            format = param.collectionFormat
+            value = this._extractParam(param.items, externals)
+            format = param.collectionFormat || null
         }
 
         if (param['x-use-with']) {
@@ -678,7 +673,7 @@ export default class SwaggerParser {
         let _param = new Parameter({
             key: param.name || null,
             value: value,
-            type: param.type || null,
+            type: type,
             format: format,
             required: required,
             description: param.description || null,

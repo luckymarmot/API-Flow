@@ -350,7 +350,6 @@ export default class URL extends Immutable.Record({
             return ''
         }
         else {
-            console.log(this.getIn([ name, 'internals', 0 ]))
             return this.get(name).generate(true)
         }
     }

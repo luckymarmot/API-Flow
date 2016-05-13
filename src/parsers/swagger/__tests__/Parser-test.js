@@ -17,13 +17,15 @@ import {
 
 import {
     Group,
-    Schema,
     Info, Contact, License
 } from '../../../models/Utils'
 
 import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
 import URL from '../../../models/URL'
+import Item from '../../../models/Item'
+
+import JSONSchemaReference from '../../../models/references/JSONSchema'
 
 import {
     ClassMock
@@ -1708,6 +1710,137 @@ export class TestSwaggerParser extends UnitTest {
             JSON.stringify(expected, null, '  '),
             JSON.stringify(result, null, '  ')
         )
+    }
+
+    @targets('_unescapeURIFragment')
+    testUnescapeURIFragment() {
+        const parser = this.__init()
+        const fragments = [
+            '#/definitions/User',
+            '#/definitions/User~01',
+            '#/definitions/User~10',
+            '#/definitions/User~0~1',
+            '#/definitions/User~1~0'
+        ]
+
+        const expected = [
+            '#/definitions/User',
+            '#/definitions/User~1',
+            '#/definitions/User/0',
+            '#/definitions/User~/',
+            '#/definitions/User/~'
+        ]
+
+        for (let i = 0; i < fragments.length; i += 1) {
+            let result = parser._unescapeURIFragment(fragments[i])
+            this.assertEqual(expected[i], result)
+        }
+    }
+
+    @targets('_extractSubTree')
+    testExtractSubTree() {
+        const parser = this.__init()
+        const refs = [
+            '#/definitions/User',
+            '#/definitions/User~01',
+            '#/definitions/User/Friend'
+        ]
+
+        const collection = {
+            definitions: {
+                User: {
+                    value: 12,
+                    Friend: {
+                        value: 42
+                    }
+                },
+                'User~1': {
+                    value: 90
+                }
+            }
+        }
+
+        const expected = [
+            {
+                value: 12,
+                Friend: {
+                    value: 42
+                }
+            },
+            {
+                value: 90
+            },
+            {
+                value: 42
+            }
+        ]
+
+        for (let i = 0; i < refs.length; i += 1) {
+            let result = parser._extractSubTree(collection, refs[i])
+            this.assertEqual(expected[i], result)
+        }
+    }
+
+    @targets('_extractReferences')
+    testExtractReferences() {
+        const parser = this.__init()
+        const item = new Item({
+            file: {
+                name: 'uber.json',
+                path: '/some/path/to/file/'
+            }
+        })
+
+        const collection = {
+            definitions: {
+                User: {
+                    value: 42
+                },
+                Product: {
+                    value: 12
+                },
+                Superfluous: {
+                    value: false
+                }
+            },
+            paths: [
+                {
+                    $ref: '#/definitions/User'
+                },
+                {
+                    $ref: '#/definitions/Product'
+                },
+                {
+                    $ref: '#/definitions/Missing'
+                },
+                {
+                    $ref: 'external.json#/definitions/Other'
+                }
+            ]
+        }
+
+        const expected = new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/definitions/User',
+                context: item
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/Product',
+                context: item
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/Missing',
+                context: item
+            }),
+            new JSONSchemaReference({
+                uri: 'external.json#/definitions/Other',
+                context: item
+            })
+        ])
+
+        let result = parser._extractReferences(item, collection)
+
+        this.assertEqual(expected, result)
     }
 
     //
