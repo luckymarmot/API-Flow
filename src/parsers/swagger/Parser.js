@@ -22,7 +22,7 @@ import Auth from '../../models/Auth'
 import URL from '../../models/URL'
 import Item from '../../models/Item'
 
-import ReferenceContainer from '../../models/Reference'
+import ReferenceContainer from '../../models/references/Container'
 import JSONSchemaReference from '../../models/references/JSONSchema'
 
 export default class SwaggerParser {
@@ -371,9 +371,7 @@ export default class SwaggerParser {
     }
 
     _extractReferences(item, collection) {
-        let ref = new JSONSchemaReference({
-            context: item
-        })
+        let ref = new JSONSchemaReference()
         let refs = ref
             .resolve(JSON.stringify(collection))
             .get('dependencies')

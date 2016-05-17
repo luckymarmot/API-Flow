@@ -1,11 +1,9 @@
 export default class ContextResolver {
-    constructor(item, context, environment) {
-        this.item = item
-        this.context = context
+    constructor(environment) {
         this.environment = environment
     }
 
-    resolveAll(_references) {
+    resolveAll(item, _references) {
         let references = _references
         let unresolved = references.getUnresolvedReferences()
 
@@ -15,8 +13,9 @@ export default class ContextResolver {
             })
         }
 
-        let promises = unresolved.map(reference => {
-            return this.resolveReference(reference)
+        let promises = unresolved.map(uri => {
+            let reference = references.resolve(uri)
+            return this.resolveReference(item, reference)
         })
 
         return Promise.all(promises).then(updatedReferences => {
@@ -25,26 +24,27 @@ export default class ContextResolver {
                 let dependencies = reference.get('dependencies')
                 references = references.create(dependencies)
             }
-            return this.resolveAll(references)
+            return this.resolveAll(item, references)
         })
     }
 
-    resolveReference(reference) {
-        let dataUri = reference.extractDataUri()
+    resolveReference(item, reference) {
+        let dataUri = reference.getDataUri()
 
         let dataResolver
         let urlPattern = /^https?:\/\//i
+        this.environment = this.environment.addResolver(item)
+
+        let type = 'file'
         if (urlPattern.test(dataUri)) {
-            dataResolver = this.environment.getURLResolver(reference)
+            type = 'url'
         }
-        else {
-            dataResolver = this.environment.getFileResolver(reference)
-        }
+        dataResolver = this.environment.getResolver(item, type)
 
         return dataResolver
             .resolve(dataUri)
-            .then(item => {
-                return reference.resolve(item)
+            .then(_item => {
+                return reference.resolve(_item)
             })
     }
 }

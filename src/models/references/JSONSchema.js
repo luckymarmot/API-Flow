@@ -31,19 +31,31 @@ export default class JSONSchemaReference extends Reference {
         else {
             let fragmentPath = match[2]
             value = this._extractSubTree(obj, fragmentPath)
+            if (value === null) {
+                return this
+                    .set('dependencies', new Immutable.List())
+                    .set('resolved', true)
+                    .set('raw', string)
+            }
         }
 
         let dependencies = this._findRefs(value)
         value = this._replaceRefs(value)
 
         return this
-            .set('value', value)
             .set('resolved', true)
+            .set('value', value)
             .set('dependencies', dependencies)
     }
 
+    /*
+        evaluate uses references only for resolution of refs
+        present in the value of the base reference. It does not
+        resolve the current uri against the reference container.
+    */
     evaluate(references, depth = 0) {
         let value = this.get('value')
+        console.log('\n\ndepth ####', depth, '\n\n')
         return this.set('value', ::this._resolveRefs(references, value, depth))
     }
 
@@ -71,12 +83,16 @@ export default class JSONSchemaReference extends Reference {
         let subTree = obj
         for (let key of path) {
             subTree = subTree[key]
+            if (typeof subTree === 'undefined') {
+                return null
+            }
         }
 
         return subTree
     }
 
     _resolveRefs(references, obj, depth = 0) {
+        console.log('this was called', JSON.stringify(obj, null, '  '), depth)
         if (typeof obj !== 'object' || depth === 0) {
             return obj
         }
@@ -94,18 +110,20 @@ export default class JSONSchemaReference extends Reference {
                         key === '$ref' &&
                         obj.$ref instanceof Reference
                     ) {
+                        console.log('\ngot a $ref', obj.$ref, '\n\n')
                         let reference = references.resolve(
                             obj.$ref.get('uri'), depth - 1
                         )
+                        console.log('\n\nreference is ->', reference)
                         obj.$ref = reference.get('value')
                     }
                     else {
-                        obj[key] = this._resolveRefs(references, obj[key])
+                        obj[key] = this._resolveRefs(references, obj[key], depth)
                     }
                 }
             }
         }
-
+        console.log('obj ->>>', obj)
         return obj
     }
 
@@ -127,8 +145,7 @@ export default class JSONSchemaReference extends Reference {
                     if (key === '$ref') {
                         let uri = this.get('uri')
                         let reference = new JSONSchemaReference({
-                            uri: (new URL(obj.$ref, uri)).href(),
-                            context: this.get('context')
+                            uri: (new URL(obj.$ref, uri)).href()
                         })
                         refs = refs.push(reference)
                     }

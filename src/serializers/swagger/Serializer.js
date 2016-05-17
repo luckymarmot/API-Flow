@@ -12,6 +12,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         let [ paths, securityDefs ] = this._formatPaths(
             context, requests, schemes
         )
+        let definitions = this._formatDefinitions(context)
 
         let swagger = {
             swagger: '2.0',
@@ -19,6 +20,8 @@ export default class SwaggerSerializer extends BaseSerializer {
             host: host,
             paths: paths
         }
+
+        Object.assign(swagger, definitions)
 
         if (schemes !== []) {
             swagger.schemes = schemes
@@ -266,7 +269,6 @@ export default class SwaggerSerializer extends BaseSerializer {
     }
 
     _formatParameters(context, request) {
-        let references = context.get('references')
         let container = request.get('parameters')
 
         let headers = container.get('headers')
@@ -275,18 +277,18 @@ export default class SwaggerSerializer extends BaseSerializer {
         let path = container.get('path')
 
         return headers.map(param => {
-            return this._formatParam('header', param, references)
+            return this._formatParam('header', param)
         }).concat(
         queries.map(param => {
-            return this._formatParam('query', param, references)
+            return this._formatParam('query', param)
         })
         ).concat(
         body.map(param => {
-            return this._formatParam('body', param, references)
+            return this._formatParam('body', param)
         })
         ).concat(
         path.map(param => {
-            return this._formatParam('path', param, references)
+            return this._formatParam('path', param)
         })
         )
     }
@@ -446,7 +448,7 @@ export default class SwaggerSerializer extends BaseSerializer {
     _formatDefinitions(context) {
         let schemas = {}
         let references = context.get('references')
-        references.forEach((cache, key) => {
+        references.get('cache').forEach((cache, key) => {
             if (key.startsWith('#/')) {
                 let pathFragments = key.split('/').slice(1).map(fragment => {
                     return this._unescapeURIFragment(fragment)
@@ -461,7 +463,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                         subTree[fragment]
                     subTree = subTree[fragment]
                 }
-                let ref = references.resolve(key)
+                let ref = references.resolve(key).get('value')
 
                 // object assignement
                 Object.assign(subTree, ref)

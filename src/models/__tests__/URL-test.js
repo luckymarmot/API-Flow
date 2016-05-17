@@ -252,8 +252,8 @@ export class TestURL extends UnitTest {
         let url = new URL({
             host: 'www.example.com',
             protocol: [
-                'http:',
-                'https:'
+                'http',
+                'https'
             ]
         })
 
@@ -261,7 +261,7 @@ export class TestURL extends UnitTest {
         let protocol = url._getParamValue('protocol')
 
         this.assertEqual(host, [ 'www.example.com' ])
-        this.assertEqual(protocol, [ 'http:', 'https:' ])
+        this.assertEqual(protocol, [ 'http', 'https' ])
     }
 
     @targets('_mergeParams')
@@ -296,32 +296,66 @@ export class TestURL extends UnitTest {
         let url1 = new URL({
             host: 'www.example.com',
             protocol: [
-                'http:',
-                'https:'
+                'http',
+                'https'
             ]
         })
 
         let url2 = new URL({
             host: 'www.example.com',
             protocol: [
-                'ws:',
-                'wss:'
+                'ws',
+                'wss'
             ]
         })
 
         let expected = new URL({
             host: 'www.example.com',
             protocol: [
-                'http:',
-                'https:',
-                'ws:',
-                'wss:'
+                'http',
+                'https',
+                'ws',
+                'wss'
             ]
         })
 
         let result = url1.merge(url2)
 
         this.assertJSONEqual(expected, result)
+    }
+
+    @targets('generateParam')
+    testGenerateParam() {
+        let url = new URL({
+            host: 'www.example.com',
+            protocol: [
+                'http',
+                'https'
+            ]
+        })
+
+        let size = 100
+
+        let counts = {
+            'www.example.com': 0,
+            http: 0,
+            https: 0
+        }
+
+        for (let i = 0; i < size; i += 1) {
+            let resultHost = url.generateParam('host')
+            let resultProtocol = url.generateParam('protocol')
+
+            counts[resultHost] = (counts[resultHost] || 0) + 1
+            counts[resultProtocol] = (counts[resultProtocol] || 0) + 1
+        }
+
+        this.assertEqual(counts['www.example.com'], size)
+        this.assertEqual(counts.http + counts.https, size)
+
+        let msg = 'this may fail if you are really unlucky'
+        this.assertNotEqual(counts.http, 0, msg)
+        this.assertNotEqual(counts.https, 0, msg)
     }
 
     __validateURL(test) {

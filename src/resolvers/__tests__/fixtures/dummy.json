@@ -1,0 +1,11 @@
+{
+    "value": 12,
+    "references": {
+        "Friend": {
+            "$ref": "#/references/User"
+        },
+        "User": {
+            "$ref": "#/references/Friend"
+        }
+    }
+}

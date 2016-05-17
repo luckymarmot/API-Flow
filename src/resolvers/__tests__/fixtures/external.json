@@ -1,0 +1,15 @@
+{
+  "references": {
+    "User": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "friend": {
+          "$ref": "dummy.json#/references/User"
+        }
+      },
+      "type": "object"
+    }
+  }
+} 

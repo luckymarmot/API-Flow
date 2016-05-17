@@ -8,6 +8,9 @@ import Immutable from 'immutable'
 
 import SwaggerSerializer from '../Serializer'
 
+import ContextResolver from '../../../resolvers/ContextResolver'
+import NodeEnvironment from '../../../models/environments/NodeEnvironment'
+
 import Context, {
     Body,
     Request,
@@ -25,10 +28,8 @@ import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
 import URL from '../../../models/URL'
 
-import ReferenceContainer, {
-    ReferenceCache
-} from '../../../models/Reference'
-
+import ReferenceContainer from '../../../models/references/Container'
+import ReferenceCache from '../../../models/references/Cache'
 import JSONSchemaReference from '../../../models/references/JSONSchema'
 
 import {
@@ -1199,36 +1200,39 @@ export class TestSwaggerSerializer extends UnitTest {
         }
     }
 
+    @targets('_formatDefinitions')
     testFormatDefinitions() {
         const parser = this.__init()
         const context = new Context({
             references: new ReferenceContainer({
-                '#/definitions/User': new ReferenceCache({
-                    cached: new JSONSchemaReference({
-                        value: {
-                            type: 'string',
-                            name: 'Content-Type',
-                            enum: [ 'application/json', 'application/xml' ]
-                        },
-                        resolved: true
-                    })
-                }),
-                '#/definitions/API': new ReferenceCache({
-                    cached: new JSONSchemaReference({
-                        value: {
-                            type: 'string'
-                        },
-                        resolved: true
-                    })
-                }),
-                '#/some/other/ProductReference': new ReferenceCache({
-                    cached: new JSONSchemaReference({
-                        value: {
-                            type: 'integer',
-                            minimum: 0,
-                            maximum: 100
-                        },
-                        resolved: true
+                cache: new Immutable.OrderedMap({
+                    '#/definitions/User': new ReferenceCache({
+                        cached: new JSONSchemaReference({
+                            value: {
+                                type: 'string',
+                                name: 'Content-Type',
+                                enum: [ 'application/json', 'application/xml' ]
+                            },
+                            resolved: true
+                        })
+                    }),
+                    '#/definitions/API': new ReferenceCache({
+                        cached: new JSONSchemaReference({
+                            value: {
+                                type: 'string'
+                            },
+                            resolved: true
+                        })
+                    }),
+                    '#/some/other/ProductReference': new ReferenceCache({
+                        cached: new JSONSchemaReference({
+                            value: {
+                                type: 'integer',
+                                minimum: 0,
+                                maximum: 100
+                            },
+                            resolved: true
+                        })
                     })
                 })
             })
@@ -1258,10 +1262,10 @@ export class TestSwaggerSerializer extends UnitTest {
 
         const result = parser._formatDefinitions(context)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
-    testFull() {
+    testFull(done) {
         const parser = new SwaggerParser()
         const content = fs
             .readFileSync(__dirname + '/collections/uber.json')
@@ -1274,10 +1278,24 @@ export class TestSwaggerSerializer extends UnitTest {
             },
             content: content
         })
-        const serializer = this.__init()
-        const result = serializer.serialize(context)
 
-        // this.assertEqual(result, '')
+        const environment = new NodeEnvironment()
+        const resolver = new ContextResolver(environment)
+        resolver.resolveAll(
+            parser.item,
+            context.get('references')
+        ).then(references => {
+            const serializer = this.__init()
+            serializer
+                .serialize(context.set('references', references))
+
+            // this.assertEqual(result, '')
+            done()
+        }, error => {
+            throw new Error(error)
+        }).catch(error => {
+            done(new Error(error))
+        })
     }
 
     //

@@ -1821,20 +1821,16 @@ export class TestSwaggerParser extends UnitTest {
 
         const expected = new Immutable.List([
             new JSONSchemaReference({
-                uri: '#/definitions/User',
-                context: item
+                uri: '#/definitions/User'
             }),
             new JSONSchemaReference({
-                uri: '#/definitions/Product',
-                context: item
+                uri: '#/definitions/Product'
             }),
             new JSONSchemaReference({
-                uri: '#/definitions/Missing',
-                context: item
+                uri: '#/definitions/Missing'
             }),
             new JSONSchemaReference({
-                uri: 'external.json#/definitions/Other',
-                context: item
+                uri: 'external.json#/definitions/Other'
             })
         ])
 

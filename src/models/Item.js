@@ -3,7 +3,8 @@ import Immutable from 'immutable'
 export default class Item extends Immutable.Record({
     url: null,
     filename: null,
-    filepath: null
+    filepath: null,
+    content: null
 }) {
     constructor(item) {
         if (!item) {
@@ -15,7 +16,8 @@ export default class Item extends Immutable.Record({
         let obj = {
             url: item.url || null,
             filename: file.name || null,
-            filepath: file.path || null
+            filepath: file.path || null,
+            content: item.content || null
         }
 
         super(obj)

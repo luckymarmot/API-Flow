@@ -4,6 +4,7 @@ import jsf from 'json-schema-faker'
 import { Info } from './Utils'
 import URL from './URL'
 import Reference from './references/Reference'
+import ReferenceContainer from './references/Container'
 
 export class Parameter extends Immutable.Record({
     key: null,
@@ -218,7 +219,7 @@ export class Request extends Immutable.Record({
 
 export default class Context extends Immutable.Record({
     group: null,
-    references: null,
+    references: new ReferenceContainer(),
     info: new Info()
 }) {
     getRequests() {
