@@ -261,8 +261,78 @@ export class TestJSONSchemaReference extends UnitTest {
             resolved: true
         })
 
-        let result = reference.evaluate(container, 3)
+        let result = reference.evaluate(container, 2)
 
         this.assertJSONEqual(expected, result)
+    }
+
+    @targets('evaluate')
+    testEvaluateWithMissingRefs() {
+        let reference = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            value: {
+                test: true,
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/Missing'
+                })
+            },
+            resolved: true
+        })
+
+        let product = new JSONSchemaReference({
+            uri: '#/definitions/Product',
+            value: {
+                pid: 42,
+                type: 'integer',
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/User'
+                })
+            },
+            resolved: true
+        })
+
+        let container = new ReferenceContainer()
+        container = container
+            .update(reference)
+            .update(product)
+
+        const expected = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            value: {
+                test: true,
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/Missing'
+                })
+            },
+            resolved: true
+        })
+
+        let result = reference.evaluate(container, 2)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('getDataUri')
+    testGetDataUri() {
+        let ref = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        let expected = ''
+        let result = ref.getDataUri()
+
+        this.assertEqual(expected, result)
+
+        ref = ref.set('uri', 'anything.json#/path/to/def')
+        expected = 'anything.json'
+        result = ref.getDataUri()
+
+        this.assertEqual(expected, result)
+
+        ref = ref.set('uri', 'no-fragment.json')
+        expected = 'no-fragment.json'
+        result = ref.getDataUri()
+
+        this.assertEqual(expected, result)
     }
 }

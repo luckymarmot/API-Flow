@@ -34,13 +34,12 @@ export default class ReferenceContainer extends Immutable.Record({
     }
 
     resolve(uri, depth = 0) {
-        console.log('in container.resolve')
         let cache = this.getIn([ 'cache', uri ])
         if (!cache) {
             return null
         }
-        console.log('got a valid cache', cache)
-        return cache.resolve(this, depth).getReference(depth)
+        let resolved = cache.resolve(this, depth).getReference(depth)
+        return resolved
     }
 
     getUnresolvedReferences() {

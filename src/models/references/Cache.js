@@ -45,7 +45,6 @@ export default class ReferenceCache extends Immutable.Record({
             closest = -1
         }
 
-        console.log('closest', closest)
         let resolved = cache
             .getIn([ 'resolved', closest ])
             .evaluate(references, depth - (closest + 1))
@@ -59,7 +58,7 @@ export default class ReferenceCache extends Immutable.Record({
             return this.get('cached')
         }
         let final = this.get('final')
-        if (final !== 0 && depth > final) {
+        if (final !== null && final !== 0 && depth > final) {
             return this.getIn([ 'resolved', final ])
         }
         return this.getIn([ 'resolved', depth ])

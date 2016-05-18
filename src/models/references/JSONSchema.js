@@ -55,8 +55,9 @@ export default class JSONSchemaReference extends Reference {
     */
     evaluate(references, depth = 0) {
         let value = this.get('value')
-        console.log('\n\ndepth ####', depth, '\n\n')
-        return this.set('value', ::this._resolveRefs(references, value, depth))
+        let newValue = ::this._resolveRefs(references, value, depth)
+        // deep copy to avoid circular references
+        return this.set('value', Immutable.fromJS(newValue).toJS())
     }
 
     getDataUri() {
@@ -92,7 +93,6 @@ export default class JSONSchemaReference extends Reference {
     }
 
     _resolveRefs(references, obj, depth = 0) {
-        console.log('this was called', JSON.stringify(obj, null, '  '), depth)
         if (typeof obj !== 'object' || depth === 0) {
             return obj
         }
@@ -104,26 +104,23 @@ export default class JSONSchemaReference extends Reference {
             }
         }
         else {
-            for (let key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    if (
-                        key === '$ref' &&
-                        obj.$ref instanceof Reference
-                    ) {
-                        console.log('\ngot a $ref', obj.$ref, '\n\n')
-                        let reference = references.resolve(
-                            obj.$ref.get('uri'), depth - 1
-                        )
-                        console.log('\n\nreference is ->', reference)
+            for (let key of Object.keys(obj)) {
+                if (
+                    key === '$ref' &&
+                    obj.$ref instanceof Reference
+                ) {
+                    let reference = references.resolve(
+                        obj.$ref.get('uri'), depth - 1
+                    )
+                    if (reference !== null) {
                         obj.$ref = reference.get('value')
                     }
-                    else {
-                        obj[key] = this._resolveRefs(references, obj[key], depth)
-                    }
+                }
+                else {
+                    obj[key] = this._resolveRefs(references, obj[key], depth)
                 }
             }
         }
-        console.log('obj ->>>', obj)
         return obj
     }
 

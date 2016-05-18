@@ -1265,7 +1265,7 @@ export class TestSwaggerSerializer extends UnitTest {
         this.assertJSONEqual(expected, result)
     }
 
-    testFull(done) {
+    _testFull(done) {
         const parser = new SwaggerParser()
         const content = fs
             .readFileSync(__dirname + '/collections/uber.json')
