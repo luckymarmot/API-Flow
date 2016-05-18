@@ -52,6 +52,7 @@
   "scripts": {
     "compile": "babel --ignore='**/__tests__/' -d lib/ src/",
     "test": "$npm_package_options_mocha \"src/**/__tests__/*-test.js\"",
+    "validate": "node validate.js",
     "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
   },
   "options": {
