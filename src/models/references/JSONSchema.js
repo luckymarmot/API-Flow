@@ -112,7 +112,7 @@ export default class JSONSchemaReference extends Reference {
                     let reference = references.resolve(
                         obj.$ref.get('uri'), depth - 1
                     )
-                    if (reference !== null) {
+                    if (reference !== null && reference.get('value')) {
                         obj.$ref = reference.get('value')
                     }
                 }

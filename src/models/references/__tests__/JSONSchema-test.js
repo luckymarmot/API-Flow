@@ -335,4 +335,373 @@ export class TestJSONSchemaReference extends UnitTest {
 
         this.assertEqual(expected, result)
     }
+
+    @targets('_unescapeURIFragment')
+    testUnescapeURIFragment() {
+        const ref = this.__init()
+        const fragments = [
+            '#/definitions/User',
+            '#/definitions/User~01',
+            '#/definitions/User~10',
+            '#/definitions/User~0~1',
+            '#/definitions/User~1~0'
+        ]
+
+        const expected = [
+            '#/definitions/User',
+            '#/definitions/User~1',
+            '#/definitions/User/0',
+            '#/definitions/User~/',
+            '#/definitions/User/~'
+        ]
+
+        for (let i = 0; i < fragments.length; i += 1) {
+            let result = ref._unescapeURIFragment(fragments[i])
+            this.assertEqual(expected[i], result)
+        }
+    }
+
+    @targets('_extractSubTree')
+    testExtractSubTree() {
+        const ref = this.__init()
+        const refs = [
+            '#/definitions/User',
+            '#/definitions/User~01',
+            '#/definitions/User/Friend'
+        ]
+
+        const collection = {
+            definitions: {
+                User: {
+                    value: 12,
+                    Friend: {
+                        value: 42
+                    }
+                },
+                'User~1': {
+                    value: 90
+                }
+            }
+        }
+
+        const expected = [
+            {
+                value: 12,
+                Friend: {
+                    value: 42
+                }
+            },
+            {
+                value: 90
+            },
+            {
+                value: 42
+            }
+        ]
+
+        for (let i = 0; i < refs.length; i += 1) {
+            let result = ref._extractSubTree(collection, refs[i])
+            this.assertEqual(expected[i], result)
+        }
+    }
+
+    @targets('_resolveRefs')
+    testResolveRefsNoDepth() {
+        let reference = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            value: {
+                test: true,
+                dummy: 12
+            },
+            resolved: true
+        })
+
+        let container = new ReferenceContainer()
+        container = container.update(reference)
+
+        let obj = {
+            value: 12
+        }
+
+        let result = reference._resolveRefs(container, obj)
+
+        this.assertEqual(obj, result)
+    }
+
+    @targets('_resolveRefs')
+    testResolveRefsWithSimpleRefs() {
+        let reference = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            value: {
+                test: true,
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/Product'
+                })
+            },
+            resolved: true
+        })
+
+        let product = new JSONSchemaReference({
+            uri: '#/definitions/Product',
+            value: {
+                pid: 42,
+                type: 'integer'
+            }
+        })
+
+        let container = new ReferenceContainer()
+        container = container
+            .update(reference)
+            .update(product)
+
+        const obj = {
+            test: true,
+            $ref: new JSONSchemaReference({
+                uri: '#/definitions/Product'
+            })
+        }
+
+        const expected = {
+            test: true,
+            $ref: {
+                pid: 42,
+                type: 'integer'
+            }
+        }
+
+        let result = reference._resolveRefs(container, obj, 1)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_resolveRefs')
+    testResolveRefsWithCircularRefs() {
+        let reference = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            value: {
+                test: true,
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/Product'
+                })
+            },
+            resolved: true
+        })
+
+        let product = new JSONSchemaReference({
+            uri: '#/definitions/Product',
+            value: {
+                pid: 42,
+                type: 'integer',
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/User'
+                })
+            },
+            resolved: true
+        })
+
+        let container = new ReferenceContainer()
+        container = container
+            .update(reference)
+            .update(product)
+
+        const obj = {
+            test: true,
+            $ref: new JSONSchemaReference({
+                uri: '#/definitions/Product'
+            })
+        }
+
+        const expected = {
+            test: true,
+            $ref: {
+                pid: 42,
+                type: 'integer',
+                $ref: {
+                    test: true,
+                    $ref: new JSONSchemaReference({
+                        uri: '#/definitions/Product'
+                    })
+                }
+            }
+        }
+
+        let result = reference._resolveRefs(container, obj, 2)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_resolveRefs')
+    testResolveRefsWithMissingRefs() {
+        let reference = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            value: {
+                test: true,
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/Missing'
+                })
+            },
+            resolved: true
+        })
+
+        let product = new JSONSchemaReference({
+            uri: '#/definitions/Product',
+            value: {
+                pid: 42,
+                type: 'integer',
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/User'
+                })
+            },
+            resolved: true
+        })
+
+        const obj = {
+            test: true,
+            $ref: new JSONSchemaReference({
+                uri: '#/definitions/Missing'
+            })
+        }
+
+        let container = new ReferenceContainer()
+        container = container
+            .update(reference)
+            .update(product)
+
+        const expected = {
+            test: true,
+            $ref: new JSONSchemaReference({
+                uri: '#/definitions/Missing'
+            })
+        }
+
+        let result = reference._resolveRefs(container, obj, 2)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_resolveRefs')
+    testResolveRefsWithUnresolvedRefs() {
+        let reference = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            value: {
+                test: true,
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/Unresolved'
+                })
+            },
+            resolved: true
+        })
+
+        let unresolved = new JSONSchemaReference({
+            uri: '#/definitions/Unresolved'
+        })
+
+        const obj = {
+            test: true,
+            $ref: new JSONSchemaReference({
+                uri: '#/definitions/Unresolved'
+            })
+        }
+
+        let container = new ReferenceContainer()
+        container = container
+            .update(reference)
+            .update(unresolved)
+
+        const expected = {
+            test: true,
+            $ref: new JSONSchemaReference({
+                uri: '#/definitions/Unresolved'
+            })
+        }
+
+        let result = reference._resolveRefs(container, obj, 2)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_findRefs')
+    testFindRefs() {
+        let ref = this.__init('#/definitions/Root')
+
+        let obj = {
+            user: {
+                $ref: '#/definitions/User'
+            },
+            product: {
+                $ref: '/some/absolute/path/#/definitions/Product'
+            },
+            web: {
+                $ref: 'http://www.example.com/some/path#/definitions/Web'
+            },
+            fragmentless: {
+                $ref: 'http://www.example.com/definitions/Fragmentless'
+            }
+        }
+
+        let expected = new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/definitions/User'
+            }),
+            new JSONSchemaReference({
+                uri: '/some/absolute/path/#/definitions/Product'
+            }),
+            new JSONSchemaReference({
+                uri: 'http://www.example.com/some/path#/definitions/Web'
+            }),
+            new JSONSchemaReference({
+                uri: 'http://www.example.com/definitions/Fragmentless'
+            })
+        ])
+
+        let result = ref._findRefs(obj)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_replaceRefs')
+    testReplaceRefs() {
+        let ref = this.__init('#/definitions/Root')
+
+        let obj = {
+            user: {
+                $ref: '#/definitions/User'
+            },
+            product: {
+                $ref: '/some/absolute/path/#/definitions/Product'
+            },
+            web: {
+                $ref: 'http://www.example.com/some/path#/definitions/Web'
+            },
+            fragmentless: {
+                $ref: 'http://www.example.com/definitions/Fragmentless'
+            }
+        }
+
+        let expected = {
+            user: {
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/User'
+                })
+            },
+            product: {
+                $ref: new JSONSchemaReference({
+                    uri: '/some/absolute/path/#/definitions/Product'
+                })
+            },
+            web: {
+                $ref: new JSONSchemaReference({
+                    uri: 'http://www.example.com/some/path#/definitions/Web'
+                })
+            },
+            fragmentless: {
+                $ref: new JSONSchemaReference({
+                    uri: 'http://www.example.com/definitions/Fragmentless'
+                })
+            }
+        }
+
+        let result = ref._replaceRefs(obj)
+        this.assertEqual(expected, result)
+    }
 }
