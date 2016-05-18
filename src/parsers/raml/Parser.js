@@ -11,9 +11,12 @@ import Context, {
 
 import {
     Group,
-    URL,
-    Schema
+    URL
 } from '../../models/Utils'
+
+import ReferenceContainer from '../../models/references/Container'
+import Reference from '../../models/references/Reference'
+import ExoticReference from '../../models/references/Exotic'
 
 import Constraint from '../../models/Constraint'
 import Auth from '../../models/Auth'
@@ -26,7 +29,6 @@ export default class RAMLParser {
         this.context = new Context()
     }
 
-    // @tested
     parse(string, location) {
         return RAML.load(string, location, {
             reader: this.reader
@@ -41,9 +43,11 @@ export default class RAMLParser {
         })
     }
 
-    // @tested
-    _createContext(raml) {
+    _createContext(_raml) {
         let context = new Context()
+
+        let references = ::this._findReferences(_raml)
+        let raml = ::this._replaceReferences(_raml)
 
         let group = this._createGroupTree(
             raml,
@@ -54,10 +58,76 @@ export default class RAMLParser {
         if (group) {
             context = context.set('group', group)
         }
+
+        if (references) {
+            let container = new ReferenceContainer()
+            container = container.create(references)
+            context = context.set('references', container)
+        }
         return context
     }
 
-    // @tested
+    _findReferences(obj) {
+        let refs = new Immutable.List()
+
+        if (typeof obj === 'string' && obj.startsWith('::fileRef::')) {
+            let uri = obj.slice(11)
+            return refs.push(
+                new ExoticReference({
+                    uri: uri
+                })
+            )
+        }
+
+        if (typeof obj !== 'object') {
+            return refs
+        }
+
+        if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; i += 1) {
+                let content = obj[i]
+                refs = refs.concat(::this._findReferences(content))
+            }
+        }
+        else {
+            for (let key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    refs = refs.concat(::this._findReferences(obj[key]))
+                }
+            }
+        }
+        return refs
+    }
+
+    _replaceReferences(obj) {
+        if (typeof obj === 'string' && obj.startsWith('::fileRef::')) {
+            let uri = obj.slice(11)
+            return new ExoticReference({
+                uri: uri
+            })
+        }
+
+        if (typeof obj !== 'object') {
+            return obj
+        }
+
+        if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; i += 1) {
+                let content = obj[i]
+                obj[i] = ::this._replaceReferences(content)
+            }
+        }
+        else {
+            for (let key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    obj[key] = ::this._replaceReferences(obj[key])
+                }
+            }
+        }
+
+        return obj
+    }
+
     _createGroupTree(baseTree, tree, baseName, url = '') {
         let _url = url
         // ignore the first group name
@@ -96,7 +166,6 @@ export default class RAMLParser {
         return null
     }
 
-    // @tested
     _createRequest(raml, req, url, method) {
         let _url = this._extractURL(raml, req, url)
         let container = new ParameterContainer()
@@ -165,13 +234,19 @@ export default class RAMLParser {
         let description = param.description || null
 
         if (param.schema) {
+            if (param.schema instanceof Reference) {
+                type = 'reference'
+            }
+            else {
+                // FIXME: we are not propagating the fact that it's a schema
+                type = 'string'
+            }
+
             return new Parameter({
                 key: _name,
                 name: param.displayName || null,
-                value: new Schema({
-                    raw: param.schema
-                }),
-                type: 'schema',
+                value: param.schema,
+                type: type,
                 description: description,
                 example: param.example || null,
                 externals: externals || new Immutable.List()
@@ -221,7 +296,6 @@ export default class RAMLParser {
         })
     }
 
-    // @tested
     _extractHeaders(raml, req, container) {
         let headers = container.get('headers')
 
@@ -235,7 +309,6 @@ export default class RAMLParser {
         return container.set('headers', headers)
     }
 
-    // @tested
     _extractQueries(raml, req, container) {
         let queries = container.get('queries')
         for (let paramName in req.queryParameters || {}) {
@@ -316,7 +389,6 @@ export default class RAMLParser {
         return [ _container, _bodies ]
     }
 
-    // @tested
     _extractAuth(raml, req) {
         let auths = new Immutable.List()
         if (!req.securedBy) {
@@ -359,7 +431,6 @@ export default class RAMLParser {
         return auths
     }
 
-    // @tested 50%
     _extractOAuth2Auth(raml, security, params) {
         let flowMap = {
             code: 'accessCode',
@@ -391,7 +462,6 @@ export default class RAMLParser {
         return auth
     }
 
-    // @tested 40%
     _extractOAuth1Auth(raml, security, params) {
         let _params = params || {}
         let auth = new Auth.OAuth1({
@@ -412,19 +482,16 @@ export default class RAMLParser {
         return auth
     }
 
-    // @tested
     _extractBasicAuth() {
         let auth = new Auth.Basic()
         return auth
     }
 
-    // @tested
     _extractDigestAuth() {
         let auth = new Auth.Digest()
         return auth
     }
 
-    // @tested 70%
     _extractResponses(raml, req) {
         let responses = new Immutable.List()
 
