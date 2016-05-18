@@ -1,8 +1,6 @@
 import Immutable from 'immutable'
 import BaseSerializer from '../BaseSerializer'
 
-import JSONSchemaReference from '../../models/references/JSONSchema'
-
 export default class SwaggerSerializer extends BaseSerializer {
     serialize(context) {
         let info = this._formatInfo(context)

@@ -98,7 +98,8 @@ export class TestContextResolver extends UnitTest {
                     },
                     friend: {
                         $ref: new JSONSchemaReference({
-                            uri: __dirname + '/fixtures/dummy.json#/references/User'
+                            uri: __dirname +
+                                '/fixtures/dummy.json#/references/User'
                         })
                     }
                 },
