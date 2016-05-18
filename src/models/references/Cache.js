@@ -58,9 +58,9 @@ export default class ReferenceCache extends Immutable.Record({
             return this.get('cached')
         }
         let final = this.get('final')
-        if (final !== null && final !== 0 && depth > final) {
+        if (final !== null && depth > final) {
             return this.getIn([ 'resolved', final ])
         }
-        return this.getIn([ 'resolved', depth ])
+        return this.getIn([ 'resolved', depth ]) || null
     }
 }
