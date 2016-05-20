@@ -10,9 +10,10 @@ import Context, {
 } from '../../models/Core'
 
 import {
-    Group,
-    URL
+    Group
 } from '../../models/Utils'
+
+import URL from '../../models/URL'
 
 import ReferenceContainer from '../../models/references/Container'
 import Reference from '../../models/references/Reference'
@@ -172,6 +173,7 @@ export default class RAMLParser {
 
         container = this._extractHeaders(raml, req, container)
         container = this._extractQueries(raml, req, container)
+        container = this._extractPaths(_url, container)
 
         let bodies
         [ container, bodies ] = this._extractBodies(raml, req, container)
@@ -182,7 +184,7 @@ export default class RAMLParser {
         let request = new Request({
             url: _url,
             method: method,
-            name: _url.getUrl(),
+            name: _url.href(),
             description: req.description || null,
             parameters: container,
             bodies: bodies,
@@ -194,15 +196,18 @@ export default class RAMLParser {
 
     _extractURL(raml, req, path) {
         let baseUri = raml.baseUri
-        let match = (baseUri || '').match(/(.*):\/\/(.*)/)
-        let domain
+        let match = (baseUri || '').match(/(.*):\/\/(.*)\/?(.*)/)
         let schemes = []
+        let domain
+        let basePath
+
         if (!match) {
             domain = baseUri
         }
         else {
             schemes = [ match[1].toLowerCase() ]
             domain = match[2]
+            basePath = match[3] ? '/' + match[3] : ''
         }
 
         if (req.protocols && req.protocols !== []) {
@@ -210,12 +215,126 @@ export default class RAMLParser {
                 return protocol.toLowerCase()
             })
         }
+
+        let protocol = new Parameter({
+            key: 'protocol',
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum(schemes)
+            ])
+        })
+
+        let parameters = Object.assign(
+            {},
+            raml.baseUriParameters,
+            req.baseUriParameters
+        )
+        let host = this._extractSequenceParam(
+            raml, domain, 'host', parameters
+        )
+
+        parameters = Object.assign(
+            {},
+            raml.baseUriParameters,
+            req.baseUriParameters,
+            req.uriParameters
+        )
+        let pathname = this._extractSequenceParam(
+            raml, basePath + path, 'path', parameters
+        )
+
         let _url = new URL({
-            schemes: schemes,
-            host: domain,
-            path: path
+            protocol: protocol,
+            host: host,
+            pathname: pathname
         })
         return _url
+    }
+
+    _extractSequenceParam(raml, _sequence, _key, parameters) {
+        let simpleParam = new Parameter({
+            key: _key,
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum([
+                    _sequence
+                ])
+            ])
+        })
+        if (!parameters) {
+            return simpleParam
+        }
+        else {
+            let groups = _sequence.match(/([^{}]*)(\{[^{}]*\})([^{}]*)/g)
+            if (!groups) {
+                return simpleParam
+            }
+
+            let sequence = new Immutable.List()
+            for (let group of groups) {
+                let sub = group.match(/([^{}]*)(\{[^{}]*\})([^{}]*)/)
+                if (sub[1]) {
+                    sequence = sequence.push(new Parameter({
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                sub[1]
+                            ])
+                        ])
+                    }))
+                }
+
+                if (sub[2]) {
+                    let key = sub[2].slice(1, -1)
+                    let _param
+
+                    if (key === 'version') {
+                        _param = {
+                            enum: [ raml.version ]
+                        }
+                    }
+                    else {
+                        _param = parameters[key]
+                    }
+
+                    if (!_param.type) {
+                        _param.type = 'string'
+                    }
+
+                    let param = this._extractParam(
+                        key, _param
+                    )
+
+                    if (param === null) {
+                        param = new Parameter({
+                            key: key,
+                            type: 'string'
+                        })
+                    }
+
+                    param = param.set('required', true)
+                    sequence = sequence.push(param)
+                }
+
+                if (sub[3]) {
+                    sequence = sequence.push(new Parameter({
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                sub[3]
+                            ])
+                        ])
+                    }))
+                }
+            }
+
+            return new Parameter({
+                key: _key,
+                type: 'string',
+                format: 'sequence',
+                value: sequence
+            })
+        }
     }
 
     _extractParam(name, param, externals) {
@@ -319,6 +438,18 @@ export default class RAMLParser {
         }
 
         return container.set('queries', queries)
+    }
+
+    _extractPaths(url, container) {
+        if (url.getIn([ 'pathname', 'format' ]) !== 'sequence') {
+            return container
+        }
+
+        let param = url.get('pathname')
+        let paths = container.get('path')
+
+        paths = paths.push(param)
+        return container.set('path', paths)
     }
 
     _extractBodies(raml, req, container, bodies) {

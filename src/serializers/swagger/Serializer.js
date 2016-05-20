@@ -123,12 +123,36 @@ export default class SwaggerSerializer extends BaseSerializer {
 
     _formatRequest(context, request, schemes) {
         let req = {}
-        let path = request.getIn([ 'url', 'pathname' ]).generate(true)
+        let _path = request.getIn([ 'url', 'pathname' ])
+
+        let path = this._formatSequenceParam(_path)
+
         let [ security, content ] = ::this.
             _formatContent(context, request, schemes)
 
         req[request.get('method')] = content
         return [ security, path, req ]
+    }
+
+    _formatSequenceParam(_param) {
+        if (_param.get('format') !== 'sequence') {
+            return _param.generate()
+        }
+
+        let schema = _param.getJSONSchema()
+
+        if (!schema['x-sequence']) {
+            return _param.generate()
+        }
+
+        for (let sub of schema['x-sequence']) {
+            if (sub['x-title']) {
+                sub.enum = [ '{' + sub['x-title'] + '}' ]
+            }
+        }
+
+        let generated = _param.generate(false, schema)
+        return generated
     }
 
     _formatContent(context, request, schemes) {

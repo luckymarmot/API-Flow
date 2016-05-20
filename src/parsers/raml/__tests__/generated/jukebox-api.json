@@ -1,6 +1,29 @@
 {
   "title": "Jukebox API",
-  "baseUri": "http://jukebox.api.com",
+  "baseUri": "http://{subDomain}.api.{extension}",
+  "baseUriParameters": {
+    "extension": {
+      "description": "the domain extension",
+      "enum": [
+        "com",
+        "io",
+        "jp"
+      ],
+      "displayName": "extension",
+      "required": true,
+      "type": "string"
+    },
+    "subDomain": {
+      "description": "the sub-domain to hit",
+      "enum": [
+        "jukebox",
+        "live"
+      ],
+      "displayName": "subDomain",
+      "required": true,
+      "type": "string"
+    }
+  },
   "version": "v1",
   "schemas": [
     {

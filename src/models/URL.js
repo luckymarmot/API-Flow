@@ -346,11 +346,14 @@ export default class URL extends Immutable.Record({
     }
 
     generateParam(name) {
-        if (!this.getIn([ name, 'internals', 0 ])) {
+        if (
+            !this.getIn([ name, 'internals', 0 ]) &&
+            this.getIn([ name, 'format' ]) !== 'sequence'
+        ) {
             return ''
         }
         else {
-            return this.get(name).generate(true)
+            return this.get(name).generate()
         }
     }
 

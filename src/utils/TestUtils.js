@@ -45,8 +45,27 @@ class UnitTest {
         return tests
     }
 
+    _getSkippedTests() {
+        const prototype = Object.getPrototypeOf(this)
+        let tests = {}
+
+        for (let fname of Object.getOwnPropertyNames(prototype)) {
+            if (fname.startsWith('_test')) {
+                const newFnName = this._parseSkippedFnName(fname)
+
+                tests[newFnName] = ::Object.getPrototypeOf(this)[fname]
+            }
+        }
+
+        return tests
+    }
+
     _parseFnName(name) {
         return name.replace(/^test/, '')
+    }
+
+    _parseSkippedFnName(name) {
+        return name.replace(/^_test/, '')
     }
 
     assert(value) {
@@ -107,6 +126,7 @@ class UnitTest {
 function registerTest(Class) {
     const test = new Class()
     const tests = test._getTests()
+    const skipped = test._getSkippedTests()
     describe(Class.name.replace(/Test$/, ''), () => {
         before(test.setUpClass.bind(test))
         after(test.tearDownClass.bind(test))
@@ -115,6 +135,12 @@ function registerTest(Class) {
 
         for (let fname of Object.keys(tests)) {
             it(fname, tests[fname].bind(test))
+        }
+    })
+
+    describe.skip(Class.name.replace(/Test$/, ''), () => {
+        for (let fname of Object.keys(skipped)) {
+            it(fname, skipped[fname].bind(test))
         }
     })
 }

@@ -199,7 +199,7 @@ export class TestURLResolver extends UnitTest {
     // on which we have no control. It would be better to
     // mock the request API
     @targets('resolve')
-    testResolveWithAbsoluteURL(done) {
+    _testResolveWithAbsoluteURL(done) {
         const url =
             'https://apis-guru.github.io/' +
             'api-models/apis-guru.github.io/1.0/' +

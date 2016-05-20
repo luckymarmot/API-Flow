@@ -462,6 +462,127 @@ export class TestSwaggerSerializer extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_formatRequest')
+    testFormatRequestWithSequenceParameter() {
+        const parser = this.__init()
+        const context = new Context()
+        const request = new Request({
+            url: new URL({
+                protocol: new Parameter({
+                    key: 'protocol',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'http', 'https'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'test.com'
+                        ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    key: 'pathname',
+                    type: 'string',
+                    format: 'sequence',
+                    value: new Immutable.List([
+                        new Parameter({
+                            key: 'version',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'v1.2', 'v2.0'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    '/path/to/req'
+                                ])
+                            ])
+                        })
+                    ])
+                })
+            }),
+            method: 'GET'
+        })
+        const schemes = [ 'http' ]
+
+        parser.spyOn('_formatContent', () => {
+            return [ null, 'test content' ]
+        })
+
+        const expected = [
+            null, '{version}/path/to/req', { GET: 'test content' }
+        ]
+
+        const result = parser._formatRequest(context, request, schemes)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatSequenceParam')
+    testFormatSequenceParamWithSimpleParam() {
+        const parser = this.__init()
+
+        const simple = new Parameter({
+            key: 'host',
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum([
+                    'test.com'
+                ])
+            ])
+        })
+
+        const expected = 'test.com'
+        const result = parser._formatSequenceParam(simple)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatSequenceParam')
+    testFormatSequenceParamWithSequenceParam() {
+        const parser = this.__init()
+
+        const seq = new Parameter({
+            key: 'pathname',
+            type: 'string',
+            format: 'sequence',
+            value: new Immutable.List([
+                new Parameter({
+                    key: 'version',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'v1.2', 'v2.0'
+                        ])
+                    ])
+                }),
+                new Parameter({
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path/to/req'
+                        ])
+                    ])
+                })
+            ])
+        })
+
+        const expected = '{version}/path/to/req'
+        const result = parser._formatSequenceParam(seq)
+
+        this.assertEqual(expected, result)
+    }
+
     @targets('_formatContent')
     testFormatContentWithSimpleContent() {
         const parser = this.__init()
@@ -808,11 +929,13 @@ export class TestSwaggerSerializer extends UnitTest {
             type: 'string',
             minimumLength: 10,
             maximumLength: 50,
+            'x-title': 'Content-Type',
             'x-use-with': [
                 {
                     name: 'Content-MD5',
                     type: null,
-                    enum: [ 'ae256', 'ae512' ]
+                    enum: [ 'ae256', 'ae512' ],
+                    'x-title': 'Content-MD5'
                 }
             ],
             description: 'the mime type of the request',
@@ -869,13 +992,16 @@ export class TestSwaggerSerializer extends UnitTest {
             maximumItems: 4,
             items: {
                 type: 'integer',
-                enum: [ 1, 2, 3, 4 ]
+                enum: [ 1, 2, 3, 4 ],
+                'x-title': 'access-type'
             },
+            'x-title': 'Content-Type',
             'x-use-with': [
                 {
                     name: 'Content-MD5',
                     type: null,
-                    enum: [ 'ae256', 'ae512' ]
+                    enum: [ 'ae256', 'ae512' ],
+                    'x-title': 'Content-MD5'
                 }
             ],
             description: 'the mime type of the request',
@@ -1147,11 +1273,13 @@ export class TestSwaggerSerializer extends UnitTest {
                         required: false,
                         default: 'application/json',
                         type: 'string',
+                        'x-title': 'Content-Type',
                         'x-use-with': [
                             {
                                 name: 'Content-Type',
                                 type: 'string',
-                                enum: [ 'application/json' ]
+                                enum: [ 'application/json' ],
+                                'x-title': 'Content-Type'
                             }
                         ]
                     },
@@ -1159,11 +1287,13 @@ export class TestSwaggerSerializer extends UnitTest {
                         required: false,
                         default: 'UserID=JohnDoe; Max-Age=3600; Version=1',
                         type: 'string',
+                        'x-title': 'Set-Cookie',
                         'x-use-with': [
                             {
                                 name: 'Content-Type',
                                 type: 'string',
-                                enum: [ 'application/json' ]
+                                enum: [ 'application/json' ],
+                                'x-title': 'Content-Type'
                             }
                         ]
                     }

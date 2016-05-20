@@ -19,22 +19,33 @@ export class Parameter extends Immutable.Record({
     externals: Immutable.List()
 }) {
     getJSONSchema(useFaker = true) {
+        let type = this.get('type')
+        let format = this.get('format')
+
         let constraintSet = this.get('internals').reduce((set, constraint) => {
             let obj = constraint.toJS()
             Object.assign(set, obj)
             return set
         }, {
-            type: this.get('type')
+            type: type
         })
 
-        if (this.get('type') === 'array') {
+        if (format === 'sequence') {
+            let sequence = this.get('value')
+            constraintSet['x-sequence'] = sequence.map(param => {
+                let schema = param.getJSONSchema(useFaker)
+                return schema
+            })
+        }
+
+        if (type === 'array') {
             let items = this.get('value')
             if (items instanceof Parameter) {
                 constraintSet.items = items.getJSONSchema()
             }
         }
 
-        if (this.get('type') === 'reference') {
+        if (type === 'reference') {
             let ref = this.get('value')
             if (ref instanceof Reference) {
                 constraintSet.$ref = this
@@ -43,7 +54,10 @@ export class Parameter extends Immutable.Record({
             }
         }
 
-        let format = this.get('format')
+        if (this.get('key')) {
+            constraintSet['x-title'] = this.get('key')
+        }
+
         const fakerFormatMap = {
             email: {
                 faker: 'internet.email'
@@ -62,6 +76,9 @@ export class Parameter extends Immutable.Record({
             },
             password: {
                 pattern: '^.*$'
+            },
+            sequence: {
+                format: 'sequence'
             }
         }
 
@@ -73,12 +90,24 @@ export class Parameter extends Immutable.Record({
         return constraintSet
     }
 
-    generate(useDefault) {
+    generate(useDefault, _constraintSet) {
         if (useDefault && this.get('value') !== null) {
             return this.get('value')
         }
 
-        let constraintSet = this.getJSONSchema()
+        let constraintSet = _constraintSet
+        if (!_constraintSet) {
+            constraintSet = this.getJSONSchema()
+        }
+        constraintSet = JSON.parse(JSON.stringify(constraintSet))
+
+        jsf.format('sequence', function(gen, schema) {
+            let result = ''
+            for (let item of schema['x-sequence']) {
+                result += jsf(item)
+            }
+            return result
+        })
 
         return jsf(constraintSet)
     }

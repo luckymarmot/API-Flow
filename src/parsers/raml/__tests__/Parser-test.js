@@ -5,7 +5,8 @@ import {
     UnitTest,
     registerTest,
     against,
-    targets
+    targets,
+    skip
 } from '../../../utils/TestUtils'
 
 import {
@@ -23,9 +24,7 @@ import Context, {
     ParameterContainer
 } from '../../../models/Core'
 
-import {
-    URL
-} from '../../../models/Utils'
+import URL from '../../../models/URL'
 
 import ExoticReference from '../../../models/references/Exotic'
 
@@ -643,16 +642,61 @@ export class TestRAMLParser extends UnitTest {
             return new Immutable.List([ true, false ])
         })
 
-        let request = parser._createRequest(raml, req, url, method)
+        const expectedURL = new URL({
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ 'http' ])
+                ])
+            }),
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                format: 'sequence',
+                value: new Immutable.List([
+                    new Parameter({
+                        key: 'subDomain',
+                        type: 'string',
+                        required: true,
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ 'jukebox', 'live' ])
+                        ]),
+                        name: 'subDomain',
+                        description: 'the sub-domain to hit'
+                    }),
+                    new Parameter({
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ '.api.' ])
+                        ])
+                    }),
+                    new Parameter({
+                        key: 'extension',
+                        type: 'string',
+                        required: true,
+                        name: 'extension',
+                        description: 'the domain extension',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ 'com', 'io', 'jp' ])
+                        ])
+                    })
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'path',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ '/songs' ])
+                ])
+            })
+        })
+
         let expected = new Request({
             headers: new Immutable.OrderedMap({
                 'Content-Type': 'application/json'
             }),
-            url: new URL({
-                schemes: [ 'http' ],
-                host: 'jukebox.api.com',
-                path: '/songs'
-            }),
+            url: expectedURL,
             method: method,
             name: 'http://jukebox.api.com' + url,
             description: req.description,
@@ -664,10 +708,25 @@ export class TestRAMLParser extends UnitTest {
             responses: new Immutable.List([ true, false ])
         })
 
-        this.assertEqual(
-            JSON.stringify(expected),
-            JSON.stringify(request)
+        const expectedGeneratedURLs = [
+            'http://jukebox.api.com/songs',
+            'http://jukebox.api.io/songs',
+            'http://jukebox.api.jp/songs',
+            'http://live.api.com/songs',
+            'http://live.api.io/songs',
+            'http://live.api.jp/songs'
+        ]
+
+        let request = parser._createRequest(raml, req, url, method)
+
+        this.assertNotEqual(
+            expectedGeneratedURLs.indexOf(request.get('name')), -1,
+            request.get('name')
         )
+
+        expected = expected.set('name', request.get('name'))
+
+        this.assertJSONEqual(expected, request)
     }
 
     @targets('_extractParam')
@@ -1676,17 +1735,156 @@ export class TestRAMLParser extends UnitTest {
         const path = '/songs'
 
         const expected = new URL({
-            schemes: [ 'http' ],
-            host: 'jukebox.api.com',
-            path: '/songs'
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ 'http' ])
+                ])
+            }),
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                format: 'sequence',
+                value: new Immutable.List([
+                    new Parameter({
+                        key: 'subDomain',
+                        type: 'string',
+                        required: true,
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ 'jukebox', 'live' ])
+                        ]),
+                        name: 'subDomain',
+                        description: 'the sub-domain to hit'
+                    }),
+                    new Parameter({
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ '.api.' ])
+                        ])
+                    }),
+                    new Parameter({
+                        key: 'extension',
+                        type: 'string',
+                        required: true,
+                        name: 'extension',
+                        description: 'the domain extension',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ 'com', 'io', 'jp' ])
+                        ])
+                    })
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'path',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ '/songs' ])
+                ])
+            })
         })
 
         const result = parser._extractURL(raml, req, path)
 
-        this.assertEqual(
-            JSON.stringify(expected),
-            JSON.stringify(result)
-        )
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractSequenceParam')
+    testExtractSequenceParam() {
+        let parser = new ClassMock(new RAMLParser(), '')
+
+        const raml = {
+            version: 'v1'
+        }
+
+        const _sequence = '{version}.api.{extension}'
+        const _key = 'host'
+        const parameters = {
+            extension: {
+                description: 'the domain extension',
+                enum: [ 'com', 'io', 'jp' ]
+            }
+        }
+
+        let result = parser
+            ._extractSequenceParam(raml, _sequence, _key, parameters)
+
+        const expected = new Parameter({
+            key: _key,
+            type: 'string',
+            format: 'sequence',
+            value: new Immutable.List([
+                new Parameter({
+                    key: 'version',
+                    type: 'string',
+                    required: true,
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'v1' ])
+                    ])
+                }),
+                new Parameter({
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '.api.' ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'extension',
+                    required: true,
+                    description: 'the domain extension',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'com', 'io', 'jp'
+                        ])
+                    ])
+                })
+            ])
+        })
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractPaths')
+    testExtractPaths() {
+        let parser = new ClassMock(new RAMLParser(), '')
+
+        const url = new URL({
+            pathname: new Parameter({
+                key: 'path',
+                type: 'string',
+                format: 'sequence',
+                value: new Immutable.List([
+                    new Parameter({
+                        key: 'userId',
+                        type: 'string',
+                        description: 'a user id'
+                    })
+                ])
+            })
+        })
+        const container = new ParameterContainer()
+
+        const expected = new ParameterContainer({
+            path: new Immutable.List([
+                new Parameter({
+                    key: 'path',
+                    type: 'string',
+                    format: 'sequence',
+                    value: new Immutable.List([
+                        new Parameter({
+                            key: 'userId',
+                            type: 'string',
+                            description: 'a user id'
+                        })
+                    ])
+                })
+            ])
+        })
+
+        const result = parser._extractPaths(url, container)
+
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_findReferences')
