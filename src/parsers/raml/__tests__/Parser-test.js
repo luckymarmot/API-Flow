@@ -5,8 +5,7 @@ import {
     UnitTest,
     registerTest,
     against,
-    targets,
-    skip
+    targets
 } from '../../../utils/TestUtils'
 
 import {
