@@ -1,7 +1,6 @@
 import Immutable from 'immutable'
 
 import RequestContext, {
-    Request,
     Parameter,
     ParameterContainer
 } from '../../../../models/Core'
@@ -13,6 +12,7 @@ import {
     SchemaReference
 } from '../../../../models/Utils'
 
+import Request from '../../../../models/Request'
 import Constraint from '../../../../models/Constraint'
 import URL from '../../../../models/URL'
 import Auth from '../../../../models/Auth'

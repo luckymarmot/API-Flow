@@ -127,6 +127,15 @@ function registerTest(Class) {
     const test = new Class()
     const tests = test._getTests()
     const skipped = test._getSkippedTests()
+
+    function skip(_skipped) {
+        return () => {
+            for (let _skip of _skipped) {
+                it(_skip, () => {})
+            }
+        }
+    }
+
     describe(Class.name.replace(/Test$/, ''), () => {
         before(test.setUpClass.bind(test))
         after(test.tearDownClass.bind(test))
@@ -134,13 +143,23 @@ function registerTest(Class) {
         afterEach(test.tearDown.bind(test))
 
         for (let fname of Object.keys(tests)) {
-            it(fname, tests[fname].bind(test))
+            if (typeof tests[fname] === 'function') {
+                it(fname, tests[fname].bind(test))
+            }
+            else {
+                describe.skip(fname, skip(tests[fname]))
+            }
         }
     })
 
     describe.skip(Class.name.replace(/Test$/, ''), () => {
         for (let fname of Object.keys(skipped)) {
-            it(fname, skipped[fname].bind(test))
+            if (typeof skipped[fname] === 'function') {
+                it(fname, skipped[fname].bind(test))
+            }
+            else {
+                describe(fname, skip(skipped[fname]))
+            }
         }
     })
 }

@@ -1,6 +1,24 @@
 import Immutable from 'immutable'
 
-import { Request } from './Core'
+export class Contact extends Immutable.Record({
+    name: null,
+    url: null,
+    email: null
+}) { }
+
+export class License extends Immutable.Record({
+    name: null,
+    url: null
+}) { }
+
+export class Info extends Immutable.Record({
+    title: null,
+    description: null,
+    tos: null,
+    contact: null,
+    license: null,
+    version: null
+}) { }
 
 export class URL extends Immutable.Record({
     schemes: null,
@@ -43,26 +61,6 @@ export class URL extends Immutable.Record({
         return [ scheme, host, path ]
     }
 }
-
-export class Info extends Immutable.Record({
-    title: null,
-    description: null,
-    tos: null,
-    contact: null,
-    license: null,
-    version: null
-}) { }
-
-export class Contact extends Immutable.Record({
-    name: null,
-    url: null,
-    email: null
-}) { }
-
-export class License extends Immutable.Record({
-    name: null,
-    url: null
-}) { }
 
 export class ReferenceContainer extends Immutable.Record({
     references: new Immutable.OrderedMap()

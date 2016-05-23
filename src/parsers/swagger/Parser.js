@@ -9,8 +9,7 @@ import Context, {
     Parameter,
     ParameterContainer,
     Body,
-    Response,
-    Request
+    Response
 } from '../../models/Core'
 
 import {
@@ -18,6 +17,7 @@ import {
     Group
 } from '../../models/Utils'
 
+import Request from '../../models/Request'
 import Auth from '../../models/Auth'
 import URL from '../../models/URL'
 import Item from '../../models/Item'

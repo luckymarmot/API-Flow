@@ -6,11 +6,11 @@ import {
     Context,
     Parameter,
     ParameterContainer,
-    Request,
     Response,
     Body
 } from '../../../../models/Core'
 
+import Request from '../../../../models/Request'
 import Auth from '../../../../models/Auth'
 import URL from '../../../../models/URL'
 import JSONSchemaReference from '../../../../models/references/JSONSchema'

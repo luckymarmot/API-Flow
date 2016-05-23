@@ -11,7 +11,6 @@ import SwaggerParser from '../Parser'
 
 import {
     Body,
-    Request,
     Parameter
 } from '../../../models/Core'
 
@@ -22,6 +21,7 @@ import {
 
 import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
+import Request from '../../../models/Request'
 import URL from '../../../models/URL'
 import Item from '../../../models/Item'
 

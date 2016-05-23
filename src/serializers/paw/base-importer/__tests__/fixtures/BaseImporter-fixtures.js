@@ -1,5 +1,5 @@
 import Immutable from 'immutable'
-import { Request } from '../../../../../models/Core'
+import Request from '../../../../../models/Request'
 import { Group } from '../../../../../models/Utils'
 
 export default class BaseImporterFixtures {

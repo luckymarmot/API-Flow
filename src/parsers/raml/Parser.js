@@ -3,7 +3,6 @@ import RAML from 'raml-parser'
 
 import Context, {
     Body,
-    Request,
     Response,
     Parameter,
     ParameterContainer
@@ -13,6 +12,7 @@ import {
     Group
 } from '../../models/Utils'
 
+import Request from '../../models/Request'
 import URL from '../../models/URL'
 
 import ReferenceContainer from '../../models/references/Container'
@@ -359,6 +359,7 @@ export default class RAMLParser {
             else {
                 // FIXME: we are not propagating the fact that it's a schema
                 type = 'string'
+                _name = 'schema'
             }
 
             return new Parameter({

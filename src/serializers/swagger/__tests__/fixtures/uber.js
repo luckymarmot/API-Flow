@@ -3,10 +3,11 @@ import Immutable from 'immutable'
 import Context, {
     Body,
     Response,
-    Request,
     Parameter,
     ParameterContainer
 } from '../../../../models/Core'
+
+import Request from '../../../../models/Core'
 
 import {
     Group,

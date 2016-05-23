@@ -13,7 +13,6 @@ import NodeEnvironment from '../../../models/environments/NodeEnvironment'
 
 import Context, {
     Body,
-    Request,
     Response,
     Parameter,
     ParameterContainer
@@ -27,6 +26,7 @@ import {
 import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
 import URL from '../../../models/URL'
+import Request from '../../../models/Request'
 
 import ReferenceContainer from '../../../models/references/Container'
 import ReferenceCache from '../../../models/references/Cache'

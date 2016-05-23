@@ -17,12 +17,12 @@ import Auth from '../../../models/Auth'
 
 import Context, {
     Body,
-    Request,
     Response,
     Parameter,
     ParameterContainer
 } from '../../../models/Core'
 
+import Request from '../../../models/Request'
 import URL from '../../../models/URL'
 
 import ExoticReference from '../../../models/references/Exotic'
@@ -1361,7 +1361,7 @@ export class TestRAMLParser extends UnitTest {
         const expectedContainer = new ParameterContainer({
             body: new Immutable.List([
                 new Parameter({
-                    key: 'body',
+                    key: 'schema',
                     value: req.body['application/json'].schema,
                     type: 'string',
                     externals: new Immutable.List([
@@ -1665,7 +1665,7 @@ export class TestRAMLParser extends UnitTest {
                 parameters: new ParameterContainer({
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'body',
+                            key: 'schema',
                             /* eslint-disable max-len */
                             value: '{\n\t\"$schema\": \"http://json-schema.org/draft-03/schema\",\n\t\"type\": \"object\" ,\n\t\"properties\": {\n\t\t\"type\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"id\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"item\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"sequence_id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"etag\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"sha1\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t},\n\t\t\"assigned_to\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"login\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t},\n\t\t\"message\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"completed_at\": {\n\t\t\t\"type\": \"timestamp\"\n\t\t},\n\t\t\"assigned_at\": {\n\t\t\t\"type\": \"timestamp\"\n\t\t},\n\t\t\"reminded_at\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"resolution_state\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"assigned_by\": {\n\t\t\t\"properties\": {\n\t\t\t\t\"type\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"id\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t},\n\t\t\t\t\"login\": {\n\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"type\": \"object\"\n\t\t}\n\t}\n}\n',
                             /* eslint-enable max-len */

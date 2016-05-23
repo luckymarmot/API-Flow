@@ -1,7 +1,8 @@
 import Context, {
-    Request,
     Parameter
 } from '../../../models/Core'
+
+import Request from '../../../models/Request'
 
 import {
     FileReference,
