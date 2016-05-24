@@ -1,13 +1,17 @@
 import Immutable from 'immutable'
+import yaml from 'js-yaml'
+
+import Request from '../../models/Request'
 import BaseSerializer from '../BaseSerializer'
 import Auth from '../../models/Auth'
+import URL from '../../models/URL'
 
 export default class RAMLSerializer extends BaseSerializer {
     serialize(context) {
-        let content = '#%RAML 0.8'
+        let content = '#%RAML 0.8\n'
         let structure = this._formatStructure(context)
 
-        content += JSON.stringify(structure)
+        content += yaml.dump(structure)
 
         return content
     }
@@ -29,6 +33,10 @@ export default class RAMLSerializer extends BaseSerializer {
         }
 
         Object.assign(structure, basicInfo, urlInfo, securitySchemes, paths)
+
+        if (Object.keys(structure).length === 0) {
+            return null
+        }
 
         return structure
     }
@@ -71,6 +79,10 @@ export default class RAMLSerializer extends BaseSerializer {
             })
         }
 
+        if (documentation.length > 0) {
+            infos.documentation = documentation
+        }
+
         if (info.get('version') !== null) {
             infos.version = info.get('version')
         }
@@ -82,15 +94,15 @@ export default class RAMLSerializer extends BaseSerializer {
         let formatted = ''
 
         if (contact.get('name')) {
-            formatted += 'name: ' + contact.get('name')
+            formatted += 'name: ' + contact.get('name') + '\n'
         }
 
         if (contact.get('url')) {
-            formatted += 'url: ' + contact.get('url')
+            formatted += 'url: ' + contact.get('url') + '\n'
         }
 
         if (contact.get('email')) {
-            formatted += 'email: ' + contact.get('email')
+            formatted += 'email: ' + contact.get('email') + '\n'
         }
 
         return formatted
@@ -100,11 +112,11 @@ export default class RAMLSerializer extends BaseSerializer {
         let formatted = ''
 
         if (license.get('name')) {
-            formatted += 'name: ' + license.get('name')
+            formatted += 'name: ' + license.get('name') + '\n'
         }
 
         if (license.get('url')) {
-            formatted += 'url: ' + license.get('url')
+            formatted += 'url: ' + license.get('url') + '\n'
         }
 
         return formatted
@@ -146,7 +158,7 @@ export default class RAMLSerializer extends BaseSerializer {
         }
 
         if (origin) {
-            urlInfo.baseURI = origin
+            urlInfo.baseUri = origin
         }
 
         if (version) {
@@ -212,13 +224,13 @@ export default class RAMLSerializer extends BaseSerializer {
         let result = {}
         let version = null
         if (param.get('format') !== 'sequence') {
-            return result
+            return [ result, version ]
         }
 
         let schema = param.getJSONSchema()
 
         if (!schema['x-sequence']) {
-            return result
+            return [ result, version ]
         }
 
         result[target] = {}
@@ -229,7 +241,7 @@ export default class RAMLSerializer extends BaseSerializer {
                 }
                 else {
                     let named = this._convertJSONSchemaToNamedParameter(sub)
-                    result[target][sub['x-title']] = named
+                    Object.assign(result[target], named)
                 }
             }
         }
@@ -246,12 +258,11 @@ export default class RAMLSerializer extends BaseSerializer {
 
         let validFields = {
             'x-title': 'displayName',
-            description: 'description',
             type: 'type',
             enum: 'enum',
             pattern: 'pattern',
-            minLength: 'minLength',
-            maxLength: 'maxLength',
+            minimumLength: 'minLength',
+            maximumLength: 'maxLength',
             minimum: 'minimum',
             maximum: 'maximum'
         }
@@ -272,20 +283,30 @@ export default class RAMLSerializer extends BaseSerializer {
         let schema = param.getJSONSchema(false)
         let named = this._convertJSONSchemaToNamedParameter(schema)
 
-        let externalValidFields = {
-            required: 'required',
-            example: 'example'
+        if (named && Object.keys(named).length > 0) {
+            let name = Object.keys(named)[0]
+            let content = named[name]
+
+            let externalValidFields = {
+                required: 'required',
+                example: 'example',
+                description: 'description'
+            }
+
+            let keys = Object.keys(externalValidFields)
+            for (let key of keys) {
+                if (
+                    typeof param.get(key) !== 'undefined' &&
+                    param.get(key) !== null
+                ) {
+                    content[externalValidFields[key]] = param.get(key)
+                }
+            }
+
+            named[name] = content
         }
 
-        let keys = Object.keys(externalValidFields)
-        for (let key of keys) {
-            if (
-                typeof param.get(key) !== 'undefined' &&
-                param.get(key) !== null
-            ) {
-                named[externalValidFields[key]] = param.get(key)
-            }
-        }
+        return named
     }
 
     _formatSecuritySchemes(requests) {
@@ -301,6 +322,10 @@ export default class RAMLSerializer extends BaseSerializer {
         requests.forEach(request => {
             let auths = request.get('auths')
             auths.forEach(auth => {
+                if (auth === null) {
+                    return
+                }
+
                 let rule = authMap.get(auth.constructor)
                 if (rule) {
                     Object.assign(securityMap, rule(auth))
@@ -314,17 +339,30 @@ export default class RAMLSerializer extends BaseSerializer {
             return s
         })
 
-        return security
+        if (security.length > 0) {
+            return {
+                securitySchemes: security
+            }
+        }
+
+        return {}
     }
 
     _formatOAuth2(auth) {
+        let flowMap = {
+            accessCode: 'code',
+            implicit: 'token',
+            application: 'owner',
+            password: 'credentials'
+        }
+
         let formatted = {
             type: 'OAuth 2.0'
         }
 
         let authorizationUri = auth.get('authorizationUrl')
         let accessTokenUri = auth.get('tokenUrl')
-        let authorizationGrants = auth.get('flow')
+        let authorizationGrants = flowMap[auth.get('flow')]
 
         let settings = {}
         if (authorizationUri) {
@@ -336,10 +374,10 @@ export default class RAMLSerializer extends BaseSerializer {
         }
 
         if (authorizationGrants) {
-            settings.authorizationGrants = authorizationGrants
+            settings.authorizationGrants = [ authorizationGrants ]
         }
 
-        if (Object.keys(settings) > 0) {
+        if (Object.keys(settings).length > 0) {
             formatted.settings = settings
         }
 
@@ -364,7 +402,7 @@ export default class RAMLSerializer extends BaseSerializer {
             }
         }
 
-        if (Object.keys(settings) > 0) {
+        if (Object.keys(settings).length > 0) {
             formatted.settings = settings
         }
 
@@ -396,10 +434,15 @@ export default class RAMLSerializer extends BaseSerializer {
             return this._formatRequest(group)
         }
 
+        let result = {}
+
         let relativeURI = group.get('name')
         let children = group.get('children')
 
-        let result = {}
+        if (relativeURI === null) {
+            return {}
+        }
+
         result[relativeURI] = {}
         children.forEach((child) => {
             Object.assign(result[relativeURI], this._formatPaths(child))
@@ -410,6 +453,11 @@ export default class RAMLSerializer extends BaseSerializer {
 
     _formatRequest(request) {
         let method = request.get('method')
+
+        if (method === null) {
+            return {}
+        }
+
         let result = {}
         let formatted = {}
 
@@ -512,7 +560,7 @@ export default class RAMLSerializer extends BaseSerializer {
             }
         })
 
-        if (Object.keys(_body) > 0) {
+        if (Object.keys(_body).length > 0) {
             result.body = _body
         }
 

@@ -22,9 +22,9 @@ import {
     HawkAuth
 } from './models/Auth'
 
-import SwaggerParser from './importers/swagger/Parser'
-import CurlParser from './importers/cURL/Parser'
-import PostmanParser from './importers/postman/Parser'
+import SwaggerParser from './parsers/swagger/Parser'
+import CurlParser from './parsers/cURL/Parser'
+import PostmanParser from './parsers/postman/Parser'
 
 export default RequestContext
 export {
