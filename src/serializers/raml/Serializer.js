@@ -264,7 +264,8 @@ export default class RAMLSerializer extends BaseSerializer {
             minimumLength: 'minLength',
             maximumLength: 'maxLength',
             minimum: 'minimum',
-            maximum: 'maximum'
+            maximum: 'maximum',
+            default: 'default'
         }
 
         let keys = Object.keys(schema)
@@ -275,7 +276,13 @@ export default class RAMLSerializer extends BaseSerializer {
         }
 
         let param = {}
-        param[schema['x-title']] = named
+
+        if (schema['x-title'] === 'schema' && named.default) {
+            param.schema = named.default
+        }
+        else {
+            param[schema['x-title']] = named
+        }
         return param
     }
 
@@ -287,19 +294,21 @@ export default class RAMLSerializer extends BaseSerializer {
             let name = Object.keys(named)[0]
             let content = named[name]
 
-            let externalValidFields = {
-                required: 'required',
-                example: 'example',
-                description: 'description'
-            }
+            if (typeof content === 'object') {
+                let externalValidFields = {
+                    required: 'required',
+                    example: 'example',
+                    description: 'description'
+                }
 
-            let keys = Object.keys(externalValidFields)
-            for (let key of keys) {
-                if (
-                    typeof param.get(key) !== 'undefined' &&
-                    param.get(key) !== null
-                ) {
-                    content[externalValidFields[key]] = param.get(key)
+                let keys = Object.keys(externalValidFields)
+                for (let key of keys) {
+                    if (
+                        typeof param.get(key) !== 'undefined' &&
+                        param.get(key) !== null
+                    ) {
+                        content[externalValidFields[key]] = param.get(key)
+                    }
                 }
             }
 

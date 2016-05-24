@@ -29,12 +29,15 @@ export class Parameter extends Immutable.Record({
             type: type
         })
 
+        let valueIsValid = true
+
         if (format === 'sequence') {
             let sequence = this.get('value')
             constraintSet['x-sequence'] = sequence.map(param => {
                 let schema = param.getJSONSchema(useFaker)
                 return schema
             })
+            valueIsValid = false
         }
 
         if (type === 'array') {
@@ -42,6 +45,7 @@ export class Parameter extends Immutable.Record({
             if (items instanceof Parameter) {
                 constraintSet.items = items.getJSONSchema()
             }
+            valueIsValid = false
         }
 
         if (type === 'reference') {
@@ -51,10 +55,15 @@ export class Parameter extends Immutable.Record({
                     .getIn([ 'value', 'uri' ])
                 delete constraintSet.type
             }
+            valueIsValid = false
         }
 
         if (this.get('key')) {
             constraintSet['x-title'] = this.get('key')
+        }
+
+        if (this.get('value') && valueIsValid) {
+            constraintSet.default = this.get('value')
         }
 
         const fakerFormatMap = {

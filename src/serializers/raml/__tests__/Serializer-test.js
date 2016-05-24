@@ -1196,6 +1196,7 @@ export class TestRAMLSerializer extends UnitTest {
         this.assertEqual(s.spy._convertParameterToNamedParameter.count, 2)
     }
 
+    @targets('_formatBody')
     testFormatBodyWithEmptyBodyList() {
         let s = this.__init()
 
@@ -1208,6 +1209,7 @@ export class TestRAMLSerializer extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_formatBody')
     testFormatBodyWithSimpleBodyList() {
         let s = this.__init()
 
@@ -1220,11 +1222,7 @@ export class TestRAMLSerializer extends UnitTest {
                 new Parameter({
                     key: 'schema',
                     type: 'string',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            '{ "super": "schema" }'
-                        ])
-                    ]),
+                    value: '{ "super": "schema" }',
                     externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
@@ -1251,12 +1249,142 @@ export class TestRAMLSerializer extends UnitTest {
         ])
 
         let expected = {
-            'application/json': {
-                schema: '{ "super": "schema" }'
+            body: {
+                'application/json': {
+                    schema: '{ "super": "schema" }'
+                }
             }
         }
 
         let result = s._formatBody(container, bodies)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyWithFormBodyList() {
+        let s = this.__init()
+
+        s.spyOn('_getContentTypeConstraint', () => {
+            return 'application/x-www-urlencoded'
+        })
+
+        let container = new ParameterContainer({
+            body: new Immutable.List([
+                new Parameter({
+                    key: 'count',
+                    type: 'integer',
+                    internals: new Immutable.List([
+                        new Constraint.Minimum(0),
+                        new Constraint.Maximum(100)
+                    ]),
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-urlencoded'
+                                ])
+                            ])
+                        })
+                    ])
+                })
+            ])
+        })
+
+        let bodies = new Immutable.List([
+            new Body({
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        type: 'string',
+                        value: 'application/x-www-urlencoded'
+                    })
+                ])
+            })
+        ])
+
+        let expected = {
+            body: {
+                'application/x-www-urlencoded': {
+                    formParameters: {
+                        count: {
+                            displayName: 'count',
+                            type: 'integer',
+                            minimum: 0,
+                            maximum: 100,
+                            required: false
+                        }
+                    }
+                }
+            }
+        }
+
+        let result = s._formatBody(container, bodies)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_getContentTypeConstraint')
+    testGetContentTypeConstraintWithEmptyBody() {
+        let s = this.__init()
+
+        let body = new Body()
+
+        let expected = null
+
+        let result = s._getContentTypeConstraint(body)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_getContentTypeConstraint')
+    testGetContentTypeConstraintWithSimpleBody() {
+        let s = this.__init()
+        let body = new Body({
+            constraints: new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    value: 'application/json'
+                })
+            ])
+        })
+
+        let expected = 'application/json'
+
+        let result = s._getContentTypeConstraint(body)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_getContentTypeConstraint')
+    testGetContentTypeConstraintWithSimpleBody() {
+        let s = this.__init()
+        let body = new Body({
+            constraints: new Immutable.List([
+                new Parameter({
+                    key: 'Expect',
+                    type: 'string',
+                    value: '100-continue'
+                }),
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    value: 'application/json'
+                }),
+                new Parameter({
+                    key: 'Warning',
+                    type: 'string',
+                    value: 'client-load:0.8'
+                })
+            ])
+        })
+
+        let expected = 'application/json'
+
+        let result = s._getContentTypeConstraint(body)
 
         this.assertEqual(expected, result)
     }
