@@ -1,5 +1,6 @@
 import Immutable from 'immutable'
 import RAML from 'raml-parser'
+import __path from 'path'
 
 import Context, {
     Body,
@@ -8,10 +9,10 @@ import Context, {
     ParameterContainer
 } from '../../models/Core'
 
-import {
-    Group
-} from '../../models/Utils'
+import { Info } from '../../models/Utils'
 
+import Item from '../../models/Item'
+import Group from '../../models/Group'
 import Request from '../../models/Request'
 import URL from '../../models/URL'
 
@@ -28,9 +29,14 @@ export default class RAMLParser {
     constructor(items) {
         this.reader = new ShimmingFileReader(items)
         this.context = new Context()
+        this.item = new Item()
     }
 
-    parse(string, location) {
+    parse(_item) {
+        this.item = new Item(_item)
+        let string = this.item.get('content')
+        let location = this.item.getPath()
+
         return RAML.load(string, location, {
             reader: this.reader
         }).then(raml => {
@@ -65,6 +71,13 @@ export default class RAMLParser {
             container = container.create(references)
             context = context.set('references', container)
         }
+
+        let info = this._extractInfos(_raml)
+
+        if (info) {
+            context = context.set('info', info)
+        }
+
         return context
     }
 
@@ -72,10 +85,14 @@ export default class RAMLParser {
         let refs = new Immutable.List()
 
         if (typeof obj === 'string' && obj.startsWith('::fileRef::')) {
-            let uri = obj.slice(11)
+            let rel = obj.slice(11)
+            let uri = __path.resolve(__path.dirname(
+                this.item.getPath()
+            ), rel)
             return refs.push(
                 new ExoticReference({
-                    uri: uri
+                    uri: uri,
+                    relative: rel
                 })
             )
         }
@@ -102,9 +119,13 @@ export default class RAMLParser {
 
     _replaceReferences(obj) {
         if (typeof obj === 'string' && obj.startsWith('::fileRef::')) {
-            let uri = obj.slice(11)
+            let rel = obj.slice(11)
+            let uri = __path.resolve(__path.dirname(
+                this.item.getPath()
+            ), rel)
             return new ExoticReference({
-                uri: uri
+                uri: uri,
+                relative: rel
             })
         }
 
@@ -176,7 +197,9 @@ export default class RAMLParser {
         container = this._extractPaths(_url, container)
 
         let bodies
-        [ container, bodies ] = this._extractBodies(raml, req, container)
+        [ container, bodies ] = this._extractBodies(
+            raml, req, container, new Immutable.List()
+        )
 
         let auths = this._extractAuth(raml, req)
         let responses = this._extractResponses(raml, req)
@@ -226,8 +249,8 @@ export default class RAMLParser {
 
         let parameters = Object.assign(
             {},
-            raml.baseUriParameters,
-            req.baseUriParameters
+            raml.baseUriParameters || {},
+            req.baseUriParameters || {}
         )
         let host = this._extractSequenceParam(
             raml, domain, 'host', parameters
@@ -235,9 +258,9 @@ export default class RAMLParser {
 
         parameters = Object.assign(
             {},
-            raml.baseUriParameters,
-            req.baseUriParameters,
-            req.uriParameters
+            raml.baseUriParameters || {},
+            req.baseUriParameters || {},
+            req.uriParameters || {}
         )
         let pathname = this._extractSequenceParam(
             raml, basePath + path, 'path', parameters
@@ -293,8 +316,13 @@ export default class RAMLParser {
                             enum: [ raml.version ]
                         }
                     }
-                    else {
+                    else if (parameters[key]) {
                         _param = parameters[key]
+                    }
+                    else {
+                        _param = {
+                            type: 'string'
+                        }
                     }
 
                     if (!_param.type) {
@@ -338,7 +366,7 @@ export default class RAMLParser {
     }
 
     _extractParam(name, param, externals) {
-        if (typeof param === 'undefined') {
+        if (typeof param === 'undefined' || param === null) {
             return null
         }
 
@@ -408,7 +436,7 @@ export default class RAMLParser {
             key: _name,
             name: param.displayName || null,
             value: value,
-            type: type,
+            type: type || null,
             description: description,
             example: param.example || null,
             internals: internals,
@@ -449,7 +477,13 @@ export default class RAMLParser {
         let param = url.get('pathname')
         let paths = container.get('path')
 
-        paths = paths.push(param)
+        let sequence = param.get('value')
+        sequence.forEach(_param => {
+            if (_param.get('key')) {
+                paths = paths.push(_param)
+            }
+        })
+
         return container.set('path', paths)
     }
 
@@ -457,6 +491,7 @@ export default class RAMLParser {
         let _body = req.body || {}
         let _bodies = bodies
         let _container = container
+        let headers = container.get('headers')
 
         let bodyParams = container.get('body')
 
@@ -476,6 +511,7 @@ export default class RAMLParser {
             let externals = new Immutable.List([
                 new Parameter({
                     key: 'Content-Type',
+                    type: 'string',
                     internals: new Immutable.List([
                         new Constraint.Enum([ contentType ])
                     ])
@@ -489,6 +525,7 @@ export default class RAMLParser {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: contentType
                     })
                 ])
@@ -509,14 +546,31 @@ export default class RAMLParser {
                 }
             }
 
-            if (!bodyType && (_body[contentType] || {}).schema) {
-                bodyParams = bodyParams.push(
-                    this._extractParam('body', _body[contentType], externals)
+            if (!bodyType && !(_body[contentType] || {}).formParameters) {
+                let param = this._extractParam(
+                    'body', _body[contentType], externals
                 )
+
+                if (param) {
+                    bodyParams = bodyParams.push(param)
+                }
             }
+
+            headers = headers.push(new Parameter({
+                key: 'Content-Type',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        contentType
+                    ])
+                ]),
+                externals: externals
+            }))
         }
 
-        _container = _container.set('body', bodyParams)
+        _container = _container
+            .set('body', bodyParams)
+            .set('headers', headers)
 
         return [ _container, _bodies ]
     }
@@ -627,7 +681,7 @@ export default class RAMLParser {
     _extractResponses(raml, req) {
         let responses = new Immutable.List()
 
-        for (let code of Object.keys(req.responses)) {
+        for (let code of Object.keys(req.responses || {})) {
             let response = req.responses[code]
             let description = response.description || null
 
@@ -646,5 +700,30 @@ export default class RAMLParser {
         }
 
         return responses
+    }
+
+    _extractInfos(raml) {
+        let documentation = raml.documentation || []
+
+        let description = documentation.reduce((desc, doc) => {
+            let title = doc.title || ''
+            if (title) {
+                title = title + ':\n'
+            }
+
+            let content = doc.content || ''
+            if (content) {
+                content = content + '\n'
+            }
+            let str = title + content + '\n'
+            return desc + str
+        }, '')
+
+        let info = new Info({
+            title: raml.title || null,
+            description: description || null,
+            version: raml.version || null
+        })
+        return info
     }
 }

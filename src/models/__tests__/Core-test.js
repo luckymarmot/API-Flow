@@ -2,7 +2,7 @@ import Immutable from 'immutable'
 
 import { UnitTest, registerTest } from '../../utils/TestUtils'
 
-import { Parameter, ParameterContainer } from '../Core'
+import { Parameter, ParameterContainer, Body } from '../Core'
 import Constraint from '../Constraint'
 
 @registerTest
@@ -295,5 +295,213 @@ export class TestParameterContainer extends UnitTest {
         ])
         let result = this.container.filter(filter)
         this.assertEqual(JSON.stringify(expected), JSON.stringify(result))
+    }
+}
+
+@registerTest
+export class TestBody extends UnitTest {
+    setUp() {
+        let container = new ParameterContainer({
+            headers: new Immutable.List([
+                new Parameter({
+                    key: 'headerKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json' ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'headerKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/xml' ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'headerSecondKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json' ])
+                            ])
+                        })
+                    ])
+                })
+            ]),
+            queries: new Immutable.List([
+                new Parameter({
+                    key: 'queryKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/xml' ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'secureKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'oauth2' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json' ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'querySecondKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json', 'app/xml' ])
+                            ])
+                        })
+                    ])
+                })
+            ]),
+            body: new Immutable.List([
+                new Parameter({
+                    key: 'xmlSchemaKey',
+                    type: 'schema',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/xml' ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'jsonSchemaKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json' ])
+                            ])
+                        })
+                    ])
+                })
+            ])
+        })
+
+        this.container = container
+    }
+
+    testBodyCallsFilterWithOwnConstraints() {
+        let body = new Body({
+            constraints: new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    value: 'app/json'
+                })
+            ])
+        })
+
+        const expected = new ParameterContainer({
+            headers: new Immutable.List([
+                new Parameter({
+                    key: 'headerKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json' ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'headerSecondKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json' ])
+                            ])
+                        })
+                    ])
+                })
+            ]),
+            queries: new Immutable.List([
+                new Parameter({
+                    key: 'secureKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'oauth2' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json' ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'querySecondKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json', 'app/xml' ])
+                            ])
+                        })
+                    ])
+                })
+            ]),
+            body: new Immutable.List([
+                new Parameter({
+                    key: 'jsonSchemaKey',
+                    type: 'string',
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'app/json' ])
+                            ])
+                        })
+                    ])
+                })
+            ])
+        })
+
+        let result = body.filter(this.container)
+
+        this.assertJSONEqual(expected, result)
     }
 }

@@ -11,6 +11,6 @@ export default class ExoticReference extends Reference {
     }
 
     getDataUri() {
-        return this.get('uri')
+        return null
     }
 }

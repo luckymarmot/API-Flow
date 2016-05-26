@@ -6,6 +6,7 @@ import {
 
 import URL from './URL'
 
+
 export default class Request extends Immutable.Record({
     id: null,
     name: null,

@@ -56,7 +56,8 @@ export class TestContextResolver extends UnitTest {
             resolved: true,
             dependencies: new Immutable.List([
                 new JSONSchemaReference({
-                    uri: '#/references/User'
+                    uri: '#/references/User',
+                    relative: '#/references/User'
                 })
             ])
         })
@@ -108,7 +109,8 @@ export class TestContextResolver extends UnitTest {
             resolved: true,
             dependencies: new Immutable.List([
                 new JSONSchemaReference({
-                    uri: __dirname + '/fixtures/dummy.json#/references/User'
+                    uri: __dirname + '/fixtures/dummy.json#/references/User',
+                    relative: 'dummy.json#/references/User'
                 })
             ])
         })
@@ -168,12 +170,14 @@ export class TestContextResolver extends UnitTest {
                 resolved: true,
                 dependencies: new Immutable.List([
                     new JSONSchemaReference({
-                        uri: '#/references/User'
+                        uri: '#/references/User',
+                        relative: '#/references/User'
                     })
                 ])
             }),
             new JSONSchemaReference({
                 uri: '#/references/User',
+                relative: '#/references/User',
                 value: {
                     $ref: new JSONSchemaReference({
                         uri: '#/references/Friend'
@@ -182,7 +186,8 @@ export class TestContextResolver extends UnitTest {
                 resolved: true,
                 dependencies: new Immutable.List([
                     new JSONSchemaReference({
-                        uri: '#/references/Friend'
+                        uri: '#/references/Friend',
+                        relative: '#/references/Friend'
                     })
                 ])
             })

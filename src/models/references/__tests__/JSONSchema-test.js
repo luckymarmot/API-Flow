@@ -76,7 +76,8 @@ export class TestJSONSchemaReference extends UnitTest {
             resolved: true,
             dependencies: new Immutable.List([
                 new JSONSchemaReference({
-                    uri: '#/Product'
+                    uri: '#/Product',
+                    relative: '#/Product'
                 })
             ])
         })
@@ -641,16 +642,20 @@ export class TestJSONSchemaReference extends UnitTest {
 
         let expected = new Immutable.List([
             new JSONSchemaReference({
-                uri: '#/definitions/User'
+                uri: '#/definitions/User',
+                relative: '#/definitions/User'
             }),
             new JSONSchemaReference({
-                uri: '/some/absolute/path/#/definitions/Product'
+                uri: '/some/absolute/path/#/definitions/Product',
+                relative: '/some/absolute/path/#/definitions/Product'
             }),
             new JSONSchemaReference({
-                uri: 'http://www.example.com/some/path#/definitions/Web'
+                uri: 'http://www.example.com/some/path#/definitions/Web',
+                relative: 'http://www.example.com/some/path#/definitions/Web'
             }),
             new JSONSchemaReference({
-                uri: 'http://www.example.com/definitions/Fragmentless'
+                uri: 'http://www.example.com/definitions/Fragmentless',
+                relative: 'http://www.example.com/definitions/Fragmentless'
             })
         ])
 

@@ -24,6 +24,8 @@ import Context, {
 
 import Request from '../../../models/Request'
 import URL from '../../../models/URL'
+import Item from '../../../models/Item'
+import { Info } from '../../../models/Utils'
 
 import ExoticReference from '../../../models/references/Exotic'
 
@@ -60,6 +62,14 @@ export class TestRAMLParser extends UnitTest {
         'version: v3\n' +
         'baseUri: https://api.github.com\n'
 
+        const item = {
+            content: raml,
+            file: {
+                path: '/some/path',
+                name: 'someRAMLFile.yml'
+            }
+        }
+
         let parser = new RAMLParser(items)
         let mockedParser = new ClassMock(parser, '')
 
@@ -77,7 +87,7 @@ export class TestRAMLParser extends UnitTest {
 
         let promise = parser.parse.apply(
             mockedParser,
-            [ raml, '/some/path/someRAMLFile.yml' ]
+            [ item ]
         )
 
         promise.then(
@@ -113,6 +123,14 @@ export class TestRAMLParser extends UnitTest {
         'schemas:\n' +
         '  - song: !include ./simpleFile'
 
+        const item = {
+            content: raml,
+            file: {
+                path: '/some/path',
+                name: 'someRAMLFile.yml'
+            }
+        }
+
         let parser = new RAMLParser(items)
         let mockedParser = new ClassMock(parser, '')
 
@@ -137,7 +155,7 @@ export class TestRAMLParser extends UnitTest {
 
         let promise = parser.parse.apply(
             mockedParser,
-            [ raml, '/some/path/someRAMLFile.yml' ]
+            [ item ]
         )
 
         promise.then(
@@ -173,6 +191,14 @@ export class TestRAMLParser extends UnitTest {
         'schemas:\n' +
         '  - song: !include ./missingFile'
 
+        const item = {
+            content: raml,
+            file: {
+                path: '/some/path',
+                name: 'someRAMLFile.yml'
+            }
+        }
+
         let parser = new RAMLParser(items)
         let mockedParser = new ClassMock(parser, '')
 
@@ -197,7 +223,7 @@ export class TestRAMLParser extends UnitTest {
 
         let promise = parser.parse.apply(
             mockedParser,
-            [ raml, '/some/path/someRAMLFile.yml' ]
+            [ item ]
         )
 
         promise.then(
@@ -231,6 +257,14 @@ export class TestRAMLParser extends UnitTest {
         'version: v3\n' +
         'baseUri: https://api.github.com\n'
 
+        const item = {
+            content: raml,
+            file: {
+                path: '/some/path',
+                name: 'someRAMLFile.yml'
+            }
+        }
+
         let parser = new RAMLParser(items)
         let mockedParser = new ClassMock(parser, '')
 
@@ -247,7 +281,7 @@ export class TestRAMLParser extends UnitTest {
 
         let promise = parser.parse.apply(
             mockedParser,
-            [ raml, '/some/path/someRAMLFile.yml' ]
+            [ item ]
         )
 
         promise.then(
@@ -286,6 +320,14 @@ export class TestRAMLParser extends UnitTest {
         'version: v3\n' +
         'baseUri: https://api.github.com\n'
 
+        const item = {
+            content: raml,
+            file: {
+                path: '/some/path',
+                name: 'someRAMLFile.yml'
+            }
+        }
+
         let parser = new RAMLParser(items)
         let mockedParser = new ClassMock(parser, '')
 
@@ -295,7 +337,7 @@ export class TestRAMLParser extends UnitTest {
 
         let promise = parser.parse.apply(
             mockedParser,
-            [ raml, '/some/path/someRAMLFile.yml' ]
+            [ item ]
         )
 
         promise.then(() => {
@@ -358,8 +400,13 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
+        mockedParser.spyOn('_extractInfos', () => {
+            return 90
+        })
+
         const expected = new Context({
-            group: 12
+            group: 12,
+            info: 90
         })
 
         let result = parser._createContext.apply(
@@ -1359,6 +1406,28 @@ export class TestRAMLParser extends UnitTest {
         const bodies = new Immutable.List()
 
         const expectedContainer = new ParameterContainer({
+            headers: new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'application/json'
+                        ])
+                    ]),
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ])
+                        })
+                    ])
+                })
+            ]),
             body: new Immutable.List([
                 new Parameter({
                     key: 'schema',
@@ -1367,6 +1436,7 @@ export class TestRAMLParser extends UnitTest {
                     externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            type: 'string',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'application/json'
@@ -1383,6 +1453,7 @@ export class TestRAMLParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'application/json'
                     })
                 ])
@@ -1393,15 +1464,8 @@ export class TestRAMLParser extends UnitTest {
             raml, req, container, bodies
         )
 
-        this.assertEqual(
-            JSON.stringify(expectedContainer),
-            JSON.stringify(resContainer)
-        )
-
-        this.assertEqual(
-            JSON.stringify(expectedBodies),
-            JSON.stringify(resBodies)
-        )
+        this.assertJSONEqual(expectedContainer, resContainer)
+        this.assertJSONEqual(expectedBodies, resBodies)
     }
 
     @targets('_extractBodies')
@@ -1428,6 +1492,48 @@ export class TestRAMLParser extends UnitTest {
         const bodies = new Immutable.List()
 
         const expectedContainer = new ParameterContainer({
+            headers: new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'binary/octet-stream'
+                        ])
+                    ]),
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'binary/octet-stream'
+                                ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'multipart/form-data'
+                        ])
+                    ]),
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ])
+                        })
+                    ])
+                })
+            ]),
             body: new Immutable.List([
                 new Parameter({
                     key: 'file',
@@ -1437,6 +1543,7 @@ export class TestRAMLParser extends UnitTest {
                     externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            type: 'string',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'multipart/form-data'
@@ -1453,6 +1560,7 @@ export class TestRAMLParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'binary/octet-stream'
                     })
                 ])
@@ -1462,6 +1570,7 @@ export class TestRAMLParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'multipart/form-data'
                     })
                 ])
@@ -1472,15 +1581,8 @@ export class TestRAMLParser extends UnitTest {
             raml, req, container, bodies
         )
 
-        this.assertEqual(
-            JSON.stringify(expectedContainer),
-            JSON.stringify(resContainer)
-        )
-
-        this.assertEqual(
-            JSON.stringify(expectedBodies),
-            JSON.stringify(resBodies)
-        )
+        this.assertJSONEqual(expectedContainer, resContainer)
+        this.assertJSONEqual(expectedBodies, resBodies)
     }
 
     @targets('_extractBodies')
@@ -1518,12 +1620,56 @@ export class TestRAMLParser extends UnitTest {
         const container = new ParameterContainer()
         const bodies = new Immutable.List()
 
-        const expectedContainer = new ParameterContainer()
+        const expectedContainer = new ParameterContainer({
+            headers: new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'someweird/key'
+                        ])
+                    ]),
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'someweird/key'
+                                ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'multipart/form-data'
+                        ])
+                    ]),
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ])
+                        })
+                    ])
+                })
+            ])
+        })
         const expectedBodies = new Immutable.List([
             new Body({
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'someweird/key'
                     })
                 ])
@@ -1533,6 +1679,7 @@ export class TestRAMLParser extends UnitTest {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: 'multipart/form-data'
                     })
                 ])
@@ -1543,15 +1690,8 @@ export class TestRAMLParser extends UnitTest {
             raml, req, container, bodies
         )
 
-        this.assertEqual(
-            JSON.stringify(expectedContainer),
-            JSON.stringify(resContainer)
-        )
-
-        this.assertEqual(
-            JSON.stringify(expectedBodies),
-            JSON.stringify(resBodies)
-        )
+        this.assertJSONEqual(expectedContainer, resContainer)
+        this.assertJSONEqual(expectedBodies, resBodies)
     }
 
     @targets('_extractResponses')
@@ -1582,11 +1722,52 @@ export class TestRAMLParser extends UnitTest {
         const expected = new Immutable.List([
             new Response({
                 code: '200',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'application/json' ])
+                            ]),
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    type: 'string',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'body',
+                            example: '::fileRef::../samples/' +
+                                'jukebox-include-artist-retrieve.sample\n',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    type: 'string',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ])
+                }),
                 bodies: new Immutable.List([
                     new Body({
                         constraints: new Immutable.List([
                             new Parameter({
                                 key: 'Content-Type',
+                                type: 'string',
                                 value: 'application/json'
                             })
                         ])
@@ -1595,11 +1776,51 @@ export class TestRAMLParser extends UnitTest {
             }),
             new Response({
                 code: '404',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'application/json' ])
+                            ]),
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    type: 'string',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'body',
+                            example: '{\"message\": \"artist not found\" }\n',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    type: 'string',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ])
+                }),
                 bodies: new Immutable.List([
                     new Body({
                         constraints: new Immutable.List([
                             new Parameter({
                                 key: 'Content-Type',
+                                type: 'string',
                                 value: 'application/json'
                             })
                         ])
@@ -1663,6 +1884,28 @@ export class TestRAMLParser extends UnitTest {
                     'returned with the response\nis dependent on the ' +
                     'method used in the request.\n',
                 parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ]),
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    type: 'string',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/json'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ]),
                     body: new Immutable.List([
                         new Parameter({
                             key: 'schema',
@@ -1673,6 +1916,7 @@ export class TestRAMLParser extends UnitTest {
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
+                                    type: 'string',
                                     internals: new Immutable.List([
                                         new Constraint.Enum([
                                             'application/json'
@@ -1688,6 +1932,7 @@ export class TestRAMLParser extends UnitTest {
                         constraints: new Immutable.List([
                             new Parameter({
                                 key: 'Content-Type',
+                                type: 'string',
                                 value: 'application/json'
                             })
                         ])
@@ -1721,10 +1966,7 @@ export class TestRAMLParser extends UnitTest {
         ])
         const result = parser._extractResponses(raml, req)
 
-        this.assertEqual(
-            JSON.stringify(expected),
-            JSON.stringify(result)
-        )
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_extractURL')
@@ -1845,7 +2087,7 @@ export class TestRAMLParser extends UnitTest {
     }
 
     @targets('_extractPaths')
-    testExtractPaths() {
+    testExtractPathsWithSimpleSequence() {
         let parser = new ClassMock(new RAMLParser(), '')
 
         const url = new URL({
@@ -1867,16 +2109,67 @@ export class TestRAMLParser extends UnitTest {
         const expected = new ParameterContainer({
             path: new Immutable.List([
                 new Parameter({
-                    key: 'path',
+                    key: 'userId',
                     type: 'string',
-                    format: 'sequence',
-                    value: new Immutable.List([
-                        new Parameter({
-                            key: 'userId',
-                            type: 'string',
-                            description: 'a user id'
-                        })
-                    ])
+                    description: 'a user id'
+                })
+            ])
+        })
+
+        const result = parser._extractPaths(url, container)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractPaths')
+    testExtractPathsWithComplexSequence() {
+        let parser = new ClassMock(new RAMLParser(), '')
+
+        const url = new URL({
+            pathname: new Parameter({
+                key: 'path',
+                type: 'string',
+                format: 'sequence',
+                value: new Immutable.List([
+                    new Parameter({
+                        type: 'string',
+                        description: 'a user id',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ '/' ])
+                        ])
+                    }),
+                    new Parameter({
+                        key: 'userId',
+                        type: 'string',
+                        description: 'a user id'
+                    }),
+                    new Parameter({
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ '/songs/' ])
+                        ])
+                    }),
+                    new Parameter({
+                        key: 'songId',
+                        type: 'string',
+                        description: 'a song id'
+                    })
+                ])
+            })
+        })
+        const container = new ParameterContainer()
+
+        const expected = new ParameterContainer({
+            path: new Immutable.List([
+                new Parameter({
+                    key: 'userId',
+                    type: 'string',
+                    description: 'a user id'
+                }),
+                new Parameter({
+                    key: 'songId',
+                    type: 'string',
+                    description: 'a song id'
                 })
             ])
         })
@@ -1897,9 +2190,17 @@ export class TestRAMLParser extends UnitTest {
             }
         }
 
+        mockedParser.item = new Item({
+            file: {
+                path: '/some/path',
+                name: 'someRAMLfile.raml'
+            }
+        })
+
         let expected = new Immutable.List([
             new ExoticReference({
-                uri: 'somefile.json'
+                uri: '/some/path/somefile.json',
+                relative: 'somefile.json'
             })
         ])
 
@@ -1913,6 +2214,13 @@ export class TestRAMLParser extends UnitTest {
         let parser = new RAMLParser()
         let mockedParser = new ClassMock(parser, '')
 
+        mockedParser.item = new Item({
+            file: {
+                path: '/some/path',
+                name: 'someRAMLfile.raml'
+            }
+        })
+
         let raml = {
             user: {
                 field: '::fileRef::somefile.json'
@@ -1922,12 +2230,46 @@ export class TestRAMLParser extends UnitTest {
         let expected = {
             user: {
                 field: new ExoticReference({
-                    uri: 'somefile.json'
+                    uri: '/some/path/somefile.json',
+                    relative: 'somefile.json'
                 })
             }
         }
 
         let result = mockedParser._replaceReferences(raml)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractInfos')
+    testExtractInfos() {
+        let parser = new ClassMock(new RAMLParser(), '')
+
+        const raml = {
+            title: 'Test Title',
+            version: 'v3',
+            documentation: [
+                {
+                    title: 'Block #1',
+                    content: 'content of Block #1'
+                },
+                {
+                    title: 'Block #2',
+                    content: 'content of Block #2'
+                }
+            ]
+        }
+
+        const expected = new Info({
+            title: 'Test Title',
+            version: 'v3',
+            description: 'Block #1:\n' +
+                'content of Block #1\n\n' +
+                'Block #2:\n' +
+                'content of Block #2\n\n'
+        })
+
+        const result = parser._extractInfos(raml)
 
         this.assertEqual(expected, result)
     }

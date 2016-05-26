@@ -5,6 +5,7 @@ import { Info } from './Utils'
 import Reference from './references/Reference'
 import ReferenceContainer from './references/Container'
 
+
 export class Parameter extends Immutable.Record({
     key: null,
     value: null,
@@ -52,6 +53,7 @@ export class Parameter extends Immutable.Record({
             let ref = this.get('value')
             if (ref instanceof Reference) {
                 constraintSet.$ref = this
+                    .getIn([ 'value', 'relative' ]) || this
                     .getIn([ 'value', 'uri' ])
                 delete constraintSet.type
             }

@@ -866,14 +866,26 @@ export class TestSwaggerSerializer extends UnitTest {
         let count = 0
         parser.spyOn('_formatParam', () => {
             count += 1
-            return count
+            return { c: count }
         })
 
-        const expected = [ 1, 2, 3, 4, 5, 6, 7, 8 ]
+        const expected = [
+            { c: 1 },
+            { c: 2 },
+            { c: 3 },
+            { c: 4 },
+            { c: 5 },
+            {
+                c: 6,
+                in: 'formData'
+            },
+            { c: 7 },
+            { c: 8 }
+        ]
 
         const result = parser._formatParameters(context, request)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
         this.assertEqual(parser.spy._formatParam.count, 8)
     }
 

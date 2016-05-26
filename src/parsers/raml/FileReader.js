@@ -2,7 +2,7 @@ import path from 'path-browserify'
 
 export default class ShimmingFileReader {
     constructor(items) {
-        this.items = items
+        this.items = items || []
     }
 
     readFileAsync(filePath) {

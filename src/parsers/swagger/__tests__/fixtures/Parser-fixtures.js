@@ -410,7 +410,8 @@ export default class SwaggerFixtures {
                         new Parameter({
                             key: 'body',
                             value: new JSONSchemaReference({
-                                uri: '#/definitions/Pet'
+                                uri: '#/definitions/Pet',
+                                relative: '#/definitions/Pet'
                             }),
                             type: 'reference',
                             description: 'Pet object'
@@ -976,7 +977,8 @@ export default class SwaggerFixtures {
                                     value: new Parameter({
                                         type: 'reference',
                                         value: new JSONSchemaReference({
-                                            uri: '#/definitions/Pet'
+                                            uri: '#/definitions/Pet',
+                                            relative: '#/definitions/Pet'
                                         })
                                     })
                                 })

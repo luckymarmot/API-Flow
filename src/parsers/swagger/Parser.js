@@ -13,10 +13,10 @@ import Context, {
 } from '../../models/Core'
 
 import {
-    Info, Contact, License,
-    Group
+    Info, Contact, License
 } from '../../models/Utils'
 
+import Group from '../../models/Group'
 import Request from '../../models/Request'
 import Auth from '../../models/Auth'
 import URL from '../../models/URL'
@@ -651,7 +651,8 @@ export default class SwaggerParser {
             let currentURI = this.item.getPath()
             let uri = (new URL(param.$ref, currentURI)).href()
             value = new JSONSchemaReference({
-                uri: uri
+                uri: uri,
+                relative: param.$ref
             })
             type = 'reference'
         }

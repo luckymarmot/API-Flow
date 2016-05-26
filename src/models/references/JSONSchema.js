@@ -142,7 +142,8 @@ export default class JSONSchemaReference extends Reference {
                     if (key === '$ref') {
                         let uri = this.get('uri')
                         let reference = new JSONSchemaReference({
-                            uri: (new URL(obj.$ref, uri)).href()
+                            uri: (new URL(obj.$ref, uri)).href(),
+                            relative: obj.$ref
                         })
                         refs = refs.push(reference)
                     }

@@ -15,10 +15,10 @@ import {
 } from '../../../models/Core'
 
 import {
-    Group,
     Info, Contact, License
 } from '../../../models/Utils'
 
+import Group from '../../../models/Group'
 import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
 import Request from '../../../models/Request'
@@ -1821,16 +1821,20 @@ export class TestSwaggerParser extends UnitTest {
 
         const expected = new Immutable.List([
             new JSONSchemaReference({
-                uri: '#/definitions/User'
+                uri: '#/definitions/User',
+                relative: '#/definitions/User'
             }),
             new JSONSchemaReference({
-                uri: '#/definitions/Product'
+                uri: '#/definitions/Product',
+                relative: '#/definitions/Product'
             }),
             new JSONSchemaReference({
-                uri: '#/definitions/Missing'
+                uri: '#/definitions/Missing',
+                relative: '#/definitions/Missing'
             }),
             new JSONSchemaReference({
-                uri: 'external.json#/definitions/Other'
+                uri: 'external.json#/definitions/Other',
+                relative: 'external.json#/definitions/Other'
             })
         ])
 

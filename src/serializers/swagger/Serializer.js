@@ -1,5 +1,10 @@
 import Immutable from 'immutable'
 import BaseSerializer from '../BaseSerializer'
+import {
+    Parameter
+} from '../../models/Core'
+
+import Reference from '../../models/references/Reference'
 
 export default class SwaggerSerializer extends BaseSerializer {
     serialize(context) {
@@ -306,7 +311,13 @@ export default class SwaggerSerializer extends BaseSerializer {
         })
         ).concat(
         body.map(param => {
-            return this._formatParam('body', param)
+            let formatted = this._formatParam('body', param)
+
+            if (!formatted.$ref) {
+                formatted.in = 'formData'
+            }
+
+            return formatted
         })
         ).concat(
         path.map(param => {
@@ -366,7 +377,17 @@ export default class SwaggerSerializer extends BaseSerializer {
         }
 
         if (example) {
-            param['x-example'] = example
+            if (example instanceof Reference) {
+                let pseudo = new Parameter({
+                    type: 'reference',
+                    value: example
+                })
+                param['x-example'] = this._formatParam(null, pseudo)
+                delete param['x-example'].required
+            }
+            else {
+                param['x-example'] = example
+            }
         }
 
         const formatMap = {

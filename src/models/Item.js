@@ -1,4 +1,5 @@
 import Immutable from 'immutable'
+import path from 'path'
 
 export default class Item extends Immutable.Record({
     url: null,
@@ -26,7 +27,10 @@ export default class Item extends Immutable.Record({
 
     getPath() {
         let url = this.get('url') || ''
-        let path = (this.get('filepath') || '') + (this.get('filename') || '')
-        return url || path
+        let _path = path.join(
+            this.get('filepath') || '',
+            this.get('filename') || ''
+        )
+        return url || _path
     }
 }

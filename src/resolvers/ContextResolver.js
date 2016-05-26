@@ -31,6 +31,14 @@ export default class ContextResolver {
     resolveReference(item, reference) {
         let dataUri = reference.getDataUri()
 
+        if (dataUri === null) {
+            return new Promise((resolve) => {
+                resolve(item)
+            }).then(_item => {
+                return reference.resolve(_item)
+            })
+        }
+
         let dataResolver
         let urlPattern = /^https?:\/\//i
         this.environment = this.environment.addResolver(item)
@@ -45,6 +53,8 @@ export default class ContextResolver {
             .resolve(dataUri)
             .then(_item => {
                 return reference.resolve(_item)
+            }, () => {
+                return reference.resolve(null)
             })
     }
 }

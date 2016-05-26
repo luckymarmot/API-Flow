@@ -10,10 +10,10 @@ import {
 import { ClassMock } from '../../../mocks/PawMocks'
 
 import {
-    Group,
     Info, Contact, License
 } from '../../../models/Utils'
 
+import Group from '../../../models/Group'
 import Auth from '../../../models/Auth'
 import Constraint from '../../../models/Constraint'
 import URL from '../../../models/URL'

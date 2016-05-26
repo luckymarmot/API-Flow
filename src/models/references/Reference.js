@@ -2,6 +2,7 @@ import Immutable from 'immutable'
 
 export default class Reference extends Immutable.Record({
     uri: null,
+    relative: null,
     resolved: false,
     value: null,
     dependencies: new Immutable.List(),
