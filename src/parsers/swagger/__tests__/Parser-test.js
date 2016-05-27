@@ -1083,6 +1083,91 @@ export class TestSwaggerParser extends UnitTest {
         this.assertJSONEqual(expected, result)
     }
 
+    @targets('_extractUrlInfo')
+    testExtractUrlInfoWithParameters() {
+        const parser = this.__init()
+
+        const collection = {
+            schemes: [ 'http', 'https' ],
+            host: 'echo.luckymarmot.com',
+            basePath: '/tests'
+        }
+        const path = '/{userId}/songs/{songId}'
+        const content = {
+            schemes: [ 'https' ],
+            parameters: [
+                {
+                    in: 'path',
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 1000,
+                    name: 'userId'
+                }
+            ]
+        }
+
+        const expected = new URL({
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'https'
+                    ])
+                ])
+            }),
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'echo.luckymarmot.com'
+                    ])
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'pathname',
+                type: 'string',
+                format: 'sequence',
+                value: new Immutable.List([
+                    new Parameter({
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ '/tests/' ])
+                        ])
+                    }),
+                    new Parameter({
+                        key: 'userId',
+                        type: 'integer',
+                        required: true,
+                        internals: new Immutable.List([
+                            new Constraint.Minimum(0),
+                            new Constraint.Maximum(1000)
+                        ])
+                    }),
+                    new Parameter({
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ '/songs/' ])
+                        ])
+                    }),
+                    new Parameter({
+                        key: 'songId',
+                        type: 'string',
+                        required: true,
+                        internals: new Immutable.List([
+                            new Constraint.Enum([ '{songId}' ])
+                        ])
+                    })
+                ])
+            })
+        })
+
+        const result = parser._extractUrlInfo(collection, path, content)
+
+        this.assertJSONEqual(expected, result)
+    }
+
     @targets('_extractResponseBodies')
     testExtractResponseBodiesOnlyCollection() {
         const parser = this.__init()
@@ -1841,6 +1926,87 @@ export class TestSwaggerParser extends UnitTest {
         let result = parser._extractReferences(item, collection)
 
         this.assertEqual(expected, result)
+    }
+
+    @targets('_extractSequenceParam')
+    testExtractSequenceParamWithSimpleSequence() {
+        const parser = this.__init()
+        const sequence = '/user'
+        const key = 'pathname'
+
+        const expected = new Parameter({
+            key: key,
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum([
+                    '/user'
+                ])
+            ])
+        })
+
+        const result = parser._extractSequenceParam(sequence, key)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractSequenceParam')
+    testExtractSequenceParamWithComplexSequence() {
+        const parser = this.__init()
+        const sequence = '/user/{userId}/songs/{songId}'
+        const key = 'pathname'
+        const parameters = [
+            {
+                name: 'songId',
+                type: 'integer',
+                minimum: 0,
+                maximum: 1000
+            }
+        ]
+
+        const expected = new Parameter({
+            key: key,
+            type: 'string',
+            format: 'sequence',
+            value: new Immutable.List([
+                new Parameter({
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '/user/' ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'userId',
+                    type: 'string',
+                    required: true,
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '{userId}'
+                        ])
+                    ])
+                }),
+                new Parameter({
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/songs/'
+                        ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'songId',
+                    type: 'integer',
+                    required: true,
+                    internals: new Immutable.List([
+                        new Constraint.Minimum(0),
+                        new Constraint.Maximum(1000)
+                    ])
+                })
+            ])
+        })
+
+        const result = parser._extractSequenceParam(sequence, key, parameters)
+
+        this.assertJSONEqual(expected, result)
     }
 
     //

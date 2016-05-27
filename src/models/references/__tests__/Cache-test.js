@@ -129,7 +129,7 @@ export class TestReferenceCache extends UnitTest {
     }
 
     @targets('getReference')
-    testGetReferenceWithNoPriorResolution() {
+    testGetReferenceWithNoPriorResolutionAtDepth() {
         const ref = new JSONSchemaReference({
             uri: '#/User',
             value: {
@@ -139,7 +139,7 @@ export class TestReferenceCache extends UnitTest {
         })
         let cache = this.__init(ref)
 
-        const expected = null
+        const expected = ref
 
         const result = cache.getReference()
         this.assertJSONEqual(expected, result)

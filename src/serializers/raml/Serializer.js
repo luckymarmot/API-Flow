@@ -6,6 +6,8 @@ import BaseSerializer from '../BaseSerializer'
 import Auth from '../../models/Auth'
 import URL from '../../models/URL'
 
+import JSONSchemaReference from '../../models/references/JSONSchema'
+
 export default class RAMLSerializer extends BaseSerializer {
     serialize(context) {
         let content = '#%RAML 0.8\n'
@@ -24,15 +26,27 @@ export default class RAMLSerializer extends BaseSerializer {
         let urlInfo = {}
         let securitySchemes = {}
         let paths = {}
+        let schemas = {}
 
         if (group) {
             let requests = group.getRequests()
             urlInfo = ::this._formatURLInfo(requests)
             securitySchemes = ::this._formatSecuritySchemes(requests)
-            paths = ::this._formatPaths(group)
+            paths = ::this._formatPaths(group, true)
         }
 
-        Object.assign(structure, basicInfo, urlInfo, securitySchemes, paths)
+        if (context.getIn([ 'references', 'cache' ]).size > 0) {
+            schemas = this._formatSchemas(context.get('references'))
+        }
+
+        Object.assign(
+            structure,
+            basicInfo,
+            urlInfo,
+            securitySchemes,
+            paths,
+            schemas
+        )
 
         if (Object.keys(structure).length === 0) {
             return null
@@ -280,6 +294,9 @@ export default class RAMLSerializer extends BaseSerializer {
         if (schema['x-title'] === 'schema' && named.default) {
             param.schema = named.default
         }
+        else if (schema.$ref) {
+            param.schema = schema.$ref
+        }
         else {
             param[schema['x-title']] = named
         }
@@ -438,7 +455,7 @@ export default class RAMLSerializer extends BaseSerializer {
         }
     }
 
-    _formatPaths(group) {
+    _formatPaths(group, skip = false) {
         if (group instanceof Request) {
             return this._formatRequest(group)
         }
@@ -448,14 +465,22 @@ export default class RAMLSerializer extends BaseSerializer {
         let relativeURI = group.get('name')
         let children = group.get('children')
 
-        if (relativeURI === null) {
+        if (relativeURI === null && !skip) {
             return {}
         }
 
+        let container = {}
         result[relativeURI] = {}
         children.forEach((child) => {
-            Object.assign(result[relativeURI], this._formatPaths(child))
+            Object.assign(container, this._formatPaths(child))
         })
+
+        if (skip) {
+            result = container
+        }
+        else {
+            result[relativeURI] = container
+        }
 
         return result
     }
@@ -478,19 +503,20 @@ export default class RAMLSerializer extends BaseSerializer {
         let container = request.get('parameters')
         let params = this._formatParameters(container)
         let body = this._formatBody(container, bodies)
+        let responses = ::this._formatResponses(request.get('responses'))
 
         let url = request.get('url')
-        let base = this._formatURIParameters(
+        let [ base ] = this._formatURIParameters(
             url.get('host'),
             'baseUriParameters'
         )
 
-        let path = this._formatURIParameters(
+        let [ path ] = this._formatURIParameters(
             url.get('pathname'),
             'uriParameters'
         )
 
-        Object.assign(formatted, params, body, base, path)
+        Object.assign(formatted, params, body, base, path, responses)
 
         result[method] = formatted
 
@@ -547,7 +573,7 @@ export default class RAMLSerializer extends BaseSerializer {
             }
 
             if (
-                constraint === 'application/x-www-urlencoded' ||
+                constraint === 'application/x-www-form-urlencoded' ||
                 constraint === 'multipart/form-data'
             ) {
                 _body[constraint] = {
@@ -586,5 +612,58 @@ export default class RAMLSerializer extends BaseSerializer {
         })
 
         return contentTypeConstraint
+    }
+
+    _formatSchemas(references) {
+        let schemas = {}
+        references.get('cache').forEach((cache) => {
+            let ref = cache.getReference()
+            if (ref instanceof JSONSchemaReference) {
+                let value = ref.get('value')
+                if (!value) {
+                    value = '!include ' + ref.get('relative')
+                }
+                else {
+                    value = ref.toJSONSchema()
+                }
+                schemas[ref.get('relative')] = value
+            }
+        })
+
+        return {
+            schemas: [ schemas ]
+        }
+    }
+
+    _formatResponses(_responses) {
+        let responses = {}
+        _responses.forEach(response => {
+            let code = response.get('code')
+            let bodies = response.get('bodies')
+            let container = response.get('parameters')
+
+            let formatted = this._formatBody(container, bodies)
+            let content
+            if (formatted.body) {
+                content = formatted.body
+            }
+            else {
+                content = {}
+            }
+
+            if (response.get('description')) {
+                content.description = response.get('description')
+            }
+
+            responses[code] = content
+        })
+
+        if (Object.keys(responses).length > 0) {
+            return {
+                responses: responses
+            }
+        }
+
+        return {}
     }
 }

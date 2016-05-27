@@ -60,6 +60,23 @@ export default class JSONSchemaReference extends Reference {
         return this.set('value', Immutable.fromJS(newValue).toJS())
     }
 
+    toJSONSchema(obj = this, depth = 0) {
+        let value = obj.get('value')
+        let result = {}
+        if (value !== null && depth >= 0) {
+            result = ::this._applyFuncToRefs(
+                value,
+                this.toJSONSchema,
+                depth - 1
+            )
+        }
+        else {
+            result = obj.get('relative') || obj.get('uri') || null
+        }
+
+        return result
+    }
+
     getDataUri() {
         let uri = this.get('uri')
         let match = uri.match(/^([^#]*)(#.*)/)
@@ -154,6 +171,30 @@ export default class JSONSchemaReference extends Reference {
             }
         }
         return refs
+    }
+
+    _applyFuncToRefs(obj, func, depth) {
+        if (obj instanceof JSONSchemaReference) {
+            let result = func(obj, depth)
+            return result
+        }
+
+        if (typeof obj !== 'object') {
+            return obj
+        }
+
+        if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; i += 1) {
+                let content = obj[i]
+                obj[i] = this._applyFuncToRefs(content, func, depth)
+            }
+        }
+        else {
+            for (let key of Object.keys(obj)) {
+                obj[key] = this._applyFuncToRefs(obj[key], func, depth)
+            }
+        }
+        return obj
     }
 
     _replaceRefs(obj) {

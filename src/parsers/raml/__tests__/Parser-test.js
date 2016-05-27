@@ -28,6 +28,7 @@ import Item from '../../../models/Item'
 import { Info } from '../../../models/Utils'
 
 import ExoticReference from '../../../models/references/Exotic'
+import JSONSchemaReference from '../../../models/references/JSONSchema'
 
 import RAMLParser from '../Parser'
 import ShimmingFileReader from '../FileReader'
@@ -730,7 +731,7 @@ export class TestRAMLParser extends UnitTest {
                 ])
             }),
             pathname: new Parameter({
-                key: 'path',
+                key: 'pathname',
                 type: 'string',
                 internals: new Immutable.List([
                     new Constraint.Enum([ '/songs' ])
@@ -2017,7 +2018,7 @@ export class TestRAMLParser extends UnitTest {
                 ])
             }),
             pathname: new Parameter({
-                key: 'path',
+                key: 'pathname',
                 type: 'string',
                 internals: new Immutable.List([
                     new Constraint.Enum([ '/songs' ])
@@ -2092,7 +2093,7 @@ export class TestRAMLParser extends UnitTest {
 
         const url = new URL({
             pathname: new Parameter({
-                key: 'path',
+                key: 'pathname',
                 type: 'string',
                 format: 'sequence',
                 value: new Immutable.List([
@@ -2127,7 +2128,7 @@ export class TestRAMLParser extends UnitTest {
 
         const url = new URL({
             pathname: new Parameter({
-                key: 'path',
+                key: 'pathname',
                 type: 'string',
                 format: 'sequence',
                 value: new Immutable.List([
@@ -2270,6 +2271,50 @@ export class TestRAMLParser extends UnitTest {
         })
 
         const result = parser._extractInfos(raml)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createJSONSchemaReference')
+    testCreateJSONSchemaReferenceWithFileReference() {
+        let parser = new ClassMock(new RAMLParser(), '')
+
+        let rel = '::fileRef::somefile.json'
+        let item = new Item({
+            file: {
+                path: '/some/path',
+                name: 'base.raml'
+            }
+        })
+
+        let expected = new JSONSchemaReference({
+            uri: '/some/path/somefile.json',
+            relative: 'somefile.json'
+        })
+
+        let result = parser._createJSONSchemaReference(rel, item)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createJSONSchemaReference')
+    testCreateJSONSchemaReferenceWithInnerReference() {
+        let parser = new ClassMock(new RAMLParser(), '')
+
+        let rel = 'someSchema'
+        let item = new Item({
+            file: {
+                path: '/some/path',
+                name: 'base.raml'
+            }
+        })
+
+        let expected = new JSONSchemaReference({
+            uri: '/some/path/base.raml#/someSchema',
+            relative: '#/someSchema'
+        })
+
+        let result = parser._createJSONSchemaReference(rel, item)
 
         this.assertEqual(expected, result)
     }

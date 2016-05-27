@@ -20,10 +20,15 @@ import URL from '../../../models/URL'
 import Request from '../../../models/Request'
 import Context, {
     Body,
+    Response,
     Parameter,
     ParameterContainer
 } from '../../../models/Core'
 import RAMLSerializer from '../Serializer'
+
+import ReferenceContainer from '../../../models/references/Container'
+import ExoticReference from '../../../models/references/Exotic'
+import JSONSchemaReference from '../../../models/references/JSONSchema'
 
 @registerTest
 @against(RAMLSerializer)
@@ -986,7 +991,7 @@ export class TestRAMLSerializer extends UnitTest {
         s.spyOn('_formatURIParameters', (_, target) => {
             let res = {}
             res[target] = true
-            return res
+            return [ res, null ]
         })
 
         let req = new Request({
@@ -1266,7 +1271,7 @@ export class TestRAMLSerializer extends UnitTest {
         let s = this.__init()
 
         s.spyOn('_getContentTypeConstraint', () => {
-            return 'application/x-www-urlencoded'
+            return 'application/x-www-form-urlencoded'
         })
 
         let container = new ParameterContainer({
@@ -1284,7 +1289,7 @@ export class TestRAMLSerializer extends UnitTest {
                             type: 'string',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
-                                    'application/x-www-urlencoded'
+                                    'application/x-www-form-urlencoded'
                                 ])
                             ])
                         })
@@ -1299,7 +1304,7 @@ export class TestRAMLSerializer extends UnitTest {
                     new Parameter({
                         key: 'Content-Type',
                         type: 'string',
-                        value: 'application/x-www-urlencoded'
+                        value: 'application/x-www-form-urlencoded'
                     })
                 ])
             })
@@ -1307,7 +1312,7 @@ export class TestRAMLSerializer extends UnitTest {
 
         let expected = {
             body: {
-                'application/x-www-urlencoded': {
+                'application/x-www-form-urlencoded': {
                     formParameters: {
                         count: {
                             displayName: 'count',
@@ -1385,6 +1390,121 @@ export class TestRAMLSerializer extends UnitTest {
         let expected = 'application/json'
 
         let result = s._getContentTypeConstraint(body)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatSchemas')
+    testFormatSchemas() {
+        let s = this.__init()
+        let references = new ReferenceContainer()
+        references = references.update(
+            new ExoticReference({
+                uri: '/absolute/path/some-song.mp3',
+                relative: 'some-song.mp3',
+                resolved: true
+            })
+        ).update(
+            new JSONSchemaReference({
+                uri: '/absolute/path/current.json#/definitions/User',
+                relative: '#/definitions/User',
+                value: { test: 12 },
+                resolved: true
+            })
+        ).update(
+            new JSONSchemaReference({
+                uri: '/absolute/path/other.json',
+                relative: 'other.json',
+                resolved: true
+            })
+        )
+
+        const expected = {
+            schemas: [
+                {
+                    'other.json': '!include other.json',
+                    '#/definitions/User': { test: 12 }
+                }
+            ]
+        }
+
+        const result = s._formatSchemas(references)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatResponses')
+    testFormatResponsesCallsFormatBody() {
+        let s = this.__init()
+
+        let count = 0
+        s.spyOn('_formatBody', () => {
+            count += 1
+            return {
+                body: count
+            }
+        })
+
+        let responses = new Immutable.List([
+            new Response({
+                code: 200
+            }),
+            new Response({
+                code: 404
+            })
+        ])
+
+        let expected = {
+            responses: {
+                200: 1,
+                404: 2
+            }
+        }
+
+        let result = s._formatResponses(responses)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatResponses')
+    testFormatResponsesAddsDescription() {
+        let s = this.__init()
+
+        let count = 0
+        s.spyOn('_formatBody', () => {
+            count += 1
+            return {
+                body: {
+                    count: count
+                }
+            }
+        })
+
+        let responses = new Immutable.List([
+            new Response({
+                code: 200,
+                description: 'basic'
+            }),
+            new Response({
+                code: 404,
+                description: 'other'
+            })
+        ])
+
+        let expected = {
+            responses: {
+                200: {
+                    count: 1,
+                    description: 'basic'
+                },
+                404: {
+                    count: 2,
+                    description: 'other'
+                }
+            }
+        }
+
+        let result = s._formatResponses(responses)
 
         this.assertEqual(expected, result)
     }

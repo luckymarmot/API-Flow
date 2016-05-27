@@ -709,4 +709,104 @@ export class TestJSONSchemaReference extends UnitTest {
         let result = ref._replaceRefs(obj)
         this.assertEqual(expected, result)
     }
+
+    @targets('_applyFuncToRefs')
+    testApplyFuncToRefs() {
+        let res = new JSONSchemaReference()
+
+        let obj = {
+            value: 12,
+            $ref: new JSONSchemaReference({
+                uri: '#/definitions/User',
+                relative: '#/definitions/User',
+                value: {
+                    test: 90
+                }
+            }),
+            other: {
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/Other',
+                    relative: '#/definitions/Other'
+                })
+            }
+        }
+
+        let count = 0
+        let func = (ref) => {
+            if (ref.get('value')) {
+                this.assertEqual(ref.get('uri'), '#/definitions/User')
+            }
+            else {
+                this.assertEqual(ref.get('uri'), '#/definitions/Other')
+            }
+            count += 1
+            return true
+        }
+
+        let depth = 0
+
+        let expected = {
+            value: 12,
+            $ref: true,
+            other: {
+                $ref: true
+            }
+        }
+        let result = res._applyFuncToRefs(obj, func, depth)
+
+        this.assertEqual(count, 2)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('toJSONSchema')
+    testToJSONSchema() {
+        let res = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        let expected = '#/definitions/User'
+        let result = res.toJSONSchema()
+
+        this.assertEqual(expected, result)
+
+        res = res.set('relative', '#/definitions/Missing')
+
+        expected = '#/definitions/Missing'
+        result = res.toJSONSchema()
+
+        this.assertEqual(expected, result)
+
+        res = res.set('value', { test: 12 })
+
+        expected = {
+            test: 12
+        }
+        result = res.toJSONSchema()
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('toJSONSchema')
+    testToJSONSchemaWithCircularReference() {
+        let res = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            relative: '#/definitions/User',
+            value: {
+                title: 'User',
+                $ref: new JSONSchemaReference({
+                    uri: '#/definitions/User',
+                    relative: '#/definitions/User'
+                })
+            }
+        })
+
+        let expected = {
+            title: 'User',
+            $ref: '#/definitions/User'
+        }
+
+        let result = res.toJSONSchema(res, 3)
+
+        this.assertEqual(expected, result)
+    }
 }

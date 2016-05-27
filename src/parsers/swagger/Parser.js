@@ -408,10 +408,30 @@ export default class SwaggerParser {
             subPath = path
         }
 
+        let pathParams = (content.parameters || []).filter(param => {
+            return param.in === 'path'
+        })
+
+        let protocol = new Parameter({
+            key: 'protocol',
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum(schemes)
+            ])
+        })
+
+        let hostParam = this._extractSequenceParam(
+            host, 'host', pathParams
+        )
+
+        let pathnameParam = this._extractSequenceParam(
+            basePath + subPath, 'pathname', pathParams
+        )
+
         let url = new URL({
-            protocol: schemes,
-            host: host,
-            pathname: basePath + subPath
+            protocol: protocol,
+            host: hostParam,
+            pathname: pathnameParam
         })
 
         return url
@@ -775,6 +795,85 @@ export default class SwaggerParser {
         }
 
         return _group
+    }
+
+    _extractSequenceParam(_sequence, _key, parameters) {
+        let simpleParam = new Parameter({
+            key: _key,
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum([
+                    _sequence
+                ])
+            ])
+        })
+
+        let groups = _sequence.match(/([^{}]*)(\{[^{}]*\})([^{}]*)/g)
+        if (!groups) {
+            return simpleParam
+        }
+
+        let sequence = new Immutable.List()
+        for (let group of groups) {
+            let sub = group.match(/([^{}]*)(\{[^{}]*\})([^{}]*)/)
+            if (sub[1]) {
+                sequence = sequence.push(new Parameter({
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            sub[1]
+                        ])
+                    ])
+                }))
+            }
+
+            if (sub[2]) {
+                let key = sub[2].slice(1, -1)
+                let _param
+
+                let found = false
+
+                for (let param of parameters || []) {
+                    if (param.name === key) {
+                        _param = this._extractParam(param, new Immutable.List())
+                        found = true
+                    }
+                }
+
+                if (!found) {
+                    _param = new Parameter({
+                        key: key,
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                sub[2]
+                            ])
+                        ])
+                    })
+                }
+
+                _param = _param.set('required', true)
+                sequence = sequence.push(_param)
+            }
+
+            if (sub[3]) {
+                sequence = sequence.push(new Parameter({
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            sub[3]
+                        ])
+                    ])
+                }))
+            }
+        }
+
+        return new Parameter({
+            key: _key,
+            type: 'string',
+            format: 'sequence',
+            value: sequence
+        })
     }
 }
 

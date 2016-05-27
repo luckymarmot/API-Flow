@@ -19,6 +19,7 @@ import URL from '../../models/URL'
 import ReferenceContainer from '../../models/references/Container'
 import Reference from '../../models/references/Reference'
 import ExoticReference from '../../models/references/Exotic'
+import JSONSchemaReference from '../../models/references/JSONSchema'
 
 import Constraint from '../../models/Constraint'
 import Auth from '../../models/Auth'
@@ -110,11 +111,44 @@ export default class RAMLParser {
         else {
             for (let key in obj) {
                 if (obj.hasOwnProperty(key)) {
-                    refs = refs.concat(::this._findReferences(obj[key]))
+                    if (key === 'schema' && typeof obj.schema === 'string') {
+                        refs = refs.push(this._createJSONSchemaReference(
+                            obj.schema, this.item
+                        ))
+                    }
+                    else {
+                        refs = refs.concat(::this._findReferences(obj[key]))
+                    }
                 }
             }
         }
         return refs
+    }
+
+    _createJSONSchemaReference(_rel, item) {
+        let rel = _rel
+        if (rel.startsWith('::fileRef::')) {
+            rel = rel.slice(11)
+            let uri = __path.resolve(__path.dirname(
+                item.getPath()
+            ), rel)
+
+            return new JSONSchemaReference({
+                uri: uri,
+                relative: rel
+            })
+        }
+
+        if (!rel.startsWith('#/')) {
+            rel = '#/' + _rel
+        }
+
+        let uri = item.getPath() + rel
+
+        return new JSONSchemaReference({
+            uri: uri,
+            relative: rel
+        })
     }
 
     _replaceReferences(obj) {
@@ -142,7 +176,14 @@ export default class RAMLParser {
         else {
             for (let key in obj) {
                 if (obj.hasOwnProperty(key)) {
-                    obj[key] = ::this._replaceReferences(obj[key])
+                    if (key === 'schema' && typeof obj.schema === 'string') {
+                        obj.schema = this._createJSONSchemaReference(
+                            obj.schema, this.item
+                        )
+                    }
+                    else {
+                        obj[key] = ::this._replaceReferences(obj[key])
+                    }
                 }
             }
         }
@@ -263,7 +304,7 @@ export default class RAMLParser {
             req.uriParameters || {}
         )
         let pathname = this._extractSequenceParam(
-            raml, basePath + path, 'path', parameters
+            raml, basePath + path, 'pathname', parameters
         )
 
         let _url = new URL({
@@ -336,7 +377,12 @@ export default class RAMLParser {
                     if (param === null) {
                         param = new Parameter({
                             key: key,
-                            type: 'string'
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    sub[2]
+                                ])
+                            ])
                         })
                     }
 
