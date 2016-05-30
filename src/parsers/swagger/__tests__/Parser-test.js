@@ -499,6 +499,89 @@ export class TestSwaggerParser extends UnitTest {
     }
 
     @targets('_applyFuncOverPathArchitecture')
+    testApplyFuncOverPathArchitectureDealsWithParametersMethod() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        parser.spyOn('_getParameters', () => {
+            return [
+                {
+                    name: 'test',
+                    in: 'query'
+                }
+            ]
+        })
+
+        const collection = {
+            paths: {
+                '/test': {
+                    get: {
+                        value: 12
+                    },
+                    post: {
+                        value: 21
+                    },
+                    parameters: [
+                        {
+                            $ref: '#/parameters/ApiKey'
+                        }
+                    ]
+                },
+                '/test/nested': {
+                    get: {
+                        value: 45
+                    }
+                }
+            }
+        }
+
+        const expected = {
+            '/test': {
+                get: {
+                    value: 24,
+                    parameters: [
+                        {
+                            name: 'test',
+                            in: 'query'
+                        }
+                    ]
+                },
+                post: {
+                    value: 42,
+                    parameters: [
+                        {
+                            name: 'test',
+                            in: 'query'
+                        }
+                    ]
+                }
+            },
+            '/test/nested': {
+                get: {
+                    value: 90
+                }
+            }
+        }
+
+        const result = parser._applyFuncOverPathArchitecture(
+            collection,
+            (coll, path, method, content) => {
+                let _result = {
+                    value: content.value * 2
+                }
+
+                if (content.parameters) {
+                    _result.parameters = content.parameters
+                }
+
+                return _result
+            }
+        )
+
+        this.assertEqual(expected, result)
+        this.assertEqual(parser.spy._getParameters.count, 1)
+    }
+
+    @targets('_applyFuncOverPathArchitecture')
     testApplyFuncOverPathArchitectureUpdatesMethodParams() {
         const parser = new SwaggerParser()
 
@@ -743,6 +826,32 @@ export class TestSwaggerParser extends UnitTest {
     }
 
     @targets('_extractParams')
+    testExtractParamsCallsGetParameters() {
+        const parser = this.__init()
+
+        const collection = {
+            value: 12
+        }
+
+        const parameters = [ 1, 2, 3, 4 ]
+
+        const content = {
+            value: 42,
+            parameters: parameters
+        }
+
+        parser.spyOn('_getParameters', (_collection, _parameters) => {
+            this.assertEqual(collection, _collection)
+            this.assertEqual(parameters, _parameters)
+            return []
+        })
+
+        parser._extractParams(collection, content)
+
+        this.assertEqual(parser.spy._getParameters.count, 1)
+    }
+
+    @targets('_extractParams')
     testExtractParamsCallsExtractContentTypes() {
         const parser = this.__init()
 
@@ -983,6 +1092,73 @@ export class TestSwaggerParser extends UnitTest {
         ]
 
         const result = parser._updateParametersInMethod(content, base)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_getParameters')
+    testGetParameters() {
+        const parser = this.__init()
+
+        const collection = {
+            parameters: {
+                skipParam: {
+                    name: 'skip',
+                    in: 'query',
+                    description: 'number of items to skip',
+                    required: true,
+                    type: 'integer',
+                    format: 'int32'
+                },
+                limitParam: {
+                    name: 'limit',
+                    in: 'query',
+                    description: 'max records to return',
+                    required: true,
+                    type: 'integer',
+                    format: 'int32'
+                }
+            }
+        }
+
+        const params = [
+            {
+                $ref: '#/parameters/limitParam'
+            },
+            {
+                name: 'skip',
+                in: 'query',
+                description: 'number of items to skip',
+                required: true,
+                type: 'integer',
+                format: 'int32',
+                minimum: 0,
+                maximum: 100
+            }
+        ]
+
+        const expected = [
+            {
+                name: 'limit',
+                in: 'query',
+                description: 'max records to return',
+                required: true,
+                type: 'integer',
+                format: 'int32'
+            },
+            {
+                name: 'skip',
+                in: 'query',
+                description: 'number of items to skip',
+                required: true,
+                type: 'integer',
+                format: 'int32',
+                minimum: 0,
+                maximum: 100
+            }
+        ]
+
+        const result = parser._getParameters(collection, params)
 
         this.assertEqual(expected, result)
     }

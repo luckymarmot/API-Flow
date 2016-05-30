@@ -190,13 +190,15 @@ export default class SwaggerParser {
     _setAuth(request, swaggerCollection, content) {
         let _request = request
 
+        let _security = content.security || swaggerCollection.security || []
+
         const typeMap = {
             basic: this._setBasicAuth,
             apiKey: this._setApiKeyAuth,
             oauth2: this._setOAuth2Auth
         }
 
-        if (!content.security) {
+        if (_security.length === 0) {
             return _request
         }
 
@@ -206,7 +208,7 @@ export default class SwaggerParser {
         }
 
         let auths = []
-        for (let security of content.security) {
+        for (let security of _security) {
             for (let key in security) {
                 if (
                     security.hasOwnProperty(key) &&
@@ -307,6 +309,7 @@ export default class SwaggerParser {
                 params.push(param)
             }
         }
+
         return params
     }
 
@@ -319,13 +322,10 @@ export default class SwaggerParser {
                 let methods = collection.paths[path]
                 let _methods = Object.keys(methods)
                 if (methods.parameters) {
-                    let _params = methods.parameters
-                    if (methods.parameters.$ref) {
-                        _params = ::this._extractSubTree(
-                            collection,
-                            methods.parameters.$ref
-                        )
-                    }
+                    let _params = this._getParameters(
+                        collection,
+                        methods.parameters
+                    )
 
                     let paramKey = _methods.indexOf('parameters')
                     // remove paramKey
@@ -351,6 +351,27 @@ export default class SwaggerParser {
         }
 
         return architecture
+    }
+
+    _getParameters(collection, params) {
+        let _params = []
+        for (let param of params) {
+            if (param.$ref) {
+                let _param = ::this._extractSubTree(
+                    collection,
+                    param.$ref
+                )
+
+                if (_param) {
+                    _params.push(_param)
+                }
+            }
+            else {
+                _params.push(param)
+            }
+        }
+
+        return _params
     }
 
     _unescapeURIFragment(uriFragment) {
@@ -408,7 +429,12 @@ export default class SwaggerParser {
             subPath = path
         }
 
-        let pathParams = (content.parameters || []).filter(param => {
+        let resolvedParams = this._getParameters(
+            collection,
+            content.parameters || []
+        )
+
+        let pathParams = resolvedParams.filter(param => {
             return param.in === 'path'
         })
 
@@ -563,6 +589,8 @@ export default class SwaggerParser {
         let _collection = collection || {}
         let parameters = _content.parameters || []
 
+        parameters = this._getParameters(collection, parameters)
+
         let headers = []
         let queries = []
         let body = []
@@ -596,24 +624,21 @@ export default class SwaggerParser {
             path: path
         }
 
-        if (
-            parameters &&
-            typeof parameters[Symbol.iterator] === 'function'
-        ) {
-            for (let param of parameters) {
-                let fieldList = mapping[param.in]
-                if (fieldList) {
-                    let _param = this._extractParam(param, externals)
-                    fieldList.push(_param)
-                }
+        for (let param of parameters) {
+            let fieldList = mapping[param.in]
+            if (fieldList) {
+                let _param = this._extractParam(param, externals)
+                fieldList.push(_param)
             }
         }
 
         let container = new ParameterContainer({
             headers: new Immutable.List(headers),
             queries: new Immutable.List(queries),
-            body: new Immutable.List(body)
+            body: new Immutable.List(body),
+            path: new Immutable.List(path)
         })
+
         return container
     }
 

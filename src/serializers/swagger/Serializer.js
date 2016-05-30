@@ -113,17 +113,17 @@ export default class SwaggerSerializer extends BaseSerializer {
     }
 
     _formatPaths(context, requests, schemes) {
-        let securityDefs = {}
+        let securityDefs = new Immutable.Map()
         let paths = {}
         requests.forEach(req => {
             let [ _defs, path, _req ] = this.
                 _formatRequest(context, req, schemes)
             let request = paths[path] || {}
-            Object.assign(securityDefs, _defs)
+            securityDefs = securityDefs.mergeDeep(_defs)
             Object.assign(request, _req)
             paths[path] = request
         })
-        return [ paths, securityDefs ]
+        return [ paths, securityDefs.toJS() ]
     }
 
     _formatRequest(context, request, schemes) {
@@ -420,7 +420,7 @@ export default class SwaggerSerializer extends BaseSerializer {
             OAuth2Auth: ::this._formatOAuth2Auth
         }
 
-        let _definitions = {}
+        let _definitions = new Immutable.Map()
         let _security = []
 
         request.get('auths').forEach(auth => {
@@ -432,12 +432,12 @@ export default class SwaggerSerializer extends BaseSerializer {
                 if (rule) {
                     let [ definition, security ] = rule(context, auth)
                     _security.push(security)
-                    Object.assign(_definitions, definition)
+                    _definitions = _definitions.mergeDeep(definition)
                 }
             }
         })
 
-        return [ _definitions, _security ]
+        return [ _definitions.toJS(), _security ]
     }
 
     _formatBasicAuth(context, auth) {
@@ -467,21 +467,34 @@ export default class SwaggerSerializer extends BaseSerializer {
     _formatOAuth2Auth(context, auth) {
         let scopes = auth.get('scopes')
 
-        if (scopes) {
-            scopes = scopes.toJS()
-        }
-
         let definition = {
             oauth_2_auth: {
                 type: 'oauth2',
                 authorizationUrl: auth.get('authorizationUrl'),
                 tokenUrl: auth.get('tokenUrl'),
-                flow: auth.get('flow'),
-                scopes: scopes
+                flow: auth.get('flow')
             }
         }
 
-        return [ definition, 'oauth_2_auth' ]
+        let scopeDescriptions = {}
+        let security
+        if (scopes) {
+            scopes = scopes.toJS()
+            security = {
+                oauth_2_auth: scopes
+            }
+
+            scopes.forEach(scope => {
+                scopeDescriptions[scope] = ''
+            })
+
+            definition.oauth_2_auth.scopes = scopeDescriptions
+        }
+        else {
+            security = 'oauth_2_auth'
+        }
+
+        return [ definition, security ]
     }
 
     _unescapeURIFragment(uriFragment) {

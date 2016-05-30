@@ -1,6 +1,6 @@
 import Immutable from 'immutable'
 
-import RequestContext, {
+import Context, {
     Parameter,
     ParameterContainer
 } from '../../../../models/Core'
@@ -17,12 +17,17 @@ import Constraint from '../../../../models/Constraint'
 import URL from '../../../../models/URL'
 import Auth from '../../../../models/Auth'
 
+import PawEnvironment from '../../../../models/environments/PawEnvironment'
+import ContextResolver from '../../../../resolvers/ContextResolver'
+
 import {
     UnitTest,
     registerTest,
     targets, against
 } from '../../../../utils/TestUtils'
+
 import BaseImporterFixtures from './fixtures/BaseImporter-fixtures'
+
 import {
     DynamicString,
     DynamicValue,
@@ -2157,14 +2162,12 @@ export class TestBaseImporter extends UnitTest {
     }
 
     @targets('import')
-    testImport() {
-        const importer = new BaseImporter()
-
-        const mockedImporter = new ClassMock(importer, '')
+    testImportWithSimpleUseCase(done) {
+        const importer = new ClassMock(new BaseImporter(), '')
         const contextMock = new PawContextMock()
-        const reqContext = new RequestContext()
+        const reqContext = new Context()
 
-        mockedImporter.spyOn('createRequestContexts', () => {
+        importer.spyOn('createRequestContexts', () => {
             return [
                 {
                     context: reqContext,
@@ -2173,24 +2176,192 @@ export class TestBaseImporter extends UnitTest {
             ]
         })
 
-        mockedImporter.spyOn('_importPawRequests', () => {})
+        importer.spyOn('_importPawRequests', () => {})
 
-        importer.import.apply(
-            mockedImporter,
-            [ contextMock, [ null ], null ]
-        )
+        let final = importer.import(contextMock, [ null ], null)
 
-        this.assertEqual(mockedImporter.spy.createRequestContexts.count, 1)
-        this.assertEqual(mockedImporter.spy.createRequestContexts.calls,
-            [ [ contextMock, [ null ], null ] ]
-        )
+        final.then((status) => {
+            this.assertEqual(importer.spy.createRequestContexts.count, 1)
+            this.assertEqual(importer.spy.createRequestContexts.calls,
+                [ [ contextMock, [ null ], null ] ]
+            )
 
-        this.assertEqual(mockedImporter.spy._importPawRequests.count, 1)
-        /* eslint-disable no-undefined */
-        this.assertEqual(mockedImporter.spy._importPawRequests.calls,
-            [ [ reqContext, undefined, null ] ]
-        )
+            this.assertEqual(importer.spy._importPawRequests.count, 1)
+            /* eslint-disable no-undefined */
+            this.assertEqual(importer.spy._importPawRequests.calls,
+                [ [ reqContext, undefined, null ] ]
+            )
+
+            this.assertTrue(status)
+            done()
+        }, error => {
+            throw error
+        }).catch(err => {
+            done(new Error(err))
+        })
         /* eslint-enable no-undefined */
+    }
+
+    @targets('import')
+    testImportWithRejectedContext(done) {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const contextMock = new PawContextMock()
+
+        importer.spyOn('createRequestContexts', () => {
+            return new Promise((_, reject) => {
+                return reject(new Error('dummy error'))
+            })
+        })
+
+        let final = importer.import(contextMock, [ null ], null)
+
+        final.then((status) => {
+            this.assertFalse(status)
+            done()
+        }).catch(err => {
+            done(err)
+        })
+    }
+
+    @targets('import')
+    testImportWithFailedContext(done) {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const contextMock = new PawContextMock()
+
+        importer.spyOn('createRequestContexts', () => {
+            return new Promise(() => {
+                throw new Error('dummy error')
+            })
+        })
+
+        let final = importer.import(contextMock, [ null ], null)
+
+        final.then((status) => {
+            this.assertFalse(status)
+            done()
+        }).catch(err => {
+            done(err)
+        })
+    }
+
+    @targets('import')
+    testImportWithRejectedImport(done) {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const contextMock = new PawContextMock()
+        const reqContext = new Context()
+
+        importer.spyOn('createRequestContexts', () => {
+            return [
+                {
+                    context: reqContext,
+                    items: []
+                }
+            ]
+        })
+
+        importer.spyOn('_importContext', () => {
+            return new Promise((_, reject) => {
+                return reject(new Error('dummy error'))
+            })
+        })
+
+        let final = importer.import(contextMock, [ null ], null)
+
+        final.then((status) => {
+            this.assertFalse(status)
+            done()
+        }).catch(err => {
+            done(err)
+        })
+    }
+
+    @targets('import')
+    testImportWithFailedImport(done) {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const contextMock = new PawContextMock()
+        const reqContext = new Context()
+
+        importer.spyOn('createRequestContexts', () => {
+            return [
+                {
+                    context: reqContext,
+                    items: []
+                }
+            ]
+        })
+
+        importer.spyOn('_importContext', () => {
+            return new Promise(() => {
+                throw new Error('dummy error')
+            })
+        })
+
+        let final = importer.import(contextMock, [ null ], null)
+
+        final.then((status) => {
+            this.assertFalse(status)
+            done()
+        }).catch(err => {
+            done(err)
+        })
+    }
+
+    @targets('_importContext')
+    testImportContextShouldThrowWithInvalidRequestContext() {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const reqContext = null
+
+        let failed = false
+        try {
+            importer._importContext(null, reqContext)
+        }
+        catch (e) {
+            failed = true
+        }
+
+        this.assertTrue(failed)
+    }
+
+    @targets('_importContext')
+    testImportContextCallsContextResolver(done) {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const reqContext = new Context()
+        const paw = new PawEnvironment()
+        const resolver = new ClassMock(new ContextResolver(paw), '')
+
+        importer.spyOn('_importPawRequests', () => {})
+
+        let promise = importer._importContext(resolver, reqContext)
+
+        promise.then(() => {
+            this.assertEqual(resolver.spy.resolveAll.count, 1)
+            done()
+        }, (err) => {
+            throw err
+        }).catch(err => {
+            return done(err)
+        })
+    }
+
+    @targets('_importContext')
+    testImportContextCallsImportPawRequests(done) {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const reqContext = new Context()
+        const paw = new PawEnvironment()
+        const resolver = new ContextResolver(paw)
+
+        importer.spyOn('_importPawRequests', () => {})
+
+        let promise = importer._importContext(resolver, reqContext)
+
+        promise.then(() => {
+            this.assertEqual(importer.spy._importPawRequests.count, 1)
+            done()
+        }, (err) => {
+            throw err
+        }).catch(err => {
+            return done(err)
+        })
     }
 
     //

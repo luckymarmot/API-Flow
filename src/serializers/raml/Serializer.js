@@ -248,6 +248,7 @@ export default class RAMLSerializer extends BaseSerializer {
         }
 
         result[target] = {}
+        let index = 0
         for (let sub of schema['x-sequence']) {
             if (sub['x-title']) {
                 if (sub['x-title'] === 'version') {
@@ -255,9 +256,16 @@ export default class RAMLSerializer extends BaseSerializer {
                 }
                 else {
                     let named = this._convertJSONSchemaToNamedParameter(sub)
+
+                    if (param.getIn([ 'value', index, 'description' ])) {
+                        named[sub['x-title']].description = param.getIn([
+                            'value', index, 'description'
+                        ])
+                    }
                     Object.assign(result[target], named)
                 }
             }
+            index += 1
         }
 
         return [ result, version ]

@@ -15,6 +15,9 @@ import {
     ApiKeyAuth
 } from '../../../models/Auth'
 
+import ContextResolver from '../../../resolvers/ContextResolver'
+import PawEnvironment from '../../../models/environments/PawEnvironment'
+
 import {
     DynamicValue,
     DynamicString
@@ -64,37 +67,6 @@ export default class BaseImporter {
     }
 
     import(context, items, options) {
-        let requestContexts = this.createRequestContexts(
-            context,
-            items,
-            options
-        )
-
-        this.context = context
-
-        for (let env of requestContexts) {
-            let requestContext = env.context
-
-            if (!(requestContext instanceof Context)) {
-                throw new Error(
-                    'createRequestContext ' +
-                    'did not return an instance of Context'
-                )
-            }
-            this._importPawRequests(
-                requestContext,
-                env.items[0],
-                options
-            )
-            if (options && options.order) {
-                options.order += 1
-            }
-        }
-
-        return true
-    }
-
-    __import__(context, items, options) {
         this.context = context
 
         let parsePromiseOrResult = this.createRequestContexts(
@@ -103,36 +75,80 @@ export default class BaseImporter {
             options
         )
 
-        if (typeof parsePromiseOrResult !== 'function') {
-            return parsePromiseOrResult
+        if (typeof parsePromiseOrResult.then !== 'function') {
+            let value = parsePromiseOrResult
+            parsePromiseOrResult = new Promise((resolve) => {
+                resolve(value)
+            })
         }
 
-        let importPromise = parsePromiseOrResult.then((requestContexts) => {
-            for (let env of requestContexts) {
-                let requestContext = env.context
+        let environment = new PawEnvironment()
+        let resolver = new ContextResolver(environment)
 
-                if (!(requestContext instanceof Context)) {
-                    throw new Error(
-                        'createRequestContext ' +
-                        'did not return an instance of RequestContext'
+        let importPromise = parsePromiseOrResult.then((requestContexts) => {
+            let promises = []
+            for (let env of requestContexts) {
+                promises.push(
+                    this._importContext(
+                        resolver,
+                        env.context,
+                        env.items[0],
+                        options
                     )
-                }
+                )
+            }
+
+            return Promise.all(promises).then(() => {
+                return true
+            }, () => {
+                return false
+            })
+        }, () => {
+            return false
+        }).catch(() => {
+            return false
+        })
+
+        return importPromise
+    }
+
+    _importContext(resolver, reqContext, item, options) {
+        if (!(reqContext instanceof Context)) {
+            throw new Error(
+                'createRequestContext ' +
+                'did not return an instance of RequestContext'
+            )
+        }
+
+        return resolver.resolveAll(
+            item,
+            reqContext.get('references')
+        ).then(references => {
+            try {
                 this._importPawRequests(
-                    requestContext,
-                    env.items[0],
+                    reqContext.set('references', references),
+                    item,
                     options
                 )
                 if (options && options.order) {
                     options.order += 1
                 }
             }
+            catch (e) {
+                /* eslint-disable no-console */
+                console.error('got error', e.stack)
+                /* eslint-enable no-console */
+            }
+        }).catch(error => {
+            /* eslint-disable no-console */
+            console.error('got error', error.stack)
+            /* eslint-enable no-console */
         })
-
-        return importPromise
     }
 
     _importPawRequests(requestContext, item, options) {
         const group = requestContext.get('group')
+        // const references = requestContext.get('references')
         const schema = requestContext.get('schema')
         const environments = requestContext.get('environments')
 

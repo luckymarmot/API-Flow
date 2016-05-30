@@ -377,12 +377,21 @@ export class TestSwaggerSerializer extends UnitTest {
         ])
         const schemes = [ 'http' ]
 
+        let count = 0
+
         parser.spyOn('_formatRequest', (_context, req) => {
             let content = {}
             content[req.get('method')] = 'test request'
             let securityDefs = {}
             let def = req.getIn([ 'url', 'host' ]).generate(true)
-            securityDefs[def] = 'test definition'
+            securityDefs[def] = {
+                desc: 'test definition',
+                scopes: {}
+            }
+
+            securityDefs[def].scopes[count] = ''
+            count += 1
+
             return [
                 securityDefs,
                 req.getIn([ 'url', 'pathname' ]).generate(),
@@ -401,8 +410,19 @@ export class TestSwaggerSerializer extends UnitTest {
                 }
             },
             {
-                'securityDefs#1': 'test definition',
-                'securityDefs#2': 'test definition'
+                'securityDefs#1': {
+                    desc: 'test definition',
+                    scopes: {
+                        0: ''
+                    }
+                },
+                'securityDefs#2': {
+                    desc: 'test definition',
+                    scopes: {
+                        1: '',
+                        2: ''
+                    }
+                }
             }
         ]
 
@@ -1152,10 +1172,15 @@ export class TestSwaggerSerializer extends UnitTest {
                     authorizationUrl: 'test.com/auth',
                     tokenUrl: 'test.com/token',
                     flow: 'implicit',
-                    scopes: [ 'write:self', 'read:any' ]
+                    scopes: {
+                        'write:self': '',
+                        'read:any': ''
+                    }
                 }
             },
-            'oauth_2_auth'
+            {
+                oauth_2_auth: [ 'write:self', 'read:any' ]
+            }
         ]
 
         const result = parser._formatOAuth2Auth(context, auth)

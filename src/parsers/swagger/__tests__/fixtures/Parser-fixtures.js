@@ -743,6 +743,13 @@ export default class SwaggerFixtures {
                                 required: true,
                                 type: 'string',
                                 default: 'Ipsum'
+                            },
+                            {
+                                in: 'path',
+                                name: 'userId',
+                                description: 'a user Id',
+                                required: true,
+                                type: 'string'
                             }
                         ]
                     }
@@ -825,6 +832,26 @@ export default class SwaggerFixtures {
                             key: 'status',
                             type: 'string',
                             description: 'Status values',
+                            externals: new Immutable.List([
+                                new Parameter({
+                                    key: 'Content-Type',
+                                    type: 'string',
+                                    internals: new Immutable.List([
+                                        new Constraint.Enum([
+                                            'application/x-www-form-urlencoded',
+                                            'multipart/form-data'
+                                        ])
+                                    ])
+                                })
+                            ])
+                        })
+                    ]),
+                    path: new Immutable.List([
+                        new Parameter({
+                            key: 'userId',
+                            type: 'string',
+                            description: 'a user Id',
+                            required: true,
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
