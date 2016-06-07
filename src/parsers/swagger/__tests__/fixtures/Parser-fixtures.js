@@ -188,6 +188,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -220,6 +225,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -236,6 +246,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'multipart/form-data',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -274,6 +289,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -335,6 +355,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -351,6 +376,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'multipart/form-data',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -453,6 +483,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -469,6 +504,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'multipart/form-data',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -600,6 +640,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'application/json',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -663,6 +708,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'application/json',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -760,6 +810,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',
@@ -776,6 +831,11 @@ export default class SwaggerFixtures {
                             key: 'Content-Type',
                             type: 'string',
                             value: 'multipart/form-data',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ]),
                             externals: new Immutable.List([
                                 new Parameter({
                                     key: 'Content-Type',

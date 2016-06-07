@@ -3,6 +3,7 @@ import RAMLParser from './parsers/raml/Parser'
 
 import SwaggerSerializer from './serializers/swagger/Serializer'
 import RAMLSerializer from './serializers/raml/Serializer'
+import PostmanSerializer from './serializers/postman/Serializer'
 
 import ContextResolver from './resolvers/ContextResolver'
 import BrowserEnvironment, {
@@ -18,21 +19,22 @@ export default class FlowBrowser {
 
         let serializerMap = {
             swagger: SwaggerSerializer,
-            raml: RAMLSerializer
+            raml: RAMLSerializer,
+            postman: PostmanSerializer
         }
 
-        if (!parserMap[this.source]) {
+        if (!parserMap[source]) {
             throw new Error('unrecognized source format')
         }
 
-        if (!serializerMap[this.target]) {
+        if (!serializerMap[target]) {
             throw new Error('unrecognized target format')
         }
 
-        let contentPromise = URLResolver.resolve(input)
+        let contentPromise = (new URLResolver()).resolve(input)
 
-        let parser = new parserMap[this.source]()
-        let serializer = new serializerMap[this.target]()
+        let parser = new parserMap[source]()
+        let serializer = new serializerMap[target]()
         let environment = new BrowserEnvironment()
         let resolver = new ContextResolver(environment)
 
@@ -75,3 +77,5 @@ export default class FlowBrowser {
         })
     }
 }
+
+window.APIFlow = FlowBrowser

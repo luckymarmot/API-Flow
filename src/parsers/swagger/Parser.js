@@ -501,6 +501,9 @@ export default class SwaggerParser {
                     key: 'Content-Type',
                     type: 'string',
                     value: contentType,
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ contentType ])
+                    ]),
                     externals: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
@@ -604,6 +607,9 @@ export default class SwaggerParser {
                 key: 'Content-Type',
                 type: 'string',
                 value: contentType,
+                internals: new Immutable.List([
+                    new Constraint.Enum([ contentType ])
+                ]),
                 externals: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',

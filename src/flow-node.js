@@ -6,6 +6,7 @@ import RAMLParser from './parsers/raml/Parser'
 
 import SwaggerSerializer from './serializers/swagger/Serializer'
 import RAMLSerializer from './serializers/raml/Serializer'
+import PostmanSerializer from './serializers/postman/Serializer'
 
 import ContextResolver from './resolvers/ContextResolver'
 import NodeEnvironment from './models/environments/NodeEnvironment'
@@ -41,7 +42,8 @@ class FlowCLI {
 
         let serializerMap = {
             swagger: SwaggerSerializer,
-            raml: RAMLSerializer
+            raml: RAMLSerializer,
+            postman: PostmanSerializer
         }
 
         let _path = path.resolve('./', this.input)

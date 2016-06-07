@@ -9,22 +9,30 @@ export class URLResolver {
     resolve(uri) {
         return new Promise((resolve, reject) => {
             if (uri === '') {
-                return resolve(this.item.content)
+                return resolve((this.item || {}).content)
             }
             else {
-                let url = new URL(uri, this.item.get('url')).href()
+                let url
+
+                if (!this.item) {
+                    url = new URL(uri).href()
+                }
+                else {
+                    url = new URL(uri, this.item.get('url')).href()
+                }
+
                 const req = new window.XMLHttpRequest()
 
                 req.addEventListener('error', (event) => {
-                    reject(new Error(event))
+                    return reject(new Error(event))
                 })
 
                 req.addEventListener('abort', (event) => {
-                    reject(new Error(event))
+                    return reject(new Error(event))
                 })
 
                 req.addEventListener('load', () => {
-                    resolve(this.responseText)
+                    return resolve(req.responseText)
                 })
 
 
