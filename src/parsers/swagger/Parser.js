@@ -901,4 +901,3 @@ export default class SwaggerParser {
         })
     }
 }
-

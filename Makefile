@@ -11,10 +11,14 @@ build:
 	npm run compile
 	cp README.md LICENSE ./lib/
 
+build-web:
+	npm run compile-web
+
 clean:
 	rm -Rf ./lib/
 
 install: clean npm-install build
+
 
 test:
 	npm test

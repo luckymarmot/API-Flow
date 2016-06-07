@@ -46,7 +46,6 @@ import BaseImporter from '../BaseImporter'
     // I'm lazy
     'importString',
     'createRequestContextFromString',
-    '__import__',
     '_importPawRequest'
 ])
 export class TestBaseImporter extends UnitTest {
