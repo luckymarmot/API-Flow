@@ -4,12 +4,8 @@ import Context, {
 
 import Request from '../../../models/Request'
 
-import {
-    FileReference,
-    EnvironmentReference,
-    SchemaReference,
-    Schema
-} from '../../../models/Utils'
+import JSONSchemaReference from '../../../models/references/JSONSchema'
+import Reference from '../../../models/references/Reference'
 
 import {
     ApiKeyAuth
@@ -148,13 +144,11 @@ export default class BaseImporter {
 
     _importPawRequests(requestContext, item, options) {
         const group = requestContext.get('group')
-        // const references = requestContext.get('references')
-        const schema = requestContext.get('schema')
-        const environments = requestContext.get('environments')
+        const references = requestContext.get('references')
 
-        if (environments && environments.size > 0) {
-            this._importEnvironments(environments)
-        }
+        this._importReferences(references)
+
+        const schema = requestContext.get('schema')
 
         if (group.get('children').size === 0) {
             return
@@ -210,19 +204,67 @@ export default class BaseImporter {
         )
     }
 
-    _importEnvironments(environments) {
+    _importReferences(references) {
         let environmentDomain = this._getEnvironmentDomain()
 
+        let variablesDict = {}
+
+        let environments = references.keySeq()
         for (let env of environments) {
-            let pawEnv = environmentDomain.createEnvironment(env.name)
-            let variablesDict = {}
-            env.get('variables').forEach(
-                value => {
-                    variablesDict[value.get('key')] = value.get('value')
-                }
-            )
+            let pawEnv = this._getEnvironment(environmentDomain, env)
+            let container = references.get(env)
+            let uris = container.get('cache').keySeq()
+            for (let uri of uris) {
+                let reference = container.resolve(uri)
+                let content = this._setReference(reference)
+                variablesDict[reference.get('relative')] = content
+            }
+
             pawEnv.setVariablesValues(variablesDict)
         }
+    }
+
+    _setReference(reference) {
+        if (reference instanceof JSONSchemaReference) {
+            return this._setJSONSchemaReference(reference)
+        }
+        else if (reference.get('value') === null) {
+            return this._setExoticReference(reference)
+        }
+        else {
+            return this._setSimpleReference(reference)
+        }
+    }
+
+    _setJSONSchemaReference(reference) {
+        return new DynamicValue(
+            'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
+            {
+                schema: reference.toJSONSchema() || {}
+            }
+        )
+    }
+
+    _setExoticReference(reference) {
+        if (reference.get('uri').match('://')) {
+            return new DynamicValue(
+                'com.luckymarmot.PawExtensions.RemoteFileDynamicValue',
+                {
+                    url: reference.get('uri')
+                }
+            )
+        }
+        else {
+            return new DynamicValue(
+                'com.luckymarmot.FileContentDynamicValue', {
+                    filePath: reference.get('uri')
+                }
+            )
+        }
+    }
+
+    _setSimpleReference(reference) {
+        return reference.get('value')
     }
 
     _getEnvironmentDomain() {
@@ -263,11 +305,11 @@ export default class BaseImporter {
         const auths = request.get('auths')
         const timeout = request.get('timeout')
 
-        let bodyType
+        let contentType
         if (bodies.size > 0) {
             let body
             body = bodies.get(0)
-            bodyType = body.get('type')
+            contentType = this._extractContentTypeFromBody(body)
             container = container.filter(body.get('constraints'))
         }
 
@@ -285,7 +327,7 @@ export default class BaseImporter {
         // body
         pawRequest = this._setBody(
             pawRequest,
-            bodyType,
+            contentType,
             container,
             schema
         )
@@ -340,7 +382,23 @@ export default class BaseImporter {
     }
 
     _generateUrl(url, queries, auths) {
-        let _url = this._toDynamicString(url.href(), true, true)
+        let protocol = this._toDynamicString(url.get('protocol'), true)
+        let host = this._toDynamicString(url.get('host'), true)
+        let path = this._toDynamicString(url.get('pathname'), true)
+
+        if (protocol.components.length > 0) {
+            protocol.components.push(':')
+        }
+
+        if (protocol.components.length > 0 || host.components.length > 0) {
+            protocol.components.push('//')
+        }
+
+        let _url = new DynamicString(
+            ...protocol.components,
+            ...host.components,
+            ...path.components
+        )
 
         let queryParams = (queries || []).concat(
             this._extractQueryParamsFromAuth(auths)
@@ -350,7 +408,7 @@ export default class BaseImporter {
             let _params = queryParams.reduce(
                 (params, keyValue) => {
                     let dynKey = this._toDynamicString(
-                        keyValue.get('key'), true, true
+                        keyValue.get('key'), true
                     ).components.map((component) => {
                         if (typeof component === 'string') {
                             return encodeURI(component)
@@ -358,7 +416,7 @@ export default class BaseImporter {
                         return component
                     })
                     let dynValue = this._toDynamicString(
-                        keyValue.get('value'), true, true
+                        keyValue, true
                     ).components.map((component) => {
                         if (typeof component === 'string') {
                             return encodeURI(component)
@@ -397,8 +455,8 @@ export default class BaseImporter {
         let headers = container.getHeadersSet()
         headers.forEach((param) => {
             pawReq.setHeader(
-                this._toDynamicString(param.get('key'), true, true),
-                this._toDynamicString(param.get('value'), true, true)
+                this._toDynamicString(param.get('key'), true),
+                this._toDynamicString(param, true)
             )
         })
         return pawReq
@@ -409,10 +467,10 @@ export default class BaseImporter {
             'com.luckymarmot.BasicAuthDynamicValue',
             {
                 username: this._toDynamicString(
-                    auth.get('username') || '', true, true
+                    auth.get('username') || '', true
                 ),
                 password: this._toDynamicString(
-                    auth.get('password') || '', true, true
+                    auth.get('password') || '', true
                 )
             }
         )
@@ -423,10 +481,10 @@ export default class BaseImporter {
             'com.luckymarmot.PawExtensions.DigestAuthDynamicValue',
             {
                 username: this._toDynamicString(
-                    auth.get('username'), true, true
+                    auth.get('username'), true
                 ),
                 password: this._toDynamicString(
-                    auth.get('password'), true, true
+                    auth.get('password'), true
                 )
             }
         )
@@ -437,28 +495,28 @@ export default class BaseImporter {
             'com.luckymarmot.OAuth1HeaderDynamicValue',
             {
                 callback: this._toDynamicString(
-                    auth.get('callback') || '', true, true
+                    auth.get('callback') || '', true
                 ),
                 consumerKey: this._toDynamicString(
-                    auth.get('consumerKey') || '', true, true
+                    auth.get('consumerKey') || '', true
                 ),
                 consumerSecret: this._toDynamicString(
-                    auth.get('consumerSecret') || '', true, true
+                    auth.get('consumerSecret') || '', true
                 ),
                 tokenSecret: this._toDynamicString(
-                    auth.get('tokenSecret') || '', true, true
+                    auth.get('tokenSecret') || '', true
                 ),
                 algorithm: auth.get('algorithm') || '',
                 nonce: this._toDynamicString(
-                    auth.get('nonce') || '', true, true
+                    auth.get('nonce') || '', true
                 ),
                 additionalParamaters: auth
                     .get('additionalParamaters') || '',
                 timestamp: this._toDynamicString(
-                    auth.get('timestamp') || '', true, true
+                    auth.get('timestamp') || '', true
                 ),
                 token: this._toDynamicString(
-                    auth.get('token') || '', true, true
+                    auth.get('token') || '', true
                 )
             }
         )
@@ -476,10 +534,10 @@ export default class BaseImporter {
             {
                 grantType: grantMap[auth.get('flow')] || 0,
                 authorizationUrl: this._toDynamicString(
-                    auth.get('authorizationUrl') || '', true, true
+                    auth.get('authorizationUrl') || '', true
                 ),
                 accessTokenUrl: this._toDynamicString(
-                    auth.get('tokenUrl') || '', true, true
+                    auth.get('tokenUrl') || '', true
                 ),
                 scope: (auth.get('scopes') || []).join(' ')
             }
@@ -491,16 +549,16 @@ export default class BaseImporter {
             'com.shigeoka.PawExtensions.AWSSignature4DynamicValue',
             {
                 key: this._toDynamicString(
-                    auth.get('key') || '', true, true
+                    auth.get('key') || '', true
                 ),
                 secret: this._toDynamicString(
-                    auth.get('secret') || '', true, true
+                    auth.get('secret') || '', true
                 ),
                 region: this._toDynamicString(
-                    auth.get('region') || '', true, true
+                    auth.get('region') || '', true
                 ),
                 service: this._toDynamicString(
-                    auth.get('service') || '', true, true
+                    auth.get('service') || '', true
                 )
             }
         )
@@ -511,13 +569,13 @@ export default class BaseImporter {
             'uk.co.jalada.PawExtensions.HawkDynamicValue',
             {
                 key: this._toDynamicString(
-                    auth.get('key') || '', true, true
+                    auth.get('key') || '', true
                 ),
                 id: this._toDynamicString(
-                    auth.get('id') || '', true, true
+                    auth.get('id') || '', true
                 ),
                 algorithm: this._toDynamicString(
-                    auth.get('algorithm') || '', true, true
+                    auth.get('algorithm') || '', true
                 )
             }
         )
@@ -543,8 +601,8 @@ export default class BaseImporter {
             else if (auth instanceof ApiKeyAuth) {
                 if (auth.get('in') === 'header') {
                     pawReq.setHeader(
-                        this._toDynamicString(auth.get('name'), true, true),
-                        this._toDynamicString(auth.get('key'), true, true)
+                        this._toDynamicString(auth.get('name'), true),
+                        this._toDynamicString(auth.get('key'), true)
                     )
                 }
             }
@@ -561,37 +619,40 @@ export default class BaseImporter {
         return pawReq
     }
 
-    _setBody(pawReq, bodyType, container, schema) {
+    _setBody(pawReq, contentType, container) {
         let body = container.get('body')
         const bodyRules = {
-            formData: ::this._setFormDataBody,
-            urlEncoded: ::this._setUrlEncodedBody,
-            json: ::this._setJSONBody,
-            plain: ::this._setPlainBody,
-            file: ::this._setPlainBody,
-            schema: (_pawReq, _body) => {
-                return ::this._setSchemaBody(_pawReq, _body, schema)
-            },
-            null: (_pawReq) => { return _pawReq }
+            'multipart/form-data':
+                ::this._setFormDataBody,
+            'application/x-www-form-urlencoded':
+                ::this._setUrlEncodedBody,
+            'application/json':
+                ::this._setJSONBody
         }
 
         let _pawReq = pawReq
 
-        const rule = bodyRules[bodyType]
+        const rule = bodyRules[contentType]
         if (rule) {
             _pawReq = rule(pawReq, body)
         }
         else {
-            /* eslint-disable no-console */
-            console.error(
-                'Body type ' +
-                    bodyType +
-                ' is not supported in Paw'
-            )
-            /* eslint-enable no-console */
+            this._setPlainBody(pawReq, body)
         }
 
         return _pawReq
+    }
+
+    _extractContentTypeFromBody(body) {
+        let constraints = body.get('constraints')
+        let contentType = null
+        constraints.forEach(param => {
+            if (param.get('key') === 'Content-Type') {
+                contentType = param.get('value')
+            }
+        })
+
+        return contentType
     }
 
     _setFormDataBody(pawReq, body) {
@@ -603,10 +664,10 @@ export default class BaseImporter {
         }
         const keyValues = body.map(param => {
             let key = this._toDynamicString(
-                param.get('key'), true, true
+                param.get('key'), true
             )
             let value = this._toDynamicString(
-                param.get('value'), true, true
+                param.get, true
             )
             return [ key, value, true ]
         }).toArray()
@@ -619,10 +680,35 @@ export default class BaseImporter {
         return pawReq
     }
 
+    _setUrlEncodedBody(pawReq, body) {
+        if (!pawReq.getHeaderByName('Content-Type')) {
+            pawReq.setHeader(
+                'Content-Type',
+                'application/x-www-form-urlencoded'
+            )
+        }
+        const keyValues = body.map(param => {
+            let key = this._toDynamicString(
+                param.get('key'), true
+            )
+            let value = this._toDynamicString(
+                param, true
+            )
+            return [ key, value, true ]
+        }).toArray()
+        const dv = new DynamicValue(
+            'com.luckymarmot.BodyFormKeyValueDynamicValue', {
+                keyValues: keyValues
+            }
+        )
+        pawReq.body = new DynamicString(dv)
+        return pawReq
+    }
+
     _setPlainBody(pawReq, body) {
         if (body.size > 0) {
-            let content = body.getIn([ 0, 'value' ]) || ''
-            pawReq.body = content
+            let param = body.get(0)
+            pawReq.body = this._toDynamicString(param, true)
         }
         else {
             pawReq.body = ''
@@ -642,11 +728,15 @@ export default class BaseImporter {
             return pawReq
         }
 
-        let content = body.getIn([ 0, 'value' ]) || {}
+        let param = body.get(0)
+        let content = this._toDynamicString(param, true)
 
-        if (typeof content === 'string') {
+        if (
+            content.components.length === 1 &&
+            typeof content.components[0] === 'string'
+        ) {
             try {
-                pawReq.jsonBody = JSON.parse(content)
+                pawReq.jsonBody = JSON.parse(content.components[0])
             }
             catch (e) {
                 /* eslint-disable no-console */
@@ -657,64 +747,17 @@ export default class BaseImporter {
                 pawReq.body = content
             }
         }
-        else {
+        else if (content.components.length === 1) {
             pawReq.jsonBody = content
         }
+        else {
+            pawReq.body = content
+        }
 
         return pawReq
     }
 
-    _setSchemaBody(pawReq, body, schema) {
-        if (body.size === 0) {
-            return pawReq
-        }
-
-        let description = ''
-        body.forEach(param => {
-            if (
-                param.get('value') instanceof Schema ||
-                param.get('value') instanceof SchemaReference
-            ) {
-                description += '### Schema ###\n\n' + JSON.stringify(
-                    param.get('value').resolve(1, schema).toJS(), null, '  '
-                )
-            }
-        })
-        let _pawReq = pawReq
-        if (description) {
-            _pawReq.description = (
-                _pawReq.description ? _pawReq.description + '\n\n' : ''
-            ) + description
-        }
-        return _pawReq
-    }
-
-    _setUrlEncodedBody(pawReq, body) {
-        if (!pawReq.getHeaderByName('Content-Type')) {
-            pawReq.setHeader(
-                'Content-Type',
-                'application/x-www-form-urlencoded'
-            )
-        }
-        const keyValues = body.map(param => {
-            let key = this._toDynamicString(
-                param.get('key'), true, true
-            )
-            let value = this._toDynamicString(
-                param.get('value'), true, true
-            )
-            return [ key, value, true ]
-        }).toArray()
-        const dv = new DynamicValue(
-            'com.luckymarmot.BodyFormKeyValueDynamicValue', {
-                keyValues: keyValues
-            }
-        )
-        pawReq.body = new DynamicString(dv)
-        return pawReq
-    }
-
-    _toDynamicString(string, defaultToEmpty, resolveFileRefs) {
+    _toDynamicString(string, defaultToEmpty) {
         if (!string) {
             if (defaultToEmpty) {
                 return new DynamicString('')
@@ -722,27 +765,18 @@ export default class BaseImporter {
             return null
         }
 
-        // resolve file references
-        if (resolveFileRefs) {
-            const resolvedString = this._resolveFileReference(string)
-            if (
-                typeof resolvedString !== 'string' &&
-                resolvedString instanceof DynamicString
-            ) {
-                return resolvedString
-            }
-        }
-
         let envComponents = []
-        if (
-            typeof string !== 'string' &&
-            string instanceof EnvironmentReference
-        ) {
+        if (string instanceof Reference) {
             envComponents = this._castReferenceToDynamicString(
                 string
             ).components
         }
-        else {
+        else if (string instanceof Parameter) {
+            envComponents = this._castParameterToDynamicString(
+                string
+            ).components
+        }
+        else if (typeof string === 'string') {
             envComponents.push(string)
         }
 
@@ -768,17 +802,6 @@ export default class BaseImporter {
 
 
         return new DynamicString(...components)
-    }
-
-    _resolveFileReference(value) {
-        if (value instanceof FileReference) {
-            const dv = new DynamicValue(
-                'com.luckymarmot.FileContentDynamicValue', {}
-            )
-            const ds = new DynamicString(dv)
-            return ds
-        }
-        return value
     }
 
     _convertCharToHex(char) {
@@ -812,43 +835,51 @@ export default class BaseImporter {
     }
 
     _castReferenceToDynamicString(reference) {
-        let components = reference.get('referenceName')
-        let dynStr = []
-
-        components.forEach((component) => {
-            let value = this._extractReferenceComponent(component)
-            if (value) {
-                dynStr.push(value)
-            }
-        })
-        return new DynamicString(...dynStr)
+        let dv = this._extractReferenceComponent(reference.get('relative'))
+        return new DynamicString(dv)
     }
 
+    _castParameterToDynamicString(param) {
+        let schema = param.getJSONSchema(false)
 
-    /*
-        This does not extract all reference components,
-        but only the simple ones. e.g. a {{var1}} will
-        be extracted as var1, but {{{{var2}}}} won't.
-        {{var{{number}}}} also won't be extracted.
+        let components = []
+        if (schema['x-sequence']) {
+            for (let item of schema['x-sequence']) {
+                if (item['x-title']) {
+                    components.push(new DynamicValue(
+                        'com.luckymarmot.PawExtensions' +
+                        '.JSONSchemaFakerDynamicValue',
+                        {
+                            schema: item
+                        }
+                    ))
+                }
+                else {
+                    components.push(param.generate(false, item))
+                }
+            }
+        }
+        else {
+            components.push(new DynamicValue(
+                'com.luckymarmot.PawExtensions' +
+                '.JSONSchemaFakerDynamicValue',
+                {
+                    schema: schema
+                }
+            ))
+        }
 
-        This is because Paw does not support variable
-        environment references: {{var{{number}}}} could
-        resolve to {{var1}}, {{var2}}, etc. depending on
-        the value {{number}} resolves to, and we can't
-        know if they exist, as {{number}} can be changed
-        on the fly by the user.
-    */
+        return new DynamicString(...components)
+    }
+
     _extractReferenceComponent(component) {
         if (typeof component === 'string') {
             return component
         }
 
-        if (component instanceof EnvironmentReference &&
-            component.get('referenceName').size === 1 &&
-            typeof component.getIn([ 'referenceName', 0 ]) === 'string'
-        ) {
+        if (component instanceof Reference) {
             let envVariable = this._getEnvironmentVariable(
-                component.getIn([ 'referenceName', 0 ])
+                component.get('relative')
             )
             return new DynamicValue(
                 'com.luckymarmot.EnvironmentVariableDynamicValue',

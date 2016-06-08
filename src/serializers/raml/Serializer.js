@@ -26,17 +26,13 @@ export default class RAMLSerializer extends BaseSerializer {
         let urlInfo = {}
         let securitySchemes = {}
         let paths = {}
-        let schemas = {}
+        let schemas = this._formatSchemas(context.get('references'))
 
         if (group) {
             let requests = group.getRequests()
             urlInfo = ::this._formatURLInfo(requests)
             securitySchemes = ::this._formatSecuritySchemes(requests)
             paths = ::this._formatPaths(group, true)
-        }
-
-        if (context.getIn([ 'references', 'cache' ]).size > 0) {
-            schemas = this._formatSchemas(context.get('references'))
         }
 
         Object.assign(
@@ -624,19 +620,25 @@ export default class RAMLSerializer extends BaseSerializer {
 
     _formatSchemas(references) {
         let schemas = {}
-        references.get('cache').forEach((cache) => {
-            let ref = cache.getReference()
-            if (ref instanceof JSONSchemaReference) {
-                let value = ref.get('value')
-                if (!value) {
-                    value = '!include ' + ref.get('relative')
+        references.forEach(container => {
+            container.get('cache').forEach((cache) => {
+                let ref = cache.getReference()
+                if (ref instanceof JSONSchemaReference) {
+                    let value = ref.get('value')
+                    if (!value) {
+                        value = '!include ' + ref.get('relative')
+                    }
+                    else {
+                        value = ref.toJSONSchema()
+                    }
+                    schemas[ref.get('relative')] = value
                 }
-                else {
-                    value = ref.toJSONSchema()
-                }
-                schemas[ref.get('relative')] = value
-            }
+            })
         })
+
+        if (Object.keys(schemas).length === 0) {
+            return {}
+        }
 
         return {
             schemas: [ schemas ]

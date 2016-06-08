@@ -1428,7 +1428,9 @@ export class TestRAMLSerializer extends UnitTest {
             ]
         }
 
-        const result = s._formatSchemas(references)
+        const result = s._formatSchemas(new Immutable.OrderedMap({
+            raml: references
+        }))
 
         this.assertEqual(expected, result)
     }

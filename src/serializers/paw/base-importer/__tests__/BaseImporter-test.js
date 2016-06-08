@@ -1,16 +1,14 @@
 import Immutable from 'immutable'
 
 import Context, {
+    Body,
     Parameter,
     ParameterContainer
 } from '../../../../models/Core'
 
-import {
-    FileReference,
-    Environment,
-    EnvironmentReference,
-    SchemaReference
-} from '../../../../models/Utils'
+import ReferenceContainer from '../../../../models/references/Container'
+import JSONSchemaReference from '../../../../models/references/JSONSchema'
+import ExoticReference from '../../../../models/references/Exotic'
 
 import Request from '../../../../models/Request'
 import Constraint from '../../../../models/Constraint'
@@ -49,32 +47,6 @@ import BaseImporter from '../BaseImporter'
     '_importPawRequest'
 ])
 export class TestBaseImporter extends UnitTest {
-
-    @targets('_resolveFileReference')
-    testResolveFileReferenceReturnsValue() {
-        const importer = new BaseImporter()
-
-        const input = 'Some Text'
-
-        let result = importer._resolveFileReference(input)
-        this.assertEqual(result, input)
-    }
-
-    @targets('_resolveFileReference')
-    testResolveFileReferenceReturnsDynamicString() {
-        const importer = new BaseImporter()
-
-        const input = new FileReference()
-
-        let result = importer._resolveFileReference(input)
-        this.assertTrue(result instanceof DynamicString)
-        this.assertTrue(result.components.length === 1)
-        this.assertTrue(result.components[0] instanceof DynamicValue)
-        this.assertEqual(
-            result.components[0].type,
-            'com.luckymarmot.FileContentDynamicValue'
-        )
-    }
 
     @targets('_convertCharToHex')
     testConvertCharToHex() {
@@ -165,23 +137,34 @@ export class TestBaseImporter extends UnitTest {
     }
 
     @targets('_toDynamicString')
-    testDefaultToEmptyToDynamicString() {
-        const importer = new BaseImporter()
-        const input = new FileReference({
-            filepath: 'somepath'
+    testToDynamicStringWithReference() {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User',
+            relative: '#/definitions/Relative',
+            value: { type: 'string' },
+            resolved: true
         })
-        const expected = importer._resolveFileReference(
-            new FileReference({
-                filepath: 'somepath'
-            })
+
+        const expected = new DynamicString(
+            new DynamicValue(
+                'com.luckymarmot.EnvironmentVariableDynamicValue',
+                {
+                    environmentVariable: 12
+                }
+            )
         )
 
-        let result = importer._toDynamicString(input, true, true)
+        importer.spyOn('_castReferenceToDynamicString', () => {
+            return expected
+        })
+
+        let result = importer._toDynamicString(input, true)
         this.assertTrue(result instanceof DynamicString)
         this.assertEqual(result.components.length, 1)
         this.assertEqual(
-            result.components[0].filepath,
-            expected.components[0].filepath
+            result.components[0].environmentVariable,
+            expected.components[0].environmentVariable
         )
         this.assertEqual(
             result.components[0].type,
@@ -190,20 +173,19 @@ export class TestBaseImporter extends UnitTest {
     }
 
     @targets('_toDynamicString')
-    testEnvironmentReferenceToDynamicString() {
+    testToDynamicStringWithParameter() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
 
-        const input = new EnvironmentReference({
-            id: 123,
-            referenceName: new Immutable.List([ 'value' ])
+        const input = new Parameter({
+            key: 'ignored',
+            type: 'integer',
+            internals: new Immutable.List([
+                new Constraint.Enum([ 1, 2, 3, 4 ])
+            ])
         })
 
-        mockedImporter.spyOn('_resolveFileReference', () => {
-            return 'not important for this test'
-        })
-
-        mockedImporter.spyOn('_castReferenceToDynamicString', () => {
+        mockedImporter.spyOn('_castParameterToDynamicString', () => {
             return {
                 components: [ 'value' ]
             }
@@ -216,70 +198,20 @@ export class TestBaseImporter extends UnitTest {
 
         let result = importer._toDynamicString.apply(
             mockedImporter,
-            [ input, true, true ]
+            [ input, true ]
         )
 
         this.assertEqual(
-            mockedImporter.spy._resolveFileReference.count, 1
+            mockedImporter.spy._castParameterToDynamicString.count, 1
         )
         this.assertEqual(
-            mockedImporter.spy._castReferenceToDynamicString.count, 1
-        )
-        this.assertEqual(
-            mockedImporter.spy._castReferenceToDynamicString.calls,
+            mockedImporter.spy._castParameterToDynamicString.calls,
             [ [ input ] ]
         )
 
         this.assertTrue(result instanceof DynamicString)
         this.assertEqual(result.components.length, 1)
         this.assertEqual(result.components[0], 'value')
-    }
-
-    @targets('_toDynamicString')
-    testResolveFileRefsToDynamicString() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
-
-        const input = new FileReference({
-            filepath: 'somepath'
-        })
-
-        const output = new DynamicString(
-            new DynamicValue(
-                'com.luckymarmot.FileContentDynamicValue', {}
-            )
-        )
-
-        mockedImporter.spyOn('_resolveFileReference', () => {
-            return output
-        })
-
-        mockedImporter.spyOn('_castReferenceToDynamicString', () => {
-            // this should not be called for this test
-            this.assertTrue(false)
-        })
-
-        mockedImporter.spyOn('_escapeSequenceDynamicValue', () => {
-            // this should not be called for this test
-            this.assertTrue(false)
-        })
-
-        let result = importer._toDynamicString.apply(
-            mockedImporter,
-            [ input, true, true ]
-        )
-
-        this.assertEqual(
-            mockedImporter.spy._resolveFileReference.count, 1
-        )
-        this.assertEqual(
-            mockedImporter.spy._resolveFileReference.calls,
-            [ [ input ] ]
-        )
-
-        this.assertTrue(result instanceof DynamicString)
-        this.assertEqual(result.components.length, 1)
-        this.assertEqual(result, output)
     }
 
     @targets('_extractReferenceComponent')
@@ -302,8 +234,9 @@ export class TestBaseImporter extends UnitTest {
             }
         })
 
-        const input = new EnvironmentReference({
-            referenceName: new Immutable.List([ 'value' ])
+        const input = new JSONSchemaReference({
+            uri: 'swagger.json#/definitions/User',
+            relative: '#/definitions/User'
         })
 
         const expected = new DynamicValue(
@@ -321,143 +254,13 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(mockedImporter.spy._getEnvironmentVariable.count, 1)
         this.assertEqual(
             mockedImporter.spy._getEnvironmentVariable.calls,
-            [ [ 'value' ] ]
+            [ [ '#/definitions/User' ] ]
         )
         this.assertEqual(expected.type, result.type)
         this.assertEqual(
             expected.environmentVariable,
             result.environmentVariable
         )
-    }
-
-    @targets('_extractReferenceComponent')
-    testExtractReferenceComponentWithComplexReference() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
-
-        mockedImporter.spyOn('_getEnvironmentVariable', () => {
-            this.assertTrue(false)
-        })
-
-        const input = new EnvironmentReference({
-            referenceName: new Immutable.List([
-                'value',
-                new EnvironmentReference()
-            ])
-        })
-
-        const expected = null
-
-        const result = importer._extractReferenceComponent.apply(
-            mockedImporter,
-            [ input ]
-        )
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_castReferenceToDynamicString')
-    testCastReferenceToDynamicStringWithSimpleReference() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
-
-        mockedImporter.spyOn('_extractReferenceComponent', () => {
-            return 'mock'
-        })
-
-        const input = new EnvironmentReference({
-            referenceName: new Immutable.List([
-                'value'
-            ])
-        })
-
-        const expected = new DynamicString('mock')
-
-        const result = importer._castReferenceToDynamicString.apply(
-            mockedImporter,
-            [ input ]
-        )
-
-        this.assertEqual(expected.components, result.components)
-    }
-
-    @targets('_castReferenceToDynamicString')
-    testCastReferenceToDynamicStringWithRichReference() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
-
-        let counter = 0
-        mockedImporter.spyOn('_extractReferenceComponent', () => {
-            counter += 1
-            return 'mock' + counter
-        })
-
-        const input = new EnvironmentReference({
-            referenceName: new Immutable.List([
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'uuid'
-                    ])
-                }),
-                '-',
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'tid'
-                    ])
-                })
-            ])
-        })
-
-        const expected = new DynamicString('mock1', 'mock2', 'mock3')
-
-        const result = importer._castReferenceToDynamicString.apply(
-            mockedImporter,
-            [ input ]
-        )
-
-        this.assertEqual(mockedImporter.spy._extractReferenceComponent.count, 3)
-        this.assertEqual(expected.components, result.components)
-    }
-
-    @targets('_castReferenceToDynamicString')
-    testCastReferenceToDynamicStringWithTooComplexReference() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
-
-        let counter = 0
-        mockedImporter.spyOn('_extractReferenceComponent', () => {
-            if (counter) {
-                return null
-            }
-            counter += 1
-            return 'mock' + counter
-        })
-
-        const input = new EnvironmentReference({
-            referenceName: new Immutable.List([
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'uuid'
-                    ])
-                }),
-                '-',
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'tid'
-                    ])
-                })
-            ])
-        })
-
-        const expected = new DynamicString('mock1')
-
-        const result = importer._castReferenceToDynamicString.apply(
-            mockedImporter,
-            [ input ]
-        )
-
-        this.assertEqual(mockedImporter.spy._extractReferenceComponent.count, 3)
-        this.assertEqual(expected.components, result.components)
     }
 
     @targets('_getEnvironmentDomain')
@@ -702,118 +505,9 @@ export class TestBaseImporter extends UnitTest {
         )
     }
 
-    @targets('_importEnvironments')
-    testImportEnvironments() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
-        const contextMock = new PawContextMock(null, '')
-
-        const domain = new Mock({
-            createEnvironment: () => {}
-        }, '')
-
-        const environment = new Mock({
-            setVariablesValues: () => {}
-        }, '')
-
-        mockedImporter.ENVIRONMENT_DOMAIN_NAME = 'Mocked Environment Domain'
-        mockedImporter.context = contextMock
-
-        mockedImporter.spyOn('_getEnvironmentDomain', () => {
-            return domain
-        })
-
-        domain.spyOn('createEnvironment', () => {
-            return environment
-        })
-
-        importer._importEnvironments.apply(
-            mockedImporter,
-            [ [
-                new Environment({
-                    variables: new Immutable.OrderedMap({
-                        var: new Parameter({ key: 'var', value: 'test' }),
-                        rate: new Parameter({ key: 'rate', value: '123' })
-                    })
-                })
-            ] ]
-        )
-
-        this.assertEqual(
-            mockedImporter.spy._getEnvironmentDomain.count, 1
-        )
-        this.assertEqual(
-            domain.spy.createEnvironment.count, 1
-        )
-        this.assertEqual(
-            environment.spy.setVariablesValues.count, 1
-        )
-        this.assertEqual(
-            environment.spy.setVariablesValues.calls[0],
-            [ {
-                var: 'test',
-                rate: '123'
-            } ]
-        )
-    }
-
-    @targets('_importEnvironments')
-    testImportEnvironmentsWithMultipleEnvironments() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
-        const contextMock = new PawContextMock(null, '')
-
-        const domain = new Mock({
-            createEnvironment: () => {}
-        }, '')
-
-        const environment = new Mock({
-            setVariablesValues: () => {}
-        }, '')
-
-        mockedImporter.ENVIRONMENT_DOMAIN_NAME = 'Mocked Environment Domain'
-        mockedImporter.context = contextMock
-
-        mockedImporter.spyOn('_getEnvironmentDomain', () => {
-            return domain
-        })
-
-        domain.spyOn('createEnvironment', () => {
-            return environment
-        })
-
-        importer._importEnvironments.apply(
-            mockedImporter,
-            [ [
-                new Environment({
-                    variables: new Immutable.OrderedMap({
-                        var: new Parameter({ key: 'var', value: 'test' }),
-                        rate: new Parameter({ key: 'rate', value: '123' })
-                    })
-                }),
-                new Environment({
-                    variables: new Immutable.OrderedMap({
-                        var: new Parameter({ key: 'var2', value: 'test2' }),
-                        rate: new Parameter({ key: 'rate2', value: '1232' })
-                    })
-                })
-            ] ]
-        )
-
-        this.assertEqual(
-            mockedImporter.spy._getEnvironmentDomain.count, 1
-        )
-        this.assertEqual(
-            domain.spy.createEnvironment.count, 2
-        )
-        this.assertEqual(
-            environment.spy.setVariablesValues.count, 2
-        )
-    }
-
     @targets('_createPawRequest')
     testSimpleCreatePawRequest() {
-        const importer = new BaseImporter()
+        const importer = new ClassMock(new BaseImporter(), '')
 
         const contextMock = new PawContextMock(null, '')
         const input = new Request({
@@ -839,6 +533,10 @@ export class TestBaseImporter extends UnitTest {
             })
         })
 
+        importer.spyOn('_generateUrl', () => {
+            return new DynamicString('http://fakeurl.com')
+        })
+
         importer.context = contextMock
         importer._createPawRequest(input, input.get('parameters'))
 
@@ -847,7 +545,7 @@ export class TestBaseImporter extends UnitTest {
             contextMock.spy.createRequest.calls[0].slice(0, 2),
             [ null, null ]
         )
-        this.assertEqual(
+        this.assertJSONEqual(
             contextMock.spy.createRequest.calls[0][2].components[0],
             'http://fakeurl.com'
         )
@@ -855,7 +553,7 @@ export class TestBaseImporter extends UnitTest {
 
     @targets('_createPawRequest')
     testCreatePawRequestWithRequestData() {
-        const importer = new BaseImporter()
+        const importer = new ClassMock(new BaseImporter(), '')
 
         const contextMock = new PawContextMock(null, '')
         const input = new Request({
@@ -881,6 +579,10 @@ export class TestBaseImporter extends UnitTest {
                     ])
                 })
             })
+        })
+
+        importer.spyOn('_generateUrl', () => {
+            return new DynamicString('http://fakeurl.com')
         })
 
         importer.context = contextMock
@@ -951,7 +653,7 @@ export class TestBaseImporter extends UnitTest {
 
     @targets('_setHeaders')
     testSetHeadersWithHeaders() {
-        const importer = new BaseImporter()
+        const importer = new ClassMock(new BaseImporter(), '')
 
         const requestMock = new PawRequestMock(null, '')
         let container = new ParameterContainer()
@@ -969,6 +671,12 @@ export class TestBaseImporter extends UnitTest {
         container = container
             .set('headers', headers)
 
+        let count = 0
+        importer.spyOn('_toDynamicString', () => {
+            count += 1
+            return new DynamicString(count + '')
+        })
+
         importer._setHeaders(requestMock, container)
 
         this.assertTrue(requestMock.spy.setHeader.count === 2)
@@ -976,19 +684,19 @@ export class TestBaseImporter extends UnitTest {
 
         this.__compareSimpleDynamicStrings(
             requestMock.spy.setHeader.calls[0][0],
-            new DynamicString('key')
+            new DynamicString('1')
         )
-        this.__compareSimpleDynamicStrings(
+        this.assertJSONEqual(
             requestMock.spy.setHeader.calls[0][1],
-            new DynamicString('value')
+            new DynamicString('2')
         )
         this.__compareSimpleDynamicStrings(
             requestMock.spy.setHeader.calls[1][0],
-            new DynamicString('sec')
+            new DynamicString('3')
         )
         this.__compareSimpleDynamicStrings(
             requestMock.spy.setHeader.calls[1][1],
-            new DynamicString('ond')
+            new DynamicString('4')
         )
     }
 
@@ -1502,7 +1210,7 @@ export class TestBaseImporter extends UnitTest {
 
     @targets('_setFormDataBody')
     testSetFormDataBodyWithSimpleBody() {
-        const importer = new BaseImporter()
+        const importer = new ClassMock(new BaseImporter(), '')
 
         const requestMock = new PawRequestMock(null, '')
         const body = new Immutable.List([
@@ -1511,6 +1219,12 @@ export class TestBaseImporter extends UnitTest {
                 value: 'value'
             })
         ])
+
+        let count = 0
+        importer.spyOn('_toDynamicString', () => {
+            count += 1
+            return new DynamicString(count + '')
+        })
 
         importer._setFormDataBody(requestMock, body)
         this.__compareDynamicValuesInDynamicStrings(
@@ -1526,7 +1240,7 @@ export class TestBaseImporter extends UnitTest {
 
         const kv = requestMock.body.components[0].keyValues
         const ekv = [
-            [ new DynamicString('key'), new DynamicString('value'), true ]
+            [ new DynamicString('1'), new DynamicString('2'), true ]
         ]
 
         this.assertEqual(kv.length, ekv.length)
@@ -1536,7 +1250,7 @@ export class TestBaseImporter extends UnitTest {
 
     @targets('_setFormDataBody')
     testSetFormDataBodyWithRichBody() {
-        const importer = new BaseImporter()
+        const importer = new ClassMock(new BaseImporter(), '')
 
         const requestMock = new PawRequestMock(null, '')
         const body = new Immutable.List([
@@ -1550,6 +1264,12 @@ export class TestBaseImporter extends UnitTest {
             })
         ])
 
+        let count = 0
+        importer.spyOn('_toDynamicString', () => {
+            count += 1
+            return new DynamicString(count + '')
+        })
+
         importer._setFormDataBody(requestMock, body)
         this.__compareDynamicValuesInDynamicStrings(
             requestMock.body,
@@ -1564,8 +1284,8 @@ export class TestBaseImporter extends UnitTest {
 
         const kv = requestMock.body.components[0].keyValues
         const ekv = [
-            [ new DynamicString('key'), new DynamicString('value'), true ],
-            [ new DynamicString('sec'), new DynamicString('ond'), true ]
+            [ new DynamicString('1'), new DynamicString('2'), true ],
+            [ new DynamicString('3'), new DynamicString('4'), true ]
         ]
 
         this.assertEqual(kv.length, ekv.length)
@@ -1577,7 +1297,7 @@ export class TestBaseImporter extends UnitTest {
 
     @targets('_setPlainBody')
     testSetPlainBody() {
-        const importer = new BaseImporter()
+        const importer = new ClassMock(new BaseImporter(), '')
 
         const mockedImporter = new ClassMock(importer, '')
         const requestMock = new PawRequestMock()
@@ -1587,17 +1307,23 @@ export class TestBaseImporter extends UnitTest {
             })
         ])
 
+        let count = 0
+        importer.spyOn('_toDynamicString', () => {
+            count += 1
+            return new DynamicString(count + '')
+        })
+
         importer._setPlainBody.apply(
             mockedImporter,
             [ requestMock, body ]
         )
 
-        this.assertEqual(requestMock.body, body.getIn([ 0, 'value' ]))
+        this.assertJSONEqual(requestMock.body, new DynamicString('1'))
     }
 
     @targets('_setJSONBody')
     testSetJSONBody() {
-        const importer = new BaseImporter()
+        const importer = new ClassMock(new BaseImporter(), '')
         const body = new Immutable.List([
             new Parameter({
                 value: {
@@ -1608,65 +1334,22 @@ export class TestBaseImporter extends UnitTest {
 
         const requestMock = new PawRequestMock()
 
+        let count = 0
+        importer.spyOn('_toDynamicString', () => {
+            count += 1
+            return new DynamicString('{ "count": ' + count + '}')
+        })
+
         importer._setJSONBody(requestMock, body)
-        this.assertEqual(requestMock.jsonBody, {
-            test: true
+        this.assertJSONEqual(requestMock.jsonBody, {
+            count: 1
         })
-    }
-
-    @targets('_setSchemaBody')
-    testSetSchemaBody() {
-        const importer = new BaseImporter()
-        const schemaRef = new SchemaReference()
-        const mockedSchemaRef = new ClassMock(schemaRef, '')
-        const requestMock = new PawRequestMock()
-
-        /*
-            __proto__ is deprecated in es6, because it is considered
-            dangerous to set the prototype of an already instanciated
-            object.
-            Instead, es6 introduces Object.getPrototypeOf(obj), but no
-            setters, which makes it safer to manipulate __proto__.
-            However, in this particular case, we want to modify the
-            protoype chain of our mock, with the chain of what it wraps,
-            so that it does not appears as instance of a Mock, but as a
-            SchemaReference.
-
-            Overall: hacky solution.
-        */
-        /* eslint-disable no-proto */
-        mockedSchemaRef.__proto__ = SchemaReference.prototype
-        /* eslint-enable no-proto */
-
-        mockedSchemaRef.spyOn('resolve', () => {
-            return {
-                toJS: () => { return 12 }
-            }
-        })
-
-        const body = new Immutable.List([
-            new Parameter({
-                value: mockedSchemaRef
-            })
-        ])
-        const result = importer._setSchemaBody(requestMock, body, {
-            schema: true
-        })
-
-        this.assertEqual(mockedSchemaRef.spy.resolve.count, 1)
-        this.assertEqual(
-            mockedSchemaRef.spy.resolve.calls,
-            [ [ 1, { schema: true } ] ]
-        )
-
-        this.assertEqual(result.description, '### Schema ###\n\n12')
     }
 
     @targets('_setUrlEncodedBody')
     testSetUrlEncodedBody() {
-        const importer = new BaseImporter()
+        const importer = new ClassMock(new BaseImporter(), '')
 
-        const mockedImporter = new ClassMock(importer, '')
         const requestMock = new PawRequestMock()
         const body = new Immutable.List([
             new Parameter({
@@ -1679,28 +1362,36 @@ export class TestBaseImporter extends UnitTest {
             })
         ])
 
-        mockedImporter.spyOn('_toDynamicString', (arg) => {
-            return arg
+        let count = 0
+        importer.spyOn('_toDynamicString', () => {
+            count += 1
+            return new DynamicString(count + '')
         })
-        const result = importer._setUrlEncodedBody.apply(
-            mockedImporter,
-            [ requestMock, body ]
-        )
+        const result = importer._setUrlEncodedBody(requestMock, body)
 
-        this.assertEqual(mockedImporter.spy._toDynamicString.count, 4)
-        this.assertEqual(
-            mockedImporter.spy._toDynamicString.calls,
+        this.assertEqual(importer.spy._toDynamicString.count, 4)
+        this.assertJSONEqual(
+            importer.spy._toDynamicString.calls,
             [
-                [ 'test', true, true ],
-                [ 'value', true, true ],
-                [ 'sec', true, true ],
-                [ 'ond', true, true ]
+                [ 'test', true ],
+                [ new Parameter({
+                    key: 'test',
+                    value: 'value'
+                }), true ],
+                [ 'sec', true ],
+                [ new Parameter({
+                    key: 'sec',
+                    value: 'ond'
+                }), true ]
             ]
         )
 
-        this.assertEqual(
+        this.assertJSONEqual(
             result.body.components[0].keyValues,
-            [ [ 'test', 'value', true ], [ 'sec', 'ond', true ] ]
+            [
+                [ new DynamicString('1'), new DynamicString('2'), true ],
+                [ new DynamicString('3'), new DynamicString('4'), true ]
+            ]
         )
     }
 
@@ -1717,7 +1408,7 @@ export class TestBaseImporter extends UnitTest {
         })
         importer._setBody.apply(
             mockedImporter,
-            [ requestMock, 'formData', body ]
+            [ requestMock, 'multipart/form-data', body ]
         )
 
         this.assertEqual(mockedImporter.spy._setFormDataBody.count, 1)
@@ -1739,7 +1430,7 @@ export class TestBaseImporter extends UnitTest {
         })
         importer._setBody.apply(
             mockedImporter,
-            [ requestMock, 'urlEncoded', body ]
+            [ requestMock, 'application/x-www-form-urlencoded', body ]
         )
 
         this.assertEqual(mockedImporter.spy._setUrlEncodedBody.count, 1)
@@ -1761,7 +1452,7 @@ export class TestBaseImporter extends UnitTest {
         })
         importer._setBody.apply(
             mockedImporter,
-            [ requestMock, 'json', body ]
+            [ requestMock, 'application/json', body ]
         )
 
         this.assertEqual(mockedImporter.spy._setJSONBody.count, 1)
@@ -1811,28 +1502,6 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(mockedImporter.spy._setPlainBody.count, 1)
         this.assertEqual(mockedImporter.spy._setPlainBody.calls,
             [ [ requestMock, new Immutable.List() ] ]
-        )
-    }
-
-    @targets('_setBody')
-    testSetBodyWithSchemaBodyType() {
-        const importer = new BaseImporter()
-
-        const mockedImporter = new ClassMock(importer, '')
-        const requestMock = new PawRequestMock()
-        const body = new ParameterContainer()
-
-        mockedImporter.spyOn('_setSchemaBody', () => {
-            return 12
-        })
-        importer._setBody.apply(
-            mockedImporter,
-            [ requestMock, 'schema', body, { schema: true } ]
-        )
-
-        this.assertEqual(mockedImporter.spy._setSchemaBody.count, 1)
-        this.assertEqual(mockedImporter.spy._setSchemaBody.calls,
-            [ [ requestMock, new Immutable.List(), { schema: true } ] ]
         )
     }
 
@@ -1897,18 +1566,27 @@ export class TestBaseImporter extends UnitTest {
 
     @targets('_generateUrl')
     testGenerateUrlWithSimpleUrl() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
+        const importer = new ClassMock(new BaseImporter(), '')
 
-        mockedImporter.spyOn('_toDynamicString', (string) => {
-            return string
+        importer.spyOn('_toDynamicString', (string) => {
+            if (string instanceof Parameter) {
+                return new DynamicString(string.generate())
+            }
+            return new DynamicString(string)
         })
 
-        mockedImporter.spyOn('_extractQueryParamsFromAuth', () => {
+        importer.spyOn('_extractQueryParamsFromAuth', () => {
             return []
         })
 
         const url = new URL({
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ 'http' ])
+                ])
+            }),
             host: new Parameter({
                 key: 'host',
                 type: 'string',
@@ -1929,32 +1607,48 @@ export class TestBaseImporter extends UnitTest {
             })
         })
 
-        const result = importer._generateUrl.apply(
-            mockedImporter,
-            [ url ]
-        )
+        const result = importer._generateUrl(url)
 
-        this.assertEqual('http://fakeurl.com/fake/path', result)
+        this.assertJSONEqual(
+            [ 'http', ':', '//', 'fakeurl.com', '/fake/path' ],
+            result.components
+        )
     }
 
     @targets('_generateUrl')
     testGenerateUrlWithSimpleQueryParams() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
+        const importer = new ClassMock(new BaseImporter(), '')
 
-        mockedImporter.spyOn('_toDynamicString', (string) => {
-            const dyn = new DynamicString(string)
+        importer.spyOn('_toDynamicString', (string) => {
+            let dyn
+            if (string instanceof Parameter) {
+                dyn = new DynamicString(string.generate())
+            }
+            else {
+                dyn = new DynamicString(string)
+            }
+
             dyn.$$_spyOn('appendString', (str) => {
                 dyn.components.push(str)
             })
+
             return dyn
         })
 
-        mockedImporter.spyOn('_extractQueryParamsFromAuth', () => {
+        importer.spyOn('_extractQueryParamsFromAuth', () => {
             return []
         })
 
         const url = new URL({
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'http'
+                    ])
+                ])
+            }),
             host: new Parameter({
                 key: 'host',
                 type: 'string',
@@ -1977,45 +1671,69 @@ export class TestBaseImporter extends UnitTest {
         const queries = new Immutable.List([
             new Parameter({
                 key: 'test',
-                value: 'new'
+                type: 'string',
+                value: 'new',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ 'new' ])
+                ])
             })
         ])
 
-        const result = importer._generateUrl.apply(
-            mockedImporter,
-            [ url, queries ]
-        )
+        const result = importer._generateUrl(url, queries)
 
         const expected = new DynamicString(
-            'http://fakeurl.com/fake/path', '?', 'test', '=', 'new'
+            'http', ':', '//', 'fakeurl.com', '/fake/path',
+            // '?', <- we don't have enough control to mock appendString of
+            // any DynamicString, only the ones we provide can be mocked
+            'test', '=', 'new'
         )
 
-        this.assertEqual(expected.components, result.components)
+        this.assertJSONEqual(expected.components, result.components)
     }
 
     @targets('_generateUrl')
     testGenerateUrlWithQueriesAndAuthParams() {
-        const importer = new BaseImporter()
-        const mockedImporter = new ClassMock(importer, '')
+        const importer = new ClassMock(new BaseImporter(), '')
 
-        mockedImporter.spyOn('_toDynamicString', (string) => {
-            const dyn = new DynamicString(string)
+        importer.spyOn('_toDynamicString', (string) => {
+            let dyn
+            if (string instanceof Parameter) {
+                dyn = new DynamicString(string.generate())
+            }
+            else {
+                dyn = new DynamicString(string)
+            }
+
             dyn.$$_spyOn('appendString', (str) => {
                 dyn.components.push(str)
             })
+
             return dyn
         })
 
-        mockedImporter.spyOn('_extractQueryParamsFromAuth', () => {
+        importer.spyOn('_extractQueryParamsFromAuth', () => {
             return [
                 new Parameter({
                     key: 'api-key',
-                    value: '123123123'
+                    type: 'string',
+                    value: '123123123',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '123123123' ])
+                    ])
                 })
             ]
         })
 
         const url = new URL({
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'http'
+                    ])
+                ])
+            }),
             host: new Parameter({
                 key: 'host',
                 type: 'string',
@@ -2038,7 +1756,11 @@ export class TestBaseImporter extends UnitTest {
         const queries = new Immutable.List([
             new Parameter({
                 key: 'test',
-                value: 'new'
+                type: 'string',
+                value: 'new',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ 'new' ])
+                ])
             })
         ])
         const auths = new Immutable.List([
@@ -2049,14 +1771,13 @@ export class TestBaseImporter extends UnitTest {
             })
         ])
 
-        const result = importer._generateUrl.apply(
-            mockedImporter,
-            [ url, queries, auths ]
-        )
+        const result = importer._generateUrl(url, queries, auths)
 
         const expected = new DynamicString(
-            'http://fakeurl.com/fake/path',
-            '?', 'test', '=', 'new', '&', 'api-key', '=', '123123123'
+            'http', ':', '//', 'fakeurl.com', '/fake/path',
+            // '?', <- we don't have enough control to mock appendString of
+            // any DynamicString, only the ones we provide can be mocked
+            'test', '=', 'new', '&', 'api-key', '=', '123123123'
         )
 
         this.assertEqual(expected.components, result.components)
@@ -2175,7 +1896,7 @@ export class TestBaseImporter extends UnitTest {
             ]
         })
 
-        importer.spyOn('_importPawRequests', () => {})
+        importer.spyOn('_importContext', () => {})
 
         let final = importer.import(contextMock, [ null ], null)
 
@@ -2185,11 +1906,7 @@ export class TestBaseImporter extends UnitTest {
                 [ [ contextMock, [ null ], null ] ]
             )
 
-            this.assertEqual(importer.spy._importPawRequests.count, 1)
-            /* eslint-disable no-undefined */
-            this.assertEqual(importer.spy._importPawRequests.calls,
-                [ [ reqContext, undefined, null ] ]
-            )
+            this.assertEqual(importer.spy._importContext.count, 1)
 
             this.assertTrue(status)
             done()
@@ -2361,6 +2078,366 @@ export class TestBaseImporter extends UnitTest {
         }).catch(err => {
             return done(err)
         })
+    }
+
+    @targets('_importReferences')
+    testImportReferences() {
+        const importer = new ClassMock(new BaseImporter(), '')
+        const env = new Mock({
+            setVariablesValues: () => {}
+        }, '')
+
+        let container = new ReferenceContainer()
+        container = container.create(new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/references/Friend',
+                relative: '#/references/Friend',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/User'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/User',
+                        relative: '#/references/User'
+                    })
+                ])
+            }),
+            new JSONSchemaReference({
+                uri: '#/references/User',
+                relative: '#/references/User',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/Friend'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/Friend',
+                        relative: '#/references/Friend'
+                    })
+                ])
+            })
+        ]))
+
+        const references = new Immutable.OrderedMap({
+            schemas: container
+        })
+
+        importer.spyOn('_getEnvironmentDomain', () => {
+            return 12
+        })
+
+        importer.spyOn('_getEnvironment', () => {
+            return env
+        })
+
+        importer.spyOn('_setReference', () => {
+            return 42
+        })
+
+        importer._importReferences(references)
+
+        this.assertEqual(importer.spy._getEnvironmentDomain.count, 1)
+        this.assertEqual(importer.spy._getEnvironment.count, 1)
+        this.assertEqual(importer.spy._setReference.count, 2)
+        this.assertEqual(env.spy.setVariablesValues.count, 1)
+
+        this.assertEqual(importer.spy._getEnvironment.calls[0][1], 'schemas')
+        this.assertEqual(env.spy.setVariablesValues.calls[0][0], {
+            '#/references/Friend': 42,
+            '#/references/User': 42
+        })
+    }
+
+    @targets('_setReference')
+    testSetReferenceWithJSONSchemaRef() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let schemaref = new JSONSchemaReference({
+            uri: '#/references/Friend',
+            relative: '#/references/Friend',
+            value: {
+                $ref: new JSONSchemaReference({
+                    uri: '#/references/User'
+                })
+            },
+            resolved: true,
+            dependencies: new Immutable.List([
+                new JSONSchemaReference({
+                    uri: '#/references/User',
+                    relative: '#/references/User'
+                })
+            ])
+        })
+
+        importer.spyOn('_setJSONSchemaReference', () => {
+            return 12
+        })
+
+        let expected = 12
+        let result = importer._setReference(schemaref)
+        this.assertEqual(expected, result)
+        this.assertEqual(importer.spy._setJSONSchemaReference.count, 1)
+    }
+
+    @targets('_setReference')
+    testSetReferenceWithExoticRef() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let exoticref = new ExoticReference({
+            uri: '#/references/User',
+            relative: '#/references/User',
+            value: null,
+            resolved: true,
+            dependencies: new Immutable.List([])
+        })
+
+        importer.spyOn('_setExoticReference', () => {
+            return 12
+        })
+
+        let expected = 12
+        let result = importer._setReference(exoticref)
+        this.assertEqual(expected, result)
+        this.assertEqual(importer.spy._setExoticReference.count, 1)
+    }
+
+    @targets('_setReference')
+    testSetReferenceWithSimpleRef() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let simpleref = new ExoticReference({
+            uri: '#/references/User',
+            relative: '#/references/User',
+            value: 42,
+            resolved: true,
+            dependencies: new Immutable.List([])
+        })
+
+        importer.spyOn('_setSimpleReference', () => {
+            return 12
+        })
+
+        let expected = 12
+        let result = importer._setReference(simpleref)
+        this.assertEqual(expected, result)
+        this.assertEqual(importer.spy._setSimpleReference.count, 1)
+    }
+
+    @targets('_setJSONSchemaReference')
+    testSetJSONSchemaReference() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let schemaref = new JSONSchemaReference({
+            uri: '#/references/Friend',
+            relative: '#/references/Friend',
+            value: {
+                $ref: new JSONSchemaReference({
+                    uri: '#/references/User'
+                })
+            },
+            resolved: true,
+            dependencies: new Immutable.List([
+                new JSONSchemaReference({
+                    uri: '#/references/User',
+                    relative: '#/references/User'
+                })
+            ])
+        })
+
+        let expected = new DynamicValue(
+            'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
+            {
+                schema: {
+                    $ref: '#/references/User'
+                }
+            }
+        )
+        let result = importer._setJSONSchemaReference(schemaref)
+        this.assertEqual(expected.type, result.type)
+        this.assertJSONEqual(expected.schema, result.schema)
+    }
+
+    @targets('_setExoticReference')
+    testSetExoticReference() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let exoticref = new ExoticReference({
+            uri: 'swagger.json',
+            relative: 'swagger.json',
+            value: null,
+            resolved: true,
+            dependencies: new Immutable.List([])
+        })
+
+        let expected = new DynamicValue(
+            'com.luckymarmot.FileContentDynamicValue', {
+                filePath: 'swagger.json'
+            }
+        )
+
+        let result = importer._setExoticReference(exoticref)
+        this.assertEqual(expected.type, result.type)
+        this.assertEqual(expected.filePath, result.filePath)
+    }
+
+    @targets('_setSimpleReference')
+    testSetSimpleReference() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let simpleref = new ExoticReference({
+            uri: '#/references/User',
+            relative: '#/references/User',
+            value: 42,
+            resolved: true,
+            dependencies: new Immutable.List([])
+        })
+
+        let expected = 42
+
+        let result = importer._setSimpleReference(simpleref)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_castParameterToDynamicString')
+    testCastParameterToDynamicStringWithSimpleParam() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let param = new Parameter({
+            key: 'ignored',
+            type: 'string',
+            value: 'new',
+            internals: new Immutable.List([
+                new Constraint.Enum([ 'new', 'old' ])
+            ])
+        })
+
+        const expected = new DynamicString(new DynamicValue(
+            'com.luckymarmot.PawExtensions' +
+            '.JSONSchemaFakerDynamicValue',
+            {
+                schema: {
+                    type: 'string',
+                    enum: [ 'new', 'old' ],
+                    'x-title': 'ignored',
+                    default: 'new'
+                }
+            }
+        ))
+
+        const result = importer._castParameterToDynamicString(param)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_castParameterToDynamicString')
+    testCastParameterToDynamicStringWithSequenceParam() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let param = new Parameter({
+            key: 'host',
+            type: 'string',
+            value: new Immutable.List([
+                new Parameter({
+                    key: 'version',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'v0.8', 'v1' ])
+                    ])
+                }),
+                new Parameter({
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '.luckymarmot.' ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'extension',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'com', 'co.uk', 'io'
+                        ])
+                    ])
+                })
+            ]),
+            format: 'sequence'
+        })
+
+        const expected = new DynamicString(
+            new DynamicValue(
+                'com.luckymarmot.PawExtensions' +
+                '.JSONSchemaFakerDynamicValue',
+                {
+                    schema: {
+                        type: 'string',
+                        enum: [ 'v0.8', 'v1' ],
+                        'x-title': 'version'
+                    }
+                }
+            ),
+            '.luckymarmot.',
+            new DynamicValue(
+                'com.luckymarmot.PawExtensions' +
+                '.JSONSchemaFakerDynamicValue',
+                {
+                    schema: {
+                        type: 'string',
+                        enum: [ 'com', 'co.uk', 'io' ],
+                        'x-title': 'extension'
+                    }
+                }
+            ),
+        )
+
+        const result = importer._castParameterToDynamicString(param)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractContentTypeFromBody')
+    testExtractContentTypeFromBody() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        const body = new Body({
+            constraints: new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    value: 'application/json'
+                })
+            ])
+        })
+
+        const expected = 'application/json'
+
+        const result = importer._extractContentTypeFromBody(body)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_castReferenceToDynamicString')
+    testCastReferenceToDynamicString() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        importer.spyOn('_extractReferenceComponent', () => {
+            return '12'
+        })
+
+        const ref = new ExoticReference({
+            uri: 'swagger.json',
+            relative: 'swagger.json'
+        })
+
+        const expected = new DynamicString('12')
+
+        const result = importer._castReferenceToDynamicString(ref)
+
+        this.assertJSONEqual(expected, result)
     }
 
     //

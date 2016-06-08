@@ -63,7 +63,7 @@ export default class SwaggerParser {
             let reqContext = new Context()
             reqContext = reqContext
                 .set('group', rootGroup)
-                .set('references', refs)
+                .setIn([ 'references', 'schemas' ], refs)
                 .set('info', info)
 
             this.context = reqContext

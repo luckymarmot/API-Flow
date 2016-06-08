@@ -1370,38 +1370,43 @@ export class TestSwaggerSerializer extends UnitTest {
     @targets('_formatDefinitions')
     testFormatDefinitions() {
         const parser = this.__init()
-        const context = new Context({
-            references: new ReferenceContainer({
-                cache: new Immutable.OrderedMap({
-                    '#/definitions/User': new ReferenceCache({
-                        cached: new JSONSchemaReference({
-                            value: {
-                                type: 'string',
-                                name: 'Content-Type',
-                                enum: [ 'application/json', 'application/xml' ]
-                            },
-                            resolved: true
-                        })
-                    }),
-                    '#/definitions/API': new ReferenceCache({
-                        cached: new JSONSchemaReference({
-                            value: {
-                                type: 'string'
-                            },
-                            resolved: true
-                        })
-                    }),
-                    '#/some/other/ProductReference': new ReferenceCache({
-                        cached: new JSONSchemaReference({
-                            value: {
-                                type: 'integer',
-                                minimum: 0,
-                                maximum: 100
-                            },
-                            resolved: true
-                        })
+
+        const container = new ReferenceContainer({
+            cache: new Immutable.OrderedMap({
+                '#/definitions/User': new ReferenceCache({
+                    cached: new JSONSchemaReference({
+                        value: {
+                            type: 'string',
+                            name: 'Content-Type',
+                            enum: [ 'application/json', 'application/xml' ]
+                        },
+                        resolved: true
+                    })
+                }),
+                '#/definitions/API': new ReferenceCache({
+                    cached: new JSONSchemaReference({
+                        value: {
+                            type: 'string'
+                        },
+                        resolved: true
+                    })
+                }),
+                '#/some/other/ProductReference': new ReferenceCache({
+                    cached: new JSONSchemaReference({
+                        value: {
+                            type: 'integer',
+                            minimum: 0,
+                            maximum: 100
+                        },
+                        resolved: true
                     })
                 })
+            })
+        })
+
+        const context = new Context({
+            references: new Immutable.OrderedMap({
+                schemas: container
             })
         })
 

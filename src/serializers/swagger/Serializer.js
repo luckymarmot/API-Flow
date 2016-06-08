@@ -504,26 +504,31 @@ export default class SwaggerSerializer extends BaseSerializer {
     _formatDefinitions(context) {
         let schemas = {}
         let references = context.get('references')
-        references.get('cache').forEach((cache, key) => {
-            if (key.startsWith('#/')) {
-                let pathFragments = key.split('/').slice(1).map(fragment => {
-                    return this._unescapeURIFragment(fragment)
-                })
-                // pointer assignement
-                // we're moving the subTree pointer to modify schemas
-                let subTree = schemas
-                for (let fragment of pathFragments) {
-                    subTree[fragment] =
-                        typeof subTree[fragment] === 'undefined' ?
-                        {} :
-                        subTree[fragment]
-                    subTree = subTree[fragment]
-                }
-                let ref = references.resolve(key).get('value')
+        references.forEach(container => {
+            container.get('cache').forEach((cache, key) => {
+                if (key.startsWith('#/')) {
+                    let pathFragments = key
+                        .split('/')
+                        .slice(1)
+                        .map(fragment => {
+                            return this._unescapeURIFragment(fragment)
+                        })
+                    // pointer assignement
+                    // we're moving the subTree pointer to modify schemas
+                    let subTree = schemas
+                    for (let fragment of pathFragments) {
+                        subTree[fragment] =
+                            typeof subTree[fragment] === 'undefined' ?
+                            {} :
+                            subTree[fragment]
+                        subTree = subTree[fragment]
+                    }
+                    let ref = container.resolve(key).get('value')
 
-                // object assignement
-                Object.assign(subTree, ref)
-            }
+                    // object assignement
+                    Object.assign(subTree, ref)
+                }
+            })
         })
 
         return schemas

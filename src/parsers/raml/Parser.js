@@ -70,7 +70,9 @@ export default class RAMLParser {
         if (references) {
             let container = new ReferenceContainer()
             container = container.create(references)
-            context = context.set('references', container)
+            if (container.get('cache').size > 0) {
+                context = context.setIn([ 'references', raml.title ], container)
+            }
         }
 
         let info = this._extractInfos(_raml)

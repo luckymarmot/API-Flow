@@ -3,8 +3,6 @@ import jsf from 'json-schema-faker'
 
 import { Info } from './Utils'
 import Reference from './references/Reference'
-import ReferenceContainer from './references/Container'
-
 
 export class Parameter extends Immutable.Record({
     key: null,
@@ -237,7 +235,7 @@ export class Response extends Immutable.Record({
 
 export default class Context extends Immutable.Record({
     group: null,
-    references: new ReferenceContainer(),
+    references: new Immutable.OrderedMap(),
     info: new Info()
 }) {
     getRequests() {
