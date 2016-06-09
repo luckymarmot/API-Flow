@@ -909,10 +909,10 @@ export class TestRAMLSerializer extends UnitTest {
     }
 
     @targets('_formatPaths')
-    testFormatPathsWithEmptyGroup() {
+    testFormatPathsWithEmptyList() {
         let s = this.__init()
 
-        let group = new Group()
+        let group = new Immutable.List()
 
         let expected = {}
         let result = s._formatPaths(group)
@@ -930,19 +930,69 @@ export class TestRAMLSerializer extends UnitTest {
             return res
         })
 
-        let group = new Group({
-            name: '/songs',
-            children: new Immutable.OrderedMap({
-                get: new Request({ method: 'get' }),
-                post: new Request({ method: 'post' }),
-                '/{songId}': new Group({
-                    name: '/{songId}',
-                    children: new Immutable.OrderedMap({
-                        get: new Request({ method: 'get' })
+        let requests = new Immutable.List([
+            new Request({
+                url: new URL({
+                    pathname: new Parameter({
+                        key: 'pathname',
+                        type: 'string',
+                        value: new Immutable.List([
+                            new Parameter({
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([ '/songs' ])
+                                ])
+                            })
+                        ]),
+                        format: 'sequence'
                     })
-                })
+                }),
+                method: 'get'
+            }),
+            new Request({
+                url: new URL({
+                    pathname: new Parameter({
+                        key: 'pathname',
+                        type: 'string',
+                        value: new Immutable.List([
+                            new Parameter({
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([ '/songs' ])
+                                ])
+                            })
+                        ]),
+                        format: 'sequence'
+                    })
+                }),
+                method: 'post'
+            }),
+            new Request({
+                url: new URL({
+                    pathname: new Parameter({
+                        key: 'pathname',
+                        type: 'string',
+                        value: new Immutable.List([
+                            new Parameter({
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([ '/songs/' ])
+                                ])
+                            }),
+                            new Parameter({
+                                key: 'songId',
+                                type: 'integer',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([ 0, 1, 3 ])
+                                ])
+                            })
+                        ]),
+                        format: 'sequence'
+                    })
+                }),
+                method: 'get'
             })
-        })
+        ])
 
         let expected = {
             '/songs': {
@@ -954,11 +1004,10 @@ export class TestRAMLSerializer extends UnitTest {
             }
         }
 
-        let result = s._formatPaths(group)
+        let result = s._formatPaths(requests)
 
         this.assertEqual(expected, result)
         this.assertEqual(s.spy._formatRequest.count, 3)
-        this.assertEqual(s.spy._formatPaths.count, 5)
     }
 
     @targets('_formatRequest')

@@ -1,7 +1,6 @@
 import Immutable from 'immutable'
 import yaml from 'js-yaml'
 
-import Request from '../../models/Request'
 import BaseSerializer from '../BaseSerializer'
 import Auth from '../../models/Auth'
 import URL from '../../models/URL'
@@ -32,7 +31,7 @@ export default class RAMLSerializer extends BaseSerializer {
             let requests = group.getRequests()
             urlInfo = ::this._formatURLInfo(requests)
             securitySchemes = ::this._formatSecuritySchemes(requests)
-            paths = ::this._formatPaths(group, true)
+            paths = ::this._formatPaths(requests)
         }
 
         Object.assign(
@@ -459,34 +458,22 @@ export default class RAMLSerializer extends BaseSerializer {
         }
     }
 
-    _formatPaths(group, skip = false) {
-        if (group instanceof Request) {
-            return this._formatRequest(group)
-        }
+    _formatPaths(requests) {
+        let paths = new Immutable.Map()
+        requests.forEach(request => {
+            let url = request.get('url')
+            let _path = this._generateSequenceParam(url, 'pathname')
 
-        let result = {}
+            let fragments = _path.split('/').slice(1).map(fragment => {
+                return '/' + fragment
+            })
+            let content = Immutable.fromJS(this._formatRequest(request))
 
-        let relativeURI = group.get('name')
-        let children = group.get('children')
-
-        if (relativeURI === null && !skip) {
-            return {}
-        }
-
-        let container = {}
-        result[relativeURI] = {}
-        children.forEach((child) => {
-            Object.assign(container, this._formatPaths(child))
+            let path = (new Immutable.Map()).setIn(fragments, content)
+            paths = paths.mergeDeep(path)
         })
 
-        if (skip) {
-            result = container
-        }
-        else {
-            result[relativeURI] = container
-        }
-
-        return result
+        return paths.toJS()
     }
 
     _formatRequest(request) {

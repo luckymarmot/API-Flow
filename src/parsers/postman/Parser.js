@@ -1,18 +1,24 @@
 import Immutable from 'immutable'
 
-import RequestContext, {
-    KeyValue,
-    Group,
-    Request,
-    Environment,
-    EnvironmentReference
-} from '../../models/RequestContext'
+import Context, {
+    Parameter,
+    ParameterContainer
+} from '../../models/Core'
+
+import Constraint from '../../models/Constraint'
+
+import ReferenceContainer from '../../models/references/Container'
+import LateResolutionReference from '../../models/references/LateResolution'
+
+import Group from '../../models/Group'
+import Request from '../../models/Request'
 
 import Auth from '../../models/Auth'
 
 export default class PostmanParser {
     contructor() {
-        this.context = new RequestContext()
+        this.context = new Context()
+        this.references = new Immutable.List()
     }
 
     // @tested
@@ -53,19 +59,17 @@ export default class PostmanParser {
             throw new Error('Invalid Postman file (missing required keys)')
         }
 
-        this.context = this._createContext(environments, collections)
+        this.context = ::this._createContext(environments, collections)
         return this.context
     }
 
     // @tested
     _createContext(environments, collections) {
-        let envs = new Immutable.List(
-            environments.map(
-                env => {
-                    return this._importEnvironment(env)
-                }
-            )
-        )
+        let envs = new Immutable.OrderedMap()
+        environments.forEach(_env => {
+            let env = this._importEnvironment(_env)
+            envs = envs.set(env.get('id'), env)
+        })
 
         let baseGroup = collections.reduce(
             (rootGroup, collection) => {
@@ -77,8 +81,17 @@ export default class PostmanParser {
             new Group()
         )
 
-        let context = new RequestContext({
-            environments: envs,
+        if (this.references) {
+            let keys = envs.keySeq()
+            for (let key of keys) {
+                let container = envs.get(key)
+                container = container.create(this.references)
+                envs = envs.set(key, container)
+            }
+        }
+
+        let context = new Context({
+            references: envs,
             group: baseGroup
         })
 
@@ -87,22 +100,21 @@ export default class PostmanParser {
 
     // @tested
     _importEnvironment(environment) {
-        let env = new Environment({
+        let env = new ReferenceContainer({
             id: environment.id,
             name: environment.name
         })
 
         if (environment.values) {
-            for (let value of environment.values) {
-                env = env.setIn(
-                    [ 'variables', value.key ],
-                    new KeyValue({
-                        key: value.key,
-                        value: this._referenceEnvironmentVariable(value.value),
-                        valueType: value.type || null
-                    })
-                )
-            }
+            let refs = environment.values.map(value => {
+                return new LateResolutionReference({
+                    uri: '#/postman/{{' + value.key + '}}',
+                    relative: '#/postman/{{' + value.key + '}}',
+                    value: value.value,
+                    resolved: true
+                })
+            })
+            env = env.create(refs)
         }
 
         return env
@@ -131,95 +143,19 @@ export default class PostmanParser {
             return null
         }
 
-        let groups = []
-        let stack = [
-            {
-                start: -1,
-                end: string.length,
-                depth: 0,
-                ref: new EnvironmentReference()
-            }
-        ]
-        let group
-        let level = 0
-        let prevChar = ''
-        let notEvaluatedIndex = 0
-        let i = 0
-        for (let char of string) {
-            if (char === '{' && prevChar === '{') {
-                level += 1
-                char = ''
-
-                let parentGroup = stack.pop()
-                let component = string.substring(parentGroup.start + 1, i - 1)
-
-                if (component.length > 0) {
-                    parentGroup.ref = parentGroup.ref
-                        .set(
-                            'referenceName',
-                            parentGroup.ref.referenceName.push(component)
-                        )
-                }
-
-                stack.push(parentGroup)
-                stack.push({
-                    start: i,
-                    depth: level,
-                    components: [],
-                    ref: new EnvironmentReference()
+        if (typeof string === 'string') {
+            if (string.match(/{{[^{}]*}}/)) {
+                let ref = new LateResolutionReference({
+                    uri: '#/postman/' + string,
+                    relative: '#/postman/' + string,
+                    resolved: true
                 })
+                this.references = this.references.push(ref)
+                return ref
             }
-
-            if (char === '}' && prevChar === '}' && level > 0) {
-                group = stack.pop()
-                group.end = i
-                notEvaluatedIndex = i
-                group.str = string.substring(group.start + 1, group.end - 1)
-
-                if (group.ref.get('referenceName').size === 0) {
-                    group.ref = new EnvironmentReference({
-                        referenceName: new Immutable.List([
-                            string.substring(group.start + 1, group.end - 1)
-                        ])
-                    })
-                }
-
-                groups.push(group)
-
-                let parentGroup = stack.pop()
-                parentGroup.ref = parentGroup.ref
-                    .set(
-                        'referenceName',
-                        parentGroup.ref.referenceName.push(group.ref)
-                    )
-                parentGroup.start = i
-                stack.push(parentGroup)
-
-                char = ''
-                level -= 1
+            else {
+                return string
             }
-
-            i += 1
-            prevChar = char
-        }
-
-        if (stack.length > 1) {
-            // unbalanced parenthesis -- too weird to work with
-            return string
-        }
-
-        let result = stack.pop()
-
-        if (result.start < 0 && result.end >= string.length) {
-            return string
-        }
-        else {
-            let ref = result.ref
-            if (notEvaluatedIndex + 1 < string.length) {
-                let trailing = string.substring(notEvaluatedIndex + 1)
-                ref = ref.set('referenceName', ref.referenceName.push(trailing))
-            }
-            return ref
         }
     }
 
@@ -270,10 +206,14 @@ export default class PostmanParser {
         }
         else {
             let kvList = params.match(/([^\s,]*="[^"]*")|([^\s,]*='[^']*')/g)
-            kvList.forEach((set, kv) => {
-                let [ key, value ] = kv.match(/([^=]*)="(.*)"/g).slice(1, 3)
+            kvList.forEach((kv) => {
+                let [ key, value ] = kv
+                    .match(/([^=]*)=["'](.*)["']/)
+                    .slice(1, 3)
                 if (digestMap[key]) {
-                    auth = auth.set(key, value)
+                    auth = auth.set(key,
+                        this._referenceEnvironmentVariable(value)
+                    )
                 }
             })
 
@@ -312,6 +252,7 @@ export default class PostmanParser {
                     )
                 )
         }
+        return auth
     }
 
     _extractHawkAuth(params, helper) {
@@ -338,6 +279,7 @@ export default class PostmanParser {
                 )
             )
         }
+        return auth
     }
 
     _extractOAuth1(params) {
@@ -358,11 +300,12 @@ export default class PostmanParser {
         let kvList = (params || '').split(',')
         for (let kvStr of kvList) {
             let [ key, value ] = kvStr.split('=')
+            key = key.replace(/(^[\s"']*)|([\s"']*$)/g, '')
             if (paramMap[key]) {
                 auth = auth.set(
                     paramMap[key],
                     this._referenceEnvironmentVariable(
-                        value.replace(/(^")|("$)/g, '')
+                        value.replace(/(^[\s"']*)|([\s"']*$)/g, '')
                     )
                 )
             }
@@ -415,40 +358,41 @@ export default class PostmanParser {
         return null
     }
 
-    _extractQueriesFromUrl(url) {
-        let _url = url
-        let queries = []
+    _createRequest(collection, req) {
+        let [ container, url, auths ] = this._extractParameters(req)
 
-        let match = _url.match(/([^?]+)\?(.*)/)
-        if (match) {
-            _url = this._referenceEnvironmentVariable(match[1])
-            let components = match[2].split('&')
-            for (let component of components) {
-                let m = component.match(/^([^\=]+)(?:\=([\s\S]*))?$/)
-                if (m) {
-                    queries.push(new KeyValue({
-                        key: this._referenceEnvironmentVariable(
-                            decodeURIComponent(m[1])
-                        ),
-                        value: typeof m[2] === 'string' ?
-                            this._referenceEnvironmentVariable(
-                                decodeURIComponent(m[2])
-                            ) : null
-                    }))
-                }
-            }
-        }
+        let request = new Request({
+            id: req.id,
+            name: req.name,
+            description: req.description,
+            method: req.method,
+            url: url,
+            parameters: container,
+            auths: auths
+        })
 
-        let _queries = new Immutable.List(queries)
-        return [ _url, _queries ]
+        return request
     }
 
-    _createRequest(collection, req) {
-        let bodyType
-        let body
+    _extractParameters(req) {
+        let [ _headers, auths ] = this._extractHeaders(req)
+        let [ url, queries ] = this._extractQueriesFromUrl(req.url)
+        let [ body, headers ] = this._extractBodyParams(req, _headers)
+
+        let container = new ParameterContainer({
+            queries: queries,
+            headers: headers,
+            body: body
+        })
+
+        return [ container, url, auths ]
+    }
+
+    _extractHeaders(req) {
         let headerLines = req.headers.split('\n')
-        let headers = new Immutable.OrderedMap()
-        let auths = new Immutable.List()
+        let headerSet = new Immutable.OrderedMap()
+        let auths = []
+        let headers = []
 
         for (let headerLine of headerLines) {
             let match = headerLine.match(/^([^\s\:]*)\s*\:\s*(.*)$/)
@@ -460,89 +404,155 @@ export default class PostmanParser {
                         req.helperAttributes
                     )
                     if (auth) {
-                        auths = auths.push(auth)
+                        auths.push(auth)
                     }
                 }
                 else {
-                    headers = headers.set(match[1],
+                    headerSet = headerSet.set(match[1],
                         this._referenceEnvironmentVariable(match[2])
                     )
                 }
             }
         }
 
-        if (req.dataMode === 'raw') {
-            let contentType = headers.get('Content-Type')
-            let rawReqBody = req.rawModeData || req.data
-
-            if (
-                contentType &&
-                contentType.indexOf('json') >= 0 &&
-                rawReqBody &&
-                rawReqBody.length > 0
-            ) {
-                if (rawReqBody) {
-                    bodyType = 'plain'
-                    body = rawReqBody
-                }
-
-                try {
-                    let jsonObj = JSON.parse(rawReqBody)
-                    bodyType = 'json'
-                    body = jsonObj
-                }
-                catch (e) {
-                    /* eslint-disable no-console */
-                    console.error(
-                        'failed to parse JSON ' +
-                        'body despite header claiming it is JSON: ' +
-                        req.name
-                    )
-                    /* eslint-enable no-console */
-                }
-            }
-            else {
-                bodyType = 'plain'
-                if (rawReqBody) {
-                    body = rawReqBody
-                }
-            }
-        }
-        else if (req.dataMode === 'urlencoded' || req.dataMode === 'params') {
-            if (req.dataMode === 'urlencoded') {
-                bodyType = 'urlEncoded'
-            }
-            else if (req.dataMode === 'params') {
-                bodyType = 'formData'
-            }
-            body = new Immutable.List()
-            if (req.data) {
-                for (let param of req.data) {
-                    body = body.push(new KeyValue({
-                        key: this._referenceEnvironmentVariable(param.key),
-                        value: this._referenceEnvironmentVariable(param.value),
-                        valueType: param.type
-                    }))
-                }
-            }
-        }
-
-        let [ url, queries ] = this._extractQueriesFromUrl(req.url)
-
-        let request = new Request({
-            id: req.id,
-            name: req.name,
-            description: req.description,
-            method: req.method,
-            url: url,
-            queries: queries,
-            headers: headers,
-            bodyType: bodyType,
-            body: body,
-            auth: auths
+        headerSet.forEach((value, key) => {
+            let param = this._extractParam(key, value)
+            headers.push(param)
         })
 
-        return request
+        return [
+            new Immutable.List(headers),
+            new Immutable.List(auths)
+        ]
+    }
+
+    _extractQueriesFromUrl(url) {
+        let _url = new URL(url)
+        let queries = new Immutable.List()
+
+        let protocol = this._referenceEnvironmentVariable(
+            _url.generateParam('protocol')
+        )
+        let host = this._referenceEnvironmentVariable(
+            _url.generateParam('host')
+        )
+        let path = this._referenceEnvironmentVariable(
+            _url.generateParam('pathname')
+        )
+
+        _url = _url
+            .set('protocol', protocol)
+            .set('host', host)
+            .set('pathname', path)
+
+        let match = url.match(/([^?]+)\?(.*)/)
+        if (match) {
+            let components = match[2].split('&')
+            for (let component of components) {
+                let query = this._extractQueryFromComponent(component)
+                if (query) {
+                    queries = queries.push(query)
+                }
+            }
+        }
+
+        return [ _url, queries ]
+    }
+
+    _extractQueryFromComponent(component) {
+        let m = component.match(/^([^\=]+)(?:\=([\s\S]*))?$/)
+
+        if (!m) {
+            return null
+        }
+
+        let key = decodeURIComponent(m[1])
+        let value = null
+        if (typeof m[2] === 'string') {
+            value = decodeURIComponent(m[2])
+        }
+
+        return this._extractParam(key, value)
+    }
+
+    _extractParam(_key, _value) {
+        let key = _key
+        let name = this._referenceEnvironmentVariable(key)
+
+        let value
+        if (typeof _value === 'string') {
+            value = this._referenceEnvironmentVariable(
+                _value
+            )
+        }
+
+        let internals = new Immutable.List()
+        let type = 'string'
+        if (value instanceof LateResolutionReference) {
+            type = 'reference'
+        }
+        else {
+            internals = new Immutable.List([
+                new Constraint.Enum([ value ])
+            ])
+        }
+
+        return new Parameter({
+            key: key,
+            name: name,
+            value: value,
+            type: type,
+            internals: internals
+        })
+    }
+
+    _extractBodyParams(req, _headers) {
+        let headers = _headers
+        let params = []
+        if (req.dataMode === 'raw') {
+            let param = this._extractParam('body', req.rawModeData || req.data)
+            params.push(param)
+        }
+        else if (req.dataMode === 'urlencoded' || req.dataMode === 'params') {
+            let contentType = this._extractContentType(headers)
+            if (!contentType && req.dataMode === 'urlencoded') {
+                let header = this._extractParam(
+                    'Content-Type', 'application/x-www-form-urlencoded'
+                )
+
+                headers = headers.push(header)
+            }
+            else if (!contentType && req.dataMode === 'params') {
+                let header = this._extractParam(
+                    'Content-Type', 'multipart/form-data'
+                )
+
+                headers = headers.push(header)
+            }
+
+            if (req.data) {
+                for (let _param of req.data) {
+                    let param = this._extractParam(_param.key, _param.value)
+                    params.push(param)
+                }
+            }
+        }
+
+        return [ new Immutable.List(params), headers ]
+    }
+
+    _extractContentType(headers) {
+        let contentType = null
+        headers.forEach(header => {
+            if (
+                header.get('key') === 'Content-Type' &&
+                typeof header.get('value') === 'string'
+            ) {
+                contentType = header.get('value')
+            }
+        })
+
+        return contentType
     }
 
     _putRequestsInGroup(group, ids, requests) {

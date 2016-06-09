@@ -1,19 +1,31 @@
 import fs from 'fs'
 import Immutable from 'immutable'
 
-import { UnitTest, registerTest } from '../../../utils/TestUtils'
-import { ClassMock } from '../../../utils/Mock'
+import {
+    UnitTest,
+    registerTest,
+    against,
+    targets
+} from '../../../utils/TestUtils'
+import { ClassMock } from '../../../mocks/PawMocks'
 
 import PostmanParser from '../Parser'
-import RequestContext, {
-    KeyValue,
-    Environment,
-    EnvironmentReference
-} from '../../../models/RequestContext'
+
+import Auth from '../../../models/Auth'
+import ReferenceContainer from '../../../models/references/Container'
+import LateResolutionReference from '../../../models/references/LateResolution'
+
+import Context, {
+    Parameter,
+    ParameterContainer
+} from '../../../models/Core'
+import Request from '../../../models/Request'
 
 @registerTest
+@against(PostmanParser)
 export class TestPostmanParser extends UnitTest {
     // TODO write tests
+    @targets('parse')
     testParseFailsOnInvalidJSON() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -32,6 +44,7 @@ export class TestPostmanParser extends UnitTest {
         }
     }
 
+    @targets('parse')
     testParseFailsOnNonPostmanJSON() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -50,6 +63,7 @@ export class TestPostmanParser extends UnitTest {
         }
     }
 
+    @targets('parse')
     testParseCallsCreateContext() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -70,6 +84,7 @@ export class TestPostmanParser extends UnitTest {
         this.assertEqual(result, 12)
     }
 
+    @targets('_createContext')
     testCreateContextCallsImportEnvironment() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -78,7 +93,9 @@ export class TestPostmanParser extends UnitTest {
         const colls = []
 
         mp.spyOn('_importEnvironment', () => {
-            return true
+            return new ReferenceContainer({
+                id: 12
+            })
         })
 
         parser._createContext.apply(
@@ -96,6 +113,7 @@ export class TestPostmanParser extends UnitTest {
         )
     }
 
+    @targets('_createContext')
     testCreateContextCallsImportCollection() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -122,6 +140,7 @@ export class TestPostmanParser extends UnitTest {
         )
     }
 
+    @targets('_createContext')
     testCreateContextReturnsRequestContext() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -130,7 +149,9 @@ export class TestPostmanParser extends UnitTest {
         const colls = [ { get: () => { return '12' } } ]
 
         mp.spyOn('_importEnvironment', () => {
-            return true
+            return new ReferenceContainer({
+                id: '12'
+            })
         })
 
         mp.spyOn('_importCollection', (obj) => {
@@ -142,15 +163,20 @@ export class TestPostmanParser extends UnitTest {
             [ envs, colls ]
         )
 
-        this.assertTrue(result instanceof RequestContext)
+        this.assertTrue(result instanceof Context)
         this.assertEqual(
-            result.get('environments'), new Immutable.List([ true ])
+            result.get('references'), new Immutable.OrderedMap({
+                12: new ReferenceContainer({
+                    id: '12'
+                })
+            })
         )
         this.assertEqual(
             result.getIn([ 'group', 'children', '12' ]), colls[0]
         )
     }
 
+    @targets('_importEnvironment')
     testImportEnvironmentWithNoValues() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -165,7 +191,7 @@ export class TestPostmanParser extends UnitTest {
             [ env ]
         )
 
-        const expected = new Environment({
+        const expected = new ReferenceContainer({
             id: 'envId',
             name: 'envName'
         })
@@ -173,6 +199,7 @@ export class TestPostmanParser extends UnitTest {
         this.assertEqual(result, expected)
     }
 
+    @targets('_importEnvironment')
     testImportEnvironmentWithValues() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -197,20 +224,23 @@ export class TestPostmanParser extends UnitTest {
             [ env ]
         )
 
-        const expected = new Environment({
+        let expected = new ReferenceContainer({
             id: 'envId',
-            name: 'envName',
-            variables: new Immutable.OrderedMap({
-                variableKey: new KeyValue({
-                    key: 'variableKey',
-                    value: 'variableValue'
-                })
-            })
+            name: 'envName'
         })
+        expected = expected.create(new Immutable.List([
+            new LateResolutionReference({
+                uri: '#/postman/{{variableKey}}',
+                relative: '#/postman/{{variableKey}}',
+                value: 'variableValue',
+                resolved: true
+            })
+        ]))
 
-        this.assertEqual(result, expected)
+        this.assertEqual(expected, result)
     }
 
+    @targets('_importCollection')
     testImportCollectionThrowsIfNoRequestsInCollection() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -229,6 +259,7 @@ export class TestPostmanParser extends UnitTest {
         }
     }
 
+    @targets('_importCollection')
     testImportCollectionWithRequests() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -265,6 +296,7 @@ export class TestPostmanParser extends UnitTest {
         )
     }
 
+    @targets('_referenceEnvironmentVariable')
     testReferenceEnvironmentVariableWithNoReference() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -278,6 +310,7 @@ export class TestPostmanParser extends UnitTest {
         this.assertEqual(input, result)
     }
 
+    @targets('_referenceEnvironmentVariable')
     testReferenceEnvironmentVariableWithNull() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -291,6 +324,7 @@ export class TestPostmanParser extends UnitTest {
         this.assertEqual(input, result)
     }
 
+    @targets('_referenceEnvironmentVariable')
     testReferenceEnvironmentVariableWithUndefined() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
@@ -303,116 +337,737 @@ export class TestPostmanParser extends UnitTest {
         this.assertEqual(null, result)
     }
 
+    @targets('_referenceEnvironmentVariable')
     testReferenceEnvironmentVariableWithSimpleReference() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
         const input = '{{simple}}'
 
+        mp.references = new Immutable.List()
+
         const result = parser._referenceEnvironmentVariable.apply(
             mp,
             [ input ]
         )
 
-        const expected = new EnvironmentReference({
-            referenceName: new Immutable.List([
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'simple'
-                    ])
-                })
-            ])
+        const expected = new LateResolutionReference({
+            uri: '#/postman/{{simple}}',
+            relative: '#/postman/{{simple}}',
+            resolved: true
         })
 
         this.assertEqual(expected, result)
     }
 
+    @targets('_referenceEnvironmentVariable')
     testReferenceEnvironmentVariableWithRichReference() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
         const input = 'notso{{simple}}'
 
+        mp.references = new Immutable.List()
+
         const result = parser._referenceEnvironmentVariable.apply(
             mp,
             [ input ]
         )
 
-        const expected = new EnvironmentReference({
-            referenceName: new Immutable.List([
-                'notso',
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'simple'
-                    ])
-                })
-            ])
+        const expected = new LateResolutionReference({
+            uri: '#/postman/notso{{simple}}',
+            relative: '#/postman/notso{{simple}}',
+            resolved: true
         })
 
         this.assertEqual(expected, result)
     }
 
-
+    @targets('_referenceEnvironmentVariable')
     testReferenceEnvironmentVariableWithMultipleReferences() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
         const input = '{{not}}so{{simple}}?'
 
+        mp.references = new Immutable.List()
+
         const result = parser._referenceEnvironmentVariable.apply(
             mp,
             [ input ]
         )
 
-        const expected = new EnvironmentReference({
-            referenceName: new Immutable.List([
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'not'
-                    ])
-                }),
-                'so',
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'simple'
-                    ])
-                }),
-                '?'
-            ])
+        const expected = new LateResolutionReference({
+            uri: '#/postman/{{not}}so{{simple}}?',
+            relative: '#/postman/{{not}}so{{simple}}?',
+            resolved: true
         })
 
         this.assertEqual(expected, result)
     }
 
-    testExtractBasicAuth() {
+    @targets('_referenceEnvironmentVariable')
+    testReferenceEnvironmentVariableWithNestedReferences() {
         const parser = new PostmanParser()
         const mp = new ClassMock(parser, '')
         const input = '{{not}}so{{{{simple}}}}?'
+
+        mp.references = new Immutable.List()
 
         const result = parser._referenceEnvironmentVariable.apply(
             mp,
             [ input ]
         )
 
-        const expected = new EnvironmentReference({
-            referenceName: new Immutable.List([
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        'not'
-                    ])
-                }),
-                'so',
-                new EnvironmentReference({
-                    referenceName: new Immutable.List([
-                        new EnvironmentReference({
-                            referenceName: new Immutable.List([
-                                'simple'
-                            ])
-                        })
-                    ])
-                }),
-                '?'
-            ])
+        const expected = new LateResolutionReference({
+            uri: '#/postman/{{not}}so{{{{simple}}}}?',
+            relative: '#/postman/{{not}}so{{{{simple}}}}?',
+            resolved: true
         })
 
         this.assertEqual(expected, result)
+    }
+
+    @targets('_extractBasicAuth')
+    testExtractBasicAuthWithHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        let helpers = {
+            username: 'username',
+            password: 'password'
+        }
+
+        const expected = new Auth.Basic({
+            username: 'username',
+            password: 'password'
+        })
+
+        const result = parser._extractBasicAuth(null, helpers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractBasicAuth')
+    testExtractBasicAuthWithNoHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        let params = 'dXNlcjoicGFzcyI='
+
+        const expected = new Auth.Basic({
+            raw: 'dXNlcjoicGFzcyI='
+        })
+
+        const result = parser._extractBasicAuth(params)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractDigestAuth')
+    testExtractDigestAuthWithHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        let helpers = {
+            username: 'username',
+            password: 'password'
+        }
+
+        const expected = new Auth.Digest({
+            username: 'username',
+            password: 'password'
+        })
+
+        const result = parser._extractDigestAuth(null, helpers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractDigestAuth')
+    testExtractDigestAuthWithNoHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        let params = `username="user", password='pass', this='garbage'`
+
+        const expected = new Auth.Digest({
+            username: 'user',
+            password: 'pass'
+        })
+
+        const result = parser._extractDigestAuth(params)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAWSS4Auth')
+    testExtractAWSS4AuthWithHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        let helpers = {
+            accessKey: 'key',
+            secretKey: 'secret',
+            region: 'region',
+            service: 'service'
+        }
+
+        const expected = new Auth.AWSSig4({
+            key: 'key',
+            secret: 'secret',
+            region: 'region',
+            service: 'service'
+        })
+
+        const result = parser._extractAWSS4Auth(null, helpers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAWSS4Auth')
+    testExtractAWSS4AuthWithNoHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        const expected = new Auth.AWSSig4()
+
+        const result = parser._extractAWSS4Auth()
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractHawkAuth')
+    testExtractHawkAuthWithHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        let helpers = {
+            algorithm: 'algorithm',
+            hawk_key: 'key',
+            hawk_id: 'id'
+
+        }
+
+        const expected = new Auth.Hawk({
+            algorithm: 'algorithm',
+            key: 'key',
+            id: 'id'
+        })
+
+        const result = parser._extractHawkAuth(null, helpers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractHawkAuth')
+    testExtractHawkAuthWithNoHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        const expected = new Auth.Hawk()
+
+        const result = parser._extractHawkAuth()
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractOAuth1')
+    testExtractOAuth1WithNoHelpers() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        const params =
+            'oauth_consumer_key=";jkahfpi", ' +
+            'oauth_signature_method="SHA1", ' +
+            'oauth_timestamp="17987304390", ' +
+            'oauth_nonce="1097908712", ' +
+            'oauth_version="1", ' +
+            'oauth_signature="pqwiofhqwpois"'
+
+        const expected = new Auth.OAuth1({
+            consumerKey: ';jkahfpi',
+            algorithm: 'SHA1',
+            timestamp: '17987304390',
+            nonce: '1097908712',
+            version: '1',
+            signature: 'pqwiofhqwpois'
+        })
+
+        const result = parser._extractOAuth1(params)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAuth')
+    testExtractAuthCallsBasicAuthBasedOnHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractBasicAuth', () => {
+            return 12
+        })
+
+        const helperType = 'basicAuth'
+
+        const expected = 12
+        const result = parser._extractAuth('scheme content', helperType)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAuth')
+    testExtractAuthCallsDigestAuthBasedOnHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractDigestAuth', () => {
+            return 12
+        })
+
+        const helperType = 'digestAuth'
+
+        const expected = 12
+        const result = parser._extractAuth('scheme content', helperType)
+
+        this.assertEqual(expected, result)
+    }
+
+
+    @targets('_extractAuth')
+    testExtractAuthCallsAWSS4AuthBasedOnHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractAWSS4Auth', () => {
+            return 12
+        })
+
+        const helperType = 'awsSigV4'
+
+        const expected = 12
+        const result = parser._extractAuth('scheme content', helperType)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAuth')
+    testExtractAuthCallsHawkAuthBasedOnHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractHawkAuth', () => {
+            return 12
+        })
+
+        const helperType = 'hawkAuth'
+
+        const expected = 12
+        const result = parser._extractAuth('scheme content', helperType)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAuth')
+    testExtractAuthCallsBasicAuthBasedWithNoHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractBasicAuth', () => {
+            return 12
+        })
+
+        const expected = 12
+        const result = parser._extractAuth('Basic content')
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAuth')
+    testExtractAuthCallsDigestAuthBasedWithNoHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractDigestAuth', () => {
+            return 12
+        })
+
+        const expected = 12
+        const result = parser._extractAuth('Digest content')
+
+        this.assertEqual(expected, result)
+    }
+
+
+    @targets('_extractAuth')
+    testExtractAuthCallsAWSS4AuthBasedWithNoHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractAWSS4Auth', () => {
+            return 12
+        })
+
+        const expected = 12
+        const result = parser._extractAuth('AWS4-HMAC-SHA256 content')
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAuth')
+    testExtractAuthCallsHawkAuthBasedWithNoHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractHawkAuth', () => {
+            return 12
+        })
+
+        const expected = 12
+        const result = parser._extractAuth('Hawk content')
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractAuth')
+    testExtractAuthCallsOAuth1BasedWithNoHelperType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+
+        parser.spyOn('_extractOAuth1', () => {
+            return 12
+        })
+
+        const expected = 12
+        const result = parser._extractAuth('OAuth content')
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createRequest')
+    testCreateRequestCallsExtractParameters() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParameters', () => {
+            return [ 12, 42, 90 ]
+        })
+
+        const req = {
+            id: 65,
+            name: 1242,
+            description: 'desc',
+            method: 'get'
+        }
+
+        parser._createRequest(null, req)
+
+        this.assertEqual(parser.spy._extractParameters.count, 1)
+    }
+
+    @targets('_createRequest')
+    testCreateRequestReturnsARequest() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParameters', () => {
+            return [ 12, 42, 90 ]
+        })
+
+        const req = {
+            id: 65,
+            name: 1242,
+            description: 'desc',
+            method: 'get'
+        }
+
+        const expected = new Request({
+            id: 65,
+            name: 1242,
+            description: 'desc',
+            method: 'get',
+            url: 42,
+            parameters: 12,
+            auths: 90
+        })
+
+        const result = parser._createRequest(null, req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractParameters')
+    testExtractParametersCallsExtractHeaders() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractHeaders', () => {
+            return [ 12, 90 ]
+        })
+
+        parser.spyOn('_extractQueriesFromUrl', () => {
+            return [ 42, 65 ]
+        })
+
+        parser.spyOn('_extractBodyParams', () => {
+            return [ 36, 12 ]
+        })
+
+        const req = {
+            url: 'some.url'
+        }
+
+        parser._extractParameters(req)
+
+        this.assertEqual(parser.spy._extractHeaders.count, 1)
+    }
+
+    @targets('_extractParameters')
+    testExtractParametersCallsExtractQueriesFomUrl() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractHeaders', () => {
+            return [ 12, 90 ]
+        })
+
+        parser.spyOn('_extractQueriesFromUrl', () => {
+            return [ 42, 65 ]
+        })
+
+        parser.spyOn('_extractBodyParams', () => {
+            return [ 36, 12 ]
+        })
+
+        const req = {
+            url: 'some.url'
+        }
+
+        parser._extractParameters(req)
+
+        this.assertEqual(parser.spy._extractQueriesFromUrl.count, 1)
+    }
+
+    @targets('_extractParameters')
+    testExtractParametersCallsExtractBodyParams() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractHeaders', () => {
+            return [ 12, 90 ]
+        })
+
+        parser.spyOn('_extractQueriesFromUrl', () => {
+            return [ 42, 65 ]
+        })
+
+        parser.spyOn('_extractBodyParams', () => {
+            return [ 36, 12 ]
+        })
+
+        const req = {
+            url: 'some.url'
+        }
+
+        parser._extractParameters(req)
+
+        this.assertEqual(parser.spy._extractBodyParams.count, 1)
+    }
+
+    @targets('_extractParameters')
+    testExtractParametersReturnsAParameterContainer() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractHeaders', () => {
+            return [ 125, 90 ]
+        })
+
+        parser.spyOn('_extractQueriesFromUrl', () => {
+            return [ 42, 65 ]
+        })
+
+        parser.spyOn('_extractBodyParams', () => {
+            return [ 36, 12 ]
+        })
+
+        const req = {
+            url: 'some.url'
+        }
+
+        const expected = [
+            new ParameterContainer({
+                queries: 65,
+                headers: 12,
+                body: 36
+            }),
+            42,
+            90
+        ]
+
+        const result = parser._extractParameters(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractHeaders')
+    testExtractHeadersCallsExtractParam() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        parser.spyOn('_extractParam', (k, v) => {
+            return new Parameter({
+                key: k,
+                value: v
+            })
+        })
+
+        const req = {
+            headers:
+                'Content-Type: application/json\n' +
+                'Special-Header: toto\n'
+        }
+
+        parser._extractHeaders(req)
+
+        this.assertEqual(parser.spy._extractParam.count, 2)
+    }
+
+    @targets('_extractHeaders')
+    testExtractHeadersCallsExtractAuthIfAuthorizationHeader() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        parser.spyOn('_extractParam', (k, v) => {
+            return new Parameter({
+                key: k,
+                value: v
+            })
+        })
+
+        parser.spyOn('_extractAuth', () => {
+            return null
+        })
+
+        const req = {
+            headers:
+                'Content-Type: application/json\n' +
+                'Special-Header: toto\n' +
+                'Authorization: Basic dXNlcjoicGFzcyI=\n'
+        }
+
+        parser._extractHeaders(req)
+
+        this.assertEqual(parser.spy._extractAuth.count, 1)
+    }
+
+    @targets('_extractHeaders')
+    testExtractHeadersCallsExtractParamOnlyForNonAuthParams() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        parser.spyOn('_extractParam', (k, v) => {
+            return new Parameter({
+                key: k,
+                value: v
+            })
+        })
+
+        parser.spyOn('_extractAuth', () => {
+            return null
+        })
+
+        const req = {
+            headers:
+                'Content-Type: application/json\n' +
+                'Special-Header: toto\n' +
+                'Authorization: Basic dXNlcjoicGFzcyI=\n'
+        }
+
+        parser._extractHeaders(req)
+
+        this.assertEqual(parser.spy._extractParam.count, 2)
+    }
+
+    @targets('_extractHeaders')
+    testExtractHeadersReturnsExpectedContent() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        parser.spyOn('_extractParam', (k, v) => {
+            return new Parameter({
+                key: k,
+                value: v
+            })
+        })
+
+        const req = {
+            headers:
+                'Content-Type: application/json\n' +
+                'Special-Header: toto\n'
+        }
+
+        const expected = [
+            new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    value: 'application/json'
+                }),
+                new Parameter({
+                    key: 'Special-Header',
+                    value: 'toto'
+                })
+            ]),
+            new Immutable.List()
+        ]
+
+        const result = parser._extractHeaders(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    testExtractQueryFromUrlWithSimpleUrl() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_referenceEnvironmentVariable', (val) => {
+            return val
+        })
+
+        const url = 'http://simple.url.com/path/to/req'
+
+        const expected = [
+            new URL()
+        ]
     }
 
     __loadPostmanFile(fileName, extension = 'json') {

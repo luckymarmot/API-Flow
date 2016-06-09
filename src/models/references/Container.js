@@ -3,6 +3,8 @@ import Immutable from 'immutable'
 import ReferenceCache from './Cache'
 
 export default class ReferenceContainer extends Immutable.Record({
+    id: null,
+    name: null,
     cache: new Immutable.OrderedMap()
 }) {
     create(references) {
