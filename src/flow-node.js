@@ -3,6 +3,7 @@ import path from 'path'
 
 import SwaggerParser from './parsers/swagger/Parser'
 import RAMLParser from './parsers/raml/Parser'
+import PostmanParser from './parsers/postman/Parser'
 
 import SwaggerSerializer from './serializers/swagger/Serializer'
 import RAMLSerializer from './serializers/raml/Serializer'
@@ -37,7 +38,9 @@ class FlowCLI {
     run() {
         let parserMap = {
             swagger: SwaggerParser,
-            raml: RAMLParser
+            raml: RAMLParser,
+            'postman-1': PostmanParser,
+            'postman-2': () => { return new PostmanParser('v2') }
         }
 
         let serializerMap = {
