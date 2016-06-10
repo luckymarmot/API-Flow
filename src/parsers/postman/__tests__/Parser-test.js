@@ -11,9 +11,12 @@ import { ClassMock } from '../../../mocks/PawMocks'
 
 import PostmanParser from '../Parser'
 
+import Constraint from '../../../models/Constraint'
+import URL from '../../../models/URL'
 import Auth from '../../../models/Auth'
 import ReferenceContainer from '../../../models/references/Container'
 import LateResolutionReference from '../../../models/references/LateResolution'
+import Group from '../../../models/Group'
 
 import Context, {
     Parameter,
@@ -24,7 +27,7 @@ import Request from '../../../models/Request'
 @registerTest
 @against(PostmanParser)
 export class TestPostmanParser extends UnitTest {
-    // TODO write tests
+
     @targets('parse')
     testParseFailsOnInvalidJSON() {
         const parser = new PostmanParser()
@@ -1056,6 +1059,22 @@ export class TestPostmanParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_extractQueriesFromUrl')
+    testExtractQueryFromUrlWithSimpleUrlCallsExtractParam() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParam', () => {
+            return new Parameter()
+        })
+
+        const url = 'http://simple.url.com/path/to/req'
+
+        parser._extractQueriesFromUrl(url)
+
+        this.assertEqual(parser.spy._extractParam.count, 3)
+    }
+
+    @targets('_extractQueriesFromUrl')
     testExtractQueryFromUrlWithSimpleUrl() {
         const parser = new ClassMock(new PostmanParser(), '')
 
@@ -1066,8 +1085,875 @@ export class TestPostmanParser extends UnitTest {
         const url = 'http://simple.url.com/path/to/req'
 
         const expected = [
-            new URL()
+            new URL({
+                // inherited from new URL('url')
+                hostname: new Parameter({
+                    key: 'hostname',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'simple.url.com' ])
+                    ])
+                }),
+                // updated by extractQueryFromUrl
+                protocol: new Parameter({
+                    key: 'protocol',
+                    name: 'protocol',
+                    value: 'http',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'http' ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
+                    value: 'simple.url.com',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'simple.url.com' ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    key: 'pathname',
+                    name: 'pathname',
+                    value: '/path/to/req',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '/path/to/req' ])
+                    ])
+                })
+            }),
+            new Immutable.List()
         ]
+
+        const result = parser._extractQueriesFromUrl(url)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractQueriesFromUrl')
+    testExtractQueryFromUrlWithRichUrl() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const url = 'http://{{sub}}.url.{{extension}}/users/{{userID}}'
+
+        const expected = [
+            new URL({
+                // inherited from new URL('url')
+                hostname: new Parameter({
+                    key: 'hostname',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '{{sub}}.url.{{extension}}' ])
+                    ])
+                }),
+                // updated by extractQueryFromUrl
+                protocol: new Parameter({
+                    key: 'protocol',
+                    name: 'protocol',
+                    value: 'http',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'http' ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
+                    value: new LateResolutionReference({
+                        uri: '#/postman/{{sub}}.url.{{extension}}',
+                        relative: '#/postman/{{sub}}.url.{{extension}}',
+                        resolved: true
+                    }),
+                    type: 'reference'
+                }),
+                pathname: new Parameter({
+                    key: 'pathname',
+                    name: 'pathname',
+                    value: new LateResolutionReference({
+                        uri: '#/postman/~1users~1{{userID}}',
+                        relative: '#/postman/~1users~1{{userID}}',
+                        resolved: true
+                    }),
+                    type: 'reference'
+                })
+            }),
+            new Immutable.List()
+        ]
+
+        parser.references = new Immutable.List()
+        const result = parser._extractQueriesFromUrl(url)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractQueriesFromUrl')
+    testExtractQueryFromUrlWithSimpleUrlAndQueryCallsExtractQueryComponent() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractQueryFromComponent', () => {
+            return new Parameter()
+        })
+
+        const url =
+            'http://simple.url.com/path/to/req' +
+            '?userId=2&songId={{songId}}'
+
+        parser.references = new Immutable.List()
+        parser._extractQueriesFromUrl(url)
+
+        this.assertEqual(parser.spy._extractQueryFromComponent.count, 2)
+    }
+
+    @targets('_extractQueriesFromUrl')
+    testExtractQueryFromUrlWithSimpleUrlAndQuery() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const url =
+            'http://simple.url.com/path/to/req' +
+            '?userId=2&songId={{songId}}'
+
+        const expected = [
+            new URL({
+                // inherited from new URL('url')
+                hostname: new Parameter({
+                    key: 'hostname',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'simple.url.com' ])
+                    ])
+                }),
+                search: new Parameter({
+                    key: 'search',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '?userId=2&songId={{songId}}' ])
+                    ])
+                }),
+                // updated by extractQueryFromUrl
+                protocol: new Parameter({
+                    key: 'protocol',
+                    name: 'protocol',
+                    value: 'http',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'http' ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
+                    value: 'simple.url.com',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'simple.url.com' ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    key: 'pathname',
+                    name: 'pathname',
+                    value: '/path/to/req',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '/path/to/req' ])
+                    ])
+                })
+            }),
+            new Immutable.List([
+                new Parameter({
+                    key: 'userId',
+                    name: 'userId',
+                    value: '2',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '2' ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'songId',
+                    name: 'songId',
+                    value: new LateResolutionReference({
+                        uri: '#/postman/{{songId}}',
+                        relative: '#/postman/{{songId}}',
+                        resolved: true
+                    }),
+                    type: 'reference'
+                })
+            ])
+        ]
+
+        parser.references = new Immutable.List()
+        const result = parser._extractQueriesFromUrl(url)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_escapeURIFragment')
+    testEscapeURIFragment() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const fragment = '/some/complex~fragment~'
+
+        const expected = '~1some~1complex~0fragment~0'
+
+        const result = parser._escapeURIFragment(fragment)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_unescapeURIFragment')
+    testUnescapeURIFragment() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const fragment = '~1some~1complex~0fragment~0'
+
+        const expected = '/some/complex~fragment~'
+
+        const result = parser._unescapeURIFragment(fragment)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractQueryFromComponent')
+    testExtractQueryFromComponentCallsExtractParam() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser._extractQueryFromComponent('key=value')
+
+        this.assertEqual(parser.spy._extractParam.count, 1)
+    }
+
+    @targets('_extractQueryFromComponent')
+    testExtractQueryFromComponentDecodesURIComponent() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser._extractQueryFromComponent('key%20with%20spaces=spaced%20value')
+
+        this.assertEqual(parser.spy._extractParam.count, 1)
+        this.assertEqual(
+            parser.spy._extractParam.calls[0],
+            [ 'key with spaces', 'spaced value' ]
+        )
+    }
+
+    @targets('_extractQueryFromComponent')
+    testExtractQueryFromComponentPassesNullIFNoValueSet() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser._extractQueryFromComponent('key%20with%20spaces')
+
+        this.assertEqual(parser.spy._extractParam.count, 1)
+        this.assertEqual(
+            parser.spy._extractParam.calls[0],
+            [ 'key with spaces', null ]
+        )
+    }
+
+    @targets('_extractQueryFromComponent')
+    testExtractQueryFromComponentPassesEmptyStringIFEqualSignIsSet() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser._extractQueryFromComponent('key%20with%20spaces=')
+
+        this.assertEqual(parser.spy._extractParam.count, 1)
+        this.assertEqual(
+            parser.spy._extractParam.calls[0],
+            [ 'key with spaces', '' ]
+        )
+    }
+
+    @targets('_extractParam')
+    testExtractParamWithSimpleParamCallsReferenceEnvironmentVariable() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser._extractParam('key', 'value')
+
+        this.assertEqual(parser.spy._referenceEnvironmentVariable.count, 2)
+        this.assertEqual(
+            parser.spy._referenceEnvironmentVariable.calls,
+            [ [ 'key' ], [ 'value' ] ]
+        )
+    }
+
+    @targets('_extractParam')
+    testExtractParamWithSimpleParamReturnsExpectedParam() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const expected = new Parameter({
+            key: 'key',
+            name: 'key',
+            value: 'value',
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum([ 'value' ])
+            ])
+        })
+
+        const result = parser._extractParam('key', 'value')
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractParam')
+    testExtractParamWithReferenceParamReturnsExpectedParam() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const expected = new Parameter({
+            key: 'key',
+            name: 'key',
+            value: new LateResolutionReference({
+                uri: '#/postman/{{userId}}',
+                relative: '#/postman/{{userId}}',
+                resolved: true
+            }),
+            type: 'reference'
+        })
+
+        parser.references = new Immutable.List()
+        const result = parser._extractParam('key', '{{userId}}')
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractBodyParams')
+    testExtractBodyParamsWithRawDataMode() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParam', () => {
+            return new Parameter()
+        })
+
+        const req = {
+            dataMode: 'raw',
+            data: 'some content'
+        }
+
+        const headers = new Immutable.List()
+
+        const expected = [
+            new Immutable.List([ new Parameter() ]),
+            new Immutable.List()
+        ]
+
+        const result = parser._extractBodyParams(req, headers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractBodyParams')
+    testExtractBodyParamsWithUrlencodedDataMode() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParam', () => {
+            return new Parameter()
+        })
+
+        const req = {
+            dataMode: 'urlencoded',
+            data: [
+                {
+                    key: 'code',
+                    value: 'xWnkliVQJURqB2x1'
+                },
+                {
+                    key: 'grant_type',
+                    value: 'authorization_code'
+                }
+            ]
+        }
+
+        const headers = new Immutable.List()
+
+        const expected = [
+            new Immutable.List([
+                new Parameter(),
+                new Parameter()
+            ]),
+            new Immutable.List([
+                new Parameter()
+            ])
+        ]
+
+        const result = parser._extractBodyParams(req, headers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractBodyParams')
+    testExtractBodyParamsWithUrlEncodedDataModeCallsExtractContentType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParam', () => {
+            return new Parameter()
+        })
+
+        const req = {
+            dataMode: 'urlencoded',
+            data: [
+                {
+                    key: 'code',
+                    value: 'xWnkliVQJURqB2x1'
+                },
+                {
+                    key: 'grant_type',
+                    value: 'authorization_code'
+                }
+            ]
+        }
+
+        const headers = new Immutable.List()
+
+        parser._extractBodyParams(req, headers)
+
+        this.assertEqual(parser.spy._extractContentType.count, 1)
+    }
+
+    @targets('_extractBodyParams')
+    testExtractBodyParamsWithUrlEncodedDataModeAddsHeaderIfNoContentTypeOnly() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParam', () => {
+            return new Parameter()
+        })
+
+        parser.spyOn('_extractContentType', () => {
+            return 'application/json'
+        })
+
+        const req = {
+            dataMode: 'urlencoded',
+            data: [
+                {
+                    key: 'code',
+                    value: 'xWnkliVQJURqB2x1'
+                },
+                {
+                    key: 'grant_type',
+                    value: 'authorization_code'
+                }
+            ]
+        }
+
+        const headers = new Immutable.List()
+
+        const expected = [
+            new Immutable.List([
+                new Parameter(),
+                new Parameter()
+            ]),
+            new Immutable.List([])
+        ]
+
+        const result = parser._extractBodyParams(req, headers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractBodyParams')
+    testExtractBodyParamsWithParamsDataMode() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParam', () => {
+            return new Parameter()
+        })
+
+        const req = {
+            dataMode: 'params',
+            data: [
+                {
+                    key: 'code',
+                    value: 'xWnkliVQJURqB2x1'
+                },
+                {
+                    key: 'grant_type',
+                    value: 'authorization_code'
+                }
+            ]
+        }
+
+        const headers = new Immutable.List()
+
+        const expected = [
+            new Immutable.List([
+                new Parameter(),
+                new Parameter()
+            ]),
+            new Immutable.List([
+                new Parameter()
+            ])
+        ]
+
+        const result = parser._extractBodyParams(req, headers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractBodyParams')
+    testExtractBodyParamsWithParamsDataModeCallsExtractContentType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParam', () => {
+            return new Parameter()
+        })
+
+        const req = {
+            dataMode: 'params',
+            data: [
+                {
+                    key: 'code',
+                    value: 'xWnkliVQJURqB2x1'
+                },
+                {
+                    key: 'grant_type',
+                    value: 'authorization_code'
+                }
+            ]
+        }
+
+        const headers = new Immutable.List()
+
+        parser._extractBodyParams(req, headers)
+
+        this.assertEqual(parser.spy._extractContentType.count, 1)
+    }
+
+    @targets('_extractBodyParams')
+    testExtractBodyParamsWithUrlEncodedDataModeAddsHeaderIfNoContentTypeOnly() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        parser.spyOn('_extractParam', () => {
+            return new Parameter()
+        })
+
+        parser.spyOn('_extractContentType', () => {
+            return 'application/json'
+        })
+
+        const req = {
+            dataMode: 'urlencoded',
+            data: [
+                {
+                    key: 'code',
+                    value: 'xWnkliVQJURqB2x1'
+                },
+                {
+                    key: 'grant_type',
+                    value: 'authorization_code'
+                }
+            ]
+        }
+
+        const headers = new Immutable.List()
+
+        const expected = [
+            new Immutable.List([
+                new Parameter(),
+                new Parameter()
+            ]),
+            new Immutable.List([])
+        ]
+
+        const result = parser._extractBodyParams(req, headers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractContentType')
+    testExtractContentTypeWithNoContentType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const headers = new Immutable.List([
+            new Parameter({
+                key: 'api-key',
+                value: 12
+            })
+        ])
+
+        const expected = null
+
+        const result = parser._extractContentType(headers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractContentType')
+    testExtractContentTypeWithContentType() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const headers = new Immutable.List([
+            new Parameter({
+                key: 'api-key',
+                value: 12
+            }),
+            new Parameter({
+                key: 'Content-Type',
+                value: 'application/json',
+                type: 'string'
+            })
+        ])
+
+        const expected = 'application/json'
+
+        const result = parser._extractContentType(headers)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_putRequestsInGroup')
+    testPutRequestsInGroupPutsAllIdsInGroup() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const group = new Group({
+            name: 'hello'
+        })
+
+        const ids = [ 0, 1 ]
+
+        const requests = {
+            0: new Request({
+                id: 0,
+                method: 'get'
+            }),
+            1: new Request({
+                id: 1,
+                method: 'post'
+            })
+        }
+
+        const expected = new Group({
+            name: 'hello',
+            children: new Immutable.OrderedMap({
+                0: new Request({
+                    id: 0,
+                    method: 'get'
+                }),
+                1: new Request({
+                    id: 1,
+                    method: 'post'
+                })
+            })
+        })
+
+        const result = parser._putRequestsInGroup(group, ids, requests)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_putRequestsInGroup')
+    testPutRequestsInGroupPutsOnlyIdsInGroup() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const group = new Group({
+            name: 'hello'
+        })
+
+        const ids = [ 0 ]
+
+        const requests = {
+            0: new Request({
+                id: 0,
+                method: 'get'
+            }),
+            1: new Request({
+                id: 1,
+                method: 'post'
+            })
+        }
+
+        const expected = new Group({
+            name: 'hello',
+            children: new Immutable.OrderedMap({
+                0: new Request({
+                    id: 0,
+                    method: 'get'
+                })
+            })
+        })
+
+        const result = parser._putRequestsInGroup(group, ids, requests)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_putRequestsInGroup')
+    testPutRequestsInGroupIgnoresMissingIds() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const group = new Group({
+            name: 'hello'
+        })
+
+        const ids = [ 0, 2 ]
+
+        const requests = {
+            0: new Request({
+                id: 0,
+                method: 'get'
+            }),
+            1: new Request({
+                id: 1,
+                method: 'post'
+            })
+        }
+
+        const expected = new Group({
+            name: 'hello',
+            children: new Immutable.OrderedMap({
+                0: new Request({
+                    id: 0,
+                    method: 'get'
+                })
+            })
+        })
+
+        const result = parser._putRequestsInGroup(group, ids, requests)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_createGroupFromCollection')
+    testCreateGroupFromCollectionWithoutFoldersOrOrder() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const collection = {
+            id: 0,
+            name: 'collection name'
+        }
+
+        const requests = {
+            0: new Request({
+                id: 0,
+                method: 'get'
+            }),
+            1: new Request({
+                id: 1,
+                method: 'post'
+            })
+        }
+
+        const expected = new Group({
+            id: 0,
+            name: 'collection name',
+            children: new Immutable.OrderedMap({
+                0: new Request({
+                    id: 0,
+                    method: 'get'
+                }),
+                1: new Request({
+                    id: 1,
+                    method: 'post'
+                })
+            })
+        })
+
+        const result = parser._createGroupFromCollection(collection, requests)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_createGroupFromCollection')
+    testCreateGroupFromCollectionWithOrder() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const collection = {
+            id: 0,
+            name: 'collection name',
+            order: [ 1, 0 ]
+        }
+
+        const requests = {
+            0: new Request({
+                id: 0,
+                method: 'get'
+            }),
+            1: new Request({
+                id: 1,
+                method: 'post'
+            })
+        }
+
+        const expected = new Group({
+            id: 0,
+            name: 'collection name',
+            children: new Immutable.OrderedMap({
+                1: new Request({
+                    id: 1,
+                    method: 'post'
+                }),
+                0: new Request({
+                    id: 0,
+                    method: 'get'
+                })
+            })
+        })
+
+        const result = parser._createGroupFromCollection(collection, requests)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_createGroupFromCollection')
+    testCreateGroupFromCollectionWithFolders() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const collection = {
+            id: 0,
+            name: 'collection name',
+            folders: [
+                {
+                    id: 12,
+                    name: 'folder #12',
+                    order: [ 0 ]
+                },
+                {
+                    id: 42,
+                    name: 'folder #42',
+                    order: [ 1 ]
+                }
+            ]
+        }
+
+        const requests = {
+            0: new Request({
+                id: 0,
+                method: 'get'
+            }),
+            1: new Request({
+                id: 1,
+                method: 'post'
+            })
+        }
+
+        const expected = new Group({
+            id: 0,
+            name: 'collection name',
+            children: new Immutable.OrderedMap({
+                12: new Group({
+                    id: 12,
+                    name: 'folder #12',
+                    children: new Immutable.OrderedMap({
+                        0: new Request({
+                            id: 0,
+                            method: 'get'
+                        })
+                    })
+                }),
+                42: new Group({
+                    id: 42,
+                    name: 'folder #42',
+                    children: new Immutable.OrderedMap({
+                        1: new Request({
+                            id: 1,
+                            method: 'post'
+                        })
+                    })
+                })
+            })
+        })
+
+        const result = parser._createGroupFromCollection(collection, requests)
+
+        this.assertJSONEqual(expected, result)
     }
 
     __loadPostmanFile(fileName, extension = 'json') {

@@ -498,7 +498,7 @@ export default class SwaggerSerializer extends BaseSerializer {
     }
 
     _unescapeURIFragment(uriFragment) {
-        return uriFragment.replace('~1', '/').replace('~0', '~')
+        return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
     }
 
     _formatDefinitions(context) {

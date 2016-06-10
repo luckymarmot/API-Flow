@@ -10,13 +10,14 @@ import Constraint from '../../models/Constraint'
 import ReferenceContainer from '../../models/references/Container'
 import LateResolutionReference from '../../models/references/LateResolution'
 
+import URL from '../../models/URL'
 import Group from '../../models/Group'
 import Request from '../../models/Request'
 
 import Auth from '../../models/Auth'
 
 export default class PostmanParser {
-    contructor() {
+    constructor() {
         this.context = new Context()
         this.references = new Immutable.List()
     }
@@ -146,8 +147,8 @@ export default class PostmanParser {
         if (typeof string === 'string') {
             if (string.match(/{{[^{}]*}}/)) {
                 let ref = new LateResolutionReference({
-                    uri: '#/postman/' + string,
-                    relative: '#/postman/' + string,
+                    uri: '#/postman/' + this._escapeURIFragment(string),
+                    relative: '#/postman/' + this._escapeURIFragment(string),
                     resolved: true
                 })
                 this.references = this.references.push(ref)
@@ -426,18 +427,19 @@ export default class PostmanParser {
         ]
     }
 
+
     _extractQueriesFromUrl(url) {
         let _url = new URL(url)
         let queries = new Immutable.List()
 
-        let protocol = this._referenceEnvironmentVariable(
-            _url.generateParam('protocol')
+        let protocol = this._extractParam(
+            'protocol', _url.generateParam('protocol')
         )
-        let host = this._referenceEnvironmentVariable(
-            _url.generateParam('host')
+        let host = this._extractParam(
+            'host', _url.generateParam('host')
         )
-        let path = this._referenceEnvironmentVariable(
-            _url.generateParam('pathname')
+        let path = this._extractParam(
+            'pathname', _url.generateParam('pathname')
         )
 
         _url = _url
@@ -457,6 +459,14 @@ export default class PostmanParser {
         }
 
         return [ _url, queries ]
+    }
+
+    _escapeURIFragment(uriFragment) {
+        return uriFragment.replace(/~/g, '~0').replace(/\//g, '~1')
+    }
+
+    _unescapeURIFragment(uriFragment) {
+        return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
     }
 
     _extractQueryFromComponent(component) {
@@ -562,8 +572,7 @@ export default class PostmanParser {
             if (req) {
                 _group = _group.setIn(
                     [
-                        'children', req.get('name') ||
-                        req.get('url')
+                        'children', req.get('id')
                     ],
                     req
                 )
@@ -593,7 +602,7 @@ export default class PostmanParser {
                     )
 
                     rootGroup = rootGroup
-                        .setIn([ 'children', group.get('name') ], group)
+                        .setIn([ 'children', group.get('id') ], group)
                 }
             }
 

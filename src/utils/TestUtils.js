@@ -177,7 +177,7 @@ function targets(name) {
     }
 }
 
-function against(Against, ignores = []) {
+function against(Against, ignores = [ 'constructor' ]) {
     return function(Class) {
         Class.__against = Against
         Class.prototype.testAllMethodsAreTested = () => {
@@ -188,8 +188,11 @@ function against(Against, ignores = []) {
             let missingTests = []
             for (let name of names) {
                 if (
-                    typeof Class.__targets[name] === 'undefined' &&
-                    ignores.indexOf(name) < 0
+                    ignores.indexOf(name) < 0 &&
+                    (
+                        typeof Class.__targets === 'undefined' ||
+                        typeof Class.__targets[name] === 'undefined'
+                    )
                 ) {
                     missingTests.push(name)
                 }
