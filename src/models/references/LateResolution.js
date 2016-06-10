@@ -16,7 +16,7 @@ export default class LateResolutionReference extends Reference {
 
         let replacer = this._replaceRef(references, counter)
 
-        while(match && counter.resolutionCount < maxResolutions) {
+        while (match && counter.resolutionCount < maxResolutions) {
             ref = ref.replace(/({{[^{}]*}})/, replacer)
             match = ref.match(/{{[^{}]*}}/)
         }

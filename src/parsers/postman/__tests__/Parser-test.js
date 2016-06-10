@@ -27,7 +27,6 @@ import Request from '../../../models/Request'
 @registerTest
 @against(PostmanParser)
 export class TestPostmanParser extends UnitTest {
-
     @targets('parse')
     testParseFailsOnInvalidJSON() {
         const parser = new PostmanParser()
