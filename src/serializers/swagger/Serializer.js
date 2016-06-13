@@ -410,6 +410,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                 param['x-format'] = format
             }
         }
+
         return param
     }
 
@@ -525,8 +526,13 @@ export default class SwaggerSerializer extends BaseSerializer {
                     }
                     let ref = container.resolve(key).get('value')
 
-                    // object assignement
-                    Object.assign(subTree, ref)
+                    if (typeof ref === 'string') {
+                        subTree = ref
+                    }
+                    else {
+                        // object assignement
+                        Object.assign(subTree, ref)
+                    }
                 }
             })
         })

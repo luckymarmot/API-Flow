@@ -12,7 +12,7 @@ import PostmanSerializer from './serializers/postman/Serializer'
 import ContextResolver from './resolvers/ContextResolver'
 import NodeEnvironment from './models/environments/NodeEnvironment'
 
-class FlowCLI {
+export default class FlowCLI {
     constructor(args) {
         this.processArguments(args)
     }
@@ -108,5 +108,4 @@ class FlowCLI {
     }
 }
 
-let cli = new FlowCLI(process.argv)
-cli.run()
+console.error('entry run');

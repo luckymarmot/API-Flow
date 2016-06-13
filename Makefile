@@ -14,6 +14,9 @@ build:
 build-web:
 	npm run compile-web
 
+build-node:
+	npm run compile-node
+
 clean:
 	rm -Rf ./lib/
 

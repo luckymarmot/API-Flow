@@ -16,7 +16,7 @@ export class Parameter extends Immutable.Record({
     internals: Immutable.List(),
     externals: Immutable.List()
 }) {
-    getJSONSchema(useFaker = true) {
+    getJSONSchema(useFaker = true, replaceRefs = true) {
         let type = this.get('type')
         let format = this.get('format')
 
@@ -95,6 +95,10 @@ export class Parameter extends Immutable.Record({
             Object.assign(constraintSet, constraint)
         }
 
+        if (replaceRefs) {
+            constraintSet = this._replaceRefs(constraintSet)
+        }
+
         return constraintSet
     }
 
@@ -109,6 +113,8 @@ export class Parameter extends Immutable.Record({
         }
         constraintSet = JSON.parse(JSON.stringify(constraintSet))
 
+        constraintSet = this._replaceRefs(constraintSet)
+
         jsf.format('sequence', function(gen, schema) {
             let result = ''
             for (let item of schema['x-sequence']) {
@@ -117,7 +123,42 @@ export class Parameter extends Immutable.Record({
             return result
         })
 
-        return jsf(constraintSet)
+        let generated = jsf(constraintSet)
+        return generated
+    }
+
+    _replaceRefs(obj) {
+        if (typeof obj !== 'object' || obj === null) {
+            return obj
+        }
+
+        if (obj.$ref) {
+            obj.enum = [
+                this._unescapeURIFragment(obj.$ref.split('/').slice(-1)[0])
+            ]
+            obj.type = 'string'
+            delete obj.$ref
+        }
+
+        if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; i += 1) {
+                let content = obj[i]
+                obj[i] = this._replaceRefs(content)
+            }
+        }
+        else {
+            for (let key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    obj[key] = ::this._replaceRefs(obj[key])
+                }
+            }
+        }
+
+        return obj
+    }
+
+    _unescapeURIFragment(uriFragment) {
+        return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
     }
 
     validate(value) {

@@ -23,13 +23,13 @@ export default class PostmanParser {
     }
 
     // @tested
-    parse(string) {
+    parse(item) {
         let collections = []
         let environments = []
 
         let obj
         try {
-            obj = JSON.parse(string)
+            obj = JSON.parse(item.content)
         }
         catch (e) {
             throw new Error('Invalid Postman file (not a valid JSON)')

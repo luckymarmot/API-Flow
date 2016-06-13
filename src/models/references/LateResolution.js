@@ -16,7 +16,13 @@ export default class LateResolutionReference extends Reference {
 
         let replacer = this._replaceRef(references, counter)
 
-        while (match && counter.resolutionCount < maxResolutions) {
+        let previous
+        while (
+            match &&
+            counter.resolutionCount < maxResolutions &&
+            ref !== previous
+        ) {
+            previous = ref
             ref = ref.replace(/({{[^{}]*}})/, replacer)
             match = ref.match(/{{[^{}]*}}/)
         }
@@ -26,7 +32,20 @@ export default class LateResolutionReference extends Reference {
 
     _replaceRef(references, counter) {
         return (match, group) => {
-            let value = references.resolve('#/postman/' + group).get('value')
+            let value
+            let ref
+            if (this.get('uri') === '#/postman/' + group) {
+                ref = this.get('value')
+            }
+            else {
+                ref = references.resolve('#/postman/' + group)
+            }
+            if (ref) {
+                value = ref.get('value')
+            }
+            else {
+                value = group
+            }
             counter.resolutionCount += 1
             return value
         }

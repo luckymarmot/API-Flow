@@ -27,10 +27,10 @@ export default class PostmanParser {
     }
 
     // @tested
-    parse(string) {
+    parse(item) {
         let obj
         try {
-            obj = JSON.parse(string)
+            obj = JSON.parse(item.content)
         }
         catch (e) {
             throw new Error('Invalid Postman file (not a valid JSON)')
@@ -127,7 +127,7 @@ export default class PostmanParser {
             }
         })
 
-        return group.set('children', children)
+        return group.set('children', _children)
     }
 
     _extractGroupFromItem(item) {
@@ -173,7 +173,7 @@ export default class PostmanParser {
         let auths = this._extractAuths(_req.auth || null)
         let method = _req.method || 'GET'
         let params = this._extractParams(_req, queries, paths)
-        let responses = this._extractResponses(item.response || null)
+        // let responses = this._extractResponses(item.response || null)
 
         return new Request({
             id: id,
@@ -182,8 +182,8 @@ export default class PostmanParser {
             url: url,
             auths: auths,
             method: method,
-            parameters: params,
-            responses: responses
+            parameters: params
+            // responses: responses
         })
     }
 
@@ -362,9 +362,13 @@ export default class PostmanParser {
             ])
         }
 
+        let format = null
         let type = 'string'
         if (value instanceof LateResolutionReference) {
             type = 'reference'
+        }
+        else if (value instanceof Immutable.List) {
+            format = 'string'
         }
         else {
             internals = new Immutable.List([
@@ -377,6 +381,7 @@ export default class PostmanParser {
             name: name,
             value: value,
             type: type,
+            format: format,
             internals: internals
         })
     }
@@ -403,6 +408,10 @@ export default class PostmanParser {
     }
 
     _extractAuths(auth) {
+        if (!auth) {
+            return new Immutable.List()
+        }
+
         let type = auth.type || null
 
         let typeMap = {
@@ -512,7 +521,7 @@ export default class PostmanParser {
     }
 
     _extractParams(req, queries, paths) {
-        let [ _headers ] = this._extractHeaders(req)
+        let _headers = this._extractHeaders(req)
         let [ body, headers ] = this._extractBodyParams(req.body, _headers)
 
         let container = new ParameterContainer({
@@ -536,7 +545,7 @@ export default class PostmanParser {
 
     _extractHeadersFromObject(headers) {
         let _headers = []
-        for (let header of headers) {
+        for (let header of headers || []) {
             let param = this._extractParam(header.key, header.value)
             _headers.push(param)
         }

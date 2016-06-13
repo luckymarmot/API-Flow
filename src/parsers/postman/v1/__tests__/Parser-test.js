@@ -1959,6 +1959,13 @@ export class TestPostmanParser extends UnitTest {
 
     __loadPostmanFile(fileName, extension = 'json') {
         const path = __dirname + '/samples/' + fileName + '.' + extension
-        return fs.readFileSync(path).toString()
+        const item = {
+            file: {
+                name: fileName + '.' + extension,
+                path: __dirname + '/samples/'
+            },
+            content: fs.readFileSync(path).toString()
+        }
+        return item
     }
 }
