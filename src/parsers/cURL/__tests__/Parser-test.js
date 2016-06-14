@@ -2,12 +2,22 @@ import { UnitTest, registerTest } from '../../../utils/TestUtils'
 import Immutable from 'immutable'
 
 import CurlParser from '../Parser'
+
+import Request from '../../../models/Request'
+
+import Constraint from '../../../models/Constraint'
+import URL from '../../../models/URL'
+import {
+    Parameter,
+    ParameterContainer
+} from '../../../models/Core'
+import ExoticReference from '../../../models/references/Exotic'
+import Auth from '../../../models/Auth'
+
 import {
     KeyValue,
-    FileReference,
-    Request
+    FileReference
 } from '../../../models/RequestContext'
-import Auth from '../../../models/Auth'
 
 @registerTest
 export class TestCurlParser extends UnitTest {
@@ -16,7 +26,8 @@ export class TestCurlParser extends UnitTest {
     testSimple() {
         this.__testRequest('curl http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             }))
     }
@@ -24,7 +35,8 @@ export class TestCurlParser extends UnitTest {
     testSimpleUppercaseCURL() {
         this.__testRequest('curl http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             }))
     }
@@ -32,7 +44,8 @@ export class TestCurlParser extends UnitTest {
     testSimpleNoHttp() {
         this.__testRequest('curl httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             }))
     }
@@ -40,7 +53,8 @@ export class TestCurlParser extends UnitTest {
     testSimpleHttps() {
         this.__testRequest('curl https://httpbin.org/get',
             new Request({
-                url: 'https://httpbin.org/get',
+                url: new URL('https://httpbin.org/get'),
+                name: 'https://httpbin.org/get',
                 method: 'GET'
             }))
     }
@@ -49,8 +63,31 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl "http://httpbin.org/get?key=value&key2=value2"',
             new Request({
-                url: 'http://httpbin.org/get?key=value&key2=value2',
-                method: 'GET'
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
+                method: 'GET',
+                parameters: new ParameterContainer({
+                    queries: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'key2',
+                            name: 'key2',
+                            value: 'value2',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value2' ])
+                            ])
+                        })
+                    ])
+                })
             })
         )
     }
@@ -63,7 +100,8 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl --url http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             })
         )
@@ -77,7 +115,8 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl -m 3 http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
                 timeout: 3
             })
@@ -88,7 +127,8 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl --max-time 42 http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
                 timeout: 42
             })
@@ -99,7 +139,8 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl --max-time 0.1 http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
                 timeout: 0.1
             })
@@ -114,7 +155,8 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -X GET',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             })
         )
@@ -123,7 +165,8 @@ export class TestCurlParser extends UnitTest {
     testMethodPOSTAfter() {
         this.__testRequest('curl http://httpbin.org/get -X POST',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST'
             }))
     }
@@ -131,7 +174,8 @@ export class TestCurlParser extends UnitTest {
     testMethodPOSTBefore() {
         this.__testRequest('curl -X POST http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST'
             }))
     }
@@ -140,7 +184,8 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -X PATCH -X POST',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST'
             })
         )
@@ -150,7 +195,8 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --request POST',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST'
             })
         )
@@ -159,7 +205,8 @@ export class TestCurlParser extends UnitTest {
     testMethodHEAD() {
         this.__testRequest('curl http://httpbin.org/get -X HEAD',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'HEAD'
             }))
     }
@@ -167,7 +214,8 @@ export class TestCurlParser extends UnitTest {
     testMethodGETOneToken() {
         this.__testRequest('curl http://httpbin.org/get -XGET',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             }))
     }
@@ -175,7 +223,8 @@ export class TestCurlParser extends UnitTest {
     testMethodPOSTOneToken() {
         this.__testRequest('curl http://httpbin.org/post -XPOST',
             new Request({
-                url: 'http://httpbin.org/post',
+                url: new URL('http://httpbin.org/post'),
+                name: 'http://httpbin.org/post',
                 method: 'POST'
             }))
     }
@@ -187,7 +236,8 @@ export class TestCurlParser extends UnitTest {
     testHeadOption() {
         this.__testRequest('curl -I http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'HEAD'
             }))
     }
@@ -195,7 +245,8 @@ export class TestCurlParser extends UnitTest {
     testHeadOptionLong() {
         this.__testRequest('curl --head http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'HEAD'
             }))
     }
@@ -204,7 +255,8 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl -I -X GET http://httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             })
         )
@@ -218,10 +270,21 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -H X-Paw:value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'X-Paw',
+                            name: 'X-Paw',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             })
         )
@@ -232,11 +295,30 @@ export class TestCurlParser extends UnitTest {
             `curl http://httpbin.org/get -H X-Paw:value --header \\
             X-Paw-2:\\ my-value'`,
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value',
-                    'X-Paw-2': 'my-value'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'X-Paw',
+                            name: 'X-Paw',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'X-Paw-2',
+                            name: 'X-Paw-2',
+                            value: 'my-value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'my-value' ])
+                            ])
+                        })
+                    ])
                 })
             })
         )
@@ -247,11 +329,30 @@ export class TestCurlParser extends UnitTest {
             `curl http://httpbin.org/get -H x-paw:value \\
             --header CONTENT-TYPE:application/json`,
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'X-Paw': 'value',
-                    'Content-Type': 'application/json'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'X-Paw',
+                            name: 'X-Paw',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/json',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'application/json' ])
+                            ])
+                        })
+                    ])
                 })
             })
         )
@@ -265,12 +366,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -F key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
+                })
             })
         )
     }
@@ -279,12 +401,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -Fkey=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -292,12 +435,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -F key=',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: null })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -305,12 +469,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -X PATCH -F key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'PATCH',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -318,12 +503,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -F key=value -X PATCH',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'PATCH',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -331,13 +537,42 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -F key=value --form name=Paw',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' }),
-                    new KeyValue({ key: 'name', value: 'Paw' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'name',
+                            name: 'name',
+                            value: 'Paw',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'Paw' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -345,12 +580,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -F $\'key=value;type=text/plain\'',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -358,18 +614,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -F key=@filename.txt',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({
-                        key: 'key',
-                        value: new FileReference({
-                            filepath: 'filename.txt',
-                            convert: null
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
                         })
-                    })
-                ])
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
+                })
             }))
     }
 
@@ -377,18 +648,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -F "key=<filename.txt"',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({
-                        key: 'key',
-                        value: new FileReference({
-                            filepath: 'filename.txt',
-                            convert: null
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
                         })
-                    })
-                ])
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
+                })
             }))
     }
 
@@ -400,12 +686,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --form-string key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -413,12 +720,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --form-string key=',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: '' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: '',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -426,12 +754,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --form-string key=@value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: '@value' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: '@value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '@value' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -439,12 +788,33 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --form-string $\'key=<value\'',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: '<value' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: '<value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '<value' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -453,12 +823,33 @@ export class TestCurlParser extends UnitTest {
             `curl http://httpbin.org/get --form-string \\
             $\'key=value;type=text/plain\'`,
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'formData',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value;type=text/plain' })
-                ])
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'multipart/form-data',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'multipart/form-data' ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value;type=text/plain',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value;type=text/plain' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -470,14 +861,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             })
         )
@@ -487,15 +898,43 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d key=value --data key2=value2',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' }),
-                    new KeyValue({ key: 'key2', value: 'value2' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'key2',
+                            name: 'key2',
+                            value: 'value2',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value2' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -504,14 +943,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -X PATCH -d key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'PATCH',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -520,14 +979,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d key=value -X PATCH',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'PATCH',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -536,14 +1015,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d ke%20y=val%20ue',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'ke y', value: 'val ue' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'ke y',
+                            name: 'ke y',
+                            value: 'val ue',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'val ue' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -552,28 +1051,71 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d key=',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: '' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: '',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
 
+    // @NOTE(Behavior was changed to match curl http://httpbin.org/post -d key)
     testFormDataKeyValueNoValue() {
         this.__testRequest(
             'curl http://httpbin.org/get -d key',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'plain',
-                body: 'key',
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -582,13 +1124,42 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -dcontent',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'content',
+                            name: 'content',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'plain',
                 body: 'content',
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
@@ -596,15 +1167,43 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d "key=value&key2=value2"',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' }),
-                    new KeyValue({ key: 'key2', value: 'value2' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'key2',
+                            name: 'key2',
+                            value: 'value2',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value2' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -613,15 +1212,43 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d "ke%20y=value&key2=value%2F2"',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'ke y', value: 'value' }),
-                    new KeyValue({ key: 'key2', value: 'value/2' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'ke y',
+                            name: 'ke y',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'key2',
+                            name: 'key2',
+                            value: 'value/2',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value/2' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -630,14 +1257,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d $\'key=v\\x61lue\'',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -646,16 +1293,43 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -d \'{"key":"va=l&u=e"}\'',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: '{"key":"va', value: 'l' }),
-                    new KeyValue({ key: 'u', value: 'e"}' })
-                ]),
-                bodyString: '{"key":"va=l&u=e"}',
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: '{"key":"va',
+                            name: '{"key":"va',
+                            value: 'l',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'l' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'u',
+                            name: 'u',
+                            value: 'e"}',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'e"}' ])
+                            ])
+                        })
+                    ])
                 })
             }), true)
     }
@@ -664,29 +1338,79 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-ascii key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
 
+    // @NOTE
     testFormDataKeyValueDataAsciiPlain() {
         this.__testRequest(
             'curl http://httpbin.org/get --data-ascii sometext',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'sometext',
+                            name: 'sometext',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'plain',
                 body: 'sometext',
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
@@ -694,29 +1418,79 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-binary key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
 
+    // @NOTE
     testFormDataKeyValueDataBinaryPlain() {
         this.__testRequest(
             'curl http://httpbin.org/get --data-binary sometext',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'sometext',
+                            name: 'sometext',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'plain',
                 body: 'sometext',
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
@@ -724,38 +1498,117 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-raw key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
 
+    // @NOTE
     testFormDataKeyValueDataRawPlain() {
         this.__testRequest(
             'curl http://httpbin.org/get --data-raw sometext',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'sometext',
+                            name: 'sometext',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'plain',
                 body: 'sometext',
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
+    // @NOTE
     testFormDataKeyValueFileReference() {
         this.__testRequest(
             'curl http://httpbin.org/get -d @filename.txt',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'filename.txt',
+                            name: 'filename.txt',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'file',
                 body: new FileReference({
                     filepath: 'filename.txt',
@@ -764,15 +1617,45 @@ export class TestCurlParser extends UnitTest {
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
+    // @NOTE
     testFormDataKeyValueFileReferenceDataAscii() {
         this.__testRequest(
             'curl http://httpbin.org/get --data-ascii @filename.txt',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'filename.txt',
+                            name: 'filename.txt',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'file',
                 body: new FileReference({
                     filepath: 'filename.txt',
@@ -781,15 +1664,45 @@ export class TestCurlParser extends UnitTest {
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
+    // @NOTE
     testFormDataKeyValueFileReferenceDataBinaryNoStripNewlines() {
         this.__testRequest(
             'curl http://httpbin.org/get --data-binary @filename.txt',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'filename.txt',
+                            name: 'filename.txt',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'file',
                 body: new FileReference({
                     filepath: 'filename.txt',
@@ -798,30 +1711,99 @@ export class TestCurlParser extends UnitTest {
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
+    // @NOTE
     testFormDataKeyValueNoFileReferenceInDataRaw() {
         this.__testRequest(
             'curl http://httpbin.org/get --data-raw @filename.txt',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: '@filename.txt',
+                            name: '@filename.txt',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'plain',
                 body: '@filename.txt',
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
+    // @NOTE(Maybe use uri instead of 'body' as key?)
     testFormDataKeyValueFileReferenceMultiple() {
         this.__testRequest(
             `curl http://httpbin.org/get \\
             -d @filename.txt --data @filename2.txt`,
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'filename.txt',
+                            name: 'filename.txt',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        }),
+                        new Parameter({
+                            key: 'filename2.txt',
+                            name: 'filename2.txt',
+                            value: new ExoticReference({
+                                uri: 'filename2.txt',
+                                relative: 'filename2.txt'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({
@@ -842,6 +1824,7 @@ export class TestCurlParser extends UnitTest {
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
@@ -850,8 +1833,63 @@ export class TestCurlParser extends UnitTest {
             `curl http://httpbin.org/get -d @filename.txt \\
             -d @filename2.txt --data "name=Paw&key2=value2"`,
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'filename.txt',
+                            name: 'filename.txt',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        }),
+                        new Parameter({
+                            key: 'filename2.txt',
+                            name: 'filename2.txt',
+                            value: new ExoticReference({
+                                uri: 'filename2.txt',
+                                relative: 'filename2.txt'
+                            }),
+                            type: 'reference'
+                        }),
+                        new Parameter({
+                            key: 'name',
+                            name: 'name',
+                            value: 'Paw',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'Paw' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'key2',
+                            name: 'key2',
+                            value: 'value2',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value2' ])
+                            ])
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({
@@ -880,6 +1918,7 @@ export class TestCurlParser extends UnitTest {
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
@@ -890,51 +1929,89 @@ export class TestCurlParser extends UnitTest {
             --data-ascii @myfile.txt -d @myfile.txt -d name=Paw \\
             -d key2=value2 -H Content-Type:text/plain`,
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'text/plain'
-                }),
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({
-                        key: 'toto\ntiti',
-                        value: null
-                    }),
-                    new KeyValue({
-                        key: new FileReference({
-                            filepath: 'myfile.txt',
-                            convert: null
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'text/plain',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'text/plain'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'toto\ntiti',
+                            name: 'toto\ntiti',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
                         }),
-                        value: null
-                    }),
-                    new KeyValue({
-                        key: '@myfile.txt',
-                        value: null
-                    }),
-                    new KeyValue({
-                        key: new FileReference({
-                            filepath: 'myfile.txt',
-                            convert: 'stripNewlines'
+                        new Parameter({
+                            key: 'myfile.txt',
+                            name: 'myfile.txt',
+                            value: new ExoticReference({
+                                uri: 'myfile.txt',
+                                relative: 'myfile.txt'
+                            }),
+                            type: 'reference'
                         }),
-                        value: null
-                    }),
-                    new KeyValue({
-                        key: new FileReference({
-                            filepath: 'myfile.txt',
-                            convert: 'stripNewlines'
+                        new Parameter({
+                            key: '@myfile.txt',
+                            name: '@myfile.txt',
+                            value: null,
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ null ])
+                            ])
                         }),
-                        value: null
-                    }),
-                    new KeyValue({
-                        key: 'name',
-                        value: 'Paw'
-                    }),
-                    new KeyValue({
-                        key: 'key2',
-                        value: 'value2'
-                    })
-                ])
+                        new Parameter({
+                            key: 'myfile.txt',
+                            name: 'myfile.txt',
+                            value: new ExoticReference({
+                                uri: 'myfile.txt',
+                                relative: 'myfile.txt'
+                            }),
+                            type: 'reference'
+                        }),
+                        new Parameter({
+                            key: 'myfile.txt',
+                            name: 'myfile.txt',
+                            value: new ExoticReference({
+                                uri: 'myfile.txt',
+                                relative: 'myfile.txt'
+                            }),
+                            type: 'reference'
+                        }),
+                        new Parameter({
+                            key: 'name',
+                            name: 'name',
+                            value: 'Paw',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'Paw' ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'key2',
+                            name: 'key2',
+                            value: 'value2',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value2' ])
+                            ])
+                        })
+                    ])
+                })
             }))
     }
 
@@ -942,14 +2019,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/post -d $\'key=val\nue\'',
             new Request({
-                url: 'http://httpbin.org/post',
+                url: new URL('http://httpbin.org/post'),
+                name: 'http://httpbin.org/post',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'val\nue' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'val\nue',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'val\nue' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -958,14 +2055,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/post -d \'key=val\nue\'',
             new Request({
-                url: 'http://httpbin.org/post',
+                url: new URL('http://httpbin.org/post'),
+                name: 'http://httpbin.org/post',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'val\nue' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'val\nue',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'val\nue' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -974,14 +2091,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/post -d "key=val\nue"',
             new Request({
-                url: 'http://httpbin.org/post',
+                url: new URL('http://httpbin.org/post'),
+                name: 'http://httpbin.org/post',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'val\nue' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'val\nue',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'val\nue' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -991,14 +2128,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/post -d key=val\\\nue',
             new Request({
-                url: 'http://httpbin.org/post',
+                url: new URL('http://httpbin.org/post'),
+                name: 'http://httpbin.org/post',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1007,24 +2164,73 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/post --data-urlencode "key=val\nue"',
             new Request({
-                url: 'http://httpbin.org/post',
+                url: new URL('http://httpbin.org/post'),
+                name: 'http://httpbin.org/post',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'val\nue' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'val\nue',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'val\nue' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
 
+    // @NOTE
     testFormDataUrlEncodeFileNameKeyValueNewlineInDoubleQuoteEscape() {
         this.__testRequest(
             'curl http://httpbin.org/post --data-urlencode name@"file\nname"',
             new Request({
-                url: 'http://httpbin.org/post',
+                url: new URL('http://httpbin.org/post'),
+                name: 'http://httpbin.org/post',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'name',
+                            name: 'name',
+                            value: new ExoticReference({
+                                uri: 'file\nname',
+                                relative: 'file\nname'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({
@@ -1038,6 +2244,7 @@ export class TestCurlParser extends UnitTest {
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
@@ -1050,14 +2257,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'value', value: '' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'value',
+                            name: 'value',
+                            value: '',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1067,14 +2294,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode =value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'value', value: '' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'value',
+                            name: 'value',
+                            value: '',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1084,25 +2331,74 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
 
+    // NOTE(strong behavior change)
     testFormDataUrlEncodeFilename() {
         // @filename
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode @filename.txt',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'filename.txt',
+                            name: 'filename.txt',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
+                })
+                /*
                 bodyType: 'urlEncoded',
                 body: Immutable.List([
                     new KeyValue({
@@ -1116,6 +2412,7 @@ export class TestCurlParser extends UnitTest {
                 headers: Immutable.OrderedMap({
                     'Content-Type': 'application/x-www-form-urlencoded'
                 })
+                */
             }))
     }
 
@@ -1124,20 +2421,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode name@filename.txt',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({
-                        key: 'name',
-                        value: new FileReference({
-                            filepath: 'filename.txt',
-                            convert: 'urlEncode'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
                         })
-                    })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'name',
+                            name: 'name',
+                            value: new ExoticReference({
+                                uri: 'filename.txt',
+                                relative: 'filename.txt'
+                            }),
+                            type: 'reference'
+                        })
+                    ])
                 })
             }))
     }
@@ -1146,14 +2457,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode =@filename',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: '@filename', value: '' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: '@filename',
+                            name: '@filename',
+                            value: '',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1162,14 +2493,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode =value=more@values',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'value=more@values', value: '' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'value=more@values',
+                            name: 'value=more@values',
+                            value: '',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1179,14 +2530,34 @@ export class TestCurlParser extends UnitTest {
             `curl http://httpbin.org/get \\
             --data-urlencode key=value=more@values`,
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'key', value: 'value=more@values' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'key',
+                            name: 'key',
+                            value: 'value=more@values',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value=more@values' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1195,14 +2566,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode name@file=path',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'name@file', value: 'path' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'name@file',
+                            name: 'name@file',
+                            value: 'path',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'path' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1211,14 +2602,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode @file=path',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: '@file', value: 'path' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: '@file',
+                            name: '@file',
+                            value: 'path',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'path' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1227,14 +2638,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode name=@value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: 'name', value: '@value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'name',
+                            name: 'name',
+                            value: '@value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ '@value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1244,14 +2675,34 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --data-urlencode \\ key=value',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'POST',
-                bodyType: 'urlEncoded',
-                body: Immutable.List([
-                    new KeyValue({ key: ' key', value: 'value' })
-                ]),
-                headers: Immutable.OrderedMap({
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: ' key',
+                            name: ' key',
+                            value: 'value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([ 'value' ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1264,10 +2715,23 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --compressed',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'Accept-Encoding': 'gzip'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Accept-Encoding',
+                            name: 'Accept-Encoding',
+                            value: 'gzip',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'gzip'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1276,10 +2740,23 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -H Accept-Encoding:bzip2 --compressed',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'Accept-Encoding': 'bzip2;gzip'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Accept-Encoding',
+                            name: 'Accept-Encoding',
+                            value: 'bzip2;gzip',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'bzip2;gzip'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1295,12 +2772,32 @@ export class TestCurlParser extends UnitTest {
             'AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 ' +
             'Safari/7046A194A"',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; ' +
-                    'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 ' +
-                    '(KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'User-Agent',
+                            name: 'User-Agent',
+                            value:
+                                'Mozilla/5.0 (Macintosh; ' +
+                                'Intel Mac OS X 10_9_3) ' +
+                                'AppleWebKit/537.75.14 ' +
+                                '(KHTML, like Gecko) ' +
+                                'Version/7.0.3 Safari/7046A194A',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'Mozilla/5.0 (Macintosh; ' +
+                                    'Intel Mac OS X 10_9_3) ' +
+                                    'AppleWebKit/537.75.14 ' +
+                                    '(KHTML, like Gecko) ' +
+                                    'Version/7.0.3 Safari/7046A194A'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1311,12 +2808,32 @@ export class TestCurlParser extends UnitTest {
             'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 ' +
             '(KHTML, like Gecko) Version/7.0.3 Safari/7046A194A"',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; ' +
-                    'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 ' +
-                    '(KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'User-Agent',
+                            name: 'User-Agent',
+                            value:
+                                'Mozilla/5.0 (Macintosh; ' +
+                                'Intel Mac OS X 10_9_3) ' +
+                                'AppleWebKit/537.75.14 ' +
+                                '(KHTML, like Gecko) ' +
+                                'Version/7.0.3 Safari/7046A194A',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'Mozilla/5.0 (Macintosh; ' +
+                                    'Intel Mac OS X 10_9_3) ' +
+                                    'AppleWebKit/537.75.14 ' +
+                                    '(KHTML, like Gecko) ' +
+                                    'Version/7.0.3 Safari/7046A194A'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1328,12 +2845,32 @@ export class TestCurlParser extends UnitTest {
             'AppleWebKit/537.75.14 (KHTML, like Gecko) ' +
             'Version/7.0.3 Safari/7046A194A"',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; ' +
-                    'Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 ' +
-                    '(KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'User-Agent',
+                            name: 'User-Agent',
+                            value:
+                                'Mozilla/5.0 (Macintosh; ' +
+                                'Intel Mac OS X 10_9_3) ' +
+                                'AppleWebKit/537.75.14 ' +
+                                '(KHTML, like Gecko) ' +
+                                'Version/7.0.3 Safari/7046A194A',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'Mozilla/5.0 (Macintosh; ' +
+                                    'Intel Mac OS X 10_9_3) ' +
+                                    'AppleWebKit/537.75.14 ' +
+                                    '(KHTML, like Gecko) ' +
+                                    'Version/7.0.3 Safari/7046A194A'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1345,10 +2882,23 @@ export class TestCurlParser extends UnitTest {
             'like Gecko) Version/7.0.3 Safari/7046A194A" ' +
             '-H "user-agent: Paw/2.2.7"',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    'User-Agent': 'Paw/2.2.7'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'User-Agent',
+                            name: 'User-Agent',
+                            value: 'Paw/2.2.7',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'Paw/2.2.7'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1361,10 +2911,23 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -b "key=value"',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    Cookie: 'key=value'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Cookie',
+                            name: 'Cookie',
+                            value: 'key=value',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'key=value'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1377,10 +2940,23 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get --referer http://google.com',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    Referer: 'http://google.com'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Referer',
+                            name: 'Referer',
+                            value: 'http://google.com',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'http://google.com'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1389,10 +2965,23 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -e http://google.com',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                headers: Immutable.OrderedMap({
-                    Referer: 'http://google.com'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Referer',
+                            name: 'Referer',
+                            value: 'http://google.com',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'http://google.com'
+                                ])
+                            ])
+                        })
+                    ])
                 })
             }))
     }
@@ -1405,9 +2994,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -u foo:bar',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: 'bar'
@@ -1420,9 +3010,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -u foo',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: null
@@ -1435,9 +3026,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -u foo:bar --basic',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: 'bar'
@@ -1450,9 +3042,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -u foo:bar --digest',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Digest({
                         username: 'foo',
                         password: 'bar'
@@ -1465,9 +3058,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -u foo:bar --ntlm',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.NTLM({
                         username: 'foo',
                         password: 'bar'
@@ -1480,9 +3074,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl http://httpbin.org/get -u foo:bar --negotiate',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Negotiate({
                         username: 'foo',
                         password: 'bar'
@@ -1499,9 +3094,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl https://foo:bar@httpbin.org/get',
             new Request({
-                url: 'https://httpbin.org/get',
+                url: new URL('https://httpbin.org/get'),
+                name: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: 'bar'
@@ -1514,9 +3110,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl https://foo@httpbin.org/get',
             new Request({
-                url: 'https://httpbin.org/get',
+                url: new URL('https://httpbin.org/get'),
+                name: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: null
@@ -1529,9 +3126,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl foo:bar@httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: 'bar'
@@ -1544,9 +3142,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl foo@httpbin.org/get',
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: null
@@ -1559,9 +3158,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl https://foo:bar@httpbin.org/get -u myuser:mypassword',
             new Request({
-                url: 'https://httpbin.org/get',
+                url: new URL('https://httpbin.org/get'),
+                name: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'myuser',
                         password: 'mypassword'
@@ -1574,9 +3174,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl -u myuser:mypassword https://foo:bar@httpbin.org/get',
             new Request({
-                url: 'https://httpbin.org/get',
+                url: new URL('https://httpbin.org/get'),
+                name: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'myuser',
                         password: 'mypassword'
@@ -1589,9 +3190,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl https://foo:bar@httpbin.org/get --basic',
             new Request({
-                url: 'https://httpbin.org/get',
+                url: new URL('https://httpbin.org/get'),
+                name: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: 'bar'
@@ -1604,9 +3206,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl --basic https://foo:bar@httpbin.org/get',
             new Request({
-                url: 'https://httpbin.org/get',
+                url: new URL('https://httpbin.org/get'),
+                name: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Basic({
                         username: 'foo',
                         password: 'bar'
@@ -1619,9 +3222,10 @@ export class TestCurlParser extends UnitTest {
         this.__testRequest(
             'curl https://foo:bar@httpbin.org/get --digest',
             new Request({
-                url: 'https://httpbin.org/get',
+                url: new URL('https://httpbin.org/get'),
+                name: 'https://httpbin.org/get',
                 method: 'GET',
-                auth: new Immutable.List([
+                auths: new Immutable.List([
                     new Auth.Digest({
                         username: 'foo',
                         password: 'bar'
@@ -1639,11 +3243,13 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get http://httpbin.org/post',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'GET'
                 })
             ])
@@ -1656,17 +3262,43 @@ export class TestCurlParser extends UnitTest {
             -H X-Paw:value`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 })
             ]))
@@ -1678,17 +3310,43 @@ export class TestCurlParser extends UnitTest {
             --url http://httpbin.org/post -H X-Paw:value`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 })
             ]))
@@ -1701,17 +3359,43 @@ export class TestCurlParser extends UnitTest {
             -H X-Paw:value`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 })
             ]))
@@ -1727,11 +3411,13 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get -: http://httpbin.org/post',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'GET'
                 })
             ]))
@@ -1744,17 +3430,43 @@ export class TestCurlParser extends UnitTest {
             -H X-Paw:value`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw2': 'value2'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw2',
+                                name: 'X-Paw2',
+                                value: 'value2',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value2'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 }),
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 })
             ]))
@@ -1767,12 +3479,25 @@ export class TestCurlParser extends UnitTest {
             -H X-Paw:value http://httpbin.org/post -X POST`,
             Immutable.List([
                 new Request({
-                    url: 'https://httpbin.org/get',
+                    url: new URL('https://httpbin.org/get'),
+                    name: 'https://httpbin.org/get',
                     method: 'GET',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw2': 'value2'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw2',
+                                name: 'X-Paw2',
+                                value: 'value2',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value2'
+                                    ])
+                                ])
+                            })
+                        ])
                     }),
-                    auth: new Immutable.List([
+                    auths: new Immutable.List([
                         new Auth.Basic({
                             username: 'foo',
                             password: 'bar'
@@ -1780,12 +3505,38 @@ export class TestCurlParser extends UnitTest {
                     ])
                 }),
                 new Request({
-                    url: 'https://httpbin.org/get?key=value',
+                    url: new URL('https://httpbin.org/get'),
+                    name: 'https://httpbin.org/get',
                     method: 'GET',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw2': 'value2'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw2',
+                                name: 'X-Paw2',
+                                value: 'value2',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value2'
+                                    ])
+                                ])
+                            })
+                        ]),
+                        queries: new Immutable.List([
+                            new Parameter({
+                                key: 'key',
+                                name: 'key',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     }),
-                    auth: new Immutable.List([
+                    auths: new Immutable.List([
                         new Auth.Basic({
                             username: 'foo',
                             password: 'bar'
@@ -1793,10 +3544,23 @@ export class TestCurlParser extends UnitTest {
                     ])
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 })
             ]))
@@ -1809,7 +3573,8 @@ export class TestCurlParser extends UnitTest {
     testShellIgnoreShellMarkDollar() {
         this.__testRequests('$ curl http://httpbin.org/get', Immutable.List([
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             })
         ]))
@@ -1818,7 +3583,8 @@ export class TestCurlParser extends UnitTest {
     testShellIgnoreShellMarkChevron() {
         this.__testRequests('> curl http://httpbin.org/get', Immutable.List([
             new Request({
-                url: 'http://httpbin.org/get',
+                url: new URL('http://httpbin.org/get'),
+                name: 'http://httpbin.org/get',
                 method: 'GET'
             })
         ]))
@@ -1829,7 +3595,8 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get | cat -X POST',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 })
             ]))
@@ -1840,7 +3607,8 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get|cat -X POST',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 })
             ]))
@@ -1851,7 +3619,8 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get > filename',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 })
             ]))
@@ -1862,7 +3631,8 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get>filename',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 })
             ]))
@@ -1873,15 +3643,43 @@ export class TestCurlParser extends UnitTest {
             'curl httpbin.org/post -d key=value > filename -d key2=value2',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST',
-                    bodyType: 'urlEncoded',
-                    body: Immutable.List([
-                        new KeyValue({ key: 'key', value: 'value' }),
-                        new KeyValue({ key: 'key2', value: 'value2' })
-                    ]),
-                    headers: Immutable.OrderedMap({
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'Content-Type',
+                                name: 'Content-Type',
+                                value: 'application/x-www-form-urlencoded',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'application/x-www-form-urlencoded'
+                                    ])
+                                ])
+                            })
+                        ]),
+                        body: new Immutable.List([
+                            new Parameter({
+                                key: 'key',
+                                name: 'key',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([ 'value' ])
+                                ])
+                            }),
+                            new Parameter({
+                                key: 'key2',
+                                name: 'key2',
+                                value: 'value2',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([ 'value2' ])
+                                ])
+                            })
+                        ])
                     })
                 })
             ]))
@@ -1893,11 +3691,13 @@ export class TestCurlParser extends UnitTest {
             -X POST http://httpbin.org/post`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST'
                 })
             ]))
@@ -1908,11 +3708,13 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get;curl -X POST http://httpbin.org/post',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST'
                 })
             ]))
@@ -1924,11 +3726,13 @@ export class TestCurlParser extends UnitTest {
             -X POST http://httpbin.org/post`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST'
                 })
             ]))
@@ -1939,11 +3743,13 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get&curl -X POST http://httpbin.org/post',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST'
                 })
             ]))
@@ -1955,11 +3761,13 @@ export class TestCurlParser extends UnitTest {
             -X POST http://httpbin.org/post`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST'
                 })
             ]))
@@ -1970,11 +3778,13 @@ export class TestCurlParser extends UnitTest {
             'curl http://httpbin.org/get&&curl -X POST http://httpbin.org/post',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'GET'
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST'
                 })
             ]))
@@ -1989,7 +3799,8 @@ export class TestCurlParser extends UnitTest {
             'curl --obscure-unknown-option http://httpbin.org/get -X POST',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'POST'
                 })
             ]))
@@ -2001,10 +3812,23 @@ export class TestCurlParser extends UnitTest {
             -H X-Paw:value`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 })
             ]))
@@ -2017,19 +3841,65 @@ export class TestCurlParser extends UnitTest {
             -H Content-Type:application/json http://httpbin.org/post`,
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value',
-                        'Content-Type': 'application/json'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            }),
+                            new Parameter({
+                                key: 'Content-Type',
+                                name: 'Content-Type',
+                                value: 'application/json',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'application/json'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 }),
                 new Request({
-                    url: 'http://httpbin.org/post',
+                    url: new URL('http://httpbin.org/post'),
+                    name: 'http://httpbin.org/post',
                     method: 'POST',
-                    headers: Immutable.OrderedMap({
-                        'X-Paw': 'value',
-                        'Content-Type': 'application/json'
+                    parameters: new ParameterContainer({
+                        headers: new Immutable.List([
+                            new Parameter({
+                                key: 'X-Paw',
+                                name: 'X-Paw',
+                                value: 'value',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'value'
+                                    ])
+                                ])
+                            }),
+                            new Parameter({
+                                key: 'Content-Type',
+                                name: 'Content-Type',
+                                value: 'application/json',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        'application/json'
+                                    ])
+                                ])
+                            })
+                        ])
                     })
                 })
             ]))
@@ -2040,7 +3910,8 @@ export class TestCurlParser extends UnitTest {
             'curl --output outputfile.txt http://httpbin.org/get -X POST',
             Immutable.List([
                 new Request({
-                    url: 'http://httpbin.org/get',
+                    url: new URL('http://httpbin.org/get'),
+                    name: 'http://httpbin.org/get',
                     method: 'POST'
                 })
             ]))
@@ -2060,19 +3931,83 @@ export class TestCurlParser extends UnitTest {
         --data-urlencode "password=test12345"`
         this.__testRequests(input, Immutable.List([
             new Request({
-                url: 'https://httpbin.org/post',
+                url: new URL('https://httpbin.org/post'),
+                name: 'https://httpbin.org/post',
                 method: 'POST',
-                headers: Immutable.OrderedMap({
-                    Locale: 'de_DE',
-                    Apikey: 'MYAPIKEY',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    Accept: 'application/vnd.my-vendor.api+json;version=2.5.0'
-                }),
-                body: Immutable.List([
-                    new KeyValue({ key: 'username', value: 'username' }),
-                    new KeyValue({ key: 'password', value: 'test12345' })
-                ]),
-                bodyType: 'urlEncoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Locale',
+                            name: 'Locale',
+                            value: 'de_DE',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'de_DE'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Apikey',
+                            name: 'Apikey',
+                            value: 'MYAPIKEY',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'MYAPIKEY'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Accept',
+                            name: 'Accept',
+                            value: 'application/' +
+                                'vnd.my-vendor.api+json;version=2.5.0',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/' +
+                                    'vnd.my-vendor.api+json;version=2.5.0'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'username',
+                            name: 'username',
+                            value: 'username',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'username'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'password',
+                            name: 'password',
+                            value: 'test12345',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'test12345'
+                                ])
+                            ])
+                        })
+                    ])
+                })
             })
         ]))
     }
@@ -2089,19 +4024,83 @@ export class TestCurlParser extends UnitTest {
         --data-urlencode "password=test12345"`
         this.__testRequests(input, Immutable.List([
             new Request({
-                url: 'https://httpbin.org/post',
+                url: new URL('https://httpbin.org/post'),
+                name: 'https://httpbin.org/post',
                 method: 'POST',
-                headers: Immutable.OrderedMap({
-                    Locale: 'de_DE',
-                    Apikey: 'MYAPIKEY',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    Accept: 'application/vnd.my-vendor.api+json;version=2.5.0'
-                }),
-                body: Immutable.List([
-                    new KeyValue({ key: 'username', value: 'username' }),
-                    new KeyValue({ key: 'password', value: 'test12345' })
-                ]),
-                bodyType: 'urlEncoded'
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Locale',
+                            name: 'Locale',
+                            value: 'de_DE',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'de_DE'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Apikey',
+                            name: 'Apikey',
+                            value: 'MYAPIKEY',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'MYAPIKEY'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Accept',
+                            name: 'Accept',
+                            value: 'application/' +
+                                'vnd.my-vendor.api+json;version=2.5.0',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/' +
+                                    'vnd.my-vendor.api+json;version=2.5.0'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'username',
+                            name: 'username',
+                            value: 'username',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'username'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'password',
+                            name: 'password',
+                            value: 'test12345',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'test12345'
+                                ])
+                            ])
+                        })
+                    ])
+                })
             })
         ]))
     }
@@ -2118,8 +4117,84 @@ export class TestCurlParser extends UnitTest {
         --data-urlencode "password=test12345"`
         this.__testRequests(input, Immutable.List([
             new Request({
-                url: 'https://httpbin.org/post',
+                url: new URL('https://httpbin.org/post'),
+                name: 'https://httpbin.org/post',
                 method: 'POST',
+                parameters: new ParameterContainer({
+                    headers: new Immutable.List([
+                        new Parameter({
+                            key: 'Locale',
+                            name: 'Locale',
+                            value: 'de_DE',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'de_DE'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Apikey',
+                            name: 'Apikey',
+                            value: 'MYAPIKEY',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'MYAPIKEY'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Content-Type',
+                            name: 'Content-Type',
+                            value: 'application/x-www-form-urlencoded',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Accept',
+                            name: 'Accept',
+                            value: 'application/' +
+                                'vnd.my-vendor.api+json;version=2.5.0',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/' +
+                                    'vnd.my-vendor.api+json;version=2.5.0'
+                                ])
+                            ])
+                        })
+                    ]),
+                    body: new Immutable.List([
+                        new Parameter({
+                            key: 'username',
+                            name: 'username',
+                            value: 'username',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'username'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'password',
+                            name: 'password',
+                            value: 'test12345',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'test12345'
+                                ])
+                            ])
+                        })
+                    ])
+                })
+                /*
                 headers: Immutable.OrderedMap({
                     Locale: 'de_DE',
                     Apikey: 'MYAPIKEY',
@@ -2131,6 +4206,7 @@ export class TestCurlParser extends UnitTest {
                     new KeyValue({ key: 'password', value: 'test12345' })
                 ]),
                 bodyType: 'urlEncoded'
+                */
             })
         ]))
     }
@@ -2155,16 +4231,12 @@ export class TestCurlParser extends UnitTest {
         verbose = false
     ) {
         const parser = new CurlParser()
-        let context = parser.parse(input)
+        let context = parser.parse({
+            content: input
+        })
         let requests = context.getIn([ 'group', 'children' ])
 
         // remove bodyString from request if we don't want to compare it here
-        requests = requests.map(request => {
-            if (!compareBodyString) {
-                return request.set('bodyString', null)
-            }
-            return request
-        })
 
         /* eslint-disable  no-console */
         if (verbose) {
@@ -2173,6 +4245,6 @@ export class TestCurlParser extends UnitTest {
         }
         /* eslint-enable  no-console */
 
-        this.assertEqual(requests, expected)
+        this.assertJSONEqual(requests, expected)
     }
 }

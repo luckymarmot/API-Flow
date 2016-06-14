@@ -1,16 +1,21 @@
 import Immutable from 'immutable'
 
 import ShellTokenizer from '../../utils/ShellTokenizer'
-import RequestContext, {
-    Request,
-    KeyValue,
-    FileReference,
-    Group
-} from '../../models/RequestContext'
+
+import ExoticReference from '../../models/references/Exotic'
+import Constraint from '../../models/Constraint'
+import Auth from '../../models/Auth'
+import URL from '../../models/URL'
+import Context, {
+    Parameter,
+    ParameterContainer
+} from '../../models/Core'
+import Request from '../../models/Request'
+import Group from '../../models/Group'
 
 export default class CurlParser {
     constructor() {
-        this.context = new RequestContext()
+        this.context = new Context()
         this.args = null
         this.idx = -1
     }
@@ -76,9 +81,9 @@ export default class CurlParser {
         return args
     }
 
-    parse(string) {
+    parse(item) {
         // tokenize
-        this.args = this._tokenize(string)
+        this.args = this._tokenize(item.content)
 
         // parse
         this.idx = 0
@@ -115,13 +120,34 @@ export default class CurlParser {
         let requests = []
         let request = new Request()
 
-        // assume BasicAuth for cURL requests
-        request.setAuthType('basic')
+        let urlEncodeFlag = false
+        let method = null
+        let auth = new Auth.Basic({
+            raw: false
+        })
+        let headers = new Immutable.OrderedMap()
+        let queries = new Immutable.List()
+        let body = new Immutable.List()
+
+        let timeout = null
 
         let urls = Immutable.List()
         let arg
         while ((arg = this._popArg()) !== null) {
-            if (arg === '|' ||
+            if (arg.toLowerCase() === 'curl') {
+                let container = this._createParameterContainer(
+                    headers, queries, body
+                )
+                this.requests = this.requests.concat(
+                    this._generateRequests(
+                        urls, method, container, auth, timeout
+                    )
+                )
+
+                this.idx -= 1
+                return
+            }
+            else if (arg === '|' ||
                     arg === ';' ||
                     arg === '&' ||
                     arg === '&&') {
@@ -139,62 +165,92 @@ export default class CurlParser {
                 break
             }
             else if (arg === '-X' || arg === '--request') {
-                request = this._parseMethod(request)
+                method = this._parseMethod()
             }
             else if (arg === '-I' || arg === '--head') {
-                request = request.set('method', 'HEAD')
+                method = 'HEAD'
             }
             else if (arg === '-H' || arg === '--header') {
-                request = this._parseHeader(request)
+                headers = this._parseHeader(headers)
             }
             else if (arg === '-F' || arg === '--form') {
-                request = this._parseMultipartFormData(request)
+                let out = this._parseMultipartFormData(headers, body, method)
+                headers = out[0]
+                body = out[1]
+                method = out[2]
             }
             else if (arg === '--form-string') {
-                request = this._parseMultipartFormString(request)
+                let out = this._parseMultipartFormString(headers, body, method)
+                headers = out[0]
+                body = out[1]
+                method = out[2]
             }
             else if (
                 arg === '-d' ||
                 arg === '--data' ||
                 arg === '--data-ascii'
             ) {
-                request = this._parseUrlEncodedData(request, '--data')
+                let out = this._parseUrlEncodedData(
+                    '--data', urlEncodeFlag, headers, body, method
+                )
+                urlEncodeFlag = out[0]
+                headers = out[1]
+                body = out[2]
+                method = out[3]
             }
             else if (arg === '--data-binary') {
-                request = this._parseUrlEncodedData(request, arg)
+                let out = this._parseUrlEncodedData(
+                    arg, urlEncodeFlag, headers, body, method
+                )
+                urlEncodeFlag = out[0]
+                headers = out[1]
+                body = out[2]
+                method = out[3]
             }
             else if (arg === '--data-raw') {
-                request = this._parseUrlEncodedData(request, arg)
+                let out = this._parseUrlEncodedData(
+                    arg, urlEncodeFlag, headers, body, method
+                )
+                urlEncodeFlag = out[0]
+                headers = out[1]
+                body = out[2]
+                method = out[3]
             }
             else if (arg === '--data-urlencode') {
-                request = this._parseUrlEncodedData(request, arg)
+                let out = this._parseUrlEncodedData(
+                    arg, urlEncodeFlag, headers, body, method
+                )
+                urlEncodeFlag = out[0]
+                headers = out[1]
+                body = out[2]
+                method = out[3]
             }
             else if (arg === '--compressed') {
-                request = this._parseCompressed(request)
+                headers = this._parseCompressed(headers)
             }
             else if (arg === '-A' || arg === '--user-agent') {
-                request = this._parseUserAgent(request)
+                headers = this._parseUserAgent(headers)
             }
             else if (arg === '-b' || arg === '--cookie') {
-                request = this._parseCookie(request)
+                headers = this._parseCookie(headers)
             }
             else if (arg === '-e' || arg === '--referer') {
                 // note: spelling "referer" is a typo in the HTTP spec
                 // while correct English is "Referrer", header name if
                 // "Referer" (one R)
-                request = this._parseReferer(request)
+                headers = this._parseReferer(headers)
             }
             else if (arg === '-u' || arg === '--user') {
-                request = this._parseUser(request)
+                auth = this._parseUser(auth)
             }
             else if (arg === '--basic' ||
                              arg === '--digest' ||
                              arg === '--ntlm' ||
                              arg === '--negotiate') {
-                request = this._parseAuth(request, arg)
+                auth = this._parseAuth(arg, auth)
             }
             else if (arg === '-m' || arg === '--max-time') {
-                request = this._parseMaxTime(request)
+                timeout = this._parseMaxTime()
             }
             else if (arg === '-c' || arg === '--cookie-jar' ||
                              arg === '-C' || arg === '--continue-at' ||
@@ -270,84 +326,212 @@ export default class CurlParser {
                 continue
             }
             else {
-                request = this._parseUrl(request, arg)
-                urls = urls.push(request.get('url'))
+                let parsed = this._parseUrl(arg, auth, queries)
+                urls = urls.push(parsed[0])
+                auth = parsed[1]
+                queries = parsed[2]
             }
         }
-        if (request.get('method') === null) {
-            request = request.set('method', 'GET')
+
+        if (!method) {
+            method = 'GET'
         }
 
-        request = this._updateRequest(request)
-        requests = urls.map(url => {
-            return request.set('url', url)
+        let update = this._updateRequest(urlEncodeFlag, headers, body)
+        headers = update[0]
+        body = update[1]
+
+        requests = urls.map(_url => {
+            let container = this._createParameterContainer(
+                headers, queries, body
+            )
+            return this._createRequest(
+                _url, method, container, auth, timeout
+            )
         })
 
         return requests
     }
 
-    _updateRequest(request) {
-        let _request = request
-        const bodyType = request.get('bodyType')
-        const body = request.get('body')
-        const contentType = request.getIn([ 'headers', 'Content-Type' ])
+    _generateRequests(urls, method, container, auth, timeout) {
+        return urls.map(url => {
+            return this._createRequest(
+                url, method, container, auth, timeout
+            )
+        })
+    }
 
-        if (bodyType === 'urlEncoded') {
+    _createParameterContainer(headers, queries, body) {
+        let headerList = []
+        let keys = headers.keySeq()
+        for (let key of keys) {
+            headerList.push(headers.get(key))
+        }
+
+        return new ParameterContainer({
+            queries: queries,
+            body: body,
+            headers: new Immutable.List(headerList)
+        })
+    }
+
+    _createRequest(_url, method, _container, _auth, timeout) {
+        let url = _url
+        let container = _container
+        let auth = _auth
+
+        let name = null
+        if (url) {
+            let search = url.generateParam('search')
+            if (search) {
+                let queries = container.get('queries')
+                queries = this._parseQueries(search, queries)
+                container = container.set('queries', queries)
+                url = url.set('search', new Parameter({
+                    key: 'search',
+                    type: 'string'
+                }))
+            }
+
+            name = url.href()
+        }
+
+        if (auth.get('raw') === false) {
+            if (auth.get('username') || auth.get('password')) {
+                auth = auth.set('raw', null)
+            }
+            else {
+                auth = null
+            }
+        }
+
+        let auths
+        if (auth) {
+            auths = new Immutable.List([ auth ])
+        }
+        else {
+            auths = new Immutable.List()
+        }
+
+        return new Request({
+            name: name,
+            url: url,
+            method: method,
+            parameters: container,
+            auths: auths,
+            timeout: timeout
+        })
+    }
+
+    _formatParameter(key, value) {
+        let type
+        let internals
+        let _key = key
+        let _value = value
+        if (
+            value instanceof ExoticReference ||
+            key instanceof ExoticReference
+        ) {
+            type = 'reference'
+            internals = new Immutable.List()
+
+            if (key instanceof ExoticReference) {
+                _value = key
+                _key = _value.get('uri')
+            }
+        }
+        else {
+            type = 'string'
+            internals = new Immutable.List([
+                new Constraint.Enum([ _value ])
+            ])
+        }
+        return new Parameter({
+            key: _key,
+            name: _key,
+            value: _value,
+            type: type,
+            internals: internals
+        })
+    }
+
+    _updateRequest(urlEncodeFlag, _headers, _body) {
+        let body = _body
+        let headers = _headers
+        let contentType = headers.get('Content-Type') || null
+
+        if (urlEncodeFlag) {
             // this is not form url encoded, but a plain body string or file
             if (body.count() === 1 && body.getIn([ 0, 'value' ]) === null) {
-                if (body.getIn([ 0, 'key' ]) instanceof FileReference) {
-                    _request = _request
-                        .set('bodyType', 'file')
-                        .set('body', body.getIn([ 0, 'key' ]))
-                }
-                else {
-                    _request = _request
-                        .set('bodyType', 'plain')
-                        .set('body', body.getIn([ 0, 'key' ]))
+                if (body.getIn([ 0, 'key' ]) instanceof ExoticReference) {
+                    body = new Immutable.List([
+                        this._formatParameter('body', body.getIn([ 0, 'key' ]))
+                    ])
                 }
             }
             // if no Content-Type is set, or not set to
             // application/x-www-form-urlencoded consider the body as
             // a plain string
-            else if (
-                contentType &&
-                contentType !== 'application/x-www-form-urlencoded'
-            ) {
-                const bodyString = _request.get('bodyString')
-                if (contentType && contentType.indexOf('json') >= 0) {
-                    try {
-                        let jsonBody = JSON.parse(bodyString)
-                        _request = _request
-                            .set('bodyType', 'json')
-                            .set('body', jsonBody)
-                    }
-                    catch (e) {
-                        const m = 'Request seems to have a JSON body, ' +
-                        'but JSON parsing failed'
-                        console.error(m) // eslint-disable-line
-                        _request = _request
-                            .set('bodyType', 'plain')
-                            .set('body', bodyString)
-                    }
-                }
+            if (!contentType) {
+                headers = headers.set(
+                    this._normalizeHeader('Content-Type'),
+                    this._formatParameter(
+                        this._normalizeHeader('Content-Type'),
+                        'application/x-www-form-urlencoded'
+                    )
+                )
             }
         }
 
-        return _request
+        return [ headers, body ]
     }
 
-    _parseUrl(request, url) {
-        const m = url
-            .match(/^(\w+\:\/\/)?(?:([^\:\/]+)(?:\:([^\@]+)?)?\@)?([\s\S]*)$/)
-        let _request = request
-        if (m[2] && !_request.getIn([ 'auth', 0, 'password' ])) {
-            _request = _request.setAuthParams({
-                username: m[2],
-                password: m[3] ? m[3] : null
-            })
+    _parseUrl(url, _auth, _queries) {
+        let queries = _queries
+        let auth = _auth
+        let _url
+
+        if (!url.match(/:\/\//)) {
+            _url = new URL('http://' + url)
         }
-        _request = _request.set('url', (m[1] ? m[1] : 'http://') + m[4])
-        return _request
+        else {
+            _url = new URL(url)
+        }
+
+        let username = _url.generateParam('username')
+        if (username) {
+            if (!auth.get('username')) {
+                auth = auth.set('username', username)
+            }
+            _url = _url.set('username', new Parameter({
+                key: 'username',
+                type: 'string'
+            }))
+        }
+
+        let password = _url.generateParam('password')
+        if (password) {
+            if (!auth.get('password')) {
+                auth = auth.set('password', password)
+            }
+            _url = _url.set('password', new Parameter({
+                key: 'password',
+                type: 'string'
+            }))
+        }
+
+        return [ _url, auth, queries ]
+    }
+
+    _parseQueries(search, queries) {
+        let components = search.slice(1).split('&')
+        return queries.concat(components.map(component => {
+            let [ key, value ] = component.split('=')
+            if (typeof value === 'undefined') {
+                value = null
+            }
+            return this._formatParameter(key, value)
+        }))
     }
 
     _normalizeHeader(string) {
@@ -359,125 +543,170 @@ export default class CurlParser {
     _resolveFileReference(string, convert = null, regex = /^\@([\s\S]*)$/) {
         const m = string.match(regex)
         if (m) {
-            return new FileReference({
-                filepath: m[1],
-                convert: convert
+            return new ExoticReference({
+                uri: m[1],
+                relative: m[1]
             })
         }
         return string
     }
 
-    _parseHeader(request) {
+    _parseHeader(headers) {
         const arg = this._popArg()
         const m = arg.match(/^([^\:\s]+)\s*\:\s*([\s\S]*)$/)
         if (!m) {
             throw new Error('Invalid -H/--header value: ' + arg)
         }
-        return request.setIn([ 'headers', this._normalizeHeader(m[1]) ], m[2])
+        return headers.set(
+            this._normalizeHeader(m[1]),
+            this._formatParameter(
+                this._normalizeHeader(m[1]),
+                m[2]
+            )
+        )
     }
 
-    _parseMethod(request) {
-        return request.set('method', this._popArg())
+    _parseMethod() {
+        return this._popArg()
     }
 
-    _parseCompressed(request) {
-        let _request = request
-        let acceptEncoding = request.getIn([ 'headers', 'Accept-Encoding' ])
-        if (!acceptEncoding) {
+    _parseCompressed(headers) {
+        let header = headers.get('Accept-Encoding') || null
+        let acceptEncoding
+        if (!header) {
             acceptEncoding = ''
         }
+        else {
+            acceptEncoding = header.generate()
+        }
+
         if (acceptEncoding.indexOf('gzip') < 0) {
             if (acceptEncoding.length > 0) {
                 acceptEncoding += ';'
             }
             acceptEncoding += 'gzip'
-            _request = _request
-                .setIn([ 'headers', 'Accept-Encoding' ], acceptEncoding)
+            return headers.set(
+                'Accept-Encoding',
+                this._formatParameter(
+                    this._normalizeHeader('Accept-Encoding'),
+                    acceptEncoding
+                )
+            )
         }
-        return _request
+
+        return headers
     }
 
-    _parseUserAgent(request) {
-        return request.setIn([ 'headers', 'User-Agent' ], this._popArg())
+    _parseUserAgent(headers) {
+        return headers.set(
+            this._normalizeHeader('User-Agent'),
+            this._formatParameter(
+                this._normalizeHeader('User-Agent'),
+                this._popArg()
+            )
+        )
     }
 
-    _parseCookie(request) {
-        return request.setIn([ 'headers', 'Cookie' ], this._popArg())
+    _parseCookie(headers) {
+        return headers.set(
+            this._normalizeHeader('Cookie'),
+            this._formatParameter(
+                this._normalizeHeader('Cookie'),
+                this._popArg()
+            )
+        )
     }
 
-    _parseReferer(request) {
+    _parseReferer(headers) {
         // note: spelling "referer" is a typo in the HTTP spec
         // while correct English is "Referrer", header name if "Referer" (one R)
-        return request.setIn([ 'headers', 'Referer' ], this._popArg())
+        return headers.set(
+            this._normalizeHeader('Referer'),
+            this._formatParameter(
+                this._normalizeHeader('Referer'),
+                this._popArg()
+            )
+        )
     }
 
-    _parseUser(request) {
+    _parseUser(auth) {
         const m = this._popArg().match(/([^\:]+)(?:\:([\s\S]*))?/)
-        return request.setAuthParams({
-            username: m[1],
-            password: m[2] ? m[2] : null
-        })
+        return auth
+            .set('username', m[1])
+            .set('password', m[2] ? m[2] : null)
     }
 
-    _parseAuth(request, arg) {
-        const m = arg.match(/\-{2}(\w+)/)
+    _parseAuth(arg, auth) {
+        let argMap = {
+            '--basic': Auth.Basic,
+            '--digest': Auth.Digest,
+            '--ntlm': Auth.NTLM,
+            '--negotiate': Auth.Negotiate
+        }
 
-        let auth = request.get('auth').last()
-        return request.setAuthType(m[1], auth)
-    }
-
-    _parseMaxTime(request) {
-        const maxTime = this._popArg()
-        return request.set('timeout', parseFloat(maxTime))
-    }
-
-    _parseMultipartFormData(request) {
-        // switch bodyType
-        let _request = request
-        if (_request.get('bodyType') !== 'formData') {
-            if (_request.get('bodyType')) {
-                throw new Error('Different body types set in the same request')
-            }
-            _request = _request.merge({
-                bodyType: 'formData',
-                body: Immutable.List()
+        if (argMap[arg]) {
+            return new argMap[arg]({
+                username: auth.get('username') || null,
+                password: auth.get('password') || null
             })
         }
+
+        return auth
+    }
+
+    _parseMaxTime() {
+        const maxTime = this._popArg()
+        return parseFloat(maxTime)
+    }
+
+    _parseMultipartFormData(_headers, _body, _method) {
+        let headers = _headers
+        let body = _body
+        let method = _method
+
+        headers = headers.set(
+            this._normalizeHeader('Content-Type'),
+            this._formatParameter(
+                this._normalizeHeader('Content-Type'),
+                'multipart/form-data'
+            )
+        )
+
         const arg = this._popArg()
         const m = arg.match(/^([^\=]+)\=([^\;]*)/)
         if (!m) {
             throw new Error('Invalid -F/--form value: ' + arg)
         }
 
-        // set body param
         const value = m[2] ?
             this._resolveFileReference(m[2], null, /^[\@\<]([\s\S]*)$/) :
             null
-        _request = _request.set('body', _request.get('body').push(new KeyValue({
-            key: m[1],
-            value: value
-        })))
+
+        // set body param
+        body = body.push(this._formatParameter(m[1], value))
 
         // set method if not set
-        if (_request.get('method') === null) {
-            _request = _request.set('method', 'POST')
+        if (!method) {
+            method = 'POST'
         }
 
-        return _request
+        return [ headers, body, method ]
     }
 
-    _parseMultipartFormString(request) {
-        let _request = request
+    _parseMultipartFormString(_headers, _body, _method) {
+        let headers = _headers
+        let body = _body
+        let method = _method
         // switch bodyType
-        if (_request.get('bodyType') !== 'formData') {
-            if (_request.get('bodyType')) {
-                throw new Error('Different body types set in the same request')
-            }
-            _request = _request.merge({
-                bodyType: 'formData',
-                body: Immutable.List()
-            })
-        }
+        headers = headers.set(
+            this._normalizeHeader('Content-Type'),
+            this._formatParameter(
+                this._normalizeHeader('Content-Type'),
+                'multipart/form-data'
+            )
+        )
+
+
         const arg = this._popArg()
         const m = arg.match(/^([^\=]+)\=([\s\S]*)$/)
         if (!m) {
@@ -485,41 +714,23 @@ export default class CurlParser {
         }
 
         // set body param
-        _request = _request.set('body', _request.get('body').push(new KeyValue({
-            key: m[1],
-            value: m[2]
-        })))
+        body = body.push(this._formatParameter(m[1], m[2]))
 
         // set method if not set
-        if (_request.get('method') === null) {
-            _request = _request.set('method', 'POST')
+        if (!method) {
+            method = 'POST'
         }
 
-        return _request
+        return [ headers, body, method ]
     }
 
-    _parseUrlEncodedData(request, option) {
-        let _request = request
+    _parseUrlEncodedData(option, _urlEncodeFlag, _headers, _body, _method) {
+        let headers = _headers
+        let body = _body
+        let method = _method
+        let urlEncodeFlag = _urlEncodeFlag
         // switch bodyType
-        if (_request.get('bodyType') !== 'urlEncoded') {
-            if (_request.get('bodyType')) {
-                throw new Error('Different body types set in the same request')
-            }
-            _request = _request.merge({
-                bodyType: 'urlEncoded',
-                body: Immutable.List(),
-                bodyString: ''
-            })
-        }
-
         const arg = this._popArg()
-
-        _request = _request
-            .setIn(
-                [ 'headers', 'Content-Type' ],
-                _request.getIn([ 'headers', 'Content-Type' ]) ||
-                'application/x-www-form-urlencoded'
-            )
 
         if (
             option === '--data' ||
@@ -536,23 +747,19 @@ export default class CurlParser {
             }
 
             // if file reference
-            if (value instanceof FileReference) {
-                _request = _request
-                    .set('body', _request.get('body').push(new KeyValue({
-                        key: value
-                    })))
+            if (value instanceof ExoticReference) {
+                body = body.push(this._formatParameter(value, null))
             }
             // otherwise, parse the parameters
             else {
                 let components = value.split('&')
                 for (let component of components) {
                     let m = component.match(/^([^\=]+)(?:\=([\s\S]*))?$/)
-                    _request = _request
-                        .set('body', _request.get('body').push(new KeyValue({
-                            key: decodeURIComponent(m[1]),
-                            value: typeof m[2] === 'string' ?
-                                decodeURIComponent(m[2]) : null
-                        })))
+                    body = body.push(this._formatParameter(
+                        decodeURIComponent(m[1]),
+                        typeof m[2] === 'string' ?
+                            decodeURIComponent(m[2]) : null
+                    ))
                 }
             }
         }
@@ -561,11 +768,10 @@ export default class CurlParser {
             // =content
             // name=content
             if (m) {
-                _request = _request
-                    .set('body', _request.get('body').push(new KeyValue({
-                        key: m[1] ? m[1] : m[2],
-                        value: m[1] ? m[2] : ''
-                    })))
+                body = body.push(this._formatParameter(
+                    m[1] ? m[1] : m[2],
+                    m[1] ? m[2] : ''
+                ))
             }
             // content
             // @filename
@@ -574,30 +780,23 @@ export default class CurlParser {
                 m = arg.match(/^([^\@]+)?([\s\S]+)?$/)
                 let value = m[2] ?
                     this._resolveFileReference(m[2], 'urlEncode') : ''
-                _request = _request
-                    .set('body', _request.get('body').push(new KeyValue({
-                        key: m[1] ? m[1] : value,
-                        value: m[1] ? value : ''
-                    })))
+                body = body.push(this._formatParameter(
+                    m[1] ? m[1] : value,
+                    m[1] ? value : ''
+                ))
             }
         }
         else {
             throw new Error('Invalid option ' + option)
         }
 
-        // add body as string
-        let bodyString = _request.get('bodyString')
-        if (bodyString.length > 0) {
-            bodyString += '&'
-        }
-        bodyString += arg
-        _request = _request.set('bodyString', bodyString)
-
         // set method if not set
-        if (_request.get('method') === null) {
-            _request = _request.set('method', 'POST')
+        if (!method) {
+            method = 'POST'
         }
 
-        return _request
+        urlEncodeFlag = true
+
+        return [ urlEncodeFlag, headers, body, method ]
     }
 }
