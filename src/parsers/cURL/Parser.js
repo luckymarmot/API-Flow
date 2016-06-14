@@ -118,7 +118,6 @@ export default class CurlParser {
 
     _parseCurlCommand() {
         let requests = []
-        let request = new Request()
 
         let urlEncodeFlag = false
         let method = null

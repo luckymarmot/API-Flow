@@ -107,5 +107,3 @@ export default class FlowCLI {
         /* eslint-enable no-console */
     }
 }
-
-console.error('entry run');

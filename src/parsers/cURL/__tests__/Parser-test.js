@@ -14,11 +14,6 @@ import {
 import ExoticReference from '../../../models/references/Exotic'
 import Auth from '../../../models/Auth'
 
-import {
-    KeyValue,
-    FileReference
-} from '../../../models/RequestContext'
-
 @registerTest
 export class TestCurlParser extends UnitTest {
 
