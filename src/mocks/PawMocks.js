@@ -113,6 +113,8 @@ export class PawRequestMock extends Mock {
             sendCookies: null,
             storeCookies: null,
             getUrl: () => {},
+            getUrlBase: () => {},
+            getUrlParams: () => {},
             getHeaders: () => {},
             getHeaderByName: () => {},
             setHeader: () => {},
@@ -162,5 +164,9 @@ export class DynamicString extends Mock {
 }
 
 export const registerImporter = (_class) => {
+    return _class
+}
+
+export const registerCodeGenerator = (_class) => {
     return _class
 }

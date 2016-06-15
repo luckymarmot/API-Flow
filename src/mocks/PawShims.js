@@ -1,13 +1,15 @@
 if (
     typeof registerImporter === 'undefined' ||
     typeof DynamicValue === 'undefined' ||
-    typeof DynamicString === 'undefined'
+    typeof DynamicString === 'undefined' ||
+    typeof registerCodeGenerator === 'undefined'
 ) {
     let mocks = require('./PawMocks.js')
     module.exports = {
         registerImporter: mocks.registerImporter,
         DynamicValue: mocks.DynamicValue,
-        DynamicString: mocks.DynamicString
+        DynamicString: mocks.DynamicString,
+        registerCodeGenerator: mocks.registerCodeGenerator
     }
 }
 else {
@@ -15,7 +17,8 @@ else {
     module.exports = {
         registerImporter: registerImporter,
         DynamicValue: DynamicValue,
-        DynamicString: DynamicString
+        DynamicString: DynamicString,
+        registerCodeGenerator: registerCodeGenerator
     }
     /* eslint-enable no-undef */
 }

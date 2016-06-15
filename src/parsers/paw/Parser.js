@@ -1,15 +1,21 @@
 import Immutable from 'immutable'
 
-import registerCodeGenerator from '../../mocks/PawShims'
+import { registerCodeGenerator } from '../../mocks/PawShims'
+
+import DynamicValueManager from './dv/DVManager'
 
 import Context, {
     Parameter,
     ParameterContainer
 } from '../../models/Core'
 
+import URL from '../../models/URL'
+import Request from '../../models/Request'
 import Constraint from '../../models/Constraint'
 import Group from '../../models/Group'
 import Auth from '../../models/Auth'
+import Reference from '../../models/references/Reference'
+import ReferenceContainer from '../../models/references/Container'
 
 import {
     Info
@@ -25,8 +31,12 @@ export default class PawParser {
     static languageHighlighter = null
     static fileExtension = null
 
+    constructor() {
+        this.references = new Immutable.List()
+    }
+
     generate(ctx, reqs, opts) {
-        let group = this._parseGroups(ctx, reqs, opts)
+        let group = this._parseGroup(ctx, reqs, opts)
         let references = this._parseDomains(ctx, reqs, opts)
         let info = this._parseInfo(ctx, reqs, opts)
 
@@ -40,6 +50,10 @@ export default class PawParser {
     }
 
     _parseGroup(ctx, reqs, opts) {
+        if (!reqs) {
+            return null
+        }
+
         let groupMap = {}
         reqs.forEach(req => {
             let request = this._parseRequest(ctx, req, opts)
@@ -59,12 +73,17 @@ export default class PawParser {
         let keys = Object.keys(groupMap)
         while (keys.length > 1) {
             let id = keys[0]
+
+            if (id === 'null') {
+                id = keys[1]
+            }
+
             let group = groupMap[id]
             delete groupMap[id]
 
             let _group = ctx.getRequestGroupById(id)
 
-            let gid = (_group.parent || {}).id
+            let gid = (_group.parent || {}).id || null
             if (!groupMap[gid]) {
                 let name = (_group.parent || {}).name || null
                 groupMap[gid] = new Group({
@@ -91,9 +110,19 @@ export default class PawParser {
         let method = req.method || 'get'
         let description = req.description || null
         let [ body, contentType ] = this._formatBody(req)
-        let headers = this._formatHeaders(req.headers, contentType)
-        let queries = this._formatQueries(req.urlParams)
+
+        let [ headers, auths ] = this._formatHeaders(
+            req.getHeaders(true), contentType, new Immutable.List()
+        )
+
+        let queries = this._formatQueries(
+            req.getUrlParams(true)
+        )
+
         let auth = this._formatAuth(req)
+        if (auth) {
+            auths = auths.push(auth)
+        }
 
         let request = new Request({
             id: id,
@@ -106,9 +135,7 @@ export default class PawParser {
                 queries: queries,
                 body: body
             }),
-            auths: new Immutable.List([
-                auth
-            ])
+            auths: auths
         })
 
         return request
@@ -128,21 +155,174 @@ export default class PawParser {
         return param
     }
 
-    _formatHeaders(headers, contentType) {
+    _formatReferenceParam(_key, ref) {
+        let key = _key
+        if (!key) {
+            key = this._unescapeURIFragment(
+                ref.get('uri').split('/').slice(-1)[0]
+            )
+        }
+
+        let param = new Parameter({
+            key: key,
+            name: key,
+            value: ref,
+            type: 'reference'
+        })
+
+        return param
+    }
+
+    _unescapeURIFragment(uriFragment) {
+        return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
+    }
+
+    _formatHeaderParam(key, ds, _auths) {
+        let param = null
+        let auths = _auths
+
+        let manager = new DynamicValueManager()
+
+        if (ds.length > 1) {
+            let value = new Immutable.List()
+            for (let component of ds.components) {
+                let [ _param, auth ] = this
+                    ._formatHeaderComponent(null, component, manager)
+
+                if (_param) {
+                    value = value.push(_param)
+                }
+
+                if (auth) {
+                    auths = auths.push(auth)
+                }
+            }
+
+            param = new Parameter({
+                key: key,
+                name: key,
+                type: 'string',
+                format: 'sequence',
+                value: value
+            })
+        }
+        else {
+            let [ _param, auth ] = this
+                ._formatHeaderComponent(
+                    key, ds.getComponentAtIndex(0) || '', manager
+                )
+
+            if (_param) {
+                param = _param
+            }
+
+            if (auth) {
+                auths = auths.push(auth)
+            }
+        }
+
+        return [ param, auths ]
+    }
+
+    _formatHeaderComponent(key, component, manager) {
+        let param = null
+        let auth = null
+
+        let val = manager.convert(component)
+
+        if (typeof component === 'string') {
+            param = this._formatParam(key, component)
+        }
+        else if (
+            val instanceof Auth.Digest ||
+            val instanceof Auth.AWSSig4 ||
+            val instanceof Auth.Hawk
+        ) {
+            auth = val
+        }
+        else if (val instanceof Reference) {
+            param = this._formatReferenceParam(key, val)
+            this.references = this.references.push(val)
+        }
+        else {
+            param = this._formatParam(key, val)
+        }
+
+        return [ param, auth ]
+    }
+
+    _formatHeaders(headers, contentType, _auths) {
+        let auths = _auths
         let keys = Object.keys(headers)
 
         let params = []
         for (let key of keys) {
-            let param = this._formatParam(key, headers[key])
-            params.push(param)
+            let header = this._formatHeaderParam(
+                key, headers[key], auths
+            )
+
+            let param = header[0]
+            if (param) {
+                params.push(param)
+            }
+
+            auths = header[1]
         }
 
-        if (!headers['Content-Type']) {
+        if (!headers['Content-Type'] && contentType) {
             let param = this._formatParam('Content-Type', contentType)
             params.push(param)
         }
 
-        return new Immutable.List(params)
+        return [ new Immutable.List(params), auths ]
+    }
+
+    _formatQueryParam(key, ds) {
+        let param = null
+
+        if (ds.length > 1) {
+            let value = new Immutable.List()
+            for (let component of ds.components) {
+                let _param = this._formatQueryComponent(null, component)
+                value = value.push(_param)
+            }
+
+            param = new Parameter({
+                key: key,
+                name: key,
+                type: 'string',
+                format: 'sequence',
+                value: value
+            })
+        }
+        else {
+            let _param = this._formatQueryComponent(
+                key, ds.getComponentAtIndex(1) || ''
+            )
+            param = _param
+        }
+
+        return param
+    }
+
+    _formatQueryComponent(key, component) {
+        let param = null
+
+        let manager = new DynamicValueManager()
+        let val = manager.convert(component)
+
+        if (typeof component === 'string') {
+            param = this._formatParam(key, component)
+        }
+        else if (val instanceof Reference) {
+            param = this._formatReferenceParam(key, val)
+            this.references = this.references.push(val)
+        }
+        else {
+            param = this._formatParam(component.getEvaluatedString())
+        }
+
+        return param
     }
 
     _formatQueries(queries) {
@@ -150,51 +330,60 @@ export default class PawParser {
 
         let params = []
         for (let key of keys) {
-            let param = this._formatParam(key, queries[key])
-            params.push(param)
+            let query = this._formatQueryParam(key, queries[key])
+            params.push(query)
         }
 
         return new Immutable.List(params)
     }
 
-    _formatBody(req) {
-        let plain = req.body
-        let jsonBody = req.jsonBody
-        let urlEncoded = req.urlEncodedBody
-        let formData = req.multipartBody
+    _formatPlainBody(content) {
+        let param = this._formatParam('body', content.getEvaluatedString())
+        return [ param, 'text/plain' ]
+    }
 
+    _formatBody(req) {
         let params = []
         let contentType
-        if (plain) {
-            contentType = 'text/plain'
-            let param = this._formatParam('body', plain)
-            params.push(param)
-        }
 
-        if (jsonBody) {
-            contentType = 'application/json'
-            let param = this._formatParam('body', JSON.stringify(jsonBody))
-            params.push(param)
-        }
+        let body = req.getBody(true)
+        let urlEncoded = req.getUrlEncodedBody(true)
+        let formData = req.getMultipartBody(true)
 
-        if (urlEncoded) {
-            contentType = 'application/x-www-form-urlencoded'
+        if (body.length === 1) {
+            let content = body.getComponentAtIndex(0)
 
-            let keys = Object.keys(urlEncoded)
-            for (let key of keys) {
-                let param = this._formatParam(key, urlEncoded[key])
+            if (typeof content === 'string') {
+                let [ param, cType ] = this._formatPlainBody(content)
                 params.push(param)
+                contentType = cType
+            }
+            else if (
+                urlEncoded !== null
+            ) {
+                contentType = 'application/x-www-form-urlencoded'
+                let keys = Object.keys(urlEncoded)
+                for (let key of keys) {
+                    let param = this._formatQueryParam(key, urlEncoded[key])
+                    params.push(param)
+                }
+            }
+            else if (
+                formData !== null
+            ) {
+                contentType = 'multipart/form-data'
+
+                let keys = Object.keys(formData)
+                for (let key of keys) {
+                    let param = this._formatQueryParam(key, formData[key])
+                    params.push(param)
+                }
             }
         }
-
-        if (formData) {
-            contentType = 'multipart/form-data'
-
-            let keys = Object.keys(formData)
-            for (let key of keys) {
-                let param = this._formatParam(key, formData[key])
-                params.push(param)
-            }
+        else {
+            let [ param, cType ] = this._formatPlainBody(body)
+            params.push(param)
+            contentType = cType
         }
 
         return [ new Immutable.List(params), contentType ]
@@ -255,7 +444,14 @@ export default class PawParser {
     }
 
     _parseDomains() {
-        return new Immutable.OrderedMap()
+        let references = this.references
+        let container = new ReferenceContainer()
+
+        container = container.create(references)
+
+        return new Immutable.OrderedMap({
+            paw: container
+        })
     }
 
     _parseInfo() {
