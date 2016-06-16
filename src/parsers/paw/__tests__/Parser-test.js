@@ -1777,6 +1777,8 @@ export class TestPawParser extends UnitTest {
         })
 
         const result = paw._parseDomains()
+
+        this.assertEqual(expected, result)
     }
 
     @targets('_parseDomains')
