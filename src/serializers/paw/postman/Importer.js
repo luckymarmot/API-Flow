@@ -4,7 +4,7 @@ import RequestContext, {
     Group
 } from '../../../models/RequestContext'
 
-import Parser from '../../../parsers/parsers'
+import PostmanParser from '../../../parsers/postman/v1/Parser'
 
 @registerImporter // eslint-disable-line
 export default class PostmanImporter extends BaseImporter {
@@ -55,7 +55,7 @@ export default class PostmanImporter extends BaseImporter {
         - options
     */
     createRequestContexts(context, items) {
-        const parser = new Parser.Postman()
+        const parser = new PostmanParser()
         let currentReqContext = new RequestContext({
             group: new Group({
                 name: 'Postman'
@@ -63,7 +63,7 @@ export default class PostmanImporter extends BaseImporter {
         })
 
         for (let item of items) {
-            let reqContext = parser.parse(item.content)
+            let reqContext = parser.parse(item)
 
             currentReqContext = currentReqContext
                 .mergeEnvironments(reqContext.get('environments'))

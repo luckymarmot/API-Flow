@@ -82,6 +82,7 @@ export default class BaseImporter {
         let resolver = new ContextResolver(environment)
 
         let importPromise = parsePromiseOrResult.then((requestContexts) => {
+            console.log('reached here'. requestContexts.size)
             let promises = []
             for (let env of requestContexts) {
                 promises.push(

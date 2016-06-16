@@ -1,9 +1,5 @@
 import BaseImporter from '../base-importer/BaseImporter'
-import {
-    Parser
-} from '../../../parsers/parsers'
-
-import path from 'path-browserify'
+import RAMLParser from '../../../parsers/raml/Parser'
 
 @registerImporter // eslint-disable-line
 export default class RAMLImporter extends BaseImporter {
@@ -40,20 +36,19 @@ export default class RAMLImporter extends BaseImporter {
         - options
     */
     createRequestContexts(context, items) {
-        const parser = new Parser.Raml()
+        const parser = new RAMLParser()
 
         let reqPromises = []
         for (let item of items) {
             if (this._startsWithRAMLVersion(item)) {
-                reqPromises.push(parser.parse(
-                    item.content,
-                    path.join(item.file.path, item.file.name)
+                reqPromises.push(
+                    parser.parse(item)
                 ).then(reqContext => {
                     return {
                         context: reqContext,
                         items: [ item ]
                     }
-                }))
+                })
             }
         }
         return Promise.all(reqPromises)

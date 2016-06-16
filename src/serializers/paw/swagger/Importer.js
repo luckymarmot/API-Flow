@@ -1,7 +1,7 @@
 import yaml from 'js-yaml'
 
 import BaseImporter from '../base-importer/BaseImporter'
-import Parser from '../../../parsers/parsers'
+import SwaggerParser from '../../../parsers/swagger/Parser'
 
 @registerImporter // eslint-disable-line
 export default class SwaggerImporter extends BaseImporter {
@@ -50,16 +50,17 @@ export default class SwaggerImporter extends BaseImporter {
         - options
     */
     createRequestContexts(context, items) {
-        const parser = new Parser.Swagger()
+        const parser = new SwaggerParser()
 
         let reqContexts = []
         for (let item of items) {
-            let reqContext = parser.parse(item.content)
+            let reqContext = parser.parse(item)
             reqContexts.push({
                 context: reqContext,
                 items: [ item ]
             })
         }
+
         return reqContexts
     }
 }

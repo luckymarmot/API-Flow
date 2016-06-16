@@ -24,7 +24,7 @@ export default class EnvironmentVariable extends DynamicValueConverter {
         let uri = this._convertNameToFragment(name)
         return new ExoticReference({
             uri: uri,
-            relative: relative,
+            relative: uri,
             value: currentValue.getEvaluatedString(),
             resolved: true
         })

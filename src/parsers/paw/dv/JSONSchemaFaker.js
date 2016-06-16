@@ -3,14 +3,14 @@ import DynamicValueConverter from './DynamicValueConverter'
 import JSONSchemaReference from '../../../models/references/JSONSchema'
 
 export default class JSONSchemaFaker extends DynamicValueConverter {
-    convert(dv, ctx) {
+    convert(dv) {
         let schema = dv.schema
         let ref = new JSONSchemaReference({
-            value: component.schema,
+            value: schema,
             resolved: true
         })
 
-        let dependencies = ref._findRefs(component.schema)
+        let dependencies = ref._findRefs(schema)
 
         return ref.set('dependencies', dependencies)
     }

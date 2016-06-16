@@ -10,7 +10,6 @@ import {
 import PawParser from '../Parser'
 
 import Context, {
-    Body,
     Parameter
 } from '../../../models/Core'
 
@@ -152,7 +151,7 @@ export class TestPawParser extends UnitTest {
     testParseGroupCallsRequestGroupByIdForEachGroup() {
         const [ paw, ctx ] = this.__init(2)
 
-        paw.spyOn('_parseRequest', (id) => {
+        paw.spyOn('_parseRequest', () => {
             return 12
         })
 
@@ -221,7 +220,7 @@ export class TestPawParser extends UnitTest {
     testParseGroupSupportsNestedGroups() {
         const [ paw, ctx ] = this.__init(2)
 
-        paw.spyOn('_parseRequest', (id) => {
+        paw.spyOn('_parseRequest', () => {
             return 12
         })
 
@@ -232,7 +231,7 @@ export class TestPawParser extends UnitTest {
                     parent: {
                         id: '90',
                         name: 'group#2'
-                    },
+                    }
                 }
             }
             return {
@@ -918,8 +917,8 @@ export class TestPawParser extends UnitTest {
 
         const auths = new Immutable.List()
 
-        paw.spyOn('_formatHeaderParam', (_, __, auths) => {
-            return [ 12, auths.push(90) ]
+        paw.spyOn('_formatHeaderParam', (_, __, _auths) => {
+            return [ 12, _auths.push(90) ]
         })
 
         paw.spyOn('_formatParam', () => {
@@ -1140,9 +1139,9 @@ export class TestPawParser extends UnitTest {
     testFormatQueriesCallsFormatQueryParamForEachQuery() {
         const paw = this.__init()
         const queries = {
-            'api_key': new DynamicString('1204580192847569182741509781'),
-            'location': new DynamicString('London'),
-            'limit': new DynamicString('190284')
+            api_key: new DynamicString('1204580192847569182741509781'),
+            location: new DynamicString('London'),
+            limit: new DynamicString('190284')
         }
 
         paw.spyOn('_formatQueryParam', () => {
@@ -1224,6 +1223,10 @@ export class TestPawParser extends UnitTest {
     testFormatBodyCallsAllGetBodyMethodsFromRequest() {
         const [ paw, ctx, req ] = this.__init(3)
 
+        if (!ctx) {
+            return
+        }
+
         req.spyOn('getBody', () => {
             return {}
         })
@@ -1250,6 +1253,10 @@ export class TestPawParser extends UnitTest {
     @targets('_formatBody')
     testFormatBodyUsesDynamicStringsFromEachGetBodyMethod() {
         const [ paw, ctx, req ] = this.__init(3)
+
+        if (!ctx) {
+            return
+        }
 
         req.spyOn('getBody', () => {
             return {}
@@ -1282,6 +1289,10 @@ export class TestPawParser extends UnitTest {
     testFormatBodyCallsFormatPlainBodyIfBodyDoesNotHaveOnlyOneComponent() {
         const [ paw, ctx, req ] = this.__init(3)
 
+        if (!ctx) {
+            return
+        }
+
         req.spyOn('getBody', () => {
             return {}
         })
@@ -1304,8 +1315,12 @@ export class TestPawParser extends UnitTest {
     }
 
     @targets('_formatBody')
-    testFormatBodyCallsFormatPlainBodyWithItselfIfItDoesNotHaveOnlyOneComponent() {
+    testFormatBodyCallsFormatPlainBodyWithItselfIfItNotOneComponent() {
         const [ paw, ctx, req ] = this.__init(3)
+
+        if (!ctx) {
+            return
+        }
 
         req.spyOn('getBody', () => {
             return 12
@@ -1334,6 +1349,10 @@ export class TestPawParser extends UnitTest {
 
     testFormatBodyReturnsExpectedParamIfItDoesNotHaveOnlyOneComponent() {
         const [ paw, ctx, req ] = this.__init(3)
+
+        if (!ctx) {
+            return
+        }
 
         req.spyOn('getBody', () => {
             return 12
@@ -1364,6 +1383,10 @@ export class TestPawParser extends UnitTest {
     testFormatBodyCallsFormatQueryParamForEachParamInUrlEncodedBody() {
         const [ paw, ctx, req ] = this.__init(3)
 
+        if (!ctx) {
+            return
+        }
+
         const ds = new DynamicString({ a: 'more complex ds' })
         ds.length = 1
 
@@ -1373,9 +1396,9 @@ export class TestPawParser extends UnitTest {
 
         req.spyOn('getUrlEncodedBody', () => {
             return {
-                'api_key': new DynamicString('1204580192847569182741509781'),
-                'location': new DynamicString('London'),
-                'limit': new DynamicString('190284')
+                api_key: new DynamicString('1204580192847569182741509781'),
+                location: new DynamicString('London'),
+                limit: new DynamicString('190284')
             }
         })
 
@@ -1396,6 +1419,10 @@ export class TestPawParser extends UnitTest {
     testFormatBodyReturnsExpectedParamWithUrlEncodedBody() {
         const [ paw, ctx, req ] = this.__init(3)
 
+        if (!ctx) {
+            return
+        }
+
         const ds = new DynamicString({ a: 'more complex ds' })
         ds.length = 1
 
@@ -1405,9 +1432,9 @@ export class TestPawParser extends UnitTest {
 
         req.spyOn('getUrlEncodedBody', () => {
             return {
-                'api_key': new DynamicString('1204580192847569182741509781'),
-                'location': new DynamicString('London'),
-                'limit': new DynamicString('190284')
+                api_key: new DynamicString('1204580192847569182741509781'),
+                location: new DynamicString('London'),
+                limit: new DynamicString('190284')
             }
         })
 
@@ -1433,6 +1460,10 @@ export class TestPawParser extends UnitTest {
     testFormatBodyCallsFormatQueryParamForEachParamInMultipartBody() {
         const [ paw, ctx, req ] = this.__init(3)
 
+        if (!ctx) {
+            return
+        }
+
         const ds = new DynamicString({ a: 'more complex ds' })
         ds.length = 1
 
@@ -1442,9 +1473,9 @@ export class TestPawParser extends UnitTest {
 
         req.spyOn('getMultipartBody', () => {
             return {
-                'api_key': new DynamicString('1204580192847569182741509781'),
-                'location': new DynamicString('London'),
-                'limit': new DynamicString('190284')
+                api_key: new DynamicString('1204580192847569182741509781'),
+                location: new DynamicString('London'),
+                limit: new DynamicString('190284')
             }
         })
 
@@ -1465,6 +1496,10 @@ export class TestPawParser extends UnitTest {
     testFormatBodyReturnsExpectedParamWithMultipartBody() {
         const [ paw, ctx, req ] = this.__init(3)
 
+        if (!ctx) {
+            return
+        }
+
         const ds = new DynamicString({ a: 'more complex ds' })
         ds.length = 1
 
@@ -1474,9 +1509,9 @@ export class TestPawParser extends UnitTest {
 
         req.spyOn('getMultipartBody', () => {
             return {
-                'api_key': new DynamicString('1204580192847569182741509781'),
-                'location': new DynamicString('London'),
-                'limit': new DynamicString('190284')
+                api_key: new DynamicString('1204580192847569182741509781'),
+                location: new DynamicString('London'),
+                limit: new DynamicString('190284')
             }
         })
 
@@ -1501,6 +1536,10 @@ export class TestPawParser extends UnitTest {
     @targets('_formatBody')
     testFormatBodyCallsFormatPlainBodyWithUnknownBodyType() {
         const [ paw, ctx, req ] = this.__init(3)
+
+        if (!ctx) {
+            return
+        }
 
         const ds = new DynamicString({ a: 'more complex ds' })
         ds.length = 1
@@ -1529,6 +1568,10 @@ export class TestPawParser extends UnitTest {
     @targets('_formatBody')
     testFormatBodyReturnsExpectedParamWithUnknownBodyType() {
         const [ paw, ctx, req ] = this.__init(3)
+
+        if (!ctx) {
+            return
+        }
 
         const ds = new DynamicString({ a: 'more complex ds' })
         ds.length = 1
