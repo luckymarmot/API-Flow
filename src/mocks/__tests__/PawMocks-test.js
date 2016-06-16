@@ -244,6 +244,8 @@ export class TestPawMocks extends UnitTest {
 
         const pawRequestFuncFields = [
             'getUrl',
+            'getUrlBase',
+            'getUrlParams',
             'getHeaders',
             'getHeaderByName',
             'setHeader',

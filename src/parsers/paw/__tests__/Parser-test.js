@@ -854,11 +854,15 @@ export class TestPawParser extends UnitTest {
         })
 
         dvm.spyOn('convert', () => {
-            return 'some evaluated dv'
+            return null
         })
 
         const key = 'Content-Type'
-        const component = {}
+        const component = {
+            getEvaluatedString: () => {
+                return 'some evaluated dv'
+            }
+        }
 
         const expected = [
             12,
@@ -931,6 +935,628 @@ export class TestPawParser extends UnitTest {
 
         this.assertJSONEqual(expected, result)
         this.assertEqual(paw.spy._formatHeaderParam.count, 2)
+    }
+
+    @targets('_formatQueryParam')
+    testFormatQueryParamCallsFormatQueryComponentOnlyOnceForSingleComponent() {
+        const paw = this.__init()
+        const ds = new DynamicString('a;slkfjwjefowij@wefjwpoij,mdw;eo')
+        ds.length = 1
+
+        paw.spyOn('_formatQueryComponent', () => {
+            return 12
+        })
+
+        const key = 'api_key'
+
+        paw._formatQueryParam(key, ds)
+
+        this.assertEqual(paw.spy._formatQueryComponent.count, 1)
+    }
+
+    @targets('_formatQueryParam')
+    testFormatQueryParamCallsFormatQueryComponentForEachComponent() {
+        const paw = this.__init()
+        const ds = new DynamicString('a;slkfjwjefowij', 'wefjwpoij,mdw;eo')
+        ds.length = 2
+
+        paw.spyOn('_formatQueryComponent', () => {
+            return 12
+        })
+
+        const key = 'api_key'
+
+        paw._formatQueryParam(key, ds)
+
+        this.assertEqual(paw.spy._formatQueryComponent.count, 2)
+    }
+
+    @targets('_formatQueryParam')
+    testFormatQueryParamReturnsSequenceParamIfMultipleComponents() {
+        const paw = this.__init()
+        const ds = new DynamicString('a;slkfjwjefowij', 'wefjwpoij,mdw;eo')
+        ds.length = 2
+
+        paw.spyOn('_formatQueryComponent', () => {
+            return 12
+        })
+
+        const key = 'api_key'
+
+        const expected = new Parameter({
+            key: key,
+            name: key,
+            type: 'string',
+            format: 'sequence',
+            value: new Immutable.List([
+                12, 12
+            ])
+        })
+
+        const result = paw._formatQueryParam(key, ds)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatQueryParam')
+    testFormatQueryParamReturnsSimpleParamIfOnlyOneComponent() {
+        const paw = this.__init()
+        const ds = new DynamicString('a;slkfjwjefowij@wefjwpoij,mdw;eo')
+        ds.length = 1
+
+        paw.spyOn('_formatQueryComponent', () => {
+            return 12
+        })
+
+        const key = 'api_key'
+
+        const expected = 12
+
+        const result = paw._formatQueryParam(key, ds)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatQueryComponent')
+    testFormatQueryComponentWithStringComponentCallsFormatParam() {
+        const paw = this.__init()
+        const dvm = new ClassMock(new DynamicValueManager(), '')
+
+        paw.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        dvm.spyOn('convert', () => {
+            return null
+        })
+
+        const key = 'Content-Type'
+        const component = 'application/json'
+
+        const expected = 12
+
+        const result = paw._formatQueryComponent(key, component, dvm)
+
+        this.assertJSONEqual(expected, result)
+        this.assertEqual(dvm.spy.convert.count, 1)
+    }
+
+    @targets('_formatQueryComponent')
+    testFormatQueryComponentWithStringComponentReturnsExpectedParam() {
+        const paw = this.__init()
+        const dvm = new ClassMock(new DynamicValueManager(), '')
+
+        dvm.spyOn('convert', () => {
+            return null
+        })
+
+        const key = 'Content-Type'
+        const component = 'application/json'
+
+        const expected = new Parameter({
+            key: key,
+            name: key,
+            type: 'string',
+            value: component,
+            internals: new Immutable.List([
+                new Constraint.Enum([ component ])
+            ])
+        })
+
+        const result = paw._formatQueryComponent(key, component, dvm)
+
+        this.assertJSONEqual(expected, result)
+        this.assertEqual(dvm.spy.convert.count, 1)
+    }
+
+    @targets('_formatQueryComponent')
+    testFormatQueryComponentWithReferenceCallsFormatReferenceParam() {
+        const paw = this.__init()
+        paw.references = new Immutable.List()
+        const dvm = new ClassMock(new DynamicValueManager(), '')
+
+        paw.spyOn('_formatReferenceParam', () => {
+            return 12
+        })
+
+        const ref = new JSONSchemaReference({
+            uri: '#/some/uri',
+            relative: '#/some/uri',
+            value: {
+                type: 'string',
+                enum: [ 'test' ]
+            },
+            resolved: true
+        })
+
+        dvm.spyOn('convert', () => {
+            return ref
+        })
+
+        const key = 'Content-Type'
+        const component = {}
+
+        const expected = 12
+
+        const result = paw._formatQueryComponent(key, component, dvm)
+
+        this.assertJSONEqual(expected, result)
+        this.assertEqual(paw.spy._formatReferenceParam.count, 1)
+    }
+
+    @targets('_formatQueryComponent')
+    testFormatQueryComponentWithUnknownDVReturnsExpectedParam() {
+        const paw = this.__init()
+        const dvm = new ClassMock(new DynamicValueManager(), '')
+
+        paw.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        dvm.spyOn('convert', () => {
+            return null
+        })
+
+        const key = 'Content-Type'
+        const component = {
+            getEvaluatedString: () => {
+                return 'some evaluated dv'
+            }
+        }
+
+        const expected = 12
+
+        const result = paw._formatQueryComponent(key, component, dvm)
+
+        this.assertJSONEqual(expected, result)
+        this.assertEqual(paw.spy._formatParam.count, 1)
+        this.assertEqual(
+            paw.spy._formatParam.calls[0],
+            [ key, 'some evaluated dv' ]
+        )
+    }
+
+    @targets('_formatQueries')
+    testFormatQueriesCallsFormatQueryParamForEachQuery() {
+        const paw = this.__init()
+        const queries = {
+            'api_key': new DynamicString('1204580192847569182741509781'),
+            'location': new DynamicString('London'),
+            'limit': new DynamicString('190284')
+        }
+
+        paw.spyOn('_formatQueryParam', () => {
+            return 12
+        })
+
+        const expected = [ 12, 12, 12 ]
+
+        const result = paw._formatQueries(queries)
+
+        this.assertEqual(expected, result)
+        this.assertEqual(paw.spy._formatQueryParam.count, 3)
+    }
+
+    @targets('_formatPlainBody')
+    testFormatPlainBodyCallsFormatParam() {
+        const paw = this.__init()
+        const content = {
+            getEvaluatedString: () => {
+                return 'test content'
+            }
+        }
+
+        paw.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        paw._formatPlainBody(content)
+
+        this.assertEqual(paw.spy._formatParam.count, 1)
+    }
+
+    @targets('_formatPlainBody')
+    testFormatPlainBodyCallsFormatParamWithCorrectArguments() {
+        const paw = this.__init()
+        const content = {
+            getEvaluatedString: () => {
+                return 'test content'
+            }
+        }
+
+        paw.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        paw._formatPlainBody(content)
+
+        this.assertEqual(paw.spy._formatParam.count, 1)
+        this.assertEqual(
+            paw.spy._formatParam.calls[0],
+            [ 'body', 'test content' ]
+        )
+    }
+
+    @targets('_formatPlainBody')
+    testFormatPlainBodyReturnsExpectedParam() {
+        const paw = this.__init()
+        const content = {
+            getEvaluatedString: () => {
+                return 'test content'
+            }
+        }
+
+        paw.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        const expected = [
+            12,
+            'text/plain'
+        ]
+
+        const result = paw._formatPlainBody(content)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatPlainBody')
+    testFormatBodyCallsAllGetBodyMethodsFromRequest() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        req.spyOn('getBody', () => {
+            return {}
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return {}
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return {}
+        })
+
+        paw.spyOn('_formatPlainBody', () => {
+            return [ 12, 42 ]
+        })
+
+        paw._formatBody(req)
+
+        this.assertEqual(req.spy.getBody.count, 1)
+        this.assertEqual(req.spy.getUrlEncodedBody.count, 1)
+        this.assertEqual(req.spy.getMultipartBody.count, 1)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyUsesDynamicStringsFromEachGetBodyMethod() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        req.spyOn('getBody', () => {
+            return {}
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return {}
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return {}
+        })
+
+        paw.spyOn('_formatPlainBody', () => {
+            return [ 12, 42 ]
+        })
+
+        paw._formatBody(req)
+
+        this.assertEqual(req.spy.getBody.count, 1)
+        this.assertEqual(req.spy.getUrlEncodedBody.count, 1)
+        this.assertEqual(req.spy.getMultipartBody.count, 1)
+
+        this.assertEqual(req.spy.getBody.calls[0], [ true ])
+        this.assertEqual(req.spy.getUrlEncodedBody.calls[0], [ true ])
+        this.assertEqual(req.spy.getMultipartBody.calls[0], [ true ])
+    }
+
+    @targets('_formatBody')
+    testFormatBodyCallsFormatPlainBodyIfBodyDoesNotHaveOnlyOneComponent() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        req.spyOn('getBody', () => {
+            return {}
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return {}
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return {}
+        })
+
+        paw.spyOn('_formatPlainBody', () => {
+            return [ 12, 42 ]
+        })
+
+        paw._formatBody(req)
+
+        this.assertEqual(paw.spy._formatPlainBody.count, 1)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyCallsFormatPlainBodyWithItselfIfItDoesNotHaveOnlyOneComponent() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        req.spyOn('getBody', () => {
+            return 12
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return {}
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return {}
+        })
+
+        paw.spyOn('_formatPlainBody', () => {
+            return [ 12, 42 ]
+        })
+
+        paw._formatBody(req)
+
+        this.assertEqual(paw.spy._formatPlainBody.count, 1)
+        this.assertEqual(
+            paw.spy._formatPlainBody.calls[0],
+            [ 12 ]
+        )
+    }
+
+    testFormatBodyReturnsExpectedParamIfItDoesNotHaveOnlyOneComponent() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        req.spyOn('getBody', () => {
+            return 12
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return {}
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return {}
+        })
+
+        paw.spyOn('_formatPlainBody', () => {
+            return [ 12, 42 ]
+        })
+
+        const expected = [
+            new Immutable.List([ 12 ]), 42
+        ]
+
+        const result = paw._formatBody(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyCallsFormatQueryParamForEachParamInUrlEncodedBody() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        const ds = new DynamicString({ a: 'more complex ds' })
+        ds.length = 1
+
+        req.spyOn('getBody', () => {
+            return ds
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return {
+                'api_key': new DynamicString('1204580192847569182741509781'),
+                'location': new DynamicString('London'),
+                'limit': new DynamicString('190284')
+            }
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return {}
+        })
+
+        paw.spyOn('_formatQueryParam', () => {
+            return 12
+        })
+
+        paw._formatBody(req)
+
+        this.assertEqual(paw.spy._formatQueryParam.count, 3)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyReturnsExpectedParamWithUrlEncodedBody() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        const ds = new DynamicString({ a: 'more complex ds' })
+        ds.length = 1
+
+        req.spyOn('getBody', () => {
+            return ds
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return {
+                'api_key': new DynamicString('1204580192847569182741509781'),
+                'location': new DynamicString('London'),
+                'limit': new DynamicString('190284')
+            }
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return null
+        })
+
+        paw.spyOn('_formatQueryParam', () => {
+            return 12
+        })
+
+        const expected = [
+            new Immutable.List([ 12, 12, 12 ]),
+            'application/x-www-form-urlencoded'
+        ]
+
+        const result = paw._formatBody(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyCallsFormatQueryParamForEachParamInMultipartBody() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        const ds = new DynamicString({ a: 'more complex ds' })
+        ds.length = 1
+
+        req.spyOn('getBody', () => {
+            return ds
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return {
+                'api_key': new DynamicString('1204580192847569182741509781'),
+                'location': new DynamicString('London'),
+                'limit': new DynamicString('190284')
+            }
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return null
+        })
+
+        paw.spyOn('_formatQueryParam', () => {
+            return 12
+        })
+
+        paw._formatBody(req)
+
+        this.assertEqual(paw.spy._formatQueryParam.count, 3)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyReturnsExpectedParamWithMultipartBody() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        const ds = new DynamicString({ a: 'more complex ds' })
+        ds.length = 1
+
+        req.spyOn('getBody', () => {
+            return ds
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return {
+                'api_key': new DynamicString('1204580192847569182741509781'),
+                'location': new DynamicString('London'),
+                'limit': new DynamicString('190284')
+            }
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return null
+        })
+
+        paw.spyOn('_formatQueryParam', () => {
+            return 12
+        })
+
+        const expected = [
+            new Immutable.List([ 12, 12, 12 ]),
+            'multipart/form-data'
+        ]
+
+        const result = paw._formatBody(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyCallsFormatPlainBodyWithUnknownBodyType() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        const ds = new DynamicString({ a: 'more complex ds' })
+        ds.length = 1
+
+        req.spyOn('getBody', () => {
+            return ds
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return null
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return null
+        })
+
+        paw.spyOn('_formatPlainBody', () => {
+            return [ 12, 42 ]
+        })
+
+        paw._formatBody(req)
+
+        this.assertEqual(paw.spy._formatPlainBody.count, 1)
+    }
+
+    @targets('_formatBody')
+    testFormatBodyReturnsExpectedParamWithUnknownBodyType() {
+        const [ paw, ctx, req ] = this.__init(3)
+
+        const ds = new DynamicString({ a: 'more complex ds' })
+        ds.length = 1
+
+        req.spyOn('getBody', () => {
+            return ds
+        })
+
+        req.spyOn('getMultipartBody', () => {
+            return null
+        })
+
+        req.spyOn('getUrlEncodedBody', () => {
+            return null
+        })
+
+        paw.spyOn('_formatPlainBody', () => {
+            return [ 12, 42 ]
+        })
+
+        const expected = [
+            new Immutable.List([ 12 ]),
+            42
+        ]
+
+        const result = paw._formatBody(req)
+
+        this.assertEqual(expected, result)
     }
 
     __init(size) {

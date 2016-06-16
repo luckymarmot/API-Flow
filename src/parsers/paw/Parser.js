@@ -245,7 +245,7 @@ export default class PawParser {
             this.references = this.references.push(val)
         }
         else {
-            param = this._formatParam(key, val)
+            param = this._formatParam(key, component.getEvaluatedString())
         }
 
         return [ param, auth ]
@@ -279,11 +279,14 @@ export default class PawParser {
 
     _formatQueryParam(key, ds) {
         let param = null
+        let manager = new DynamicValueManager()
 
         if (ds.length > 1) {
             let value = new Immutable.List()
             for (let component of ds.components) {
-                let _param = this._formatQueryComponent(null, component)
+                let _param = this._formatQueryComponent(
+                    null, component, manager
+                )
                 value = value.push(_param)
             }
 
@@ -297,7 +300,7 @@ export default class PawParser {
         }
         else {
             let _param = this._formatQueryComponent(
-                key, ds.getComponentAtIndex(1) || ''
+                key, ds.getComponentAtIndex(1) || '', manager
             )
             param = _param
         }
@@ -305,10 +308,9 @@ export default class PawParser {
         return param
     }
 
-    _formatQueryComponent(key, component) {
+    _formatQueryComponent(key, component, manager) {
         let param = null
 
-        let manager = new DynamicValueManager()
         let val = manager.convert(component)
 
         if (typeof component === 'string') {
@@ -319,7 +321,7 @@ export default class PawParser {
             this.references = this.references.push(val)
         }
         else {
-            param = this._formatParam(component.getEvaluatedString())
+            param = this._formatParam(key, component.getEvaluatedString())
         }
 
         return param
@@ -351,14 +353,7 @@ export default class PawParser {
         let formData = req.getMultipartBody(true)
 
         if (body.length === 1) {
-            let content = body.getComponentAtIndex(0)
-
-            if (typeof content === 'string') {
-                let [ param, cType ] = this._formatPlainBody(content)
-                params.push(param)
-                contentType = cType
-            }
-            else if (
+            if (
                 urlEncoded !== null
             ) {
                 contentType = 'application/x-www-form-urlencoded'
@@ -380,7 +375,8 @@ export default class PawParser {
                 }
             }
         }
-        else {
+
+        if (params.length === 0) {
             let [ param, cType ] = this._formatPlainBody(body)
             params.push(param)
             contentType = cType
