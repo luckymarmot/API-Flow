@@ -1,8 +1,7 @@
 import BaseImporter from '../base-importer/BaseImporter'
 
-import RequestContext, {
-    Group
-} from '../../../models/RequestContext'
+import Context from '../../../models/Core'
+import Group from '../../../models/Group'
 
 import PostmanParser from '../../../parsers/postman/v1/Parser'
 
@@ -56,7 +55,7 @@ export default class PostmanImporter extends BaseImporter {
     */
     createRequestContexts(context, items) {
         const parser = new PostmanParser()
-        let currentReqContext = new RequestContext({
+        let currentReqContext = new Context({
             group: new Group({
                 name: 'Postman'
             })
@@ -65,8 +64,10 @@ export default class PostmanImporter extends BaseImporter {
         for (let item of items) {
             let reqContext = parser.parse(item)
 
-            currentReqContext = currentReqContext
-                .mergeEnvironments(reqContext.get('environments'))
+            let references = currentReqContext.get('references')
+            references = references.mergeDeep(reqContext.get('references'))
+
+            currentReqContext = currentReqContext.set('references', references)
 
             if (reqContext.getIn([ 'group', 'children' ]).size > 0) {
                 let groupName = reqContext.getIn([ 'group', 'name' ])

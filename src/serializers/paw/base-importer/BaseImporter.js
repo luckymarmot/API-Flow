@@ -82,7 +82,6 @@ export default class BaseImporter {
         let resolver = new ContextResolver(environment)
 
         let importPromise = parsePromiseOrResult.then((requestContexts) => {
-            console.log('reached here'. requestContexts.size)
             let promises = []
             for (let env of requestContexts) {
                 promises.push(
@@ -218,7 +217,8 @@ export default class BaseImporter {
             for (let uri of uris) {
                 let reference = container.resolve(uri)
                 let content = this._setReference(reference)
-                variablesDict[reference.get('relative')] = content
+                variablesDict[reference.get('relative')] =
+                    new DynamicString(content)
             }
 
             pawEnv.setVariablesValues(variablesDict)
@@ -238,6 +238,10 @@ export default class BaseImporter {
     }
 
     _setJSONSchemaReference(reference) {
+        console.log('reference.jsf ->',
+            JSON.stringify(reference.toJSONSchema(), null, '  '),
+            JSON.stringify(reference.get('value'), null, '  ')
+        )
         return new DynamicValue(
             'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
             {
@@ -387,12 +391,12 @@ export default class BaseImporter {
         let host = this._toDynamicString(url.get('host'), true)
         let path = this._toDynamicString(url.get('pathname'), true)
 
-        if (protocol.components.length > 0) {
-            protocol.components.push(':')
+        if (protocol.length > 0) {
+            protocol.appendString(':')
         }
 
-        if (protocol.components.length > 0 || host.components.length > 0) {
-            protocol.components.push('//')
+        if (protocol.length > 0 || host.length > 0) {
+            protocol.appendString('//')
         }
 
         let _url = new DynamicString(
@@ -847,18 +851,26 @@ export default class BaseImporter {
         if (schema['x-sequence']) {
             for (let item of schema['x-sequence']) {
                 if (item['x-title']) {
-                    components.push(new DynamicValue(
-                        'com.luckymarmot.PawExtensions' +
-                        '.JSONSchemaFakerDynamicValue',
-                        {
-                            schema: item
-                        }
-                    ))
+                    if (schema.enum && schema.enum.length === 1) {
+                        components.push(param.generate())
+                    }
+                    else {
+                        components.push(new DynamicValue(
+                            'com.luckymarmot.PawExtensions' +
+                            '.JSONSchemaFakerDynamicValue',
+                            {
+                                schema: item
+                            }
+                        ))
+                    }
                 }
                 else {
                     components.push(param.generate(false, item))
                 }
             }
+        }
+        else if (schema.enum && schema.enum.length === 1) {
+            components.push(param.generate(false, schema))
         }
         else {
             components.push(new DynamicValue(
