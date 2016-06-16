@@ -1570,9 +1570,19 @@ export class TestBaseImporter extends UnitTest {
 
         importer.spyOn('_toDynamicString', (string) => {
             if (string instanceof Parameter) {
-                return new DynamicString(string.generate())
+                let dynStr = new DynamicString(string.generate())
+                dynStr.$$_spyOn('appendString', (str) => {
+                    dynStr.components.push(str)
+                })
+                dynStr.length = dynStr.components.length
+                return dynStr
             }
-            return new DynamicString(string)
+            let dynStr = new DynamicString(string)
+            dynStr.$$_spyOn('appendString', (str) => {
+                dynStr.components.push(str)
+            })
+            dynStr.length = dynStr.components.length
+            return dynStr
         })
 
         importer.spyOn('_extractQueryParamsFromAuth', () => {
@@ -1631,6 +1641,8 @@ export class TestBaseImporter extends UnitTest {
             dyn.$$_spyOn('appendString', (str) => {
                 dyn.components.push(str)
             })
+
+            dyn.length = dyn.components.length
 
             return dyn
         })
@@ -1707,6 +1719,8 @@ export class TestBaseImporter extends UnitTest {
             dyn.$$_spyOn('appendString', (str) => {
                 dyn.components.push(str)
             })
+
+            dyn.length = dyn.components.length
 
             return dyn
         })
@@ -2147,9 +2161,9 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(env.spy.setVariablesValues.count, 1)
 
         this.assertEqual(importer.spy._getEnvironment.calls[0][1], 'schemas')
-        this.assertEqual(env.spy.setVariablesValues.calls[0][0], {
-            '#/references/Friend': 42,
-            '#/references/User': 42
+        this.assertJSONEqual(env.spy.setVariablesValues.calls[0][0], {
+            '#/references/Friend': new DynamicString(42),
+            '#/references/User': new DynamicString(42)
         })
     }
 

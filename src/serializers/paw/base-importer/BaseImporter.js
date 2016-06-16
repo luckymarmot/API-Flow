@@ -238,10 +238,6 @@ export default class BaseImporter {
     }
 
     _setJSONSchemaReference(reference) {
-        console.log('reference.jsf ->',
-            JSON.stringify(reference.toJSONSchema(), null, '  '),
-            JSON.stringify(reference.get('value'), null, '  ')
-        )
         return new DynamicValue(
             'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
             {

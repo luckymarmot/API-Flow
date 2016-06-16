@@ -19,7 +19,10 @@ import Auth from '../../../models/Auth'
 import Request from '../../../models/Request'
 import URL from '../../../models/URL'
 
+import { Info } from '../../../models/Utils'
+
 import JSONSchemaReference from '../../../models/references/JSONSchema'
+import ReferenceContainer from '../../../models/references/Container'
 
 import DynamicValueManager from '../dv/DVManager'
 
@@ -1598,6 +1601,265 @@ export class TestPawParser extends UnitTest {
         ]
 
         const result = paw._formatBody(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuth')
+    testFormatAuthCallsAllAuthMethodsFromRequest() {
+        const paw = this.__init()
+        const req = new PawRequestMock({}, '')
+
+        req.spyOn('getHttpBasicAuth', () => {
+            return null
+        })
+
+        req.spyOn('getOAuth1', () => {
+            return null
+        })
+
+        req.spyOn('getOAuth2', () => {
+            return null
+        })
+
+        paw._formatAuth(req)
+
+        this.assertEqual(req.spy.getHttpBasicAuth.count, 1)
+        this.assertEqual(req.spy.getOAuth1.count, 1)
+        this.assertEqual(req.spy.getOAuth2.count, 1)
+    }
+
+    @targets('_formatAuth')
+    testFormatAuthReturnsEmptyListIfNoMatch() {
+        const paw = this.__init()
+        const req = new PawRequestMock({}, '')
+
+        req.spyOn('getHttpBasicAuth', () => {
+            return null
+        })
+
+        req.spyOn('getOAuth1', () => {
+            return null
+        })
+
+        req.spyOn('getOAuth2', () => {
+            return null
+        })
+
+        const expected = new Immutable.List()
+
+        const result = paw._formatAuth(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuth')
+    testFormatAuthReturnsBasicAuthIfAppropriate() {
+        const paw = this.__init()
+        const req = new PawRequestMock({}, '')
+
+        req.spyOn('getHttpBasicAuth', () => {
+            return {
+                username: 'username',
+                password: 'password'
+            }
+        })
+
+        req.spyOn('getOAuth1', () => {
+            return null
+        })
+
+        req.spyOn('getOAuth2', () => {
+            return null
+        })
+
+        const expected = new Immutable.List([
+            new Auth.Basic({
+                username: 'username',
+                password: 'password'
+            })
+        ])
+
+        const result = paw._formatAuth(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuth')
+    testFormatAuthReturnsOAuth1IfAppropriate() {
+        const paw = this.__init()
+        const req = new PawRequestMock({}, '')
+
+        req.spyOn('getHttpBasicAuth', () => {
+            return null
+        })
+
+        req.spyOn('getOAuth1', () => {
+            return {
+                callback: 'asda',
+                consumerKey: 'woeghw',
+                consumerSecret: 'woergjhw',
+                tokenSecret: 'oeurthfb',
+                algorithm: 'eoriy',
+                nonce: 'woruetyw',
+                additionalParameters: 'snbcwe',
+                timestamp: '129048726',
+                token: 'w[p49673]'
+            }
+        })
+
+        req.spyOn('getOAuth2', () => {
+            return null
+        })
+
+        const expected = new Immutable.List([
+            new Auth.OAuth1({
+                callback: 'asda',
+                consumerKey: 'woeghw',
+                consumerSecret: 'woergjhw',
+                tokenSecret: 'oeurthfb',
+                algorithm: 'eoriy',
+                nonce: 'woruetyw',
+                additionalParameters: 'snbcwe',
+                timestamp: '129048726',
+                token: 'w[p49673]'
+            })
+        ])
+
+        const result = paw._formatAuth(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuth')
+    testFormatAuthReturnsOAuth2IfAppropriate() {
+        const paw = this.__init()
+        const req = new PawRequestMock({}, '')
+
+        req.spyOn('getHttpBasicAuth', () => {
+            return null
+        })
+
+        req.spyOn('getOAuth1', () => {
+            return null
+        })
+
+        req.spyOn('getOAuth2', () => {
+            return {
+                grantType: 1,
+                authorizationUrl: 'w;oeifhwe',
+                tokenUrl: 'h2oiufh23',
+                scope: 'read:any write:self'
+            }
+        })
+
+        const expected = new Immutable.List([
+            new Auth.OAuth2({
+                flow: 'implicit',
+                authorizationUrl: 'w;oeifhwe',
+                tokenUrl: 'h2oiufh23',
+                scopes: [ 'read:any', 'write:self' ]
+            })
+        ])
+
+        const result = paw._formatAuth(req)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_parseDomains')
+    testParseDomainWithEmptyReferenceList() {
+        const paw = this.__init()
+        paw.references = new Immutable.List()
+
+        const expected = new Immutable.OrderedMap({
+            paw: new ReferenceContainer()
+        })
+
+        const result = paw._parseDomains()
+    }
+
+    @targets('_parseDomains')
+    testParseDomainsWithSimpleReferenceList() {
+        const paw = this.__init()
+        paw.references = new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/paw/param',
+                relative: '#/paw/param',
+                value: {
+                    type: 'string',
+                    enum: [ 'hello', 'world' ]
+                },
+                resolved: true
+            }),
+            new JSONSchemaReference({
+                uri: '#/paw/other',
+                relative: '#/paw/other',
+                value: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 5
+                },
+                resolved: true
+            })
+        ])
+
+        const expected = new Immutable.OrderedMap({
+            paw: (new ReferenceContainer()).create(paw.references)
+        })
+
+        const result = paw._parseDomains()
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_parseDomains')
+    _testParseDomainsWithComplexReferenceList() {
+        const paw = this.__init()
+        paw.references = new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/paw/param',
+                relative: '#/paw/param',
+                value: {
+                    type: 'object',
+                    properties: {
+                        item: {
+                            $ref: '#/paw/missing'
+                        },
+                        other: {
+                            $ref: '#/paw/other'
+                        }
+                    }
+                },
+                resolved: true
+            }),
+            new JSONSchemaReference({
+                uri: '#/paw/other',
+                relative: '#/paw/other',
+                value: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 5
+                },
+                resolved: true
+            })
+        ])
+
+        // TODO set expected to correct value
+        const expected = null
+
+        const result = paw._parseDomains()
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_parseInfo')
+    testParseInfo() {
+        const paw = this.__init()
+
+        const expected = new Info()
+
+        const result = paw._parseInfo()
 
         this.assertEqual(expected, result)
     }
