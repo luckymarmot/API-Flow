@@ -64,17 +64,16 @@ export default class ContextResolver {
                 'resolve', 'custom', reference.get('relative')
             ])
             if (options) {
-
                 resolve = options.get('resolve')
                 value = options.get('value')
 
                 if (resolve && value) {
-                    reference = reference
+                    let _reference = reference
                         .set('value', value)
                         .set('resolved', true)
 
-                    return new Promise((resolve) => {
-                        return resolve(reference)
+                    return new Promise((_resolve) => {
+                        return _resolve(_reference)
                     })
                 }
             }
@@ -89,14 +88,14 @@ export default class ContextResolver {
         }
 
         if (!resolve) {
-            return new Promise((resolve) => {
-                return resolve(reference.set('resolved', true))
+            return new Promise((_resolve) => {
+                return _resolve(reference.set('resolved', true))
             })
         }
 
         if (dataUri === null) {
-            return new Promise((resolve) => {
-                resolve(item)
+            return new Promise((_resolve) => {
+                _resolve(item)
             }).then(_item => {
                 return reference.resolve(_item)
             })

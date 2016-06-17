@@ -2,9 +2,7 @@ import Immutable from 'immutable'
 
 import {
     UnitTest,
-    registerTest,
-    targets,
-    against
+    registerTest
 } from '../../../utils/TestUtils'
 
 import ResolverOptions, {

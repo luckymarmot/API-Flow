@@ -96,28 +96,6 @@ export default class FlowBrowser {
             })
         })
     }
-
-    _normalizeOptions(opts) {
-        if (!opts || typeof opts !== 'object') {
-            return {
-                parser: {
-                    name: 'swagger'
-                },
-                resolver: {
-                    base: 'remote'
-                },
-                serializer: {
-                    name: 'raml'
-                }
-            }
-        }
-
-        let parser = opts.parser
-        let resolver = opts.resolver
-        let serializer = opts.serializer
-
-
-    }
 }
 
 window.APIFlow = FlowBrowser

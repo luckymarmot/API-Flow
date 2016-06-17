@@ -1,10 +1,6 @@
-import Immutable from 'immutable'
-
 import {
     UnitTest,
-    registerTest,
-    targets,
-    against
+    registerTest
 } from '../../../utils/TestUtils'
 
 import ParserOptions from '../ParserOptions'
@@ -76,7 +72,7 @@ export class TestParserOptions extends UnitTest {
             instance: null
         })
 
-        const result =  new ParserOptions({
+        const result = new ParserOptions({
             some: 'key'
         })
 

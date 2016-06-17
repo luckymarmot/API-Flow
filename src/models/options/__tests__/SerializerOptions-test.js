@@ -1,10 +1,6 @@
-import Immutable from 'immutable'
-
 import {
     UnitTest,
-    registerTest,
-    targets,
-    against
+    registerTest
 } from '../../../utils/TestUtils'
 
 import SerializerOptions from '../SerializerOptions'
@@ -76,7 +72,7 @@ export class TestSerializerOptions extends UnitTest {
             instance: null
         })
 
-        const result =  new SerializerOptions({
+        const result = new SerializerOptions({
             some: 'key'
         })
 
