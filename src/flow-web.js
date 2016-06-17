@@ -10,8 +10,10 @@ import BrowserEnvironment, {
     URLResolver
 } from './models/environments/BrowserEnvironment'
 
+import Options from './models/options/Options'
+
 export default class FlowBrowser {
-    transform(input, source, target, callback) {
+    transform(input, callback, _opts) {
         let parserMap = {
             swagger: SwaggerParser,
             raml: RAMLParser
@@ -23,6 +25,12 @@ export default class FlowBrowser {
             postman: PostmanSerializer
         }
 
+        let opts = new Options(_opts)
+
+        let source = opts.getIn([ 'parser', 'name' ])
+        let target = opts.getIn([ 'serializer', 'name' ])
+        let base = opts.getIn([ 'resolver', 'base' ])
+
         if (!parserMap[source]) {
             throw new Error('unrecognized source format')
         }
@@ -31,7 +39,15 @@ export default class FlowBrowser {
             throw new Error('unrecognized target format')
         }
 
-        let contentPromise = (new URLResolver()).resolve(input)
+        let contentPromise
+        if (base === 'raw') {
+            contentPromise = new Promise((resolve) => {
+                return resolve(input)
+            })
+        }
+        else {
+            contentPromise = (new URLResolver()).resolve(input)
+        }
 
         let parser = new parserMap[source]()
         let serializer = new serializerMap[target]()
@@ -44,7 +60,7 @@ export default class FlowBrowser {
                 content: content
             }
 
-            let promise = parser.parse(item)
+            let promise = parser.parse(item, opts.get('parser'))
 
             if (typeof promise.then !== 'function') {
                 let value = promise
@@ -56,11 +72,15 @@ export default class FlowBrowser {
             promise.then(context => {
                 resolver.resolveAll(
                     parser.item,
-                    context.get('references')
-                ).then(references => {
+                    context,
+                    opts.get('resolver')
+                ).then(_context => {
                     try {
                         let final = serializer
-                            .serialize(context.set('references', references))
+                            .serialize(
+                                _context,
+                                opts.get('serializer')
+                            )
                         callback(null, final)
                     }
                     catch (e) {
@@ -75,6 +95,28 @@ export default class FlowBrowser {
                 callback(err.stack)
             })
         })
+    }
+
+    _normalizeOptions(opts) {
+        if (!opts || typeof opts !== 'object') {
+            return {
+                parser: {
+                    name: 'swagger'
+                },
+                resolver: {
+                    base: 'remote'
+                },
+                serializer: {
+                    name: 'raml'
+                }
+            }
+        }
+
+        let parser = opts.parser
+        let resolver = opts.resolver
+        let serializer = opts.serializer
+
+
     }
 }
 

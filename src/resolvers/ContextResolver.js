@@ -1,15 +1,17 @@
+import ResolverOptions from '../models/options/ResolverOptions'
+
 export default class ContextResolver {
     constructor(environment) {
         this.environment = environment
     }
 
-    resolveAll(item, _references) {
-        let references = _references
+    resolveAll(item, context, opts = new ResolverOptions()) {
+        let references = context.get('references')
         let environments = references.keySeq()
 
         let promises = []
         for (let env of environments) {
-            let promise = this.resolveContainer(item, references.get(env))
+            let promise = this.resolveContainer(item, references.get(env), opts)
             promises.push(promise)
         }
 
@@ -17,11 +19,11 @@ export default class ContextResolver {
             for (let i = 0; i < environments.size; i += 1) {
                 references = references.set(environments.get(i), containers[i])
             }
-            return references
+            return context.set('references', references)
         })
     }
 
-    resolveContainer(item, _container) {
+    resolveContainer(item, _container, opts) {
         let container = _container
         let unresolved = container.getUnresolvedReferences()
 
@@ -33,7 +35,7 @@ export default class ContextResolver {
 
         let promises = unresolved.map(uri => {
             let reference = container.resolve(uri)
-            return this.resolveReference(item, reference)
+            return this.resolveReference(item, reference, opts)
         })
 
         return Promise.all(promises).then(updatedReferences => {
@@ -42,12 +44,55 @@ export default class ContextResolver {
                 let dependencies = reference.get('dependencies')
                 container = container.create(dependencies)
             }
-            return this.resolveContainer(item, container)
+            return this.resolveContainer(item, container, opts)
         })
     }
 
-    resolveReference(item, reference) {
+    resolveReference(item, reference, opts) {
         let dataUri = reference.getDataUri()
+
+        let type = 'file'
+        let urlPattern = /^https?:\/\//i
+        if (urlPattern.test(dataUri || '')) {
+            type = 'url'
+        }
+
+        let resolve = true
+        let value = null
+        if (opts) {
+            let options = opts.getIn([
+                'resolve', 'custom', reference.get('relative')
+            ])
+            if (options) {
+
+                resolve = options.get('resolve')
+                value = options.get('value')
+
+                if (resolve && value) {
+                    reference = reference
+                        .set('value', value)
+                        .set('resolved', true)
+
+                    return new Promise((resolve) => {
+                        return resolve(reference)
+                    })
+                }
+            }
+
+            if (type === 'file' && !opts.getIn([ 'resolve', 'local' ])) {
+                resolve = false
+            }
+
+            if (type === 'url' && !opts.getIn([ 'resolve', 'remote' ])) {
+                resolve = false
+            }
+        }
+
+        if (!resolve) {
+            return new Promise((resolve) => {
+                return resolve(reference.set('resolved', true))
+            })
+        }
 
         if (dataUri === null) {
             return new Promise((resolve) => {
@@ -58,13 +103,7 @@ export default class ContextResolver {
         }
 
         let dataResolver
-        let urlPattern = /^https?:\/\//i
         this.environment = this.environment.addResolver(item)
-
-        let type = 'file'
-        if (urlPattern.test(dataUri)) {
-            type = 'url'
-        }
         dataResolver = this.environment.getResolver(item, type)
 
         return dataResolver

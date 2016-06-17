@@ -11,8 +11,11 @@ import ContextResolver from '../ContextResolver'
 import NodeEnvironment from '../../models/environments/NodeEnvironment'
 import Item from '../../models/Item'
 
+import Context from '../../models/Core'
 import ReferenceContainer from '../../models/references/Container'
 import JSONSchemaReference from '../../models/references/JSONSchema'
+
+import ResolverOptions from '../../models/options/ResolverOptions'
 
 @registerTest
 @against(ContextResolver)
@@ -275,11 +278,15 @@ export class TestContextResolver extends UnitTest {
             })
         ]))
 
-        let expected = new Immutable.OrderedMap({
-            schemas: expectedContainer
+        let expected = new Context({
+            references: new Immutable.OrderedMap({
+                schemas: expectedContainer
+            })
         })
 
-        let promise = resolver.resolveAll(item, references)
+        let promise = resolver.resolveAll(item, new Context({
+            references: references
+        }))
 
         promise.then(refs => {
             this.assertJSONEqual(expected, refs)
@@ -291,6 +298,393 @@ export class TestContextResolver extends UnitTest {
         })
     }
 
+    @targets('resolveAll')
+    testResolveAllWithNoResolveOption(done) {
+        const resolver = this.__init()
+
+        const options = new ResolverOptions({
+            resolve: false
+        })
+
+        const dummyJSON = {
+            value: 12,
+            references: {
+                Friend: {
+                    $ref: '#/references/User'
+                },
+                User: {
+                    $ref: '#/references/Friend'
+                }
+            }
+        }
+
+        const item = new Item({
+            content: JSON.stringify(dummyJSON),
+            file: {
+                path: __dirname + 'fixtures/',
+                name: 'dummy.json'
+            }
+        })
+
+        const reference = new JSONSchemaReference({
+            uri: '#/references/Friend'
+        })
+
+        let container = new ReferenceContainer()
+        container = container.update(reference)
+
+        let references = new Immutable.OrderedMap({
+            schemas: container
+        })
+
+        let expectedContainer = new ReferenceContainer()
+        expectedContainer = container.update(
+            reference.set('resolved', true)
+        )
+
+        let expected = new Context({
+            references: new Immutable.OrderedMap({
+                schemas: expectedContainer
+            })
+        })
+
+        let promise = resolver.resolveAll(item, new Context({
+            references: references
+        }), options)
+
+        promise.then(refs => {
+            this.assertJSONEqual(expected, refs)
+            done()
+        }, err => {
+            throw new Error(err)
+        }).catch(error => {
+            done(new Error(error))
+        })
+    }
+
+    @targets('resolveAll')
+    testResolveAllWithNoRemoteResolveOption(done) {
+        const resolver = this.__init()
+
+        const options = new ResolverOptions({
+            resolve: {
+                remote: false
+            }
+        })
+
+        const dummyJSON = {
+            value: 12,
+            references: {
+                Friend: {
+                    $ref: 'http://echo.luckymarmot.com/#/references/User'
+                },
+                User: {
+                    $ref: '#/references/Friend'
+                }
+            }
+        }
+
+        const item = new Item({
+            content: JSON.stringify(dummyJSON),
+            file: {
+                path: __dirname + 'fixtures/',
+                name: 'dummy.json'
+            }
+        })
+
+        const reference = new JSONSchemaReference({
+            uri: '#/references/User'
+        })
+
+        let container = new ReferenceContainer()
+        container = container.update(reference)
+
+        let references = new Immutable.OrderedMap({
+            schemas: container
+        })
+
+        let expectedContainer = new ReferenceContainer()
+        expectedContainer = expectedContainer.create(new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/references/User',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/Friend'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/Friend',
+                        relative: '#/references/Friend'
+                    })
+                ])
+            }),
+            new JSONSchemaReference({
+                uri: '#/references/Friend',
+                relative: '#/references/Friend',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: 'http://echo.luckymarmot.com/#/references/User'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri:
+                            'http://echo.luckymarmot.com/#/references/User',
+                        relative:
+                            'http://echo.luckymarmot.com/#/references/User'
+                    })
+                ])
+            }),
+            new JSONSchemaReference({
+                uri: 'http://echo.luckymarmot.com/#/references/User',
+                relative: 'http://echo.luckymarmot.com/#/references/User',
+                value: null,
+                resolved: true
+            })
+        ]))
+
+        let expected = new Context({
+            references: new Immutable.OrderedMap({
+                schemas: expectedContainer
+            })
+        })
+
+        let promise = resolver.resolveAll(item, new Context({
+            references: references
+        }), options)
+
+        promise.then(refs => {
+            this.assertJSONEqual(expected, refs)
+            done()
+        }, err => {
+            throw new Error(err)
+        }).catch(error => {
+            done(new Error(error))
+        })
+    }
+
+    @targets('resolveAll')
+    testResolveAllWithCustomResolveOption(done) {
+        const resolver = this.__init()
+
+        const options = new ResolverOptions({
+            resolve: [
+                {
+                    uri: 'http://echo.luckymarmot.com/#/references/User',
+                    value: {
+                        type: 'string',
+                        enum: [ 'custom resolved' ]
+                    }
+                }
+            ]
+        })
+
+        const dummyJSON = {
+            value: 12,
+            references: {
+                Friend: {
+                    $ref: 'http://echo.luckymarmot.com/#/references/User'
+                },
+                User: {
+                    $ref: '#/references/Friend'
+                }
+            }
+        }
+
+        const item = new Item({
+            content: JSON.stringify(dummyJSON),
+            file: {
+                path: __dirname + 'fixtures/',
+                name: 'dummy.json'
+            }
+        })
+
+        const reference = new JSONSchemaReference({
+            uri: '#/references/User'
+        })
+
+        let container = new ReferenceContainer()
+        container = container.update(reference)
+
+        let references = new Immutable.OrderedMap({
+            schemas: container
+        })
+
+        let expectedContainer = new ReferenceContainer()
+        expectedContainer = expectedContainer.create(new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/references/User',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/Friend'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/Friend',
+                        relative: '#/references/Friend'
+                    })
+                ])
+            }),
+            new JSONSchemaReference({
+                uri: '#/references/Friend',
+                relative: '#/references/Friend',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: 'http://echo.luckymarmot.com/#/references/User'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri:
+                            'http://echo.luckymarmot.com/#/references/User',
+                        relative:
+                            'http://echo.luckymarmot.com/#/references/User'
+                    })
+                ])
+            }),
+            new JSONSchemaReference({
+                uri: 'http://echo.luckymarmot.com/#/references/User',
+                relative: 'http://echo.luckymarmot.com/#/references/User',
+                value: {
+                    type: 'string',
+                    enum: [ 'custom resolved' ]
+                },
+                resolved: true
+            })
+        ]))
+
+        let expected = new Context({
+            references: new Immutable.OrderedMap({
+                schemas: expectedContainer
+            })
+        })
+
+        let promise = resolver.resolveAll(item, new Context({
+            references: references
+        }), options)
+
+        promise.then(refs => {
+            this.assertJSONEqual(expected, refs)
+            done()
+        }, err => {
+            throw new Error(err)
+        }).catch(error => {
+            done(new Error(error))
+        })
+    }
+
+    @targets('resolveAll')
+    testResolveAllWithCustomNoResolveOption(done) {
+        const resolver = this.__init()
+
+        const options = new ResolverOptions({
+            resolve: [
+                {
+                    uri: 'http://echo.luckymarmot.com/#/references/User',
+                    resolve: false
+                }
+            ]
+        })
+
+        const dummyJSON = {
+            value: 12,
+            references: {
+                Friend: {
+                    $ref: 'http://echo.luckymarmot.com/#/references/User'
+                },
+                User: {
+                    $ref: '#/references/Friend'
+                }
+            }
+        }
+
+        const item = new Item({
+            content: JSON.stringify(dummyJSON),
+            file: {
+                path: __dirname + 'fixtures/',
+                name: 'dummy.json'
+            }
+        })
+
+        const reference = new JSONSchemaReference({
+            uri: '#/references/User'
+        })
+
+        let container = new ReferenceContainer()
+        container = container.update(reference)
+
+        let references = new Immutable.OrderedMap({
+            schemas: container
+        })
+
+        let expectedContainer = new ReferenceContainer()
+        expectedContainer = expectedContainer.create(new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/references/User',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/Friend'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/Friend',
+                        relative: '#/references/Friend'
+                    })
+                ])
+            }),
+            new JSONSchemaReference({
+                uri: '#/references/Friend',
+                relative: '#/references/Friend',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: 'http://echo.luckymarmot.com/#/references/User'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri:
+                            'http://echo.luckymarmot.com/#/references/User',
+                        relative:
+                            'http://echo.luckymarmot.com/#/references/User'
+                    })
+                ])
+            }),
+            new JSONSchemaReference({
+                uri: 'http://echo.luckymarmot.com/#/references/User',
+                relative: 'http://echo.luckymarmot.com/#/references/User',
+                value: null,
+                resolved: true
+            })
+        ]))
+
+        let expected = new Context({
+            references: new Immutable.OrderedMap({
+                schemas: expectedContainer
+            })
+        })
+
+        let promise = resolver.resolveAll(item, new Context({
+            references: references
+        }), options)
+
+        promise.then(refs => {
+            this.assertJSONEqual(expected, refs)
+            done()
+        }, err => {
+            throw new Error(err)
+        }).catch(error => {
+            done(new Error(error))
+        })
+    }
 
     __init() {
         const env = new NodeEnvironment()

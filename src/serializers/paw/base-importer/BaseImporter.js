@@ -118,11 +118,11 @@ export default class BaseImporter {
 
         return resolver.resolveAll(
             item,
-            reqContext.get('references')
-        ).then(references => {
+            reqContext
+        ).then(context => {
             try {
                 this._importPawRequests(
-                    reqContext.set('references', references),
+                    context,
                     item,
                     options
                 )
