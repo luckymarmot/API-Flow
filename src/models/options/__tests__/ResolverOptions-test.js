@@ -2,7 +2,9 @@ import Immutable from 'immutable'
 
 import {
     UnitTest,
-    registerTest
+    registerTest,
+    targets,
+    against
 } from '../../../utils/TestUtils'
 
 import ResolverOptions, {
@@ -26,6 +28,7 @@ export class TestResolverOptions extends UnitTest {
 }
 
 @registerTest
+@against(ResolutionOptions)
 export class TestResolutionOptions extends UnitTest {
     testNormalizeWithNoOpts() {
         const expected = {
@@ -319,6 +322,127 @@ export class TestResolutionOptions extends UnitTest {
                 }
             }
         })
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('addCustomResolutions')
+    testAddCustomResolutionsWithNoPreviousCustomOptions() {
+        const opts = new ResolutionOptions()
+
+        const list = [
+            {
+                key: 'api_key',
+                value: 1029471
+            },
+            {
+                uri: '#/postman/userId',
+                resolve: true,
+                value: 1251
+            }
+        ]
+
+        const expected = new ResolutionOptions({
+            custom: list
+        })
+
+        const result = opts.addCustomResolutions(list)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('addCustomResolutions')
+    testAddCustomResolutionsWithPreviousCustomOptions() {
+        const opts = new ResolutionOptions({
+            custom: [
+                {
+                    key: 'password',
+                    value: '12dh2498'
+                }
+            ]
+        })
+
+        const list = [
+            {
+                key: 'api_key',
+                value: 1029471
+            },
+            {
+                uri: '#/postman/userId',
+                resolve: true,
+                value: 1251
+            }
+        ]
+
+        const expected = new ResolutionOptions({
+            custom: [
+                {
+                    key: 'password',
+                    value: '12dh2498'
+                },
+                {
+                    key: 'api_key',
+                    value: 1029471
+                },
+                {
+                    uri: '#/postman/userId',
+                    resolve: true,
+                    value: 1251
+                }
+            ]
+        })
+
+        const result = opts.addCustomResolutions(list)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('addCustomResolutions')
+    testAddCustomResolutionsOverridesPreviousCustomOptions() {
+        const opts = new ResolutionOptions({
+            custom: [
+                {
+                    key: 'password',
+                    value: '12dh2498'
+                },
+                {
+                    key: 'api_key',
+                    value: 92837592
+                }
+            ]
+        })
+
+        const list = [
+            {
+                key: 'api_key',
+                value: 1029471
+            },
+            {
+                uri: '#/postman/userId',
+                resolve: true,
+                value: 1251
+            }
+        ]
+
+        const expected = new ResolutionOptions({
+            custom: [
+                {
+                    key: 'password',
+                    value: '12dh2498'
+                },
+                {
+                    key: 'api_key',
+                    value: 1029471
+                },
+                {
+                    uri: '#/postman/userId',
+                    resolve: true,
+                    value: 1251
+                }
+            ]
+        })
+
+        const result = opts.addCustomResolutions(list)
 
         this.assertEqual(expected, result)
     }

@@ -1,20 +1,20 @@
 import fs from 'fs'
 import path from 'path'
-import info from '../package.json'
+import info from '../../package.json'
 import { ArgumentParser, RawTextHelpFormatter } from 'argparse'
 
-import Options from './models/options/Options'
+import Options from '../models/options/Options'
 
-import SwaggerParser from './parsers/swagger/Parser'
-import RAMLParser from './parsers/raml/Parser'
-import PostmanParser from './parsers/postman/Parser'
+import SwaggerParser from '../parsers/swagger/Parser'
+import RAMLParser from '../parsers/raml/Parser'
+import PostmanParser from '../parsers/postman/Parser'
 
-import SwaggerSerializer from './serializers/swagger/Serializer'
-import RAMLSerializer from './serializers/raml/Serializer'
-import PostmanSerializer from './serializers/postman/Serializer'
+import SwaggerSerializer from '../serializers/swagger/Serializer'
+import RAMLSerializer from '../serializers/raml/Serializer'
+import PostmanSerializer from '../serializers/postman/Serializer'
 
-import ContextResolver from './resolvers/ContextResolver'
-import NodeEnvironment from './models/environments/NodeEnvironment'
+import ContextResolver from '../resolvers/ContextResolver'
+import NodeEnvironment from '../models/environments/NodeEnvironment'
 
 export default class FlowCLI {
     constructor() {

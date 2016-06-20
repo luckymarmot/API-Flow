@@ -10,7 +10,7 @@ export default class Options extends Immutable.Record({
     serializer: new SerializerOptions()
 }) {
     constructor(opts) {
-        let normalized = ParserOptions.normalize(opts)
+        let normalized = Options.normalize(opts)
         super(normalized)
     }
 

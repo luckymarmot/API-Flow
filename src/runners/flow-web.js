@@ -1,16 +1,16 @@
-import SwaggerParser from './parsers/swagger/Parser'
-import RAMLParser from './parsers/raml/Parser'
+import SwaggerParser from '../parsers/swagger/Parser'
+import RAMLParser from '../parsers/raml/Parser'
 
-import SwaggerSerializer from './serializers/swagger/Serializer'
-import RAMLSerializer from './serializers/raml/Serializer'
-import PostmanSerializer from './serializers/postman/Serializer'
+import SwaggerSerializer from '../serializers/swagger/Serializer'
+import RAMLSerializer from '../serializers/raml/Serializer'
+import PostmanSerializer from '../serializers/postman/Serializer'
 
-import ContextResolver from './resolvers/ContextResolver'
+import ContextResolver from '../resolvers/ContextResolver'
 import BrowserEnvironment, {
     URLResolver
-} from './models/environments/BrowserEnvironment'
+} from '../models/environments/BrowserEnvironment'
 
-import Options from './models/options/Options'
+import Options from '../models/options/Options'
 
 export default class FlowBrowser {
     transform(input, callback, _opts) {

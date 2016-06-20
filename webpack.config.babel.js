@@ -5,14 +5,12 @@ const name = 'api-flow'
 
 const production = process.env.NODE_ENV === 'production' // eslint-disable-line
 
-console.log(process.env.TARGET)
-
 const target = process.env.TARGET
 
 const config = {
     target: target,
     entry: [
-        './src/flow-' + target + '.js'
+        './src/runners/flow-' + target + '.js'
     ],
     output: {
         path: path.join(__dirname,
