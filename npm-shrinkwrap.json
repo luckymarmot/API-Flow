@@ -3374,6 +3374,11 @@
       "from": "rx-lite@>=2.5.2 <3.0.0",
       "resolved": "https://registry.npmjs.org/rx-lite/-/rx-lite-2.5.2.tgz"
     },
+    "sax": {
+      "version": "1.2.1",
+      "from": "sax@>=0.6.0",
+      "resolved": "https://registry.npmjs.org/sax/-/sax-1.2.1.tgz"
+    },
     "semver": {
       "version": "4.3.6",
       "from": "semver@>=4.0.3 <5.0.0",
@@ -3784,6 +3789,18 @@
       "version": "1.0.0",
       "from": "xml-escape@>=1.0.0 <1.1.0",
       "resolved": "https://registry.npmjs.org/xml-escape/-/xml-escape-1.0.0.tgz"
+    },
+    "xmlbuilder": {
+      "version": "4.2.1",
+      "from": "xmlbuilder@>=4.1.0 <5.0.0",
+      "resolved": "https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-4.2.1.tgz",
+      "dependencies": {
+        "lodash": {
+          "version": "4.12.0",
+          "from": "lodash@>=4.0.0 <5.0.0",
+          "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.12.0.tgz"
+        }
+      }
     },
     "xtend": {
       "version": "4.0.1",

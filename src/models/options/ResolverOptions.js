@@ -110,6 +110,21 @@ export class ResolutionOptions extends Immutable.Record({
             custom: custom
         }
     }
+
+    addCustomResolutions(list) {
+        let formatted = this.get('custom')
+        for (let res of list) {
+            if (res.uri) {
+                let _res = new ResolutionItem(res)
+                formatted = formatted.set(_res.get('uri'), _res)
+            }
+            else if (res.key) {
+                let _res = new ParameterItem(res)
+                formatted = formatted.set(_res.get('key'), _res)
+            }
+        }
+        return this.set('custom', formatted)
+    }
 }
 
 export default class ResolverOptions extends Immutable.Record({
