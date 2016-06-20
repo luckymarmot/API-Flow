@@ -7,7 +7,13 @@ import {
     against
 } from '../../utils/TestUtils'
 
+import {
+    ClassMock
+} from '../../mocks/PawMocks'
+
 import ContextResolver from '../ContextResolver'
+import ParameterResolver from '../ParameterResolver'
+
 import NodeEnvironment from '../../models/environments/NodeEnvironment'
 import Item from '../../models/Item'
 
@@ -678,6 +684,107 @@ export class TestContextResolver extends UnitTest {
 
         promise.then(refs => {
             this.assertJSONEqual(expected, refs)
+            done()
+        }, err => {
+            throw new Error(err)
+        }).catch(error => {
+            done(new Error(error))
+        })
+    }
+
+    @targets('resolveAll')
+    testResolveAllCallsParameterResolve_resolveAll(done) {
+        const resolver = this.__init()
+
+        const paramResolver = new ClassMock(new ParameterResolver(), '')
+
+        paramResolver.spyOn('resolveAll', () => {
+            return 12
+        })
+
+        const dummyJSON = {
+            value: 12,
+            references: {
+                Friend: {
+                    $ref: '#/references/User'
+                },
+                User: {
+                    $ref: '#/references/Friend'
+                }
+            }
+        }
+
+        const item = new Item({
+            content: JSON.stringify(dummyJSON),
+            file: {
+                path: __dirname + 'fixtures/',
+                name: 'dummy.json'
+            }
+        })
+
+        const reference = new JSONSchemaReference({
+            uri: '#/references/Friend'
+        })
+
+        let container = new ReferenceContainer()
+        container = container.update(reference)
+
+        let references = new Immutable.OrderedMap({
+            schemas: container
+        })
+
+        let expectedContainer = new ReferenceContainer()
+        expectedContainer = expectedContainer.create(new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/references/Friend',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/User'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/User',
+                        relative: '#/references/User'
+                    })
+                ])
+            }),
+            new JSONSchemaReference({
+                uri: '#/references/User',
+                relative: '#/references/User',
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/Friend'
+                    })
+                },
+                resolved: true,
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/Friend',
+                        relative: '#/references/Friend'
+                    })
+                ])
+            })
+        ]))
+
+        let expected = new Context({
+            references: new Immutable.OrderedMap({
+                schemas: expectedContainer
+            })
+        })
+
+        let promise = resolver.resolveAll(item, new Context({
+            references: references
+        }), new ResolverOptions(), paramResolver)
+
+        promise.then(context => {
+            this.assertEqual(12, context)
+            this.assertEqual(paramResolver.spy.resolveAll.count, 1)
+            this.assertJSONEqual(
+                paramResolver.spy.resolveAll.calls[0],
+                [ expected, new ResolverOptions() ]
+            )
             done()
         }, err => {
             throw new Error(err)

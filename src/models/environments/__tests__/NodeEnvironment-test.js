@@ -61,7 +61,7 @@ export class TestNodeEnvironment extends UnitTest {
     testAddResolverWithURLResolver() {
         const env = this.__init()
         const url =
-            'https://apis-guru.github.io/' +
+            'https://echo.luckymarmot.com/' +
             'api-models/apis-guru.github.io/1.0/' +
             'swagger.json'
 
@@ -201,13 +201,13 @@ export class TestURLResolver extends UnitTest {
     @targets('resolve')
     _testResolveWithAbsoluteURL(done) {
         const url =
-            'https://apis-guru.github.io/' +
+            'https://echo.luckymarmot.com/' +
             'api-models/apis-guru.github.io/1.0/' +
             'swagger.json'
         const item = new Item({
             content: 'toto',
             url:
-                'https://apis-guru.github.io/' +
+                'https://echo.luckymarmot.com/' +
                 'api-models/bufferapp.com/1/' +
                 'swagger.json'
         })

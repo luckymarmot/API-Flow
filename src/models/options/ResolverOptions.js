@@ -24,6 +24,28 @@ export class ResolutionItem extends Immutable.Record({
     }
 }
 
+export class ParameterItem extends Immutable.Record({
+    key: null,
+    value: null
+}) {
+    constructor(opts) {
+        let normalized = ParameterItem.normalize(opts)
+        super(normalized)
+    }
+
+    static normalize(_item) {
+        let item = _item
+        if (!item || typeof item !== 'object') {
+            item = {}
+        }
+
+        return {
+            key: item.key ? item.key : '',
+            value: typeof item.value === 'undefined' ? null : item.value
+        }
+    }
+}
+
 export class ResolutionOptions extends Immutable.Record({
     remote: true,
     local: true,
@@ -50,8 +72,14 @@ export class ResolutionOptions extends Immutable.Record({
         else if (typeof custom[Symbol.iterator] === 'function') {
             let formatted = {}
             for (let res of custom) {
-                let _res = new ResolutionItem(res)
-                formatted[_res.get('uri')] = _res
+                if (res.uri) {
+                    let _res = new ResolutionItem(res)
+                    formatted[_res.get('uri')] = _res
+                }
+                else if (res.key) {
+                    let _res = new ParameterItem(res)
+                    formatted[_res.get('key')] = _res
+                }
             }
             custom = new Immutable.OrderedMap(formatted)
         }
@@ -59,8 +87,19 @@ export class ResolutionOptions extends Immutable.Record({
             let formatted = {}
             let uris = Object.keys(custom)
             for (let uri of uris) {
-                custom[uri].uri = uri
-                formatted[uri] = new ResolutionItem(custom[uri])
+                let _uri = uri
+                if (custom[uri].uri) {
+                    _uri = custom[uri].uri
+                    formatted[_uri] = new ResolutionItem(custom[uri])
+                }
+                else if (custom[uri].key) {
+                    _uri = custom[uri].key
+                    formatted[_uri] = new ParameterItem(custom[uri])
+                }
+                else {
+                    custom[uri].uri = uri
+                    formatted[_uri] = new ResolutionItem(custom[uri])
+                }
             }
             custom = new Immutable.OrderedMap(formatted)
         }

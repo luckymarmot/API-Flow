@@ -1,11 +1,18 @@
 import ResolverOptions from '../models/options/ResolverOptions'
 
+import ParameterResolver from './ParameterResolver'
+
 export default class ContextResolver {
     constructor(environment) {
         this.environment = environment
     }
 
-    resolveAll(item, context, opts = new ResolverOptions()) {
+    resolveAll(
+        item,
+        context,
+        opts = new ResolverOptions(),
+        parameterResolver = new ParameterResolver()
+    ) {
         let references = context.get('references')
         let environments = references.keySeq()
 
@@ -19,7 +26,10 @@ export default class ContextResolver {
             for (let i = 0; i < environments.size; i += 1) {
                 references = references.set(environments.get(i), containers[i])
             }
-            return context.set('references', references)
+            return parameterResolver.resolveAll(
+                context.set('references', references),
+                opts
+            )
         })
     }
 

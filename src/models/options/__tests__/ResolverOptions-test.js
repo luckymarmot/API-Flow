@@ -7,6 +7,7 @@ import {
 
 import ResolverOptions, {
     ResolutionItem,
+    ParameterItem,
     ResolutionOptions
 } from '../ResolverOptions'
 
@@ -148,6 +149,74 @@ export class TestResolutionOptions extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    testNormalizeWithParameterArrayCustom() {
+        const expected = {
+            remote: true,
+            local: true,
+            custom: new Immutable.OrderedMap({
+                api_key: new ParameterItem({
+                    key: 'api_key'
+                }),
+                userId: new ParameterItem({
+                    key: 'userId'
+                })
+            })
+        }
+
+        const result = ResolutionOptions.normalize({
+            custom: [
+                {
+                    key: 'api_key'
+                },
+                {
+                    key: 'userId'
+                }
+            ]
+        })
+
+        this.assertEqual(expected, result)
+    }
+
+    testNormalizeWithMixedArrayCustom() {
+        const expected = {
+            remote: true,
+            local: true,
+            custom: new Immutable.OrderedMap({
+                api_key: new ParameterItem({
+                    key: 'api_key'
+                }),
+                userId: new ParameterItem({
+                    key: 'userId'
+                }),
+                '#/postman/user': new ResolutionItem({
+                    uri: '#/postman/user'
+                }),
+                '#/paw/pets': new ResolutionItem({
+                    uri: '#/paw/pets'
+                })
+            })
+        }
+
+        const result = ResolutionOptions.normalize({
+            custom: [
+                {
+                    key: 'api_key'
+                },
+                {
+                    key: 'userId'
+                },
+                {
+                    uri: '#/postman/user'
+                },
+                {
+                    uri: '#/paw/pets'
+                }
+            ]
+        })
+
+        this.assertEqual(expected, result)
+    }
+
     testNormalizeWithObjectCustom() {
         const expected = {
             remote: true,
@@ -176,8 +245,125 @@ export class TestResolutionOptions extends UnitTest {
 
         this.assertEqual(expected, result)
     }
+
+    testNormalizeWithParameterObjectCustom() {
+        const expected = {
+            remote: true,
+            local: true,
+            custom: new Immutable.OrderedMap({
+                api_key: new ParameterItem({
+                    key: 'api_key',
+                    value: 102398
+                }),
+                userId: new ParameterItem({
+                    key: 'userId',
+                    value: 1039751
+                })
+            })
+        }
+
+        const result = ResolutionOptions.normalize({
+            custom: {
+                api_key: {
+                    key: 'api_key',
+                    value: 102398
+                },
+                someKey: {
+                    key: 'userId',
+                    value: 1039751
+                }
+            }
+        })
+
+        this.assertEqual(expected, result)
+    }
+
+    testNormalizeWithMixedObjectCustom() {
+        const expected = {
+            remote: true,
+            local: true,
+            custom: new Immutable.OrderedMap({
+                api_key: new ParameterItem({
+                    key: 'api_key',
+                    value: 102398
+                }),
+                userId: new ParameterItem({
+                    key: 'userId',
+                    value: 1039751
+                }),
+                '#/postman/user': new ResolutionItem({
+                    uri: '#/postman/user',
+                    value: 'use paw'
+                }),
+                '#/paw/pets': new ResolutionItem({
+                    uri: '#/paw/pets',
+                    resolve: false
+                })
+            })
+        }
+
+        const result = ResolutionOptions.normalize({
+            custom: {
+                api_key: {
+                    key: 'api_key',
+                    value: 102398
+                },
+                someKey: {
+                    key: 'userId',
+                    value: 1039751
+                },
+                '#/postman/user': {
+                    value: 'use paw'
+                }, '#/paw/pets': {
+                    resolve: false
+                }
+            }
+        })
+
+        this.assertEqual(expected, result)
+    }
 }
 
+
+@registerTest
+export class TestParameterItem extends UnitTest {
+    testNormalizeWithNoOpts() {
+        const expected = {
+            key: '',
+            value: null
+        }
+
+        const result = ParameterItem.normalize()
+
+        this.assertEqual(expected, result)
+    }
+
+    testNormalizeWithKey() {
+        const expected = {
+            key: 'api_key',
+            value: null
+        }
+
+        const result = ParameterItem.normalize({
+            key: 'api_key'
+        })
+
+        this.assertEqual(expected, result)
+    }
+
+    testNormalizeWithValue() {
+        const expected = {
+            key: '',
+            value: 42
+        }
+
+        const result = ParameterItem.normalize({
+            value: 42
+        })
+
+        this.assertEqual(expected, result)
+    }
+}
 
 @registerTest
 export class TestResolutionItem extends UnitTest {
