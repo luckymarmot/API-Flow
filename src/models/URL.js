@@ -104,70 +104,72 @@ export default class URL extends Immutable.Record({
 
         let def = new Immutable.List()
 
-        return this
-            .set('protocol', new Parameter({
-                key: 'protocol',
-                type: 'string',
-                internals: protocol.slice(0, -1) ? new Immutable.List([
-                    new Constraint.Enum([ protocol.slice(0, -1) ])
-                ]) : def
-            }))
-            .set('username', new Parameter({
-                key: 'username',
-                type: 'string',
-                internals: username ? new Immutable.List([
-                    new Constraint.Enum([ username ])
-                ]) : def
-            }))
-            .set('password', new Parameter({
-                key: 'password',
-                type: 'string',
-                internals: password ? new Immutable.List([
-                    new Constraint.Enum([ password ])
-                ]) : def
-            }))
-            .set('host', new Parameter({
-                key: 'host',
-                type: 'string',
-                internals: host ? new Immutable.List([
-                    new Constraint.Enum([ host ])
-                ]) : def
-            }))
-            .set('hostname', new Parameter({
-                key: 'hostname',
-                type: 'string',
-                internals: hostname ? new Immutable.List([
-                    new Constraint.Enum([ hostname ])
-                ]) : def
-            }))
-            .set('port', new Parameter({
-                key: 'port',
-                type: 'string',
-                internals: port ? new Immutable.List([
-                    new Constraint.Enum([ port ])
-                ]) : def
-            }))
-            .set('pathname', new Parameter({
-                key: 'pathname',
-                type: 'string',
-                internals: pathname ? new Immutable.List([
-                    new Constraint.Enum([ pathname ])
-                ]) : def
-            }))
-            .set('search', new Parameter({
-                key: 'search',
-                type: 'string',
-                internals: search ? new Immutable.List([
-                    new Constraint.Enum([ search ])
-                ]) : def
-            }))
-            .set('hash', new Parameter({
-                key: 'hash',
-                type: 'string',
-                internals: hash ? new Immutable.List([
-                    new Constraint.Enum([ hash ])
-                ]) : def
-            }))
+        return this.withMutations(_this => {
+            _this
+                .set('protocol', new Parameter({
+                    key: 'protocol',
+                    type: 'string',
+                    internals: protocol.slice(0, -1) ? new Immutable.List([
+                        new Constraint.Enum([ protocol.slice(0, -1) ])
+                    ]) : def
+                }))
+                .set('username', new Parameter({
+                    key: 'username',
+                    type: 'string',
+                    internals: username ? new Immutable.List([
+                        new Constraint.Enum([ username ])
+                    ]) : def
+                }))
+                .set('password', new Parameter({
+                    key: 'password',
+                    type: 'string',
+                    internals: password ? new Immutable.List([
+                        new Constraint.Enum([ password ])
+                    ]) : def
+                }))
+                .set('host', new Parameter({
+                    key: 'host',
+                    type: 'string',
+                    internals: host ? new Immutable.List([
+                        new Constraint.Enum([ host ])
+                    ]) : def
+                }))
+                .set('hostname', new Parameter({
+                    key: 'hostname',
+                    type: 'string',
+                    internals: hostname ? new Immutable.List([
+                        new Constraint.Enum([ hostname ])
+                    ]) : def
+                }))
+                .set('port', new Parameter({
+                    key: 'port',
+                    type: 'string',
+                    internals: port ? new Immutable.List([
+                        new Constraint.Enum([ port ])
+                    ]) : def
+                }))
+                .set('pathname', new Parameter({
+                    key: 'pathname',
+                    type: 'string',
+                    internals: pathname ? new Immutable.List([
+                        new Constraint.Enum([ pathname ])
+                    ]) : def
+                }))
+                .set('search', new Parameter({
+                    key: 'search',
+                    type: 'string',
+                    internals: search ? new Immutable.List([
+                        new Constraint.Enum([ search ])
+                    ]) : def
+                }))
+                .set('hash', new Parameter({
+                    key: 'hash',
+                    type: 'string',
+                    internals: hash ? new Immutable.List([
+                        new Constraint.Enum([ hash ])
+                    ]) : def
+                }))
+        })
     }
 
     _constructorFromObj(obj) {
@@ -185,16 +187,18 @@ export default class URL extends Immutable.Record({
         let search = this._formatParam('search', obj.search)
         let hash = this._formatParam('hash', obj.hash)
 
-        return this
-            .set('protocol', protocol)
-            .set('username', username)
-            .set('password', password)
-            .set('host', host)
-            .set('hostname', hostname)
-            .set('port', port)
-            .set('pathname', pathname)
-            .set('search', search)
-            .set('hash', hash)
+        return this.withMutations(url => {
+            url
+                .set('protocol', protocol)
+                .set('username', username)
+                .set('password', password)
+                .set('host', host)
+                .set('hostname', hostname)
+                .set('port', port)
+                .set('pathname', pathname)
+                .set('search', search)
+                .set('hash', hash)
+        })
     }
 
     _formatParam(name, param) {
@@ -386,15 +390,17 @@ export default class URL extends Immutable.Record({
             ._getParamValue('hash')
             .concat(url._getParamValue('hash')))
 
-        return this
-            .set('protocol', this._formatParam('protocol', protocol))
-            .set('username', this._formatParam('username', username))
-            .set('password', this._formatParam('password', password))
-            .set('host', this._formatParam('host', host))
-            .set('hostname', this._formatParam('hostname', hostname))
-            .set('port', this._formatParam('port', port))
-            .set('pathname', this._formatParam('pathname', pathname))
-            .set('search', this._formatParam('search', search))
-            .set('hash', this._formatParam('hash', hash))
+        return this.withMutations(_this => {
+            _this
+                .set('protocol', this._formatParam('protocol', protocol))
+                .set('username', this._formatParam('username', username))
+                .set('password', this._formatParam('password', password))
+                .set('host', this._formatParam('host', host))
+                .set('hostname', this._formatParam('hostname', hostname))
+                .set('port', this._formatParam('port', port))
+                .set('pathname', this._formatParam('pathname', pathname))
+                .set('search', this._formatParam('search', search))
+                .set('hash', this._formatParam('hash', hash))
+        })
     }
 }

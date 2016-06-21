@@ -247,11 +247,13 @@ export class ParameterContainer extends Immutable.Record({
                 return d.isValid(param)
             })
         })
-        return this
-            .set('headers', headers)
-            .set('queries', queries)
-            .set('body', body)
-            .set('path', path)
+        return this.withMutations(container => {
+            container
+                .set('headers', headers)
+                .set('queries', queries)
+                .set('body', body)
+                .set('path', path)
+        })
     }
 }
 

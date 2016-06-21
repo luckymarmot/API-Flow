@@ -178,12 +178,14 @@ export default class SwaggerParser {
         let _bodies = bodies || new Immutable.List()
         let _responses = responses || new Immutable.List()
 
-        return request
-            .set('url', url)
-            .set('method', method.toUpperCase())
-            .set('parameters', _container)
-            .set('bodies', _bodies)
-            .set('responses', _responses)
+        return request.withMutations(req => {
+            req
+                .set('url', url)
+                .set('method', method.toUpperCase())
+                .set('parameters', _container)
+                .set('bodies', _bodies)
+                .set('responses', _responses)
+        })
     }
 
     // @Tested
