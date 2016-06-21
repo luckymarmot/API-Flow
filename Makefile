@@ -14,14 +14,13 @@ build:
 build-web:
 	npm run compile-web
 
-build-node:
-	npm run compile-node
+build-node: clean
+	npm run compile
 
 clean:
 	rm -Rf ./lib/
 
 install: clean npm-install build
-
 
 test:
 	npm test

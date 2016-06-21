@@ -11,7 +11,7 @@
     "grape"
   ],
   "version": "0.0.22",
-  "main": "lib/index.js",
+  "main": "lib/api-flow.js",
   "license": "MIT",
   "homepage": "https://github.com/luckymarmot/API-Flow",
   "dependencies": {

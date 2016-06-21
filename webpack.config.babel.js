@@ -32,7 +32,7 @@ const config = {
             {
                 loader: 'json-loader',
                 include: [
-                    path.resolve(__dirname, 'node_modules/')
+                    __dirname
                 ],
                 test: /\.json$/
             }

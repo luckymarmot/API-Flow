@@ -153,7 +153,7 @@ export default class FlowCLI {
         this.input = args.source
     }
 
-    run() {
+    run(input = this.input, _options = this.options, _callback) {
         let parserMap = {
             swagger: SwaggerParser,
             raml: RAMLParser,
@@ -167,10 +167,24 @@ export default class FlowCLI {
             postman: PostmanSerializer
         }
 
+        let options = _options
+        if (!options instanceof Options) {
+            options = new Options(options)
+        }
+
+        let callback = _callback
+        if (!callback) {
+            callback = (data) => {
+                /* eslint-disable no-console */
+                console.log(data)
+                /* eslint-enable no-console */
+            }
+        }
+
         let content
         let item
-        if (this.options.getIn([ 'resolver', 'base' ]) === 'local') {
-            let _path = path.resolve('./', this.input)
+        if (options.getIn([ 'resolver', 'base' ]) === 'local') {
+            let _path = path.resolve('./', input)
             content = fs.readFileSync(_path).toString()
             item = {
                 file: {
@@ -181,7 +195,7 @@ export default class FlowCLI {
             }
         }
         else {
-            content = this.input
+            content = input
             item = {
                 file: {
                     name: '',
@@ -191,8 +205,8 @@ export default class FlowCLI {
             }
         }
 
-        let source = this.options.getIn([ 'parser', 'name' ])
-        let target = this.options.getIn([ 'serializer', 'name' ])
+        let source = options.getIn([ 'parser', 'name' ])
+        let target = options.getIn([ 'serializer', 'name' ])
 
         if (!parserMap[source]) {
             throw new Error('unrecognized source format')
@@ -207,7 +221,7 @@ export default class FlowCLI {
         let environment = new NodeEnvironment()
         let resolver = new ContextResolver(environment)
 
-        let promise = parser.parse(item, this.options.get('parser'))
+        let promise = parser.parse(item, options.get('parser'))
 
         if (typeof promise.then !== 'function') {
             let value = promise
@@ -217,16 +231,17 @@ export default class FlowCLI {
         }
 
         /* eslint-disable no-console */
-        promise.then(context => {
+        return promise.then(context => {
             resolver.resolveAll(
                 parser.item,
                 context,
-                this.options.get('resolver')
+                options.get('resolver')
             ).then(_context => {
                 try {
                     let final = serializer
-                        .serialize(_context, this.options.get('serializer'))
-                    console.log(final)
+                        .serialize(_context, options.get('serializer'))
+                    callback(final)
+                    return final
                 }
                 catch (e) {
                     console.error('got error', e.stack)
