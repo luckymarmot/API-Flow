@@ -17,10 +17,7 @@ import ContextResolver from '../resolvers/ContextResolver'
 import NodeEnvironment from '../models/environments/NodeEnvironment'
 
 export default class FlowCLI {
-    constructor() {
-        this.parser = this._createParser()
-        this.processArguments(this.parser)
-    }
+    constructor() {}
 
     _createParser() {
         let parser = new ArgumentParser({
@@ -153,7 +150,14 @@ export default class FlowCLI {
         this.input = args.source
     }
 
-    run(input = this.input, _options = this.options, _callback) {
+    run(_input, _options, _callback) {
+        let input = _input || this.input
+        let options = _options || this.options
+
+        if (!(options instanceof Options)) {
+            options = new Options(options)
+        }
+
         let parserMap = {
             swagger: SwaggerParser,
             raml: RAMLParser,
@@ -165,11 +169,6 @@ export default class FlowCLI {
             swagger: SwaggerSerializer,
             raml: RAMLSerializer,
             postman: PostmanSerializer
-        }
-
-        let options = _options
-        if (!options instanceof Options) {
-            options = new Options(options)
         }
 
         let callback = _callback

@@ -48,7 +48,7 @@ import PostmanSerializer from './serializers/postman/Serializer'
 import ContextResolver from './resolvers/ContextResolver'
 import NodeEnvironment from './models/environments/NodeEnvironment'
 
-import FlowCLI from './runners/flow-node'
+import Flow from './runners/flow-node'
 
 export default Context
 export {
@@ -66,7 +66,7 @@ export {
     Group,
     ContextResolver,
     NodeEnvironment,
-    FlowCLI
+    Flow
 }
 
 export const Auth = {
@@ -105,11 +105,12 @@ export const Serializer = {
     Postman: PostmanSerializer
 }
 
-function main() {
-    var cli = new FlowCLI()
-    cli.run()
-}
-
 if (require.main === module) {
-    main()
+    console.log('it is a main')
+    var flow = new Flow()
+
+    let parser = flow._createParser()
+    flow.processArguments(parser)
+
+    flow.run(null, null, null, true)
 }
