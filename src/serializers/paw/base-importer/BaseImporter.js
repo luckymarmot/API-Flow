@@ -23,9 +23,9 @@ export default class BaseImporter {
     static fileExtensions = [];
     static inputs = [];
 
-    constructor() {
+    constructor(context) {
         this.ENVIRONMENT_DOMAIN_NAME = 'Imported Environments'
-        this.context = null
+        this.context = context || null
     }
 
     /*
@@ -140,6 +140,10 @@ export default class BaseImporter {
             console.error('got error', error.stack)
             /* eslint-enable no-console */
         })
+    }
+
+    serialize(requestContext, opts = null, item, options) {
+        return this._importPawRequests(requestContext, item, options)
     }
 
     _importPawRequests(requestContext, item, options) {

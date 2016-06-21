@@ -2454,6 +2454,8 @@ export class TestBaseImporter extends UnitTest {
         this.assertJSONEqual(expected, result)
     }
 
+    @targets('serialize')
+    _testSerialize() {}
     //
     // helpers
     //

@@ -50,6 +50,7 @@
     "path": "0.12.7",
     "webpack": "1.12.9"
   },
+  "eslintConfig": "./linting/prod.yaml",
   "scripts": {
     "compile": "babel --ignore='**/__tests__/' -d lib/ src/",
     "compile-node": "TARGET=node ./node_modules/webpack/bin/webpack.js",
