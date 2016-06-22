@@ -106,8 +106,7 @@ export const Serializer = {
 }
 
 if (require.main === module) {
-    console.log('it is a main')
-    var flow = new Flow()
+    let flow = new Flow()
 
     let parser = flow._createParser()
     flow.processArguments(parser)
