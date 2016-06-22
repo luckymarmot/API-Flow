@@ -53,7 +53,7 @@ node ./node_modules/lib/api-flow.js some_swagger.json -f swagger -t raml > conve
 ```
 ## License
 
-This repository is released under the [MIT License](LICENSE). Feel free to fork, and modify!
+This repository is released under the [MIT License](LICENSE). Feel free to fork, and modify! PRs are welcomed!
 
 Copyright © 2016 Paw Inc.
 
