@@ -231,7 +231,7 @@ export default class FlowCLI {
 
         /* eslint-disable no-console */
         return promise.then(context => {
-            resolver.resolveAll(
+            return resolver.resolveAll(
                 parser.item,
                 context,
                 options.get('resolver')
