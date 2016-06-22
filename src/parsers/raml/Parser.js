@@ -114,9 +114,10 @@ export default class RAMLParser {
             for (let key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     if (key === 'schema' && typeof obj.schema === 'string') {
-                        refs = refs.push(this._createJSONSchemaReference(
+                        let ref = this._createJSONSchemaReference(
                             obj.schema, this.item
-                        ))
+                        )
+                        refs = refs.push(ref)
                     }
                     else {
                         refs = refs.concat(::this._findReferences(obj[key]))
@@ -141,9 +142,36 @@ export default class RAMLParser {
             })
         }
 
-        if (!rel.startsWith('#/')) {
-            rel = '#/' + _rel
+        try {
+            let schema = JSON.parse(rel)
+            return new JSONSchemaReference({
+                value: {
+                    description:
+                        'This schema could not be reliably parsed.\n' +
+                        'We have included it as a description to preserve the' +
+                        ' information it represents.\n\n' +
+                        JSON.stringify(schema)
+                },
+                resolved: true
+            })
         }
+        catch (e) {
+            if (rel.match(/[<>]/)) {
+                return new JSONSchemaReference({
+                    value: {
+                        description:
+                            'This schema could not be reliably parsed.\n' +
+                            'We have included it as a description to preserve' +
+                            ' the information it represents.\n\n' + rel
+                    },
+                    resolved: true
+                })
+            }
+            else if (!rel.startsWith('#/')) {
+                rel = '#/' + _rel
+            }
+        }
+
 
         let uri = item.getPath() + rel
 
@@ -262,7 +290,7 @@ export default class RAMLParser {
 
     _extractURL(raml, req, path) {
         let baseUri = raml.baseUri
-        let match = (baseUri || '').match(/(.*):\/\/(.*)\/?(.*)/)
+        let match = (baseUri || '').match(/(.*):\/\/([^/]*)\/?(.*)/)
         let schemes = []
         let domain
         let basePath
@@ -273,6 +301,9 @@ export default class RAMLParser {
         else {
             schemes = [ match[1].toLowerCase() ]
             domain = match[2]
+            if (match[3].endsWith('/')) {
+                match[3] = match[3].slice(0, -1)
+            }
             basePath = match[3] ? '/' + match[3] : ''
         }
 

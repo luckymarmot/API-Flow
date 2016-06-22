@@ -57,7 +57,8 @@ export default class JSONSchemaReference extends Reference {
         let value = this.get('value')
         let newValue = ::this._resolveRefs(references, value, depth)
         // deep copy to avoid circular references
-        return this.set('value', Immutable.fromJS(newValue).toJS())
+        // changed to partial shallow, will it still work ?
+        return this.set('value', Object.assign({}, newValue))
     }
 
     toJSONSchema(obj = this, depth = 0) {
@@ -110,7 +111,7 @@ export default class JSONSchemaReference extends Reference {
     }
 
     _resolveRefs(references, obj, depth = 0) {
-        if (typeof obj !== 'object' || depth === 0) {
+        if (typeof obj !== 'object' || obj === null || depth === 0) {
             return obj
         }
 

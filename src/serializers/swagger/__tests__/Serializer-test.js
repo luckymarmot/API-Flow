@@ -474,7 +474,7 @@ export class TestSwaggerSerializer extends UnitTest {
         })
 
         const expected = [
-            null, '/path/to/req', { GET: 'test content' }
+            null, '/path/to/req', { get: 'test content' }
         ]
 
         const result = parser._formatRequest(context, request, schemes)
@@ -540,7 +540,7 @@ export class TestSwaggerSerializer extends UnitTest {
         })
 
         const expected = [
-            null, '{version}/path/to/req', { GET: 'test content' }
+            null, '{version}/path/to/req', { get: 'test content' }
         ]
 
         const result = parser._formatRequest(context, request, schemes)
@@ -889,18 +889,13 @@ export class TestSwaggerSerializer extends UnitTest {
             return { c: count }
         })
 
+        // Params with same name and location are discarded
         const expected = [
             { c: 1 },
-            { c: 2 },
-            { c: 3 },
-            { c: 4 },
-            { c: 5 },
             {
                 c: 6,
                 in: 'formData'
-            },
-            { c: 7 },
-            { c: 8 }
+            }
         ]
 
         const result = parser._formatParameters(context, request)
@@ -1121,7 +1116,9 @@ export class TestSwaggerSerializer extends UnitTest {
                     'x-password': 'paw'
                 }
             },
-            'basic_auth'
+            {
+                basic_auth: []
+            }
         ]
 
         const result = parser._formatBasicAuth(context, auth)
@@ -1146,7 +1143,9 @@ export class TestSwaggerSerializer extends UnitTest {
                     in: 'query'
                 }
             },
-            'api_key_auth'
+            {
+                api_key_auth: []
+            }
         ]
 
         const result = parser._formatApiKeyAuth(context, auth)
@@ -1231,7 +1230,9 @@ export class TestSwaggerSerializer extends UnitTest {
         })
 
         const expected = {
-            200: {}
+            200: {
+                description: 'stub description'
+            }
         }
         const result = parser._formatResponse(context, response)
 
@@ -1307,7 +1308,6 @@ export class TestSwaggerSerializer extends UnitTest {
                 description: 'dummy description',
                 headers: {
                     'Content-Type': {
-                        required: false,
                         default: 'application/json',
                         type: 'string',
                         'x-title': 'Content-Type',
@@ -1321,7 +1321,6 @@ export class TestSwaggerSerializer extends UnitTest {
                         ]
                     },
                     'Set-Cookie': {
-                        required: false,
                         default: 'UserID=JohnDoe; Max-Age=3600; Version=1',
                         type: 'string',
                         'x-title': 'Set-Cookie',
@@ -1470,6 +1469,303 @@ export class TestSwaggerSerializer extends UnitTest {
         })
     }
 
+    @targets('_formatContactInfo')
+    testFormatContactInfoWithNull() {
+        const parser = this.__init()
+
+        const expected = {}
+
+        const result = parser._formatContactInfo(null)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatContactInfo')
+    testFormatContactInfoWithEmptyContact() {
+        const parser = this.__init()
+        const contact = new Contact()
+
+        const expected = {}
+
+        const result = parser._formatContactInfo(contact)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatContactInfo')
+    testFormatContactInfoWithName() {
+        const parser = this.__init()
+        const contact = new Contact({
+            name: 'some name'
+        })
+
+        const expected = {
+            name: 'some name'
+        }
+
+        const result = parser._formatContactInfo(contact)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatContactInfo')
+    testFormatContactInfoWithUrl() {
+        const parser = this.__init()
+        const contact = new Contact({
+            url: 'some.url.com'
+        })
+
+        const expected = {
+            url: 'some.url.com'
+        }
+
+        const result = parser._formatContactInfo(contact)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatContactInfo')
+    testFormatContactInfoWithEmail() {
+        const parser = this.__init()
+        const contact = new Contact({
+            email: 'some@email.com'
+        })
+
+        const expected = {
+            email: 'some@email.com'
+        }
+
+        const result = parser._formatContactInfo(contact)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatLicenseInfo')
+    testFormatLicenseInfoWithNull() {
+        const parser = this.__init()
+
+        const expected = {}
+
+        const result = parser._formatLicenseInfo(null)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatLicenseInfo')
+    testFormatLicenseInfoWithEmptyLicense() {
+        const parser = this.__init()
+        const license = new License()
+
+        const expected = {}
+
+        const result = parser._formatLicenseInfo(license)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatLicenseInfo')
+    testFormatLicenseInfoWithName() {
+        const parser = this.__init()
+        const license = new License({
+            name: 'MIT'
+        })
+
+        const expected = {
+            name: 'MIT'
+        }
+
+        const result = parser._formatLicenseInfo(license)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatLicenseInfo')
+    testFormatLicenseInfoWithUrl() {
+        const parser = this.__init()
+        const license = new License({
+            url: 'some.url.com'
+        })
+
+        const expected = {
+            name: 'Missing License Scheme',
+            url: 'some.url.com'
+        }
+
+        const result = parser._formatLicenseInfo(license)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_dropDuplicateParameters')
+    testDropDuplicateParametersWithEmptyList() {
+        const parser = this.__init()
+
+        const params = []
+
+        const expected = []
+
+        const result = parser._dropDuplicateParameters(params)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_dropDuplicateParameters')
+    testDropDuplicateParametersWithListOfUniqueParams() {
+        const parser = this.__init()
+
+        const params = [
+            {
+                name: 'api_key',
+                in: 'query'
+            },
+            {
+                name: 'Content-MD5',
+                in: 'header'
+            }
+        ]
+
+        const expected = params
+
+        const result = parser._dropDuplicateParameters(params)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_dropDuplicateParameters')
+    testDropDuplicateParametersWithListOfDuplParamsWithDifferentLocations() {
+        const parser = this.__init()
+
+        const params = [
+            {
+                name: 'api_key',
+                in: 'query'
+            },
+            {
+                name: 'api_key',
+                in: 'header'
+            },
+            {
+                name: 'Content-MD5',
+                in: 'header'
+            }
+        ]
+
+        const expected = params
+
+        const result = parser._dropDuplicateParameters(params)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_dropDuplicateParameters')
+    testDropDuplicateParametersWithListOfDuplParamsWithSameLocation() {
+        const parser = this.__init()
+
+        const params = [
+            {
+                name: 'api_key',
+                in: 'query'
+            },
+            {
+                name: 'api_key',
+                in: 'query'
+            },
+            {
+                name: 'Content-MD5',
+                in: 'header'
+            }
+        ]
+
+        const expected = [
+            {
+                name: 'api_key',
+                in: 'query'
+            },
+            {
+                name: 'Content-MD5',
+                in: 'header'
+            }
+        ]
+
+        const result = parser._dropDuplicateParameters(params)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_replaceRefs')
+    testReplaceRefsWithNullObject() {
+        const parser = this.__init()
+
+        const obj = null
+
+        const expected = null
+
+        const result = parser._replaceRefs(obj)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_replaceRefs')
+    testReplaceRefsWithSimpleTypeObject() {
+        const parser = this.__init()
+
+        const obj = 'simple string'
+
+        const expected = 'simple string'
+
+        const result = parser._replaceRefs(obj)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_replaceRefs')
+    testReplaceRefsWithReferenceWithRelativeURI() {
+        const parser = this.__init()
+
+        const obj = new JSONSchemaReference({
+            uri: 'file.json#/path/to/def/User',
+            relative: '#/path/to/def/User'
+        })
+
+        const expected = '#/path/to/def/User'
+
+        const result = parser._replaceRefs(obj)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_replaceRefs')
+    testReplaceRefsWithArrayCallsReplaceRefForEachItem() {
+        const parser = this.__init()
+
+        const obj = [ 1, 2, 3, 4 ]
+
+        const expected = [ 1, 2, 3, 4 ]
+
+        const result = parser._replaceRefs(obj)
+
+        this.assertEqual(expected, result)
+        this.assertEqual(parser.spy._replaceRefs.count, 5)
+    }
+
+    @targets('_replaceRefs')
+    testReplaceRefsWithObjectCallsReplaceRefForEachKey() {
+        const parser = this.__init()
+
+        const obj = {
+            a: 12,
+            b: 42,
+            c: 90,
+            d: 36
+        }
+
+        const expected = obj
+
+        const result = parser._replaceRefs(obj)
+
+        this.assertEqual(expected, result)
+        this.assertEqual(parser.spy._replaceRefs.count, 5)
+    }
     //
     // helpers
     //

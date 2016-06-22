@@ -50,9 +50,14 @@ export class Parameter extends Immutable.Record({
         if (type === 'reference') {
             let ref = this.get('value')
             if (ref instanceof Reference) {
-                constraintSet.$ref = this
-                    .getIn([ 'value', 'relative' ]) || this
-                    .getIn([ 'value', 'uri' ])
+                if (ref.get('value')) {
+                    constraintSet.$ref = ref.get('value')
+                }
+                else {
+                    constraintSet.$ref =
+                        ref.get('relative') ||
+                        ref.get('uri')
+                }
                 delete constraintSet.type
             }
             valueIsValid = false

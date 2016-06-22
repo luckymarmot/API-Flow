@@ -74,17 +74,56 @@ export default class SwaggerSerializer extends BaseSerializer {
         }
 
         if (_info.contact) {
-            _info.contact = _info.contact.toJS()
+            let contact = this._formatContactInfo(_info.contact)
+            if (Object.keys(contact).length > 0) {
+                _info.contact = contact
+            }
         }
 
         if (_info.license) {
-            _info.license = _info.license.toJS()
-            if (!_info.license.name) {
-                _info.license = 'Missing License'
+            let license = this._formatLicenseInfo(_info.license)
+            if (Object.keys(license).length > 0) {
+                _info.license = license
             }
         }
 
         return _info
+    }
+
+    _formatContactInfo(contact) {
+        let formatted = {}
+
+        if (!contact) {
+            return formatted
+        }
+
+        for (let key of contact.keys()) {
+            if (contact.get(key)) {
+                formatted[key] = contact.get(key)
+            }
+        }
+
+        return formatted
+    }
+
+    _formatLicenseInfo(license) {
+        let formatted = {}
+
+        if (!license) {
+            return formatted
+        }
+
+        for (let key of license.keys()) {
+            if (license.get(key)) {
+                formatted[key] = license.get(key)
+            }
+        }
+
+        if (formatted.url && !formatted.name) {
+            formatted.name = 'Missing License Scheme'
+        }
+
+        return formatted
     }
 
     _formatHost(requests) {
@@ -109,7 +148,8 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        return [ url.get('host').generate() || 'localhost', usedSchemes ]
+        let generated = url.get('host').generate()
+        return [ generated || 'localhost', usedSchemes ]
     }
 
     _formatPaths(context, requests, schemes) {
@@ -135,7 +175,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         let [ security, content ] = ::this.
             _formatContent(context, request, schemes)
 
-        req[request.get('method')] = content
+        req[request.get('method').toLowerCase()] = content
         return [ security, path, req ]
     }
 
@@ -243,9 +283,8 @@ export default class SwaggerSerializer extends BaseSerializer {
 
     _formatResponse(context, response) {
         let _responseMap = {}
-        let content = {}
-        if (response.get('description')) {
-            content.description = response.get('description')
+        let content = {
+            description: response.get('description') || 'stub description'
         }
 
         let container = response.get('parameters')
@@ -258,6 +297,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                 let _param = this._formatParam(null, param)
                 let name = _param.name
                 delete _param.name
+                delete _param.required
                 let final = {}
                 final[name] = _param
 
@@ -283,6 +323,10 @@ export default class SwaggerSerializer extends BaseSerializer {
                     content.schema = {}
                 }
 
+                if (typeof _param.$ref === 'object') {
+                    _param = _param.$ref || {}
+                }
+
                 content['x-use-with'] = _param['x-use-with']
 
                 delete _param['x-use-with']
@@ -303,7 +347,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         let body = container.get('body')
         let path = container.get('path')
 
-        return headers.map(param => {
+        let params = headers.map(param => {
             return this._formatParam('header', param)
         }).concat(
         queries.map(param => {
@@ -313,9 +357,22 @@ export default class SwaggerSerializer extends BaseSerializer {
         body.map(param => {
             let formatted = this._formatParam('body', param)
 
-            if (!formatted.$ref) {
+            if (typeof formatted.$ref === 'undefined') {
                 formatted.in = 'formData'
             }
+            else {
+                if (typeof formatted.$ref === 'object') {
+                    formatted.schema = formatted.$ref || {}
+                }
+                else {
+                    formatted.schema = {
+                        $ref: formatted.$ref
+                    }
+                }
+                delete formatted.$ref
+                delete formatted.type
+            }
+
 
             return formatted
         })
@@ -324,6 +381,19 @@ export default class SwaggerSerializer extends BaseSerializer {
             return this._formatParam('path', param)
         })
         )
+
+        return this._dropDuplicateParameters(params)
+    }
+
+    _dropDuplicateParameters(params) {
+        let paramMap = {}
+        return params.filter(param => {
+            if (!paramMap[param.in + '-' + param.name]) {
+                paramMap[param.in + '-' + param.name] = true
+                return true
+            }
+            return false
+        })
     }
 
     _formatParam(source, _param) {
@@ -357,7 +427,7 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        Object.assign(param, _param.getJSONSchema(false))
+        Object.assign(param, _param.getJSONSchema(false, false))
 
         if (_param.get('externals').size > 0) {
             param['x-use-with'] = []
@@ -366,7 +436,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                 let constraint = {
                     name: external.get('key')
                 }
-                let schema = external.getJSONSchema()
+                let schema = external.getJSONSchema(false, false)
                 Object.assign(constraint, schema)
                 param['x-use-with'].push(constraint)
             })
@@ -450,7 +520,7 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        return [ definition, 'basic_auth' ]
+        return [ definition, { basic_auth: [] } ]
     }
 
     _formatApiKeyAuth(context, auth) {
@@ -462,19 +532,30 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        return [ definition, 'api_key_auth' ]
+        return [ definition, { api_key_auth: [] } ]
     }
 
     _formatOAuth2Auth(context, auth) {
         let scopes = auth.get('scopes')
 
+        let _definition = {
+            type: 'oauth2'
+        }
+
+        if (auth.get('authorizationUrl')) {
+            _definition.authorizationUrl = auth.get('authorizationUrl')
+        }
+
+        if (auth.get('tokenUrl')) {
+            _definition.tokenUrl = auth.get('tokenUrl')
+        }
+
+        if (auth.get('flow')) {
+            _definition.flow = auth.get('flow')
+        }
+
         let definition = {
-            oauth_2_auth: {
-                type: 'oauth2',
-                authorizationUrl: auth.get('authorizationUrl'),
-                tokenUrl: auth.get('tokenUrl'),
-                flow: auth.get('flow')
-            }
+            oauth_2_auth: _definition
         }
 
         let scopeDescriptions = {}
@@ -507,7 +588,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         let references = context.get('references')
         references.forEach(container => {
             container.get('cache').forEach((cache, key) => {
-                if (key.startsWith('#/')) {
+                if (key && key.startsWith('#/')) {
                     let pathFragments = key
                         .split('/')
                         .slice(1)
@@ -526,17 +607,51 @@ export default class SwaggerSerializer extends BaseSerializer {
                     }
                     let ref = container.resolve(key).get('value')
 
-                    if (typeof ref === 'string') {
+                    if (typeof ref === 'undefined' || ref === null) {
+                        subTree = ''
+                    }
+                    else if (typeof ref === 'string') {
                         subTree = ref
                     }
                     else {
                         // object assignement
-                        Object.assign(subTree, ref)
+                        ref = this._replaceRefs(ref)
+                        if (typeof ref === 'string') {
+                            subTree = ref
+                        }
+                        else {
+                            Object.assign(subTree, ref)
+                        }
                     }
                 }
             })
         })
 
         return schemas
+    }
+
+    _replaceRefs(obj) {
+        if (typeof obj !== 'object' || obj === null) {
+            return obj
+        }
+
+        if (obj instanceof Reference) {
+            return obj.get('relative') || obj.get('uri')
+        }
+
+        if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; i += 1) {
+                let content = obj[i]
+                obj[i] = this._replaceRefs(content)
+            }
+        }
+        else {
+            for (let key of Object.keys(obj)) {
+                let replaced = this._replaceRefs(obj[key])
+                obj[key] = replaced
+            }
+        }
+
+        return obj
     }
 }
