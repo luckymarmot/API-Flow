@@ -468,7 +468,7 @@ export default class PostmanParser {
 
             // warning: this only works with simple groups of the form {{ex}}
             // nested groups will produce weird path parameters
-            if(groups) {
+            if (groups) {
                 for (let group of groups) {
                     let param = this._extractParam(group.slice(2, -2), group)
                     paths.push(param)

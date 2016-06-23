@@ -35,7 +35,9 @@ export default class LateResolutionReference extends Reference {
             let value
             let ref
             if (this.get('uri') === '#/x-postman/' + group) {
+                /* eslint-disable consistent-this */
                 ref = this
+                /* eslint-enable consistent-this */
             }
             else {
                 ref = references.resolve('#/x-postman/' + group)

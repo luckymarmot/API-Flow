@@ -239,7 +239,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         if (Object.keys(responses).length === 0) {
             _content.responses = {
                 default: {
-                  description: 'stub description for swagger compliance'
+                    description: 'stub description for swagger compliance'
                 }
             }
         }
