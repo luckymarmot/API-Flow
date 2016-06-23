@@ -109,8 +109,8 @@ export default class PostmanParser {
         if (environment.values) {
             let refs = environment.values.map(value => {
                 return new LateResolutionReference({
-                    uri: '#/postman/{{' + value.key + '}}',
-                    relative: '#/postman/{{' + value.key + '}}',
+                    uri: '#/x-postman/{{' + value.key + '}}',
+                    relative: '#/x-postman/{{' + value.key + '}}',
                     value: value.value,
                     resolved: true
                 })
@@ -147,8 +147,8 @@ export default class PostmanParser {
         if (typeof string === 'string') {
             if (string.match(/{{[^{}]*}}/)) {
                 let ref = new LateResolutionReference({
-                    uri: '#/postman/' + this._escapeURIFragment(string),
-                    relative: '#/postman/' + this._escapeURIFragment(string),
+                    uri: '#/x-postman/' + this._escapeURIFragment(string),
+                    relative: '#/x-postman/' + this._escapeURIFragment(string),
                     resolved: true
                 })
                 this.references = this.references.push(ref)
@@ -377,13 +377,14 @@ export default class PostmanParser {
 
     _extractParameters(req) {
         let [ _headers, auths ] = this._extractHeaders(req)
-        let [ url, queries ] = this._extractQueriesFromUrl(req.url)
+        let [ url, paths, queries ] = this._extractParamsFromUrl(req.url)
         let [ body, headers ] = this._extractBodyParams(req, _headers)
 
         let container = new ParameterContainer({
             queries: queries,
             headers: headers,
-            body: body
+            body: body,
+            path: paths
         })
 
         return [ container, url, auths ]
@@ -428,9 +429,10 @@ export default class PostmanParser {
     }
 
 
-    _extractQueriesFromUrl(url) {
+    _extractParamsFromUrl(url) {
         let _url = new URL(url)
-        let queries = new Immutable.List()
+        let queries = []
+        let paths = []
 
         let protocol = this._extractParam(
             'protocol', _url.generateParam('protocol')
@@ -453,12 +455,28 @@ export default class PostmanParser {
             for (let component of components) {
                 let query = this._extractQueryFromComponent(component)
                 if (query) {
-                    queries = queries.push(query)
+                    queries.push(query)
                 }
             }
         }
 
-        return [ _url, queries ]
+        if (path.get('type') === 'reference') {
+            let ref = path.get('value')
+            let value = ref.get('relative').split('/').slice(-1)[0]
+            let content = this._unescapeURIFragment(value)
+            let groups = content.match(/{{.*?}}/g)
+
+            // warning: this only works with simple groups of the form {{ex}}
+            // nested groups will produce weird path parameters
+            if(groups) {
+                for (let group of groups) {
+                    let param = this._extractParam(group.slice(2, -2), group)
+                    paths.push(param)
+                }
+            }
+        }
+
+        return [ _url, new Immutable.List(paths), new Immutable.List(queries) ]
     }
 
     _escapeURIFragment(uriFragment) {
@@ -529,20 +547,33 @@ export default class PostmanParser {
                 let header = this._extractParam(
                     'Content-Type', 'application/x-www-form-urlencoded'
                 )
-
+                contentType = 'application/x-www-form-urlencoded'
                 headers = headers.push(header)
             }
             else if (!contentType && req.dataMode === 'params') {
                 let header = this._extractParam(
                     'Content-Type', 'multipart/form-data'
                 )
-
+                contentType = 'multipart/form-data'
                 headers = headers.push(header)
             }
 
             if (req.data) {
                 for (let _param of req.data) {
                     let param = this._extractParam(_param.key, _param.value)
+                    if (contentType) {
+                        param = param.set('externals', new Immutable.List([
+                            new Parameter({
+                                key: 'Content-Type',
+                                type: 'string',
+                                internals: new Immutable.List([
+                                    new Constraint.Enum([
+                                        contentType
+                                    ])
+                                ])
+                            })
+                        ]))
+                    }
                     params.push(param)
                 }
             }

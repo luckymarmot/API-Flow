@@ -34,11 +34,11 @@ export default class LateResolutionReference extends Reference {
         return (match, group) => {
             let value
             let ref
-            if (this.get('uri') === '#/postman/' + group) {
-                ref = this.get('value')
+            if (this.get('uri') === '#/x-postman/' + group) {
+                ref = this
             }
             else {
-                ref = references.resolve('#/postman/' + group)
+                ref = references.resolve('#/x-postman/' + group)
             }
             if (ref) {
                 value = ref.get('value')

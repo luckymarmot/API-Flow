@@ -668,7 +668,11 @@ export class TestSwaggerSerializer extends UnitTest {
                 schemes: [ 'https', 'ws' ],
                 produces: [],
                 consumes: [],
-                responses: {},
+                responses: {
+                    default: {
+                        description: 'stub description for swagger compliance'
+                    }
+                },
                 parameters: [],
                 security: null
             }
@@ -745,12 +749,119 @@ export class TestSwaggerSerializer extends UnitTest {
                 produces: [ 'application/json' ],
                 consumes: [ 'application/json', 'application/xml' ],
                 parameters: [ 'params' ],
-                responses: {},
+                responses: {
+                    default: {
+                        description: 'stub description for swagger compliance'
+                    }
+                },
                 security: 'security scheme'
             }
         ]
 
         const result = parser._formatContent(context, request, schemes)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_getContentTypeDomain')
+    testGetContentTypeDomainWithNoExternals() {
+        const parser = this.__init()
+        const param = new Parameter()
+
+        const expected = []
+
+        const result = parser._getContentTypeDomain(param)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_getContentTypeDomain')
+    testGetContentTypeDomainWithNoContentTypeExternals() {
+        const parser = this.__init()
+        const param = new Parameter({
+            externals: new Immutable.List([
+                new Parameter({
+                    key: 'Content-MD5',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '1129f82efe47'
+                        ])
+                    ])
+                })
+            ])
+        })
+
+        const expected = []
+
+        const result = parser._getContentTypeDomain(param)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_getContentTypeDomain')
+    testGetContentTypeDomainWithSingleValueContentTypeExternal() {
+        const parser = this.__init()
+        const param = new Parameter({
+            externals: new Immutable.List([
+                new Parameter({
+                    key: 'Content-MD5',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '1129f82efe47'
+                        ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'application/json'
+                        ])
+                    ])
+                })
+            ])
+        })
+
+        const expected = [ 'application/json' ]
+
+        const result = parser._getContentTypeDomain(param)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_getContentTypeDomain')
+    testGetContentTypeDomainWithMultipleValuesContentTypeExternal() {
+        const parser = this.__init()
+        const param = new Parameter({
+            externals: new Immutable.List([
+                new Parameter({
+                    key: 'Content-MD5',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '1129f82efe47'
+                        ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'application/json',
+                            'application/xml'
+                        ])
+                    ])
+                })
+            ])
+        })
+
+        const expected = [ 'application/json', 'application/xml' ]
+
+        const result = parser._getContentTypeDomain(param)
 
         this.assertEqual(expected, result)
     }

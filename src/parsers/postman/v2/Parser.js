@@ -394,8 +394,8 @@ export default class PostmanParser {
         if (typeof string === 'string') {
             if (string.match(/{{[^{}]*}}/)) {
                 let ref = new LateResolutionReference({
-                    uri: '#/postman/' + this._escapeURIFragment(string),
-                    relative: '#/postman/' + this._escapeURIFragment(string),
+                    uri: '#/x-postman/' + this._escapeURIFragment(string),
+                    relative: '#/x-postman/' + this._escapeURIFragment(string),
                     resolved: true
                 })
                 this.references = this.references.push(ref)
