@@ -20,6 +20,14 @@ export class Parameter extends Immutable.Record({
         let type = this.get('type')
         let format = this.get('format')
 
+        let types = [
+            'integer', 'number', 'array', 'string', 'object', 'boolean', 'null'
+        ]
+
+        if (types.indexOf(type) === -1) {
+            type = this._inferType(type)
+        }
+
         let constraintSet = this.get('internals').reduce((set, constraint) => {
             let obj = constraint.toJS()
             Object.assign(set, obj)
@@ -130,6 +138,18 @@ export class Parameter extends Immutable.Record({
 
         let generated = jsf(constraintSet)
         return generated
+    }
+
+    _inferType(type) {
+        if (type.match(/double/) || type.match(/float/)) {
+            return 'number'
+        }
+
+        if (type.match(/date/)) {
+            return 'string'
+        }
+
+        return type
     }
 
     _replaceRefs(obj) {
