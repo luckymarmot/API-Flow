@@ -158,9 +158,8 @@ export class Parameter extends Immutable.Record({
         }
 
         if (obj.$ref) {
-            obj.enum = [
-                this._unescapeURIFragment(obj.$ref.split('/').slice(-1)[0])
-            ]
+            obj.default = this
+              ._unescapeURIFragment(obj.$ref.split('/').slice(-1)[0])
             obj.type = 'string'
             delete obj.$ref
         }

@@ -181,7 +181,12 @@ export default class SwaggerSerializer extends BaseSerializer {
 
     _formatSequenceParam(_param) {
         if (_param.get('format') !== 'sequence') {
-            return _param.generate()
+            let schema = _param.getJSONSchema(false, true)
+            if (!schema.enum && typeof schema.default !== 'undefined') {
+                schema.enum = [ schema.default ]
+            }
+            let generated = _param.generate(false, schema)
+            return generated
         }
 
         let schema = _param.getJSONSchema()
@@ -229,7 +234,19 @@ export default class SwaggerSerializer extends BaseSerializer {
 
         _content.parameters = ::this._formatParameters(context, request)
         let [ definitions, security ] = ::this._formatSecurity(context, request)
-        _content.responses = ::this._formatResponses(context, request)
+        let responses = ::this._formatResponses(context, request)
+
+        if (Object.keys(responses).length === 0) {
+            _content.responses = {
+                default: {
+                    description: 'stub description for swagger compliance'
+                }
+            }
+        }
+        else {
+            _content.responses = responses
+        }
+
         _content.security = security
 
         return [ definitions, _content ]
@@ -310,7 +327,7 @@ export default class SwaggerSerializer extends BaseSerializer {
 
         if (body.size > 0) {
             body.forEach(param => {
-                let _param = this._formatParam('body', param)
+                let _param = this._formatParam('body', param, false)
                 if (_param.type !== 'array') {
                     delete _param.type
                 }
@@ -355,7 +372,18 @@ export default class SwaggerSerializer extends BaseSerializer {
         })
         ).concat(
         body.map(param => {
-            let formatted = this._formatParam('body', param)
+            let formatted
+            let domain = this._getContentTypeDomain(param)
+
+            if (
+                domain.indexOf('application/x-www-form-urlencoded') >= 0 ||
+                domain.indexOf('multipart/form-data') >= 0
+            ) {
+                formatted = this._formatParam('body', param, true)
+            }
+            else {
+                formatted = this._formatParam('body', param, false)
+            }
 
             if (typeof formatted.$ref === 'undefined') {
                 formatted.in = 'formData'
@@ -385,6 +413,18 @@ export default class SwaggerSerializer extends BaseSerializer {
         return this._dropDuplicateParameters(params)
     }
 
+    _getContentTypeDomain(param) {
+        let externals = param.get('externals')
+        let domain = []
+        externals.forEach(external => {
+            if (external.get('key') === 'Content-Type') {
+                domain = external.getIn([ 'internals', 0, 'value' ])
+            }
+        })
+
+        return domain
+    }
+
     _dropDuplicateParameters(params) {
         let paramMap = {}
         return params.filter(param => {
@@ -396,7 +436,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         })
     }
 
-    _formatParam(source, _param) {
+    _formatParam(source, _param, replaceRefs = true) {
         let description = _param.get('description')
         let example = _param.get('example')
         let format = _param.get('format')
@@ -427,7 +467,7 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        Object.assign(param, _param.getJSONSchema(false, false))
+        Object.assign(param, _param.getJSONSchema(false, replaceRefs))
 
         if (_param.get('externals').size > 0) {
             param['x-use-with'] = []

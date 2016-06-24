@@ -234,8 +234,8 @@ export class TestPostmanParser extends UnitTest {
         })
         expected = expected.create(new Immutable.List([
             new LateResolutionReference({
-                uri: '#/postman/{{variableKey}}',
-                relative: '#/postman/{{variableKey}}',
+                uri: '#/x-postman/{{variableKey}}',
+                relative: '#/x-postman/{{variableKey}}',
                 value: 'variableValue',
                 resolved: true
             })
@@ -355,8 +355,8 @@ export class TestPostmanParser extends UnitTest {
         )
 
         const expected = new LateResolutionReference({
-            uri: '#/postman/{{simple}}',
-            relative: '#/postman/{{simple}}',
+            uri: '#/x-postman/{{simple}}',
+            relative: '#/x-postman/{{simple}}',
             resolved: true
         })
 
@@ -377,8 +377,8 @@ export class TestPostmanParser extends UnitTest {
         )
 
         const expected = new LateResolutionReference({
-            uri: '#/postman/notso{{simple}}',
-            relative: '#/postman/notso{{simple}}',
+            uri: '#/x-postman/notso{{simple}}',
+            relative: '#/x-postman/notso{{simple}}',
             resolved: true
         })
 
@@ -399,8 +399,8 @@ export class TestPostmanParser extends UnitTest {
         )
 
         const expected = new LateResolutionReference({
-            uri: '#/postman/{{not}}so{{simple}}?',
-            relative: '#/postman/{{not}}so{{simple}}?',
+            uri: '#/x-postman/{{not}}so{{simple}}?',
+            relative: '#/x-postman/{{not}}so{{simple}}?',
             resolved: true
         })
 
@@ -421,8 +421,8 @@ export class TestPostmanParser extends UnitTest {
         )
 
         const expected = new LateResolutionReference({
-            uri: '#/postman/{{not}}so{{{{simple}}}}?',
-            relative: '#/postman/{{not}}so{{{{simple}}}}?',
+            uri: '#/x-postman/{{not}}so{{{{simple}}}}?',
+            relative: '#/x-postman/{{not}}so{{{{simple}}}}?',
             resolved: true
         })
 
@@ -830,8 +830,8 @@ export class TestPostmanParser extends UnitTest {
             return [ 12, 90 ]
         })
 
-        parser.spyOn('_extractQueriesFromUrl', () => {
-            return [ 42, 65 ]
+        parser.spyOn('_extractParamsFromUrl', () => {
+            return [ 42, 36, 65 ]
         })
 
         parser.spyOn('_extractBodyParams', () => {
@@ -855,8 +855,8 @@ export class TestPostmanParser extends UnitTest {
             return [ 12, 90 ]
         })
 
-        parser.spyOn('_extractQueriesFromUrl', () => {
-            return [ 42, 65 ]
+        parser.spyOn('_extractParamsFromUrl', () => {
+            return [ 42, 36, 65 ]
         })
 
         parser.spyOn('_extractBodyParams', () => {
@@ -869,7 +869,7 @@ export class TestPostmanParser extends UnitTest {
 
         parser._extractParameters(req)
 
-        this.assertEqual(parser.spy._extractQueriesFromUrl.count, 1)
+        this.assertEqual(parser.spy._extractParamsFromUrl.count, 1)
     }
 
     @targets('_extractParameters')
@@ -880,8 +880,8 @@ export class TestPostmanParser extends UnitTest {
             return [ 12, 90 ]
         })
 
-        parser.spyOn('_extractQueriesFromUrl', () => {
-            return [ 42, 65 ]
+        parser.spyOn('_extractParamsFromUrl', () => {
+            return [ 42, 36, 65 ]
         })
 
         parser.spyOn('_extractBodyParams', () => {
@@ -905,8 +905,8 @@ export class TestPostmanParser extends UnitTest {
             return [ 125, 90 ]
         })
 
-        parser.spyOn('_extractQueriesFromUrl', () => {
-            return [ 42, 65 ]
+        parser.spyOn('_extractParamsFromUrl', () => {
+            return [ 42, 72, 65 ]
         })
 
         parser.spyOn('_extractBodyParams', () => {
@@ -921,7 +921,8 @@ export class TestPostmanParser extends UnitTest {
             new ParameterContainer({
                 queries: 65,
                 headers: 12,
-                body: 36
+                body: 36,
+                path: 72
             }),
             42,
             90
@@ -1060,7 +1061,7 @@ export class TestPostmanParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
-    @targets('_extractQueriesFromUrl')
+    @targets('_extractParamsFromUrl')
     testExtractQueryFromUrlWithSimpleUrlCallsExtractParam() {
         const parser = new ClassMock(new PostmanParser(), '')
 
@@ -1070,12 +1071,12 @@ export class TestPostmanParser extends UnitTest {
 
         const url = 'http://simple.url.com/path/to/req'
 
-        parser._extractQueriesFromUrl(url)
+        parser._extractParamsFromUrl(url)
 
         this.assertEqual(parser.spy._extractParam.count, 3)
     }
 
-    @targets('_extractQueriesFromUrl')
+    @targets('_extractParamsFromUrl')
     testExtractQueryFromUrlWithSimpleUrl() {
         const parser = new ClassMock(new PostmanParser(), '')
 
@@ -1124,15 +1125,16 @@ export class TestPostmanParser extends UnitTest {
                     ])
                 })
             }),
+            new Immutable.List(),
             new Immutable.List()
         ]
 
-        const result = parser._extractQueriesFromUrl(url)
+        const result = parser._extractParamsFromUrl(url)
 
         this.assertJSONEqual(expected, result)
     }
 
-    @targets('_extractQueriesFromUrl')
+    @targets('_extractParamsFromUrl')
     testExtractQueryFromUrlWithRichUrl() {
         const parser = new ClassMock(new PostmanParser(), '')
 
@@ -1162,8 +1164,8 @@ export class TestPostmanParser extends UnitTest {
                     key: 'host',
                     name: 'host',
                     value: new LateResolutionReference({
-                        uri: '#/postman/{{sub}}.url.{{extension}}',
-                        relative: '#/postman/{{sub}}.url.{{extension}}',
+                        uri: '#/x-postman/{{sub}}.url.{{extension}}',
+                        relative: '#/x-postman/{{sub}}.url.{{extension}}',
                         resolved: true
                     }),
                     type: 'reference'
@@ -1172,23 +1174,35 @@ export class TestPostmanParser extends UnitTest {
                     key: 'pathname',
                     name: 'pathname',
                     value: new LateResolutionReference({
-                        uri: '#/postman/~1users~1{{userID}}',
-                        relative: '#/postman/~1users~1{{userID}}',
+                        uri: '#/x-postman/~1users~1{{userID}}',
+                        relative: '#/x-postman/~1users~1{{userID}}',
                         resolved: true
                     }),
                     type: 'reference'
                 })
             }),
+            new Immutable.List([
+                new Parameter({
+                    key: 'userID',
+                    name: 'userID',
+                    value: new LateResolutionReference({
+                        uri: '#/x-postman/{{userID}}',
+                        relative: '#/x-postman/{{userID}}',
+                        resolved: true
+                    }),
+                    type: 'reference'
+                })
+            ]),
             new Immutable.List()
         ]
 
         parser.references = new Immutable.List()
-        const result = parser._extractQueriesFromUrl(url)
+        const result = parser._extractParamsFromUrl(url)
 
         this.assertJSONEqual(expected, result)
     }
 
-    @targets('_extractQueriesFromUrl')
+    @targets('_extractParamsFromUrl')
     testExtractQueryFromUrlWithSimpleUrlAndQueryCallsExtractQueryComponent() {
         const parser = new ClassMock(new PostmanParser(), '')
 
@@ -1201,12 +1215,12 @@ export class TestPostmanParser extends UnitTest {
             '?userId=2&songId={{songId}}'
 
         parser.references = new Immutable.List()
-        parser._extractQueriesFromUrl(url)
+        parser._extractParamsFromUrl(url)
 
         this.assertEqual(parser.spy._extractQueryFromComponent.count, 2)
     }
 
-    @targets('_extractQueriesFromUrl')
+    @targets('_extractParamsFromUrl')
     testExtractQueryFromUrlWithSimpleUrlAndQuery() {
         const parser = new ClassMock(new PostmanParser(), '')
 
@@ -1260,6 +1274,7 @@ export class TestPostmanParser extends UnitTest {
                     ])
                 })
             }),
+            new Immutable.List(),
             new Immutable.List([
                 new Parameter({
                     key: 'userId',
@@ -1274,8 +1289,8 @@ export class TestPostmanParser extends UnitTest {
                     key: 'songId',
                     name: 'songId',
                     value: new LateResolutionReference({
-                        uri: '#/postman/{{songId}}',
-                        relative: '#/postman/{{songId}}',
+                        uri: '#/x-postman/{{songId}}',
+                        relative: '#/x-postman/{{songId}}',
                         resolved: true
                     }),
                     type: 'reference'
@@ -1284,7 +1299,75 @@ export class TestPostmanParser extends UnitTest {
         ]
 
         parser.references = new Immutable.List()
-        const result = parser._extractQueriesFromUrl(url)
+        const result = parser._extractParamsFromUrl(url)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_extractParamsFromUrl')
+    testExtractQueryFromUrlWithSimpleUrlAndPathParams() {
+        const parser = new ClassMock(new PostmanParser(), '')
+
+        const url =
+            'http://simple.url.com/path/to/{{req}}'
+
+        const expected = [
+            new URL({
+                // inherited from new URL('url')
+                hostname: new Parameter({
+                    key: 'hostname',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'simple.url.com' ])
+                    ])
+                }),
+                // updated by extractQueryFromUrl
+                protocol: new Parameter({
+                    key: 'protocol',
+                    name: 'protocol',
+                    value: 'http',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'http' ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
+                    value: 'simple.url.com',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'simple.url.com' ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    key: 'pathname',
+                    name: 'pathname',
+                    value: new LateResolutionReference({
+                        uri: '#/x-postman/~1path~1to~1{{req}}',
+                        relative: '#/x-postman/~1path~1to~1{{req}}',
+                        resolved: true
+                    }),
+                    type: 'reference'
+                })
+            }),
+            new Immutable.List([
+                new Parameter({
+                    key: 'req',
+                    name: 'req',
+                    value: new LateResolutionReference({
+                        uri: '#/x-postman/{{req}}',
+                        relative: '#/x-postman/{{req}}',
+                        resolved: true
+                    }),
+                    type: 'reference'
+                })
+            ]),
+            new Immutable.List()
+        ]
+
+        parser.references = new Immutable.List()
+        const result = parser._extractParamsFromUrl(url)
 
         this.assertJSONEqual(expected, result)
     }
@@ -1403,8 +1486,8 @@ export class TestPostmanParser extends UnitTest {
             key: 'key',
             name: 'key',
             value: new LateResolutionReference({
-                uri: '#/postman/{{userId}}',
-                relative: '#/postman/{{userId}}',
+                uri: '#/x-postman/{{userId}}',
+                relative: '#/x-postman/{{userId}}',
                 resolved: true
             }),
             type: 'reference'
@@ -1467,8 +1550,32 @@ export class TestPostmanParser extends UnitTest {
 
         const expected = [
             new Immutable.List([
-                new Parameter(),
-                new Parameter()
+                new Parameter({
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/x-www-form-urlencoded'
+                                ])
+                            ])
+                        })
+                    ])
+                })
             ]),
             new Immutable.List([
                 new Parameter()
@@ -1477,7 +1584,7 @@ export class TestPostmanParser extends UnitTest {
 
         const result = parser._extractBodyParams(req, headers)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_extractBodyParams')
@@ -1539,15 +1646,39 @@ export class TestPostmanParser extends UnitTest {
 
         const expected = [
             new Immutable.List([
-                new Parameter(),
-                new Parameter()
+                new Parameter({
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ])
+                        })
+                    ])
+                })
             ]),
             new Immutable.List([])
         ]
 
         const result = parser._extractBodyParams(req, headers)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_extractBodyParams')
@@ -1576,8 +1707,32 @@ export class TestPostmanParser extends UnitTest {
 
         const expected = [
             new Immutable.List([
-                new Parameter(),
-                new Parameter()
+                new Parameter({
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'multipart/form-data'
+                                ])
+                            ])
+                        })
+                    ])
+                })
             ]),
             new Immutable.List([
                 new Parameter()
@@ -1586,7 +1741,7 @@ export class TestPostmanParser extends UnitTest {
 
         const result = parser._extractBodyParams(req, headers)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_extractBodyParams')
@@ -1648,15 +1803,39 @@ export class TestPostmanParser extends UnitTest {
 
         const expected = [
             new Immutable.List([
-                new Parameter(),
-                new Parameter()
+                new Parameter({
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ])
+                        })
+                    ])
+                }),
+                new Parameter({
+                    externals: new Immutable.List([
+                        new Parameter({
+                            key: 'Content-Type',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'application/json'
+                                ])
+                            ])
+                        })
+                    ])
+                })
             ]),
             new Immutable.List([])
         ]
 
         const result = parser._extractBodyParams(req, headers)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_extractContentType')
