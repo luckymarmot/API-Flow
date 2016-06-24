@@ -141,6 +141,10 @@ export class Parameter extends Immutable.Record({
     }
 
     _inferType(type) {
+        if (!type) {
+            return null
+        }
+
         if (type.match(/double/) || type.match(/float/)) {
             return 'number'
         }
