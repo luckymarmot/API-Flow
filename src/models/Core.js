@@ -136,6 +136,10 @@ export class Parameter extends Immutable.Record({
             return result
         })
 
+        if (constraintSet.default) {
+            constraintSet.enum = [ constraintSet.default ]
+        }
+
         let generated = jsf(constraintSet)
         return generated
     }
