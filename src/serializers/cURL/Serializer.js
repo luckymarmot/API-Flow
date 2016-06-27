@@ -1,10 +1,13 @@
+import Immutable from 'immutable'
+
 import BaseSerializer from '../BaseSerializer'
 
 import Group from '../../models/Group'
 import Request from '../../models/Request'
 import Auth from '../../models/Auth'
+import Reference from '../../models/references/Reference'
 
-export default class PostmanSerializer extends BaseSerializer {
+export default class CurlSerializer extends BaseSerializer {
     serialize(context) {
         let content = this._formatContent(context)
         return content
@@ -141,12 +144,8 @@ export default class PostmanSerializer extends BaseSerializer {
     _formatRequest(request) {
         let formatted = []
 
-        let name = request.get('name')
-        if (!name) {
-            name = request.get('url').href()
-        }
-
-        formatted.push('#### ' + name)
+        let name = this._formatName(request)
+        formatted.push(name)
 
         let description = this._formatDescription(request)
         if (description) {
@@ -156,21 +155,37 @@ export default class PostmanSerializer extends BaseSerializer {
         let curl = this._formatCurlCommand(request)
         formatted.push(curl)
 
+        let parameters = this._formatParameterDescriptions(request)
+        if (parameters) {
+            formatted.push(parameters)
+        }
+
         return formatted.join('\n\n')
     }
 
-    _formatDescription(req) {
-        let formatted = []
+    _formatName(req) {
+        let method = (req.get('method') || 'GET').toUpperCase()
+        let name = req.get('name')
 
-        let description = req.get('description')
-        if (description) {
-            formatted = [
-                '##### Description',
-                description
-            ]
+        if (!name) {
+            name = req.get('url').href()
         }
 
-        return formatted.join('\n')
+        if (name) {
+            return '#### **' + method + '** - ' + name
+        }
+
+        return '#### **' + method + '** - Unnamed Request'
+    }
+
+    _formatDescription(req) {
+        let description = req.get('description')
+
+        if (description) {
+            return '##### Description\n' + description
+        }
+
+        return ''
     }
 
     _formatCurlCommand(req) {
@@ -209,7 +224,51 @@ export default class PostmanSerializer extends BaseSerializer {
 
     _formatURL(req) {
         let url = req.get('url')
-        return url.href()
+        let protocol = url.generateParam('protocol') || 'http'
+        let host = url.generateParam('host') || 'localhost'
+        let path = url.generateParam('pathname')
+
+        let queries = this._formatQueries(req)
+
+        let formatted = protocol + '://' + host + path
+
+        if (queries) {
+            formatted += queries
+        }
+        return formatted
+    }
+
+    _formatQueries(req) {
+        let container = req.get('parameters')
+        let bodies = req.get('bodies')
+        if (bodies.size > 0) {
+            container = bodies.get(0).filter(container)
+        }
+
+        let queries = []
+        container.get('queries').forEach(query => {
+            let [ k, v ] = this._formatParam(query, '=', false)
+
+            let content = ''
+            if (k) {
+                content = encodeURIComponent(k) + '='
+            }
+
+            let match = v.match(/^{{.*}}$/)
+            if (match) {
+                content += '{{' + encodeURIComponent(v.slice(2,-2)) + '}}'
+            }
+            else {
+                content += encodeURIComponent(v)
+            }
+            queries.push(content)
+        })
+
+        let formatted = queries.join('&')
+        if (formatted) {
+            return '&' + formatted
+        }
+        return formatted
     }
 
     _formatHeaders(container, offset) {
@@ -225,19 +284,16 @@ export default class PostmanSerializer extends BaseSerializer {
     }
 
     _formatHeader(param) {
-        let schema = param.getJSONSchema()
-        if (schema.default) {
-            schema.enum = [ schema.default ]
+        let [ key, value ] = this._formatParam(param, ': ', false)
+
+        let header
+        if (key) {
+            header = '"' + key + ': ' + value + '"'
+        }
+        else {
+            header = '": ' + value + '"'
         }
 
-        if (schema.type === 'string' && !schema.enum) {
-            schema.enum = [ schema['x-title'] ]
-        }
-
-        let generated = this._escape(param.generate(false, schema))
-        let key = this._escape(param.get('key'))
-
-        let header = '"' + key + ': ' + generated + '"'
         return '-H ' + header + ' \\'
     }
 
@@ -265,21 +321,249 @@ export default class PostmanSerializer extends BaseSerializer {
         return formatted.join('\n')
     }
 
+    _formatParam(param, separator = '=', dropBodyKeys = false) {
+        if (!param) {
+            return [ null, '{{unnamed}}' ]
+        }
+
+        let type = param.get('type')
+
+        if (type === 'reference') {
+            return this._formatReferenceParam(param, separator, dropBodyKeys)
+        }
+
+        if (type === 'array') {
+            return this._formatArrayParam(param, separator, dropBodyKeys)
+        }
+
+        if (type === 'multi') {
+            return this._formatMultiParam(param, separator, dropBodyKeys)
+        }
+
+        if (type === 'string' && param.get('format') === 'sequence') {
+            return this._formatSequenceParam(param, separator, dropBodyKeys)
+        }
+
+        return this._formatSimpleParam(param, separator, dropBodyKeys)
+    }
+
+    _formatReferenceParam(param, separator = '=', dropBodyKeys = false) {
+        let key = param.get('key')
+        let _key = key ? this._escape(key) : null
+        let ref = param.get('value')
+        let value
+
+        if (ref instanceof Reference) {
+            let uri =
+                ref.get('relative') ||
+                ref.get('uri') ||
+                param.get('name') ||
+                '#/missing'
+
+            value = this._escape(uri)
+        }
+        else {
+            value = '#/missing'
+        }
+
+        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+            _key = null
+        }
+
+        return [ _key, '{{' + value + '}}' ]
+    }
+
+    _formatArrayParam(param, separator = '=', dropBodyKeys = false) {
+        let key = param.get('key')
+        let _key = key ? this._escape(key) : null
+        let array = param.get('value')
+
+        let formatted = []
+        if (array instanceof Immutable.List) {
+            array.forEach(sub => {
+                let [ k, v ] = this
+                ._formatParam(sub, separator, dropBodyKeys)
+
+                let content
+                if (k) {
+                    content += k + separator
+                }
+
+                content += v
+                formatted.push(content)
+            })
+
+            if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+                _key = null
+            }
+
+            return [ _key, '[ ' + formatted.join(' AND ') + ' ]' ]
+        }
+        else {
+            let _value = _key === null ? '{{unnamed}}' : '{{' + _key + '}}'
+            return [ _key, _value ]
+        }
+    }
+
+    _formatMultiParam(param, separator = '=', dropBodyKeys = false) {
+        let key = param.get('key')
+        let _key = key !== null ? this._escape(key) : null
+        let array = param.get('value')
+
+        let formatted = []
+        array.forEach(sub => {
+            let [ k, v ] = this
+                ._formatParam(sub, separator, dropBodyKeys)
+
+            let content
+            if (k) {
+                content += k + separator
+            }
+
+            content += v
+            formatted.push(content)
+        })
+
+        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+            _key = null
+        }
+
+        return [ _key, '( ' + formatted.join(' OR ') + ' )' ]
+    }
+
+    _formatSequenceParam(param, separator = '=', dropBodyKeys = false) {
+        let key = param.get('key')
+        let _key = key ? this._escape(key) : null
+
+        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+            _key = null
+        }
+
+        let value = param.get('value')
+        let formatted = []
+        if (value) {
+            value.forEach(sub => {
+                let kvPair = this._formatParam(sub, separator, dropBodyKeys)
+
+                formatted.push(kvPair[1])
+            })
+        }
+
+        let _value = formatted.join('')
+        if (!value) {
+            _value = _key === null ? '{{unnamed}}' : '{{' + _key + '}}'
+        }
+        return [ _key, _value ]
+    }
+
+    _formatSimpleParam(param, separator = '=', dropBodyKeys = false) {
+        let key = param.get('key')
+        let _key = key ? this._escape(key) : null
+
+        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+            _key = null
+        }
+
+        let value = param.get('value')
+        let _value
+        if (!value) {
+            _value = _key === null ? '{{unnamed}}' : '{{' + _key + '}}'
+        }
+        else {
+            if (typeof value === 'object') {
+                _value = this._escape(JSON.stringify(value))
+            }
+            else {
+                _value = this._escape(value + '')
+            }
+        }
+
+        return [ _key, _value ]
+    }
+
     _formatBodyParam(option, param) {
-        let schema = param.getJSONSchema()
-        if (schema.default) {
-            schema.enum = [ schema.default ]
-        }
+        let [ key, value ] = this._formatParam(param, '=', true)
 
-        if (schema.type === 'string' && !schema.enum) {
-            schema.enum = [ schema['x-title'] ]
-        }
-
-        let generated = this._escape(param.generate(false, schema))
-        let key = this._escape(param.get('key'))
-
-        let _param = '"' + key + '=' + generated + '"'
+        let _param = key ? '"' + key + '"="' + value + '"' : '"' + value + '"'
         return option + ' ' + _param + ' \\'
+    }
+
+    _formatParameterDescriptions(req) {
+        let container = req.get('parameters')
+        let bodies = req.get('bodies')
+        if (bodies.size > 0) {
+            container = bodies.get(0).filter(container)
+        }
+
+        let pathDescriptions = []
+        container.get('path').forEach(param => {
+            let formatted = this._formatParamDescription(param)
+            if (formatted) {
+                pathDescriptions.push(formatted)
+            }
+        })
+
+        let queryDescriptions = []
+        container.get('queries').forEach(param => {
+            let formatted = this._formatParamDescription(param)
+            if (formatted) {
+                queryDescriptions.push(formatted)
+            }
+        })
+
+        let headerDescriptions = []
+        container.get('headers').forEach(param => {
+            let formatted = this._formatParamDescription(param)
+            if (formatted) {
+                headerDescriptions.push(formatted)
+            }
+        })
+
+        let bodyDescriptions = []
+        container.get('body').forEach(param => {
+            let formatted = this._formatParamDescription(param)
+            if (formatted) {
+                bodyDescriptions.push(formatted)
+            }
+        })
+
+        let formatted = []
+        if (pathDescriptions.length > 0) {
+            let path = '##### Path Parameters\n\n' +
+                pathDescriptions.join('\n')
+            formatted.push(path)
+        }
+
+        if (queryDescriptions.length > 0) {
+            let query = '##### Query Parameters\n\n' +
+                queryDescriptions.join('\n')
+            formatted.push(query)
+        }
+
+        if (headerDescriptions.length > 0) {
+            let header = '##### Header Parameters\n\n' +
+                headerDescriptions.join('\n')
+            formatted.push(header)
+        }
+
+        if (bodyDescriptions.length > 0) {
+            let body = '##### Body Parameters\n\n' +
+                bodyDescriptions.join('\n')
+            formatted.push(body)
+        }
+
+        return formatted.join('\n\n')
+    }
+
+    _formatParamDescription(param) {
+        let name = param.get('key') || param.get('name')
+
+        let value = param.getJSONSchema(false, false)
+
+        return '- ' + name + ' should respect the following schema:\n\n' +
+            '```\n' +
+            JSON.stringify(value, null, '  ') + '\n' +
+            '```'
     }
 
     _formatAuths(req) {
@@ -291,32 +575,32 @@ export default class PostmanSerializer extends BaseSerializer {
             if (auth instanceof Auth.Basic) {
                 let username = this._escape(auth.get('username')) || '$username'
                 let password = this._escape(auth.get('password')) || '$password'
-                return '-u "' + username + '":"' + password + '"\\'
+                return '-u "' + username + '":"' + password + '" \\'
             }
 
             if (auth instanceof Auth.Digest) {
                 let username = this._escape(auth.get('username')) || '$username'
                 let password = this._escape(auth.get('password')) || '$password'
-                return '--digest -u "' + username + '":"' + password + '"\\'
+                return '--digest -u "' + username + '":"' + password + '" \\'
             }
 
             if (auth instanceof Auth.NTLM) {
                 let username = this._escape(auth.get('username')) || '$username'
                 let password = this._escape(auth.get('password')) || '$password'
-                return '--ntlm -u "' + username + '":"' + password + '"\\'
+                return '--ntlm -u "' + username + '":"' + password + '" \\'
             }
 
             if (auth instanceof Auth.Negotiate) {
                 let username = this._escape(auth.get('username')) || '$username'
                 let password = this._escape(auth.get('password')) || '$password'
-                return '--negotiate -u "' + username + '":"' + password + '"\\'
+                return '--negotiate -u "' + username + '":"' + password + '" \\'
             }
 
             if (auth instanceof Auth.ApiKey) {
-                if (auth.get('in' === 'header')) {
+                if (auth.get('in') === 'header') {
                     let name = this._escape(auth.get('name') || '')
                     let key = this._escape(auth.get('key') || '')
-                    return '-H "' + name + '": "' + key + '"\\'
+                    return '-H "' + name + ': ' + key + '" \\'
                 }
             }
 
@@ -327,6 +611,7 @@ export default class PostmanSerializer extends BaseSerializer {
         }
     }
 
+    // NOTE: not sure this works as expected
     _escape(string) {
         return string
             .replace(/\\/, '\\')

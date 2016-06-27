@@ -607,6 +607,7 @@ export default class SwaggerParser {
         for (let contentType of contentTypes) {
             headers.push(new Parameter({
                 key: 'Content-Type',
+                name: 'Content-Type',
                 type: 'string',
                 value: contentType,
                 internals: new Immutable.List([
@@ -651,6 +652,7 @@ export default class SwaggerParser {
     }
 
     _extractParam(param, externals) {
+        let _key = param.name || null
         let value = param.default
         let format = param.format || param['x-format'] || null
         let required = param.required || false
@@ -673,10 +675,6 @@ export default class SwaggerParser {
             multipleOf: Constraint.MultipleOf
         }
 
-        if (param.schema) {
-            Object.assign(param, param.schema)
-            param.name = param.name || 'schema'
-        }
 
         let type = param.type || null
 
@@ -700,14 +698,15 @@ export default class SwaggerParser {
             }
         }
 
-        if (param.$ref) {
+        if (param.schema) {
             let currentURI = this.item.getPath()
             let uri = (new URL(param.$ref, currentURI)).href()
             value = new JSONSchemaReference({
                 uri: uri,
-                relative: param.$ref
-            })
+                relative: uri
+            }).resolve(param.schema)
             type = 'reference'
+            _key = null
         }
 
         if (param.type === 'array') {
@@ -723,7 +722,8 @@ export default class SwaggerParser {
         }
 
         let _param = new Parameter({
-            key: param.name || null,
+            key: _key,
+            name: param.name || null,
             value: value,
             type: type,
             format: format,
@@ -852,6 +852,7 @@ export default class SwaggerParser {
             if (sub[1]) {
                 sequence = sequence.push(new Parameter({
                     type: 'string',
+                    value: sub[1],
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             sub[1]
@@ -877,6 +878,7 @@ export default class SwaggerParser {
                     _param = new Parameter({
                         key: key,
                         type: 'string',
+                        value: sub[2],
                         internals: new Immutable.List([
                             new Constraint.Enum([
                                 sub[2]
@@ -892,6 +894,7 @@ export default class SwaggerParser {
             if (sub[3]) {
                 sequence = sequence.push(new Parameter({
                     type: 'string',
+                    value: sub[3],
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             sub[3]

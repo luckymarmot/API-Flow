@@ -12,6 +12,7 @@ import PostmanParser from '../parsers/postman/Parser'
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
 import PostmanSerializer from '../serializers/postman/Serializer'
+import CurlSerializer from '../serializers/cURL/Serializer'
 
 import ContextResolver from '../resolvers/ContextResolver'
 import NodeEnvironment from '../models/environments/NodeEnvironment'
@@ -54,7 +55,7 @@ export default class FlowCLI {
             metavar: 'format',
             help:
                 'The format of the destination file',
-            choices: [ 'swagger', 'raml', 'postman' ],
+            choices: [ 'swagger', 'raml', 'postman', 'curl' ],
             defaultValue: [ 'raml' ],
             nargs: 1,
             action: 'store'
@@ -168,7 +169,8 @@ export default class FlowCLI {
         let serializerMap = {
             swagger: SwaggerSerializer,
             raml: RAMLSerializer,
-            postman: PostmanSerializer
+            postman: PostmanSerializer,
+            curl: CurlSerializer
         }
 
         let callback = _callback

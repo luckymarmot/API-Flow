@@ -4,6 +4,7 @@ import RAMLParser from '../parsers/raml/Parser'
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
 import PostmanSerializer from '../serializers/postman/Serializer'
+import CurlSerializer from '../serializers/cURL/Serializer'
 
 import ContextResolver from '../resolvers/ContextResolver'
 import BrowserEnvironment, {
@@ -22,7 +23,8 @@ export default class FlowBrowser {
         let serializerMap = {
             swagger: SwaggerSerializer,
             raml: RAMLSerializer,
-            postman: PostmanSerializer
+            postman: PostmanSerializer,
+            curl: CurlSerializer
         }
 
         let opts = new Options(_opts)

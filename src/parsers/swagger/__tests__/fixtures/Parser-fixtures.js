@@ -99,6 +99,7 @@ export default class SwaggerFixtures {
                     queries: new Immutable.List([
                         new Parameter({
                             key: 'status',
+                            name: 'status',
                             type: 'string',
                             description: 'Status values'
                         })
@@ -126,6 +127,7 @@ export default class SwaggerFixtures {
                     queries: new Immutable.List([
                         new Parameter({
                             key: 'status',
+                            name: 'status',
                             value: 'content',
                             type: 'string',
                             description: 'Status values'
@@ -161,11 +163,13 @@ export default class SwaggerFixtures {
                     queries: new Immutable.List([
                         new Parameter({
                             key: 'status',
+                            name: 'status',
                             type: 'string',
                             description: 'Status values'
                         }),
                         new Parameter({
                             key: 'second',
+                            name: 'second',
                             value: 'Ipsum',
                             type: 'string',
                             required: true,
@@ -186,6 +190,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
                             internals: new Immutable.List([
@@ -223,6 +228,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
                             internals: new Immutable.List([
@@ -244,6 +250,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'multipart/form-data',
                             internals: new Immutable.List([
@@ -287,6 +294,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
                             internals: new Immutable.List([
@@ -310,6 +318,7 @@ export default class SwaggerFixtures {
                     body: new Immutable.List([
                         new Parameter({
                             key: 'name',
+                            name: 'name',
                             type: 'string',
                             description: 'Updated name of the pet',
                             required: true,
@@ -353,6 +362,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
                             internals: new Immutable.List([
@@ -374,6 +384,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'multipart/form-data',
                             internals: new Immutable.List([
@@ -397,6 +408,7 @@ export default class SwaggerFixtures {
                     body: new Immutable.List([
                         new Parameter({
                             key: 'name',
+                            name: 'name',
                             value: 'content',
                             type: 'string',
                             description: 'Updated name of the pet',
@@ -438,10 +450,22 @@ export default class SwaggerFixtures {
                 output: new ParameterContainer({
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'body',
+                            name: 'body',
                             value: new JSONSchemaReference({
-                                uri: '#/definitions/Pet',
-                                relative: '#/definitions/Pet'
+                                uri: '',
+                                relative: '',
+                                resolved: true,
+                                value: {
+                                    $ref: new JSONSchemaReference({
+                                        uri: '#/definitions/Pet'
+                                    })
+                                },
+                                dependencies: new Immutable.List([
+                                    new JSONSchemaReference({
+                                        uri: '#/definitions/Pet',
+                                        relative: '#/definitions/Pet'
+                                    })
+                                ])
                             }),
                             type: 'reference',
                             description: 'Pet object'
@@ -481,6 +505,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
                             internals: new Immutable.List([
@@ -502,6 +527,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'multipart/form-data',
                             internals: new Immutable.List([
@@ -525,6 +551,7 @@ export default class SwaggerFixtures {
                     body: new Immutable.List([
                         new Parameter({
                             key: 'status',
+                            name: 'status',
                             type: 'string',
                             description: 'Status values',
                             externals: new Immutable.List([
@@ -542,6 +569,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'second',
+                            name: 'second',
                             value: 'Ipsum',
                             type: 'string',
                             description: 'Status values',
@@ -582,6 +610,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'api_key',
+                            name: 'api_key',
                             type: 'string',
                             required: true
                         })
@@ -609,6 +638,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'api_key',
+                            name: 'api_key',
                             value: 'content',
                             type: 'string',
                             required: true
@@ -638,6 +668,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'application/json',
                             internals: new Immutable.List([
@@ -659,6 +690,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'api_key',
+                            name: 'api_key',
                             value: 'content',
                             type: 'string',
                             required: true,
@@ -706,6 +738,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'application/json',
                             internals: new Immutable.List([
@@ -727,6 +760,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'status',
+                            name: 'status',
                             type: 'string',
                             description: 'Status values',
                             externals: new Immutable.List([
@@ -743,6 +777,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'second',
+                            name: 'second',
                             value: 'Ipsum',
                             type: 'string',
                             description: 'Status values',
@@ -808,6 +843,7 @@ export default class SwaggerFixtures {
                     headers: new Immutable.List([
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'application/x-www-form-urlencoded',
                             internals: new Immutable.List([
@@ -829,6 +865,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'Content-Type',
+                            name: 'Content-Type',
                             type: 'string',
                             value: 'multipart/form-data',
                             internals: new Immutable.List([
@@ -850,6 +887,7 @@ export default class SwaggerFixtures {
                         }),
                         new Parameter({
                             key: 'api_key',
+                            name: 'api_key',
                             type: 'string',
                             required: true,
                             externals: new Immutable.List([
@@ -869,6 +907,7 @@ export default class SwaggerFixtures {
                     queries: new Immutable.List([
                         new Parameter({
                             key: 'second',
+                            name: 'second',
                             type: 'string',
                             value: 'Ipsum',
                             description: 'Status values',
@@ -890,6 +929,7 @@ export default class SwaggerFixtures {
                     body: new Immutable.List([
                         new Parameter({
                             key: 'status',
+                            name: 'status',
                             type: 'string',
                             description: 'Status values',
                             externals: new Immutable.List([
@@ -909,6 +949,7 @@ export default class SwaggerFixtures {
                     path: new Immutable.List([
                         new Parameter({
                             key: 'userId',
+                            name: 'userId',
                             type: 'string',
                             description: 'a user Id',
                             required: true,
@@ -1059,14 +1100,25 @@ export default class SwaggerFixtures {
                         parameters: new ParameterContainer({
                             body: new Immutable.List([
                                 new Parameter({
-                                    key: 'schema',
-                                    type: 'array',
-                                    value: new Parameter({
-                                        type: 'reference',
-                                        value: new JSONSchemaReference({
-                                            uri: '#/definitions/Pet',
-                                            relative: '#/definitions/Pet'
-                                        })
+                                    type: 'reference',
+                                    value: new JSONSchemaReference({
+                                        uri: '',
+                                        relative: '',
+                                        resolved: true,
+                                        value: {
+                                            type: 'array',
+                                            items: {
+                                                $ref: new JSONSchemaReference({
+                                                    uri: '#/definitions/Pet'
+                                                })
+                                            }
+                                        },
+                                        dependencies: new Immutable.List([
+                                            new JSONSchemaReference({
+                                                uri: '#/definitions/Pet',
+                                                relative: '#/definitions/Pet'
+                                            })
+                                        ])
                                     })
                                 })
                             ])

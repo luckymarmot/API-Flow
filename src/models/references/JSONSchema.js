@@ -7,19 +7,24 @@ import URL from '../URL'
 export default class JSONSchemaReference extends Reference {
     resolve(string) {
         let obj
-        try {
-            obj = JSON.parse(string)
-        }
-        catch (jsonParseError) {
+        if (typeof string !== 'object') {
             try {
-                obj = yaml.safeLoad(string)
+                obj = JSON.parse(string)
             }
-            catch (yamlParseError) {
-                return this
+            catch (jsonParseError) {
+                try {
+                    obj = yaml.safeLoad(string)
+                }
+                catch (yamlParseError) {
+                    return this
                     .set('dependencies', new Immutable.List())
                     .set('resolved', true)
                     .set('raw', string)
+                }
             }
+        }
+        else {
+            obj = string
         }
 
         let value

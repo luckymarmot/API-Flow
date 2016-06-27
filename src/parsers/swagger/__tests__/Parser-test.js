@@ -1308,12 +1308,14 @@ export class TestSwaggerParser extends UnitTest {
                 value: new Immutable.List([
                     new Parameter({
                         type: 'string',
+                        value: '/tests/',
                         internals: new Immutable.List([
                             new Constraint.Enum([ '/tests/' ])
                         ])
                     }),
                     new Parameter({
                         key: 'userId',
+                        name: 'userId',
                         type: 'integer',
                         required: true,
                         internals: new Immutable.List([
@@ -1323,6 +1325,7 @@ export class TestSwaggerParser extends UnitTest {
                     }),
                     new Parameter({
                         type: 'string',
+                        value: '/songs/',
                         internals: new Immutable.List([
                             new Constraint.Enum([ '/songs/' ])
                         ])
@@ -1331,6 +1334,7 @@ export class TestSwaggerParser extends UnitTest {
                         key: 'songId',
                         type: 'string',
                         required: true,
+                        value: '{songId}',
                         internals: new Immutable.List([
                             new Constraint.Enum([ '{songId}' ])
                         ])
@@ -1706,6 +1710,7 @@ export class TestSwaggerParser extends UnitTest {
 
         const expected = new Parameter({
             key: 'api_key',
+            name: 'api_key',
             value: 'ae256',
             type: 'string',
             format: 'byte',
@@ -1738,6 +1743,7 @@ export class TestSwaggerParser extends UnitTest {
 
         const expected = new Parameter({
             key: 'api_key',
+            name: 'api_key',
             value: 'ae256',
             type: 'string',
             format: 'byte',
@@ -1769,6 +1775,7 @@ export class TestSwaggerParser extends UnitTest {
 
         const expected = new Parameter({
             key: 'score',
+            name: 'score',
             value: 0.1209402,
             type: 'number',
             format: 'float',
@@ -2146,6 +2153,7 @@ export class TestSwaggerParser extends UnitTest {
             value: new Immutable.List([
                 new Parameter({
                     type: 'string',
+                    value: '/user/',
                     internals: new Immutable.List([
                         new Constraint.Enum([ '/user/' ])
                     ])
@@ -2154,6 +2162,7 @@ export class TestSwaggerParser extends UnitTest {
                     key: 'userId',
                     type: 'string',
                     required: true,
+                    value: '{userId}',
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             '{userId}'
@@ -2162,6 +2171,7 @@ export class TestSwaggerParser extends UnitTest {
                 }),
                 new Parameter({
                     type: 'string',
+                    value: '/songs/',
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             '/songs/'
@@ -2170,6 +2180,7 @@ export class TestSwaggerParser extends UnitTest {
                 }),
                 new Parameter({
                     key: 'songId',
+                    name: 'songId',
                     type: 'integer',
                     required: true,
                     internals: new Immutable.List([

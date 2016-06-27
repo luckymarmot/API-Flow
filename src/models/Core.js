@@ -58,15 +58,21 @@ export class Parameter extends Immutable.Record({
         if (type === 'reference') {
             let ref = this.get('value')
             if (ref instanceof Reference) {
-                if (ref.get('value')) {
+                delete constraintSet.type
+                if (typeof ref.get('value') === 'string') {
                     constraintSet.$ref = ref.get('value')
+                }
+                else if (
+                    ref.get('value') &&
+                    typeof ref.get('value') === 'object'
+                ) {
+                    Object.assign(constraintSet, ref.get('value'))
                 }
                 else {
                     constraintSet.$ref =
                         ref.get('relative') ||
                         ref.get('uri')
                 }
-                delete constraintSet.type
             }
             valueIsValid = false
         }
@@ -110,6 +116,9 @@ export class Parameter extends Immutable.Record({
 
         if (replaceRefs) {
             constraintSet = this._replaceRefs(constraintSet)
+        }
+        else {
+            constraintSet = this._simplifyRefs(constraintSet)
         }
 
         return constraintSet
@@ -182,6 +191,32 @@ export class Parameter extends Immutable.Record({
             for (let key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     obj[key] = ::this._replaceRefs(obj[key])
+                }
+            }
+        }
+
+        return obj
+    }
+
+    _simplifyRefs(obj) {
+        if (typeof obj !== 'object' || obj === null) {
+            return obj
+        }
+
+        if (obj.$ref instanceof Reference) {
+            obj.$ref = obj.$ref.get('relative') || obj.$ref.get('uri')
+        }
+
+        if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; i += 1) {
+                let content = obj[i]
+                obj[i] = this._simplifyRefs(content)
+            }
+        }
+        else {
+            for (let key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    obj[key] = ::this._simplifyRefs(obj[key])
                 }
             }
         }
