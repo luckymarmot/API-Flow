@@ -488,7 +488,7 @@ export default class SwaggerParser {
                 let param = this._extractParam(
                     responses[code],
                     externals
-                )
+                ).set('name', 'body')
 
                 body = body.push(param)
             }
@@ -501,6 +501,7 @@ export default class SwaggerParser {
             for (let contentType of contentTypes) {
                 headers.push(new Parameter({
                     key: 'Content-Type',
+                    name: 'Content-Type',
                     type: 'string',
                     value: contentType,
                     internals: new Immutable.List([

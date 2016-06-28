@@ -86,6 +86,8 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
+        mockedParser.reader = parser.reader
+
         let promise = parser.parse.apply(
             mockedParser,
             [ item ]
@@ -210,7 +212,7 @@ export class TestRAMLParser extends UnitTest {
             protocols: [ 'HTTPS' ],
             schemas: [
                 {
-                    song: '::fileRef::/some/path/missingFile'
+                    song: '::fileRef::missingFile'
                 }
             ]
         }
@@ -280,6 +282,8 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
+        mockedParser.reader = parser.reader
+
         let promise = parser.parse.apply(
             mockedParser,
             [ item ]
@@ -335,6 +339,8 @@ export class TestRAMLParser extends UnitTest {
         mockedParser.spyOn('_createContext', () => {
             return 12
         })
+
+        mockedParser.reader = parser.reader
 
         let promise = parser.parse.apply(
             mockedParser,
@@ -714,6 +720,7 @@ export class TestRAMLParser extends UnitTest {
                     }),
                     new Parameter({
                         type: 'string',
+                        value: '.api.',
                         internals: new Immutable.List([
                             new Constraint.Enum([ '.api.' ])
                         ])
@@ -733,6 +740,7 @@ export class TestRAMLParser extends UnitTest {
             pathname: new Parameter({
                 key: 'pathname',
                 type: 'string',
+                value: '/songs',
                 internals: new Immutable.List([
                     new Constraint.Enum([ '/songs' ])
                 ])
@@ -1411,6 +1419,7 @@ export class TestRAMLParser extends UnitTest {
                 new Parameter({
                     key: 'Content-Type',
                     type: 'string',
+                    value: 'application/json',
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             'application/json'
@@ -1420,6 +1429,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'application/json',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'application/json'
@@ -1438,6 +1448,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'application/json',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'application/json'
@@ -1497,6 +1508,7 @@ export class TestRAMLParser extends UnitTest {
                 new Parameter({
                     key: 'Content-Type',
                     type: 'string',
+                    value: 'binary/octet-stream',
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             'binary/octet-stream'
@@ -1506,6 +1518,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'binary/octet-stream',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'binary/octet-stream'
@@ -1517,6 +1530,7 @@ export class TestRAMLParser extends UnitTest {
                 new Parameter({
                     key: 'Content-Type',
                     type: 'string',
+                    value: 'multipart/form-data',
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             'multipart/form-data'
@@ -1526,6 +1540,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'multipart/form-data',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'multipart/form-data'
@@ -1545,6 +1560,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'multipart/form-data',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'multipart/form-data'
@@ -1626,6 +1642,7 @@ export class TestRAMLParser extends UnitTest {
                 new Parameter({
                     key: 'Content-Type',
                     type: 'string',
+                    value: 'someweird/key',
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             'someweird/key'
@@ -1635,6 +1652,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'someweird/key',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'someweird/key'
@@ -1646,6 +1664,7 @@ export class TestRAMLParser extends UnitTest {
                 new Parameter({
                     key: 'Content-Type',
                     type: 'string',
+                    value: 'multipart/form-data',
                     internals: new Immutable.List([
                         new Constraint.Enum([
                             'multipart/form-data'
@@ -1655,6 +1674,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'multipart/form-data',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'multipart/form-data'
@@ -1728,6 +1748,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'application/json',
                             internals: new Immutable.List([
                                 new Constraint.Enum([ 'application/json' ])
                             ]),
@@ -1735,6 +1756,7 @@ export class TestRAMLParser extends UnitTest {
                                 new Parameter({
                                     key: 'Content-Type',
                                     type: 'string',
+                                    value: 'application/json',
                                     internals: new Immutable.List([
                                         new Constraint.Enum([
                                             'application/json'
@@ -1753,6 +1775,7 @@ export class TestRAMLParser extends UnitTest {
                                 new Parameter({
                                     key: 'Content-Type',
                                     type: 'string',
+                                    value: 'application/json',
                                     internals: new Immutable.List([
                                         new Constraint.Enum([
                                             'application/json'
@@ -1782,6 +1805,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'application/json',
                             internals: new Immutable.List([
                                 new Constraint.Enum([ 'application/json' ])
                             ]),
@@ -1789,6 +1813,7 @@ export class TestRAMLParser extends UnitTest {
                                 new Parameter({
                                     key: 'Content-Type',
                                     type: 'string',
+                                    value: 'application/json',
                                     internals: new Immutable.List([
                                         new Constraint.Enum([
                                             'application/json'
@@ -1806,6 +1831,7 @@ export class TestRAMLParser extends UnitTest {
                                 new Parameter({
                                     key: 'Content-Type',
                                     type: 'string',
+                                    value: 'application/json',
                                     internals: new Immutable.List([
                                         new Constraint.Enum([
                                             'application/json'
@@ -1889,6 +1915,7 @@ export class TestRAMLParser extends UnitTest {
                         new Parameter({
                             key: 'Content-Type',
                             type: 'string',
+                            value: 'application/json',
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     'application/json'
@@ -1898,6 +1925,7 @@ export class TestRAMLParser extends UnitTest {
                                 new Parameter({
                                     key: 'Content-Type',
                                     type: 'string',
+                                    value: 'application/json',
                                     internals: new Immutable.List([
                                         new Constraint.Enum([
                                             'application/json'
@@ -1918,6 +1946,7 @@ export class TestRAMLParser extends UnitTest {
                                 new Parameter({
                                     key: 'Content-Type',
                                     type: 'string',
+                                    value: 'application/json',
                                     internals: new Immutable.List([
                                         new Constraint.Enum([
                                             'application/json'
@@ -2001,6 +2030,7 @@ export class TestRAMLParser extends UnitTest {
                     }),
                     new Parameter({
                         type: 'string',
+                        value: '.api.',
                         internals: new Immutable.List([
                             new Constraint.Enum([ '.api.' ])
                         ])
@@ -2020,6 +2050,7 @@ export class TestRAMLParser extends UnitTest {
             pathname: new Parameter({
                 key: 'pathname',
                 type: 'string',
+                value: '/songs',
                 internals: new Immutable.List([
                     new Constraint.Enum([ '/songs' ])
                 ])
@@ -2066,6 +2097,7 @@ export class TestRAMLParser extends UnitTest {
                 }),
                 new Parameter({
                     type: 'string',
+                    value: '.api.',
                     internals: new Immutable.List([
                         new Constraint.Enum([ '.api.' ])
                     ])

@@ -35,6 +35,7 @@ export default class RAMLParser {
 
     parse(_item) {
         this.item = new Item(_item)
+        this.reader.setBaseItem(this.item)
         let string = this.item.get('content')
         let location = this.item.getPath()
 
@@ -135,6 +136,8 @@ export default class RAMLParser {
             let uri = __path.resolve(__path.dirname(
                 item.getPath()
             ), rel)
+
+            console.error('rel ====', rel)
 
             return new JSONSchemaReference({
                 uri: uri,
@@ -352,6 +355,7 @@ export default class RAMLParser {
         let simpleParam = new Parameter({
             key: _key,
             type: 'string',
+            value: _sequence,
             internals: new Immutable.List([
                 new Constraint.Enum([
                     _sequence
@@ -373,6 +377,7 @@ export default class RAMLParser {
                 if (sub[1]) {
                     sequence = sequence.push(new Parameter({
                         type: 'string',
+                        value: sub[1],
                         internals: new Immutable.List([
                             new Constraint.Enum([
                                 sub[1]
@@ -411,6 +416,7 @@ export default class RAMLParser {
                         param = new Parameter({
                             key: key,
                             type: 'string',
+                            value: sub[2],
                             internals: new Immutable.List([
                                 new Constraint.Enum([
                                     sub[2]
@@ -426,6 +432,7 @@ export default class RAMLParser {
                 if (sub[3]) {
                     sequence = sequence.push(new Parameter({
                         type: 'string',
+                        value: sub[3],
                         internals: new Immutable.List([
                             new Constraint.Enum([
                                 sub[3]
@@ -591,6 +598,7 @@ export default class RAMLParser {
                 new Parameter({
                     key: 'Content-Type',
                     type: 'string',
+                    value: contentType,
                     internals: new Immutable.List([
                         new Constraint.Enum([ contentType ])
                     ])
@@ -638,6 +646,7 @@ export default class RAMLParser {
             headers = headers.push(new Parameter({
                 key: 'Content-Type',
                 type: 'string',
+                value: contentType,
                 internals: new Immutable.List([
                     new Constraint.Enum([
                         contentType

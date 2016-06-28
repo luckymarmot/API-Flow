@@ -1101,6 +1101,7 @@ export default class SwaggerFixtures {
                             body: new Immutable.List([
                                 new Parameter({
                                     type: 'reference',
+                                    name: 'body',
                                     value: new JSONSchemaReference({
                                         uri: '',
                                         relative: '',

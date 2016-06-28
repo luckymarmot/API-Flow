@@ -5,7 +5,10 @@ import BaseSerializer from '../BaseSerializer'
 import Group from '../../models/Group'
 import Request from '../../models/Request'
 import Auth from '../../models/Auth'
+
 import Reference from '../../models/references/Reference'
+import JSONSchemaReference from '../../models/references/JSONSchema'
+import LateResolutionReference from '../../models/references/LateResolution'
 
 export default class CurlSerializer extends BaseSerializer {
     serialize(context) {
@@ -16,8 +19,14 @@ export default class CurlSerializer extends BaseSerializer {
     _formatContent(context) {
         let [ startInfo, endInfo ] = this._formatInfo(context)
         let group = this._formatGroup(context.get('group'))
+        let references = this._formatReferences(context.get('references'))
 
-        let formatted = [ startInfo, group, endInfo ].filter(content => {
+        let formatted = [
+            startInfo,
+            group,
+            references,
+            endInfo
+        ].filter(content => {
             return !!content
         })
 
@@ -98,44 +107,20 @@ export default class CurlSerializer extends BaseSerializer {
     }
 
     _formatGroup(group, depth = 0, path = '') {
-        if (group instanceof Request) {
-            return this._formatRequest(group)
+        if (!group) {
+            return ''
         }
 
-        if (group instanceof Group) {
-            let formatted = []
-            let name
-            let _path = path
+        let requests = group.getRequests()
 
-            if (group.get('name')) {
-                name = group.get('name')
-            }
-            else if (group.get('id')) {
-                name = 'Group ' + group.get('id')
-            }
-            else {
-                name = 'Unnamed Group'
-            }
+        let formatted = []
+        requests.forEach(request => {
+            let formattedReq = this._formatRequest(request)
+            formatted.push(formattedReq)
+        })
 
-            if (path) {
-                _path = path + ' -> ' + name
-            }
-            else {
-                _path = name
-            }
-
-            formatted.push('### ' + _path)
-
-            let children = group.get('children')
-            if (children) {
-                children.forEach(child => {
-                    let formattedChild = this
-                        ._formatGroup(child, depth + 1, _path)
-                    formatted.push(formattedChild)
-                })
-            }
-
-            return formatted.join('\n\n')
+        if (formatted.length > 0) {
+            return '## Requests\n\n' + formatted.join('\n\n')
         }
 
         return ''
@@ -160,29 +145,35 @@ export default class CurlSerializer extends BaseSerializer {
             formatted.push(parameters)
         }
 
+        let authDescription = this._formatAuthDescription(request)
+        if (authDescription) {
+            formatted.push(authDescription)
+        }
+
+        let responses = this._formatResponses(request)
+        if (responses) {
+            formatted.push(responses)
+        }
+
         return formatted.join('\n\n')
     }
 
     _formatName(req) {
         let method = (req.get('method') || 'GET').toUpperCase()
-        let name = req.get('name')
+        let path = this._formatURLBlock(req.get('url'), 'pathname')
 
-        if (!name) {
-            name = req.get('url').href()
+        if (path) {
+            return '### **' + method + '** - ' + path
         }
 
-        if (name) {
-            return '#### **' + method + '** - ' + name
-        }
-
-        return '#### **' + method + '** - Unnamed Request'
+        return '### **'+ method + '** - ?'
     }
 
     _formatDescription(req) {
         let description = req.get('description')
 
         if (description) {
-            return '##### Description\n' + description
+            return '#### Description\n' + description
         }
 
         return ''
@@ -192,7 +183,7 @@ export default class CurlSerializer extends BaseSerializer {
         let formatted = []
         let offset = '    '
 
-        let url = this._formatURL(req)
+        let url = this._formatURL(req, offset)
         let method = (req.get('method') || 'GET').toUpperCase()
 
         let curlLine = 'curl -X ' + method + ' ' + url + ' \\'
@@ -219,23 +210,52 @@ export default class CurlSerializer extends BaseSerializer {
             formatted.push(auths)
         }
 
-        return '```sh\n' + formatted.join('\n').slice(0, -2) + '\n```'
+        return '#### CURL\n\n' +
+            '```sh\n' + formatted.join('\n').slice(0, -2) + '\n```'
+    }
+
+    _formatURLBlock(url, blockName) {
+        let param = url.get(blockName)
+        if (
+            param &&
+            param.get('type') === 'string' &&
+            param.get('format') === 'sequence'
+        ) {
+            let keyValuePair = this._formatParam(param)
+            return keyValuePair[1]
+        }
+        else {
+            return url.generateParam(blockName)
+        }
     }
 
     _formatURL(req) {
         let url = req.get('url')
-        let protocol = url.generateParam('protocol') || 'http'
-        let host = url.generateParam('host') || 'localhost'
-        let path = url.generateParam('pathname')
+        let formattedList = []
+        let blocks = [ 'protocol', 'host', 'pathname' ]
+        for (let block of blocks) {
+            let formattedBlock = this._formatURLBlock(url, block)
+            formattedList.push(formattedBlock)
+        }
+
+        let protocol = formattedList[0]
+        let host = formattedList[1]
+        let path = formattedList[2]
+
+        let origin = ''
+
+        if (protocol || host) {
+            origin += protocol + '://' + host
+        }
+
+        let formatted = origin + path
 
         let queries = this._formatQueries(req)
-
-        let formatted = protocol + '://' + host + path
-
         if (queries) {
-            formatted += queries
+            formatted += '\\\n' + queries
         }
-        return formatted
+
+        return '"' + formatted + '"'
     }
 
     _formatQueries(req) {
@@ -254,9 +274,9 @@ export default class CurlSerializer extends BaseSerializer {
                 content = encodeURIComponent(k) + '='
             }
 
-            let match = v.match(/^{{.*}}$/)
+            let match = v.match(/^\$.*$/)
             if (match) {
-                content += '{{' + encodeURIComponent(v.slice(2,-2)) + '}}'
+                content += '$' + encodeURIComponent(v.slice(1))
             }
             else {
                 content += encodeURIComponent(v)
@@ -264,9 +284,25 @@ export default class CurlSerializer extends BaseSerializer {
             queries.push(content)
         })
 
-        let formatted = queries.join('&')
+        let queryLines = []
+        let line = ''
+        for (let query of queries) {
+            let tmp = line + '&' + query
+            if (tmp.length > 80) {
+                queryLines.push(line)
+                line = '&' + query
+            }
+            else {
+                line = tmp
+            }
+        }
+
+        queryLines.push(line)
+
+        let formatted = queryLines.join('\\\n')
+
         if (formatted) {
-            return '&' + formatted
+            return '?' + formatted.slice(1)
         }
         return formatted
     }
@@ -323,7 +359,7 @@ export default class CurlSerializer extends BaseSerializer {
 
     _formatParam(param, separator = '=', dropBodyKeys = false) {
         if (!param) {
-            return [ null, '{{unnamed}}' ]
+            return [ null, '$unnamed' ]
         }
 
         let type = param.get('type')
@@ -341,39 +377,30 @@ export default class CurlSerializer extends BaseSerializer {
         }
 
         if (type === 'string' && param.get('format') === 'sequence') {
-            return this._formatSequenceParam(param, separator, dropBodyKeys)
+            let formatted = this._formatSequenceParam(param, separator, dropBodyKeys)
+            return formatted
         }
 
         return this._formatSimpleParam(param, separator, dropBodyKeys)
     }
 
     _formatReferenceParam(param, separator = '=', dropBodyKeys = false) {
+        if (!param) {
+            return [ null, '$unnamed' ]
+        }
+
         let key = param.get('key')
         let _key = key ? this._escape(key) : null
-        let ref = param.get('value')
-        let value
 
-        if (ref instanceof Reference) {
-            let uri =
-                ref.get('relative') ||
-                ref.get('uri') ||
-                param.get('name') ||
-                '#/missing'
-
-            value = this._escape(uri)
-        }
-        else {
-            value = '#/missing'
-        }
-
-        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
-            _key = null
-        }
-
-        return [ _key, '{{' + value + '}}' ]
+        let name = param.get('key') || param.get('name') || 'unnamed'
+        return [ _key, '$' + name ]
     }
 
     _formatArrayParam(param, separator = '=', dropBodyKeys = false) {
+        if (!param) {
+            return [ null, '$unnamed' ]
+        }
+
         let key = param.get('key')
         let _key = key ? this._escape(key) : null
         let array = param.get('value')
@@ -400,22 +427,31 @@ export default class CurlSerializer extends BaseSerializer {
             return [ _key, '[ ' + formatted.join(' AND ') + ' ]' ]
         }
         else {
-            let _value = _key === null ? '{{unnamed}}' : '{{' + _key + '}}'
+            let _value = _key === null ? '$unnamed' : '$' + _key
             return [ _key, _value ]
         }
     }
 
     _formatMultiParam(param, separator = '=', dropBodyKeys = false) {
+        if (!param) {
+            return [ null, '(  )']
+        }
+
         let key = param.get('key')
         let _key = key !== null ? this._escape(key) : null
         let array = param.get('value')
 
         let formatted = []
+
+        if (!array) {
+            array = new Immutable.List()
+        }
+
         array.forEach(sub => {
             let [ k, v ] = this
                 ._formatParam(sub, separator, dropBodyKeys)
 
-            let content
+            let content = ''
             if (k) {
                 content += k + separator
             }
@@ -432,6 +468,10 @@ export default class CurlSerializer extends BaseSerializer {
     }
 
     _formatSequenceParam(param, separator = '=', dropBodyKeys = false) {
+        if (!param) {
+            return [ null, '$unnamed' ]
+        }
+
         let key = param.get('key')
         let _key = key ? this._escape(key) : null
 
@@ -450,13 +490,17 @@ export default class CurlSerializer extends BaseSerializer {
         }
 
         let _value = formatted.join('')
-        if (!value) {
-            _value = _key === null ? '{{unnamed}}' : '{{' + _key + '}}'
+        if (!_value) {
+            _value = _key === null ? '$unnamed' : '$' + _key
         }
         return [ _key, _value ]
     }
 
     _formatSimpleParam(param, separator = '=', dropBodyKeys = false) {
+        if (!param) {
+            return [ null, '$unnamed' ]
+        }
+
         let key = param.get('key')
         let _key = key ? this._escape(key) : null
 
@@ -467,7 +511,7 @@ export default class CurlSerializer extends BaseSerializer {
         let value = param.get('value')
         let _value
         if (!value) {
-            _value = _key === null ? '{{unnamed}}' : '{{' + _key + '}}'
+            _value = _key === null ? '$unnamed' : '$' + _key
         }
         else {
             if (typeof value === 'object') {
@@ -488,7 +532,7 @@ export default class CurlSerializer extends BaseSerializer {
         return option + ' ' + _param + ' \\'
     }
 
-    _formatParameterDescriptions(req) {
+    _formatParameterDescriptions(req, headerType = 4) {
         let container = req.get('parameters')
         let bodies = req.get('bodies')
         if (bodies.size > 0) {
@@ -529,25 +573,25 @@ export default class CurlSerializer extends BaseSerializer {
 
         let formatted = []
         if (pathDescriptions.length > 0) {
-            let path = '##### Path Parameters\n\n' +
+            let path = '#'.repeat(headerType) + ' Path Parameters\n\n' +
                 pathDescriptions.join('\n')
             formatted.push(path)
         }
 
         if (queryDescriptions.length > 0) {
-            let query = '##### Query Parameters\n\n' +
+            let query = '#'.repeat(headerType) + ' Query Parameters\n\n' +
                 queryDescriptions.join('\n')
             formatted.push(query)
         }
 
         if (headerDescriptions.length > 0) {
-            let header = '##### Header Parameters\n\n' +
+            let header = '#'.repeat(headerType) + ' Header Parameters\n\n' +
                 headerDescriptions.join('\n')
             formatted.push(header)
         }
 
         if (bodyDescriptions.length > 0) {
-            let body = '##### Body Parameters\n\n' +
+            let body = '#'.repeat(headerType) + ' Body Parameters\n\n' +
                 bodyDescriptions.join('\n')
             formatted.push(body)
         }
@@ -556,11 +600,12 @@ export default class CurlSerializer extends BaseSerializer {
     }
 
     _formatParamDescription(param) {
-        let name = param.get('key') || param.get('name')
+        let name = param.get('key') || param.get('name') || 'unnamed'
 
         let value = param.getJSONSchema(false, false)
+        delete value['x-title']
 
-        return '- ' + name + ' should respect the following schema:\n\n' +
+        return '- **' + name + '** should respect the following schema:\n\n' +
             '```\n' +
             JSON.stringify(value, null, '  ') + '\n' +
             '```'
@@ -600,6 +645,9 @@ export default class CurlSerializer extends BaseSerializer {
                 if (auth.get('in') === 'header') {
                     let name = this._escape(auth.get('name') || '')
                     let key = this._escape(auth.get('key') || '')
+                    if (!key) {
+                        key = '$' + name
+                    }
                     return '-H "' + name + ': ' + key + '" \\'
                 }
             }
@@ -609,6 +657,224 @@ export default class CurlSerializer extends BaseSerializer {
         else {
             return ''
         }
+    }
+
+    _formatAuthDescription(req) {
+        let auths = req.get('auths')
+
+        if (auths.size > 0) {
+            let formatted = [ '#### Security\n' ]
+            auths.forEach(auth => {
+                let msg
+                if (auth === null) {
+                    msg = '- No Authentication'
+                }
+                else if (auth instanceof Auth.Basic) {
+                    let username =
+                        this._escape(auth.get('username')) || '$username'
+                    let password =
+                        this._escape(auth.get('password')) || '$password'
+                    msg = '- Basic Authentication'
+                    msg += '\n  - **username**: ' + username
+                    msg += '\n  - **password**: ' + password
+                }
+                else if (auth instanceof Auth.Digest) {
+                    let username =
+                        this._escape(auth.get('username')) || '$username'
+                    let password =
+                        this._escape(auth.get('password')) || '$password'
+                    msg = '- Digest Authentication'
+                    msg += '\n  - **username**: ' + username
+                    msg += '\n  - **password**: ' + password
+                }
+                else if (auth instanceof Auth.NTLM) {
+                    let username =
+                        this._escape(auth.get('username')) || '$username'
+                    let password =
+                        this._escape(auth.get('password')) || '$password'
+                    msg = '- NTLM Authentication'
+                    msg += '\n  - **username**: ' + username
+                    msg += '\n  - **password**: ' + password
+                }
+                else if (auth instanceof Auth.Negotiate) {
+                    let username =
+                        this._escape(auth.get('username')) || '$username'
+                    let password =
+                        this._escape(auth.get('password')) || '$password'
+                    msg = '- Negotiate Authentication'
+                    msg += '\n  - **username**: ' + username
+                    msg += '\n  - **password**: ' + password
+                }
+                else if (auth instanceof Auth.ApiKey) {
+                    let name = auth.get('name') || '$name'
+                    let key = auth.get('key') || ''
+                    msg = '- API Key Authentication'
+                    msg += '\n  - **location**: ' + auth.get('in')
+                    msg += '\n  - **name**: ' + name
+                    msg += '\n  - **key**: ' + key
+                }
+                else if (auth instanceof Auth.OAuth1) {
+                    let infos = [
+                        'tokenCredentialsUri',
+                        'requestTokenUri',
+                        'authorizationUri'
+                    ]
+
+                    msg = '- OAuth1 Authentication'
+                    for (let info of infos) {
+                        let data = auth.get(info)
+                        if (data) {
+                            msg += '\n  - **' + info + '**: ' + data
+                        }
+                    }
+                }
+                else if (auth instanceof Auth.OAuth2) {
+                    let infos = [
+                        'flow',
+                        'authorizationUrl',
+                        'tokenUrl',
+                        'scopes'
+                    ]
+
+                    msg = '- OAuth2 Authentication'
+                    for (let info of infos) {
+                        let data = auth.get(info)
+                        if (data) {
+                            msg += '\n  - **' + info + '**: ' + data
+                        }
+                    }
+                }
+                else if (auth instanceof Auth.Hawk) {
+                    let infos = [
+                        'id',
+                        'key',
+                        'algorithm'
+                    ]
+
+                    msg = '- Hawk Authentication'
+                    for (let info of infos) {
+                        let data = auth.get(info)
+                        if (data) {
+                            msg += '\n  - **' + info + '**: ' + data
+                        }
+                    }
+                }
+                else if (auth instanceof Auth.AWSSig4) {
+                    let infos = [
+                        'key',
+                        'secret',
+                        'region',
+                        'service'
+                    ]
+
+                    msg = '- AWS Signature 4 Authentication'
+                    for (let info of infos) {
+                        let data = auth.get(info)
+                        if (data) {
+                            msg += '\n  - **' + info + '**: ' + data
+                        }
+                    }
+                }
+                formatted.push(msg)
+            })
+
+            return formatted.join('\n')
+        }
+        else {
+            return ''
+        }
+    }
+
+    _formatResponses(request) {
+        let responses = request.get('responses')
+
+        let formatted = []
+        responses.forEach(response => {
+            let formattedResponse = this._formatResponse(response)
+            formatted.push(formattedResponse)
+        })
+
+        if (formatted.length > 0) {
+            return '#### Responses\n\n' + formatted.join('\n\n')
+        }
+
+        return ''
+    }
+
+    _formatResponse(response) {
+        let formatted = []
+
+        let code = response.get('code')
+        let header = '##### Code\n\n- **' + code + '**'
+
+        let description = response.get('description')
+        if (description) {
+            header += ': ' + description
+        }
+        formatted.push(header)
+
+        let headerType = 5
+        let parameters = this._formatParameterDescriptions(response, headerType)
+        if (parameters) {
+            formatted.push(parameters)
+        }
+
+        return formatted.join('\n\n')
+    }
+
+    _formatReferences(references) {
+        let formatted = []
+
+        if (references.size > 0) {
+            formatted.push('## References')
+        }
+
+        references.forEach((container) => {
+            formatted.push(this._formatReferenceContainer(container))
+        })
+
+        return formatted.join('\n\n')
+    }
+
+    _formatReferenceContainer(container) {
+        let formatted = []
+        let cache = container.get('cache')
+
+        if (cache.size > 0) {
+            let name =
+                container.get('name') ||
+                container.get('id') ||
+                'Container'
+            let header = '### ' + name
+            formatted.push(header)
+        }
+
+        cache.forEach((value, uri) => {
+            let resolved = container.resolve(uri)
+            formatted.push(this._formatReference(resolved))
+        })
+
+        return formatted.join('\n\n')
+    }
+
+    _formatReference(reference) {
+        let value = reference.get('value')
+        let relative = reference.get('relative') || reference.get('uri')
+
+        let content = ''
+        if (reference instanceof JSONSchemaReference) {
+            content = '```\n' + JSON.stringify(value, null, '  ') + '\n```'
+        }
+        else if (reference instanceof LateResolutionReference) {
+            content =
+                'Replace {{.*}} by the corresponding reference in this doc.\n' +
+                '```\n' + value + '\n```'
+        }
+        else {
+            content = '```\n' + value + '\n```'
+        }
+
+        return '#### ' + relative + '\n' + content
     }
 
     // NOTE: not sure this works as expected

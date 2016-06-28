@@ -2,6 +2,7 @@ import path from 'path-browserify'
 
 export default class ShimmingFileReader {
     constructor(items) {
+        this.baseItem = ''
         this.items = items || []
     }
 
@@ -18,8 +19,12 @@ export default class ShimmingFileReader {
         return new Promise((resolve) => {
             resolve(
                 '::fileRef::' +
-                filePath
+                path.relative(path.dirname(this.baseItem), filePath)
             )
         })
+    }
+
+    setBaseItem(item) {
+        this.baseItem = item.getPath()
     }
 }
