@@ -666,8 +666,6 @@ export class TestSwaggerSerializer extends UnitTest {
                 tags: [ 'first', 'second' ],
                 operationId: 'ae256',
                 schemes: [ 'https', 'ws' ],
-                produces: [],
-                consumes: [],
                 responses: {
                     default: {
                         description: 'stub description for swagger compliance'

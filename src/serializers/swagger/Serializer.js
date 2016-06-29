@@ -229,8 +229,15 @@ export default class SwaggerSerializer extends BaseSerializer {
             _content.schemes = _schemes
         }
 
-        _content.consumes = this._formatConsumes(context, request)
-        _content.produces = ::this._formatProduces(context, request)
+        let consumes = this._formatConsumes(context, request)
+        if (consumes.length > 0) {
+            _content.consumes = consumes
+        }
+
+        let produces = ::this._formatProduces(context, request)
+        if (produces.length > 0) {
+            _content.produces = produces
+        }
 
         _content.parameters = ::this._formatParameters(context, request)
         let [ definitions, security ] = ::this._formatSecurity(context, request)
@@ -399,6 +406,9 @@ export default class SwaggerSerializer extends BaseSerializer {
                 }
                 delete formatted.$ref
                 delete formatted.type
+                if (formatted.name === null) {
+                    delete formatted.name
+                }
             }
 
 
@@ -467,7 +477,14 @@ export default class SwaggerSerializer extends BaseSerializer {
             }
         }
 
-        Object.assign(param, _param.getJSONSchema(false, replaceRefs))
+        let _schema = _param.getJSONSchema(false, replaceRefs)
+        if (_param.get('type') === 'reference') {
+            param.$ref = {}
+            Object.assign(param.$ref, _schema)
+        }
+        else {
+            Object.assign(param, _schema)
+        }
 
         if (_param.get('externals').size > 0) {
             param['x-use-with'] = []
