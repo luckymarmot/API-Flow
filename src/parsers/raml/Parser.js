@@ -137,8 +137,6 @@ export default class RAMLParser {
                 item.getPath()
             ), rel)
 
-            console.error('rel ====', rel)
-
             return new JSONSchemaReference({
                 uri: uri,
                 relative: rel

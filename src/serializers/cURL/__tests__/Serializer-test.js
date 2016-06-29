@@ -11,7 +11,7 @@ import CurlSerializer from '../Serializer'
 
 import Context, {
 //    Body,
-//    Response,
+    Response,
     Parameter,
     ParameterContainer
 } from '../../../models/Core'
@@ -25,6 +25,11 @@ import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
 import URL from '../../../models/URL'
 import Request from '../../../models/Request'
+
+import Reference from '../../../models/references/Reference'
+import LateResolutionReference from '../../../models/references/LateResolution'
+import JSONSchemaReference from '../../../models/references/JSONSchema'
+import ReferenceContainer from '../../../models/references/Container'
 
 import {
     ClassMock
@@ -636,7 +641,7 @@ export class TestCurlSerializer extends UnitTest {
             return ''
         })
 
-        const input  = new Request()
+        const input = new Request()
 
         const expected = '### **GET** - ?'
         const result = s._formatName(input)
@@ -648,7 +653,7 @@ export class TestCurlSerializer extends UnitTest {
     testFormatNameWithURL() {
         const s = this.__init()
 
-        const input  = new Request({
+        const input = new Request({
             url: new URL('http://echo.luckymarmot.com/headers')
         })
 
@@ -662,7 +667,7 @@ export class TestCurlSerializer extends UnitTest {
     testFormatNameWithURLAndMethod() {
         const s = this.__init()
 
-        const input  = new Request({
+        const input = new Request({
             method: 'post',
             url: new URL('http://echo.luckymarmot.com/headers')
         })
@@ -1975,7 +1980,7 @@ export class TestCurlSerializer extends UnitTest {
         const input = new Parameter({
             key: 'key',
             value: {
-                complex:'value'
+                complex: 'value'
             }
         })
 
@@ -2095,6 +2100,558 @@ export class TestCurlSerializer extends UnitTest {
             JSON.stringify({ type: 'integer' }, null, '  ') + '\n' +
             '```'
         const result = s._formatParamDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithEmptyRequest() {
+        const s = this.__init()
+
+        const input = new Request()
+
+        const expected = ''
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithNullAuthentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([ null ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- No Authentication'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithBasicAuthentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.Basic({
+                    username: 'user',
+                    password: 'pass'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- Basic Authentication' +
+            '\n  - **username**: user' +
+            '\n  - **password**: pass'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithDigestAuthentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.Digest({
+                    username: 'user',
+                    password: 'pass'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- Digest Authentication' +
+            '\n  - **username**: user' +
+            '\n  - **password**: pass'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithNTLMAuthentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.NTLM({
+                    username: 'user',
+                    password: 'pass'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- NTLM Authentication' +
+            '\n  - **username**: user' +
+            '\n  - **password**: pass'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithNegotiateAuthentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.Negotiate({
+                    username: 'user',
+                    password: 'pass'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- Negotiate Authentication' +
+            '\n  - **username**: user' +
+            '\n  - **password**: pass'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithApiKeyAuthentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.ApiKey({
+                    in: 'header',
+                    name: 'Api-Key',
+                    key: '1234567890'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- API Key Authentication' +
+            '\n  - **location**: header' +
+            '\n  - **name**: Api-Key' +
+            '\n  - **key**: 1234567890'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithOAuth1Authentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.OAuth1({
+                    tokenCredentialsUri: 'some.uri.com/oauth1',
+                    requestTokenUri: 'other.uri.com/oauth1',
+                    authorizationUri: 'auth.uri.com/oauth1'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- OAuth1 Authentication' +
+            '\n  - **tokenCredentialsUri**: some.uri.com/oauth1' +
+            '\n  - **requestTokenUri**: other.uri.com/oauth1' +
+            '\n  - **authorizationUri**: auth.uri.com/oauth1'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithOAuth2Authentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.OAuth2({
+                    flow: 'implicit',
+                    tokenUrl: 'other.uri.com/oauth1',
+                    authorizationUrl: 'auth.uri.com/oauth1',
+                    scopes: new Immutable.List([ 'read:any', 'write:self' ])
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- OAuth2 Authentication' +
+            '\n  - **flow**: implicit' +
+            '\n  - **authorizationUrl**: auth.uri.com/oauth1' +
+            '\n  - **tokenUrl**: other.uri.com/oauth1' +
+            '\n  - **scopes**: List [ "read:any", "write:self" ]'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithHawkAuthentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.Hawk({
+                    id: '0987654321',
+                    algorithm: 'SHA1',
+                    key: '1234567890'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- Hawk Authentication' +
+            '\n  - **id**: 0987654321' +
+            '\n  - **key**: 1234567890' +
+            '\n  - **algorithm**: SHA1'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithAWSSig4Authentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.AWSSig4({
+                    key: '0987654321',
+                    secret: '1234567890',
+                    region: 'us-east-1',
+                    service: 'execute'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- AWS Signature 4 Authentication' +
+            '\n  - **key**: 0987654321' +
+            '\n  - **secret**: 1234567890' +
+            '\n  - **region**: us-east-1' +
+            '\n  - **service**: execute'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthDescription')
+    testFormatAuthDescriptionWithAWSSig4Authentication() {
+        const s = this.__init()
+
+        const input = new Request({
+            auths: new Immutable.List([
+                new Auth.AWSSig4({
+                    key: '0987654321',
+                    secret: '1234567890',
+                    region: 'us-east-1',
+                    service: 'execute'
+                })
+            ])
+        })
+
+        const expected = '#### Security\n\n' +
+            '- AWS Signature 4 Authentication' +
+            '\n  - **key**: 0987654321' +
+            '\n  - **secret**: 1234567890' +
+            '\n  - **region**: us-east-1' +
+            '\n  - **service**: execute'
+        const result = s._formatAuthDescription(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatResponses')
+    testFormatResponsesWithEmptyRequest() {
+        const s = this.__init()
+
+        const input = new Request()
+
+        const expected = ''
+        const result = s._formatResponses(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatResponses')
+    testFormatResponsesCallsFormatResponseForEachResponse() {
+        const s = this.__init()
+
+        s.spyOn('_formatResponse', () => {
+            return '#### response'
+        })
+
+        const input = new Request({
+            responses: new Immutable.List([
+                new Response(),
+                new Response(),
+                new Response()
+            ])
+        })
+
+        s._formatResponses(input)
+
+        this.assertEqual(s.spy._formatResponse.count, 3)
+    }
+
+    @targets('_formatResponses')
+    testFormatResponsesReturnsExpectedContent() {
+        const s = this.__init()
+
+        s.spyOn('_formatResponse', () => {
+            return '##### response'
+        })
+
+        const input = new Request({
+            responses: new Immutable.List([
+                new Response(),
+                new Response(),
+                new Response()
+            ])
+        })
+
+        const expected = '#### Responses\n\n' +
+            '##### response\n\n' +
+            '##### response\n\n' +
+            '##### response'
+        const result = s._formatResponses(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatResponse')
+    testFormatResponseCallsFormatParameterDescriptions() {
+        const s = this.__init()
+
+        s.spyOn('_formatParameterDescriptions', () => {
+            return 'parameters'
+        })
+
+        const input = new Response()
+
+        s._formatResponse(input)
+
+        this.assertEqual(s.spy._formatParameterDescriptions.count, 1)
+    }
+
+    @targets('_formatResponse')
+    testFormatResponseReturnsExpectedContent() {
+        const s = this.__init()
+
+        s.spyOn('_formatParameterDescriptions', () => {
+            return '##### parameters'
+        })
+
+        const input = new Response({
+            code: 200,
+            description: 'a simple description'
+        })
+
+        const expected =
+            '##### Code' +
+            '\n\n- **200**: a simple description' +
+            '\n\n##### parameters'
+        const result = s._formatResponse(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatReferences')
+    testFormatReferencesWithNoReference() {
+        const s = this.__init()
+
+        const input = new Immutable.OrderedMap()
+
+        const expected = ''
+        const result = s._formatReferences(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatReferences')
+    testFormatReferencesCallsFormatReferenceContainerForEachContainer() {
+        const s = this.__init()
+
+        s.spyOn('_formatReferenceContainer', () => {
+            return '### Container'
+        })
+
+        const input = new Immutable.OrderedMap({
+            postman: new ReferenceContainer(),
+            paw: new ReferenceContainer(),
+            schemas: new ReferenceContainer()
+        })
+
+        s._formatReferences(input)
+
+        this.assertEqual(s.spy._formatReferenceContainer.count, 3)
+    }
+
+    @targets('_formatReferences')
+    testFormatReferencesReturnsExpectedContent() {
+        const s = this.__init()
+
+        s.spyOn('_formatReferenceContainer', () => {
+            return '### Container'
+        })
+
+        const input = new Immutable.OrderedMap({
+            postman: new ReferenceContainer(),
+            paw: new ReferenceContainer(),
+            schemas: new ReferenceContainer()
+        })
+
+        const expected = '## References' +
+            '\n\n### Container' +
+            '\n\n### Container' +
+            '\n\n### Container'
+        const result = s._formatReferences(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatReferenceContainer')
+    testFormatReferenceContainerWithEmptyContainer() {
+        const s = this.__init()
+
+        const input = new ReferenceContainer()
+
+        const expected = ''
+        const result = s._formatReferenceContainer(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatReferenceContainer')
+    testFormatReferenceContainerCallsFormatReferenceForEachReference() {
+        const s = this.__init()
+
+        s.spyOn('_formatReference', () => {
+            return '#### Reference'
+        })
+
+        const input = (new ReferenceContainer())
+            .create(new Immutable.List([
+                new JSONSchemaReference({
+                    uri: '#/definitions/User'
+                }),
+                new JSONSchemaReference({
+                    uri: '#/definitions/Pet'
+                }),
+                new JSONSchemaReference({
+                    uri: '#/definitions/Location'
+                })
+            ]))
+
+        s._formatReferenceContainer(input)
+
+        this.assertEqual(s.spy._formatReference.count, 3)
+    }
+
+    @targets('_formatReferenceContainer')
+    testFormatReferenceContainerReturnsExpectedContent() {
+        const s = this.__init()
+
+        s.spyOn('_formatReference', () => {
+            return '#### Reference'
+        })
+
+        const input = (new ReferenceContainer({
+            name: 'Schemas'
+        }))
+            .create(new Immutable.List([
+                new JSONSchemaReference({
+                    uri: '#/definitions/User'
+                }),
+                new JSONSchemaReference({
+                    uri: '#/definitions/Pet'
+                }),
+                new JSONSchemaReference({
+                    uri: '#/definitions/Location'
+                })
+            ]))
+
+        const expected = '### Schemas' +
+            '\n\n#### Reference' +
+            '\n\n#### Reference' +
+            '\n\n#### Reference'
+        const result = s._formatReferenceContainer(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatReference')
+    testFormatReferenceWithSimpleReference() {
+        const s = this.__init()
+
+        const input = new Reference({
+            uri: 'someFile#/definitions/User',
+            relative: '#/definitions/User',
+            value: 'a simple value'
+        })
+
+        const expected = '#### #/definitions/User' +
+            '\n```' +
+            '\na simple value' +
+            '\n```'
+        const result = s._formatReference(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatReference')
+    testFormatReferenceWithJSONSchemaReference() {
+        const s = this.__init()
+
+        const input = new JSONSchemaReference({
+            uri: 'someFile#/definitions/User',
+            relative: '#/definitions/User',
+            value: {
+                test: '42',
+                $ref: new JSONSchemaReference({
+                    uri: 'someFile#/definitions/Pet',
+                    relative: '#/definitions/Pet'
+                })
+            }
+        })
+
+        const expected = '#### #/definitions/User' +
+            '\n```' +
+            '\n' + JSON.stringify({
+                test: '42',
+                $ref: '#/definitions/Pet'
+            }, null, '  ') +
+            '\n```'
+        const result = s._formatReference(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatReference')
+    testFormatReferenceWithLateResolutionReference() {
+        const s = this.__init()
+
+        const input = new LateResolutionReference({
+            uri: 'someFile#/x-postman/{{userId}}',
+            relative: '#/x-postman/{{userId}}',
+            value: 'simple'
+        })
+
+        const expected = '#### #/x-postman/{{userId}}' +
+            '\nReplace `{{.*}}` by the corresponding ' +
+            'reference in this doc.' +
+            '\n```' +
+            '\n' + 'simple' +
+            '\n```'
+        const result = s._formatReference(input)
 
         this.assertEqual(expected, result)
     }

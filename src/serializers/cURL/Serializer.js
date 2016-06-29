@@ -2,11 +2,8 @@ import Immutable from 'immutable'
 
 import BaseSerializer from '../BaseSerializer'
 
-import Group from '../../models/Group'
-import Request from '../../models/Request'
 import Auth from '../../models/Auth'
 
-import Reference from '../../models/references/Reference'
 import JSONSchemaReference from '../../models/references/JSONSchema'
 import LateResolutionReference from '../../models/references/LateResolution'
 
@@ -106,7 +103,7 @@ export default class CurlSerializer extends BaseSerializer {
         return formatted.join('\n')
     }
 
-    _formatGroup(group, depth = 0, path = '') {
+    _formatGroup(group) {
         if (!group) {
             return ''
         }
@@ -166,7 +163,7 @@ export default class CurlSerializer extends BaseSerializer {
             return '### **' + method + '** - ' + path
         }
 
-        return '### **'+ method + '** - ?'
+        return '### **' + method + '** - ?'
     }
 
     _formatDescription(req) {
@@ -377,7 +374,8 @@ export default class CurlSerializer extends BaseSerializer {
         }
 
         if (type === 'string' && param.get('format') === 'sequence') {
-            let formatted = this._formatSequenceParam(param, separator, dropBodyKeys)
+            let formatted = this
+                ._formatSequenceParam(param, separator, dropBodyKeys)
             return formatted
         }
 
@@ -393,6 +391,11 @@ export default class CurlSerializer extends BaseSerializer {
         let _key = key ? this._escape(key) : null
 
         let name = param.get('key') || param.get('name') || 'unnamed'
+
+        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+            _key = null
+        }
+
         return [ _key, '$' + name ]
     }
 
@@ -434,7 +437,7 @@ export default class CurlSerializer extends BaseSerializer {
 
     _formatMultiParam(param, separator = '=', dropBodyKeys = false) {
         if (!param) {
-            return [ null, '(  )']
+            return [ null, '(  )' ]
         }
 
         let key = param.get('key')
@@ -513,13 +516,11 @@ export default class CurlSerializer extends BaseSerializer {
         if (!value) {
             _value = _key === null ? '$unnamed' : '$' + _key
         }
+        else if (typeof value === 'object') {
+            _value = this._escape(JSON.stringify(value))
+        }
         else {
-            if (typeof value === 'object') {
-                _value = this._escape(JSON.stringify(value))
-            }
-            else {
-                _value = this._escape(value + '')
-            }
+            _value = this._escape(value + '')
         }
 
         return [ _key, _value ]
@@ -863,11 +864,13 @@ export default class CurlSerializer extends BaseSerializer {
 
         let content = ''
         if (reference instanceof JSONSchemaReference) {
+            value = reference.toJSONSchema()
             content = '```\n' + JSON.stringify(value, null, '  ') + '\n```'
         }
         else if (reference instanceof LateResolutionReference) {
             content =
-                'Replace {{.*}} by the corresponding reference in this doc.\n' +
+                'Replace `{{.*}}` by the corresponding ' +
+                'reference in this doc.\n' +
                 '```\n' + value + '\n```'
         }
         else {
