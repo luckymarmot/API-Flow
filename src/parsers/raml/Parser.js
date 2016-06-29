@@ -146,13 +146,7 @@ export default class RAMLParser {
         try {
             let schema = JSON.parse(rel)
             return new JSONSchemaReference({
-                value: {
-                    description:
-                        'This schema could not be reliably parsed.\n' +
-                        'We have included it as a description to preserve the' +
-                        ' information it represents.\n\n' +
-                        JSON.stringify(schema)
-                },
+                value: schema,
                 resolved: true
             })
         }
@@ -580,7 +574,7 @@ export default class RAMLParser {
         let bodyParams = container.get('body')
 
         if (_body.schema) {
-            bodyParams = bodyParams.push(this._extractParam('body', _body))
+            bodyParams = bodyParams.push(this._extractParam(null, _body))
             _bodies = _bodies.push(new Body())
             _container = _container.set('body', bodyParams)
             return [ _container, _bodies ]
@@ -633,7 +627,7 @@ export default class RAMLParser {
 
             if (!bodyType && !(_body[contentType] || {}).formParameters) {
                 let param = this._extractParam(
-                    'body', _body[contentType], externals
+                    null, _body[contentType], externals
                 )
 
                 if (param) {

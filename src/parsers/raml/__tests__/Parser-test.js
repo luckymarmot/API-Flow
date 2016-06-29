@@ -1768,7 +1768,6 @@ export class TestRAMLParser extends UnitTest {
                     ]),
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'body',
                             example: '::fileRef::../samples/' +
                                 'jukebox-include-artist-retrieve.sample\n',
                             externals: new Immutable.List([
@@ -1825,7 +1824,6 @@ export class TestRAMLParser extends UnitTest {
                     ]),
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'body',
                             example: '{\"message\": \"artist not found\" }\n',
                             externals: new Immutable.List([
                                 new Parameter({

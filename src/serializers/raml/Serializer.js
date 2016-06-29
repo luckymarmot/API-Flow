@@ -151,7 +151,7 @@ export default class RAMLSerializer extends BaseSerializer {
         if (requests.size > 0) {
             let url = requests.get(0).get('url')
             let host = this._generateSequenceParam(url, 'host')
-            let protocol = protocols[0] || 'http'
+            let protocol = (protocols[0] || 'http').toLowerCase()
             origin = protocol + '://' + host
             let [ _base, _version ] = this._formatURIParameters(
                     url.get('host'),
@@ -163,7 +163,9 @@ export default class RAMLSerializer extends BaseSerializer {
         }
 
         if (protocols.length > 0) {
-            urlInfo.protocols = protocols
+            urlInfo.protocols = protocols.map(string => {
+                return string.toUpperCase()
+            })
         }
 
         if (origin) {
@@ -267,10 +269,6 @@ export default class RAMLSerializer extends BaseSerializer {
     }
 
     _convertJSONSchemaToNamedParameter(schema) {
-        if (!schema['x-title']) {
-            return null
-        }
-
         let named = {}
 
         let validFields = {
@@ -287,7 +285,11 @@ export default class RAMLSerializer extends BaseSerializer {
 
         let keys = Object.keys(schema)
         for (let key of keys) {
-            if (validFields[key]) {
+            if (
+                validFields[key] &&
+                schema[key] !== null &&
+                typeof schema[key] !== 'undefined'
+            ) {
                 named[validFields[key]] = schema[key]
             }
         }
@@ -333,6 +335,15 @@ export default class RAMLSerializer extends BaseSerializer {
             }
 
             named[name] = content
+        }
+
+        let key = param.get('key')
+        if (!key) {
+            let content = named[key]
+            if (typeof content === 'undefined') {
+                content = null
+            }
+            return content
         }
 
         return named
@@ -469,11 +480,52 @@ export default class RAMLSerializer extends BaseSerializer {
             })
             let content = Immutable.fromJS(this._formatRequest(request))
 
+            let skeleton = {}
+            fragments.reduce((obj, fragment) => {
+                obj[fragment] = obj[fragment] || {}
+                let params = this._formatURIParametersForFragment(fragment, url)
+                Object.assign(obj[fragment], params)
+                return obj[fragment]
+            }, skeleton)
+
             let path = (new Immutable.Map()).setIn(fragments, content)
-            paths = paths.mergeDeep(path)
+            paths = paths
+                .mergeDeep(path)
+                .mergeDeep(Immutable.fromJS(skeleton))
         })
 
         return paths.toJS()
+    }
+
+    _formatURIParametersForFragment(fragment, url) {
+        let param = url.get('pathname')
+        let match = fragment.match(/{.*?}/g)
+        if (!match ||
+            param.get('format') !== 'sequence' ||
+            param.get('type') !== 'string' ||
+            !param.get('value')
+        ) {
+            return {}
+        }
+
+        let [ path ] = this._formatURIParameters(
+            url.get('pathname'),
+            'uriParameters'
+        )
+
+        let content = {}
+
+        match.forEach(block => {
+            let name = block.slice(1, -1)
+            let value = path.uriParameters[name]
+            if (value) {
+                content[name] = value
+            }
+        })
+
+        return {
+            uriParameters: content
+        }
     }
 
     _formatRequest(request) {
@@ -495,6 +547,7 @@ export default class RAMLSerializer extends BaseSerializer {
         let params = this._formatParameters(container)
         let body = this._formatBody(container, bodies)
         let responses = ::this._formatResponses(request.get('responses'))
+        let auths = this._formatAuths(request.get('auths'))
 
         let url = request.get('url')
         let [ base ] = this._formatURIParameters(
@@ -502,12 +555,7 @@ export default class RAMLSerializer extends BaseSerializer {
             'baseUriParameters'
         )
 
-        let [ path ] = this._formatURIParameters(
-            url.get('pathname'),
-            'uriParameters'
-        )
-
-        Object.assign(formatted, params, body, base, path, responses)
+        Object.assign(formatted, params, body, base, responses, auths)
 
         result[method] = formatted
 
@@ -589,7 +637,6 @@ export default class RAMLSerializer extends BaseSerializer {
         if (Object.keys(_body).length > 0) {
             result.body = _body
         }
-
         return result
     }
 
@@ -618,7 +665,10 @@ export default class RAMLSerializer extends BaseSerializer {
                     else {
                         value = ref.toJSONSchema()
                     }
-                    schemas[ref.get('relative')] = value
+                    let uri = ref.get('relative')
+                    if (uri) {
+                        schemas[uri] = value
+                    }
                 }
             })
         })
@@ -642,7 +692,7 @@ export default class RAMLSerializer extends BaseSerializer {
             let formatted = this._formatBody(container, bodies)
             let content
             if (formatted.body) {
-                content = formatted.body
+                content = formatted
             }
             else {
                 content = {}
@@ -662,5 +712,45 @@ export default class RAMLSerializer extends BaseSerializer {
         }
 
         return {}
+    }
+
+    _formatAuths(auths) {
+        if (auths.size === 0) {
+            return {}
+        }
+
+        let securedBy = []
+        auths.forEach(auth => {
+            if (auth === null) {
+                securedBy.push(null)
+            }
+            else if (auth instanceof Auth.Basic) {
+                securedBy.push('basic')
+            }
+            else if (auth instanceof Auth.Digest) {
+                securedBy.push('digest')
+            }
+            else if (auth instanceof Auth.OAuth1) {
+                securedBy.push('oauth_1_0')
+            }
+            else if (auth instanceof Auth.OAuth2) {
+                let scopes = auth.get('scopes')
+                let content
+                if (scopes && scopes.size > 0) {
+                    content = {}
+                    content.oauth_2_0 = {
+                        scopes: scopes.toJS()
+                    }
+                }
+                else {
+                    content = 'oauth_2_0'
+                }
+                securedBy.push(content)
+            }
+        })
+
+        return {
+            securedBy: securedBy
+        }
     }
 }

@@ -366,7 +366,7 @@ export class TestRAMLSerializer extends UnitTest {
         ])
 
         let expected = {
-            protocols: [ 'http', 'https' ],
+            protocols: [ 'HTTP', 'HTTPS' ],
             baseUri: 'http://test.luckymarmot.com',
             version: 'v1',
             baseUriParameters: 42
@@ -584,7 +584,11 @@ export class TestRAMLSerializer extends UnitTest {
 
         let schema = {}
 
-        let expected = null
+        /* eslint-disable no-undefined */
+        let expected = {
+            undefined: {}
+        }
+        /* eslint-enable no-undefined */
         let result = s._convertJSONSchemaToNamedParameter(schema)
 
         this.assertEqual(expected, result)
@@ -930,6 +934,10 @@ export class TestRAMLSerializer extends UnitTest {
             return res
         })
 
+        s.spyOn('_formatURIParametersForFragment', () => {
+            return {}
+        })
+
         let requests = new Immutable.List([
             new Request({
                 url: new URL({
@@ -1008,6 +1016,7 @@ export class TestRAMLSerializer extends UnitTest {
 
         this.assertEqual(expected, result)
         this.assertEqual(s.spy._formatRequest.count, 3)
+        this.assertEqual(s.spy._formatURIParametersForFragment.count, 4)
     }
 
     @targets('_formatRequest')
@@ -1053,8 +1062,7 @@ export class TestRAMLSerializer extends UnitTest {
                 description: 'a simple description',
                 headers: true,
                 body: true,
-                baseUriParameters: true,
-                uriParameters: true
+                baseUriParameters: true
             }
         }
 
@@ -1063,7 +1071,7 @@ export class TestRAMLSerializer extends UnitTest {
         this.assertEqual(expected, result)
         this.assertEqual(s.spy._formatParameters.count, 1)
         this.assertEqual(s.spy._formatBody.count, 1)
-        this.assertEqual(s.spy._formatURIParameters.count, 2)
+        this.assertEqual(s.spy._formatURIParameters.count, 1)
     }
 
     @targets('_formatParameters')
@@ -1507,8 +1515,12 @@ export class TestRAMLSerializer extends UnitTest {
 
         let expected = {
             responses: {
-                200: 1,
-                404: 2
+                200: {
+                    body: 1
+                },
+                404: {
+                    body: 2
+                }
             }
         }
 
@@ -1545,17 +1557,245 @@ export class TestRAMLSerializer extends UnitTest {
         let expected = {
             responses: {
                 200: {
-                    count: 1,
+                    body: {
+                        count: 1
+                    },
                     description: 'basic'
                 },
                 404: {
-                    count: 2,
+                    body: {
+                        count: 2
+                    },
                     description: 'other'
                 }
             }
         }
 
         let result = s._formatResponses(responses)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatURIParametersForFragment')
+    testFormatURIParametersForFragmentWithSimpleFragment() {
+        const s = this.__init()
+
+        s.spyOn('_formatURIParameters', () => {
+            return [ { uriParameters: {} } ]
+        })
+
+        const fragment = '/songs'
+        const url = new URL('http://echo.luckymarmot.com/songs/{songId}')
+
+        const expected = {}
+        const result = s._formatURIParametersForFragment(fragment, url)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatURIParametersForFragment')
+    testFormatURIParametersForFragmentWithRichFragment() {
+        const s = this.__init()
+
+        s.spyOn('_formatURIParameters', () => {
+            return [ { uriParameters: {
+                songId: {
+                    type: 'integer',
+                    minimum: 0
+                }
+            } } ]
+        })
+
+        const fragment = '/{songId}'
+        const url = new URL({
+            protocol: new Parameter({
+                key: 'protocol',
+                type: 'string',
+                value: 'http',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'http'
+                    ])
+                ])
+            }),
+            host: new Parameter({
+                key: 'host',
+                type: 'string',
+                value: 'echo.luckymarmot.com',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'echo.luckymarmot.com'
+                    ])
+                ])
+            }),
+            pathname: new Parameter({
+                key: 'pathname',
+                type: 'string',
+                format: 'sequence',
+                value: new Immutable.List([
+                    new Parameter({
+                        type: 'string',
+                        value: '/songs/',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                '/songs/'
+                            ])
+                        ])
+                    }),
+                    new Parameter({
+                        key: 'songId',
+                        type: 'integer',
+                        internals: new Immutable.List([
+                            new Constraint.Minimum(0)
+                        ])
+                    })
+                ])
+            })
+        })
+
+        const expected = {
+            uriParameters: {
+                songId: {
+                    type: 'integer',
+                    minimum: 0
+                }
+            }
+        }
+        const result = s._formatURIParametersForFragment(fragment, url)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuths')
+    testFormatAuthsWithNoAuth() {
+        const s = this.__init()
+
+        const input = new Immutable.List()
+
+        const expected = {}
+        const result = s._formatAuths(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuths')
+    testFormatAuthsWithNullAuth() {
+        const s = this.__init()
+
+        const input = new Immutable.List([ null ])
+
+        const expected = {
+            securedBy: [ null ]
+        }
+        const result = s._formatAuths(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuths')
+    testFormatAuthsWithBasicAuth() {
+        const s = this.__init()
+
+        const input = new Immutable.List([
+            new Auth.Basic()
+        ])
+
+        const expected = {
+            securedBy: [ 'basic' ]
+        }
+        const result = s._formatAuths(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuths')
+    testFormatAuthsWithDigestAuth() {
+        const s = this.__init()
+
+        const input = new Immutable.List([
+            new Auth.Digest()
+        ])
+
+        const expected = {
+            securedBy: [ 'digest' ]
+        }
+        const result = s._formatAuths(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuths')
+    testFormatAuthsWithOAuth1Auth() {
+        const s = this.__init()
+
+        const input = new Immutable.List([
+            new Auth.OAuth1()
+        ])
+
+        const expected = {
+            securedBy: [ 'oauth_1_0' ]
+        }
+        const result = s._formatAuths(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuths')
+    testFormatAuthsWithOAuth2Auth() {
+        const s = this.__init()
+
+        const input = new Immutable.List([
+            new Auth.OAuth2()
+        ])
+
+        const expected = {
+            securedBy: [ 'oauth_2_0' ]
+        }
+        const result = s._formatAuths(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuths')
+    testFormatAuthsWithOAuth2AuthAndScopes() {
+        const s = this.__init()
+
+        const input = new Immutable.List([
+            new Auth.OAuth2({
+                scopes: new Immutable.List([
+                    'read:any', 'write:self'
+                ])
+            })
+        ])
+
+        const expected = {
+            securedBy: [
+                {
+                    oauth_2_0: {
+                        scopes: [ 'read:any', 'write:self' ]
+                    }
+                }
+            ]
+        }
+        const result = s._formatAuths(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuths')
+    testFormatAuthsWithMultipleAuth() {
+        const s = this.__init()
+
+        const input = new Immutable.List([
+            null,
+            new Auth.Basic(),
+            new Auth.Digest()
+        ])
+
+        const expected = {
+            securedBy: [ null, 'basic', 'digest' ]
+        }
+        const result = s._formatAuths(input)
 
         this.assertEqual(expected, result)
     }
