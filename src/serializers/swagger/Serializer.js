@@ -529,8 +529,19 @@ export default class SwaggerSerializer extends BaseSerializer {
             password: true
         }
 
+        const arrayFormatMap = {
+            csv: true,
+            ssv: true,
+            tsv: true,
+            pipes: true,
+            multi: true
+        }
+
         if (format) {
-            if (formatMap[format]) {
+            if (param.type === 'array' && arrayFormatMap[format]) {
+                param.collectionFormat = format
+            }
+            else if (param.type !== 'array' && formatMap[format]) {
                 param.format = format
             }
             else {

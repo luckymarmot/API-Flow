@@ -175,6 +175,10 @@ export class Parameter extends Immutable.Record({
         }
 
         if (obj.$ref) {
+            if (obj.$ref instanceof Reference) {
+                obj.$ref = obj.$ref.get('relative') || obj.$ref.get('uri')
+            }
+
             obj.default = this
               ._unescapeURIFragment(obj.$ref.split('/').slice(-1)[0])
             obj.type = 'string'

@@ -296,6 +296,20 @@ export default class RAMLSerializer extends BaseSerializer {
 
         let param = {}
 
+        if (named.type === 'array') {
+            delete named.type
+            if (schema.items) {
+                named.description =
+                    'Type: array.\n' +
+                    'Warning: server implementation may not support repeated ' +
+                    'parameters. This parameter should respect the following ' +
+                    'schema: \n' +
+                    '```\n' +
+                    JSON.stringify(schema, null, '  ') +
+                    '\n```'
+            }
+        }
+
         if (schema['x-title'] === 'schema' && named.default) {
             param.schema = named.default
         }
@@ -303,14 +317,18 @@ export default class RAMLSerializer extends BaseSerializer {
             param.schema = schema.$ref
         }
         else {
-            param[schema['x-title']] = named
+            param[schema['x-title'] || null] = named
         }
         return param
     }
 
-    _convertParameterToNamedParameter(param) {
-        let schema = param.getJSONSchema(false)
+    _convertParameterToNamedParameter(param, removeRequired = false) {
+        let schema = param.getJSONSchema(false, false)
         let named = this._convertJSONSchemaToNamedParameter(schema)
+
+        if (named.schema) {
+            return named
+        }
 
         if (named && Object.keys(named).length > 0) {
             let name = Object.keys(named)[0]
@@ -318,9 +336,12 @@ export default class RAMLSerializer extends BaseSerializer {
 
             if (typeof content === 'object') {
                 let externalValidFields = {
-                    required: 'required',
                     example: 'example',
                     description: 'description'
+                }
+
+                if (!removeRequired) {
+                    externalValidFields.required = 'required'
                 }
 
                 let keys = Object.keys(externalValidFields)
@@ -404,22 +425,13 @@ export default class RAMLSerializer extends BaseSerializer {
         let accessTokenUri = auth.get('tokenUrl')
         let authorizationGrants = flowMap[auth.get('flow')]
 
-        let settings = {}
-        if (authorizationUri) {
-            settings.authorizationUri = authorizationUri
+        let settings = {
+            authorizationUri: authorizationUri || '',
+            accessTokenUri: accessTokenUri || '',
+            authorizationGrants: [ authorizationGrants ]
         }
 
-        if (accessTokenUri) {
-            settings.accessTokenUri = accessTokenUri
-        }
-
-        if (authorizationGrants) {
-            settings.authorizationGrants = [ authorizationGrants ]
-        }
-
-        if (Object.keys(settings).length > 0) {
-            formatted.settings = settings
-        }
+        formatted.settings = settings
 
         let result = {
             oauth_2_0: formatted
@@ -600,7 +612,7 @@ export default class RAMLSerializer extends BaseSerializer {
         return result
     }
 
-    _formatBody(container, bodies) {
+    _formatBody(container, bodies, removeRequired = false) {
         let result = {}
         let _body = {}
         bodies.forEach(body => {
@@ -628,8 +640,13 @@ export default class RAMLSerializer extends BaseSerializer {
                 _body[constraint] = {}
                 let params = filtered.get('body')
                 params.forEach(param => {
-                    let named = this._convertParameterToNamedParameter(param)
-                    Object.assign(_body[constraint], named)
+                    let named = this._convertParameterToNamedParameter(
+                        param, removeRequired
+                    )
+
+                    if (named.schema) {
+                        Object.assign(_body[constraint], named)
+                    }
                 })
             }
         })
@@ -663,7 +680,7 @@ export default class RAMLSerializer extends BaseSerializer {
                         value = '!include ' + ref.get('relative')
                     }
                     else {
-                        value = ref.toJSONSchema()
+                        value = JSON.stringify(ref.toJSONSchema(), null, '  ')
                     }
                     let uri = ref.get('relative')
                     if (uri) {
@@ -689,7 +706,8 @@ export default class RAMLSerializer extends BaseSerializer {
             let bodies = response.get('bodies')
             let container = response.get('parameters')
 
-            let formatted = this._formatBody(container, bodies)
+            let removeRequired = true
+            let formatted = this._formatBody(container, bodies, removeRequired)
             let content
             if (formatted.body) {
                 content = formatted
@@ -702,7 +720,10 @@ export default class RAMLSerializer extends BaseSerializer {
                 content.description = response.get('description')
             }
 
-            responses[code] = content
+            let match = (code + '').match(/^([0-9]{3})/)
+            if (match) {
+                responses[match[1]] = content
+            }
         })
 
         if (Object.keys(responses).length > 0) {

@@ -586,7 +586,7 @@ export class TestRAMLSerializer extends UnitTest {
 
         /* eslint-disable no-undefined */
         let expected = {
-            undefined: {}
+            null: {}
         }
         /* eslint-enable no-undefined */
         let result = s._convertJSONSchemaToNamedParameter(schema)
@@ -650,7 +650,9 @@ export class TestRAMLSerializer extends UnitTest {
 
         let param = new Parameter()
 
-        let expected = null
+        let expected = {
+            required: false
+        }
 
         let result = s._convertParameterToNamedParameter(param)
 
@@ -781,13 +783,18 @@ export class TestRAMLSerializer extends UnitTest {
 
         let expected = {
             oauth_2_0: {
-                type: 'OAuth 2.0'
+                type: 'OAuth 2.0',
+                settings: {
+                    authorizationUri: '',
+                    accessTokenUri: '',
+                    authorizationGrants: [ null ]
+                }
             }
         }
 
         let result = s._formatOAuth2(auth)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_formatOAuth2')
@@ -1480,7 +1487,9 @@ export class TestRAMLSerializer extends UnitTest {
             schemas: [
                 {
                     'other.json': '!include other.json',
-                    '#/definitions/User': { test: 12 }
+                    '#/definitions/User': JSON.stringify({
+                        test: 12
+                    }, null, '  ')
                 }
             ]
         }
