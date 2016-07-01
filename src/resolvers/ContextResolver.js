@@ -45,7 +45,13 @@ export default class ContextResolver {
 
         let promises = unresolved.map(uri => {
             let reference = container.resolve(uri)
-            return this.resolveReference(item, reference, opts)
+            try {
+                let promise = this.resolveReference(item, reference, opts)
+                return promise
+            }
+            catch (e) {
+                return null
+            }
         })
 
         return Promise.all(promises).then(updatedReferences => {
@@ -55,6 +61,14 @@ export default class ContextResolver {
                 container = container.create(dependencies)
             }
             return this.resolveContainer(item, container, opts)
+        }, (err, refs) => {
+            /* eslint-disable no-console */
+            console.error('rejected promise', err, refs)
+            /* eslint-enable no-console */
+        }).catch((error, something) => {
+            /* eslint-disable no-console */
+            console.error('got this error', error, something)
+            /* eslint-enable no-console */
         })
     }
 
@@ -103,11 +117,12 @@ export default class ContextResolver {
             })
         }
 
-        if (dataUri === null) {
+        if (dataUri === null || dataUri === '') {
             return new Promise((_resolve) => {
                 _resolve(item)
             }).then(_item => {
-                return reference.resolve(_item)
+                let resolved = reference.resolve(_item.content)
+                return resolved
             })
         }
 

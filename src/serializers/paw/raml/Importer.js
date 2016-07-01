@@ -21,7 +21,7 @@ export default class RAMLImporter extends BaseImporter {
         Only root files starts with RAML version.
     */
     _startsWithRAMLVersion(item) {
-        let firstLine = item.split('\n', 1)
+        let firstLine = item.content.split('\n', 1)[0]
         let match = firstLine.match(/#%RAML (0\.8|1\.0)/)
         if (match) {
             return 1

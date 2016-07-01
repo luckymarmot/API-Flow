@@ -91,6 +91,7 @@ export default class CurlParser {
         this.context = this.context.set(
             'group',
             new Group({
+                name: 'cURL Imports',
                 children: this._parseAll()
             })
         )

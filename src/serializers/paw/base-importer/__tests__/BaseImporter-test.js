@@ -1337,7 +1337,12 @@ export class TestBaseImporter extends UnitTest {
         let count = 0
         importer.spyOn('_toDynamicString', () => {
             count += 1
-            return new DynamicString('{ "count": ' + count + '}')
+            let ds = new DynamicString('{ "count": ' + count + '}')
+            ds.length = 1
+            ds.$$_spyOn('getComponentAtIndex', () => {
+                return '{ "count": ' + count + '}'
+            })
+            return ds
         })
 
         importer._setJSONBody(requestMock, body)

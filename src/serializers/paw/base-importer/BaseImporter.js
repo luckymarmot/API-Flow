@@ -11,6 +11,7 @@ import {
     ApiKeyAuth
 } from '../../../models/Auth'
 
+import Item from '../../../models/Item'
 import ContextResolver from '../../../resolvers/ContextResolver'
 import PawEnvironment from '../../../models/environments/PawEnvironment'
 
@@ -108,13 +109,15 @@ export default class BaseImporter {
         return importPromise
     }
 
-    _importContext(resolver, reqContext, item, options) {
+    _importContext(resolver, reqContext, _item, options) {
         if (!(reqContext instanceof Context)) {
             throw new Error(
                 'createRequestContext ' +
                 'did not return an instance of RequestContext'
             )
         }
+
+        let item = new Item(_item)
 
         return resolver.resolveAll(
             item,
@@ -123,7 +126,7 @@ export default class BaseImporter {
             try {
                 this._importPawRequests(
                     context,
-                    item,
+                    _item,
                     options
                 )
                 if (options && options.order) {
@@ -242,12 +245,13 @@ export default class BaseImporter {
     }
 
     _setJSONSchemaReference(reference) {
-        return new DynamicValue(
+        let dv = new DynamicValue(
             'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
             {
                 schema: reference.toJSONSchema() || {}
             }
         )
+        return dv
     }
 
     _setExoticReference(reference) {
@@ -737,11 +741,11 @@ export default class BaseImporter {
         let content = this._toDynamicString(param, true)
 
         if (
-            content.components.length === 1 &&
-            typeof content.components[0] === 'string'
+            content.length === 1 &&
+            typeof content.getComponentAtIndex(0) === 'string'
         ) {
             try {
-                pawReq.jsonBody = JSON.parse(content.components[0])
+                pawReq.jsonBody = JSON.parse(content.getComponentAtIndex(0))
             }
             catch (e) {
                 /* eslint-disable no-console */
@@ -752,7 +756,7 @@ export default class BaseImporter {
                 pawReq.body = content
             }
         }
-        else if (content.components.length === 1) {
+        else if (content.length === 1) {
             pawReq.jsonBody = content
         }
         else {
@@ -855,13 +859,14 @@ export default class BaseImporter {
                         components.push(param.generate())
                     }
                     else {
-                        components.push(new DynamicValue(
+                        let dv = new DynamicValue(
                             'com.luckymarmot.PawExtensions' +
                             '.JSONSchemaFakerDynamicValue',
                             {
                                 schema: item
                             }
-                        ))
+                        )
+                        components.push(dv)
                     }
                 }
                 else {
@@ -873,13 +878,14 @@ export default class BaseImporter {
             components.push(param.generate(false, schema))
         }
         else {
-            components.push(new DynamicValue(
+            let dv = new DynamicValue(
                 'com.luckymarmot.PawExtensions' +
                 '.JSONSchemaFakerDynamicValue',
                 {
                     schema: schema
                 }
-            ))
+            )
+            components.push(dv)
         }
 
         return new DynamicString(...components)
