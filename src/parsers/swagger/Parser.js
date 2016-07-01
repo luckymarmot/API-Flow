@@ -529,6 +529,8 @@ export default class SwaggerParser {
                 }
             }
 
+            let examples = responses[code].examples || null
+
             let container = new ParameterContainer({
                 body: body,
                 headers: headers
@@ -536,6 +538,7 @@ export default class SwaggerParser {
             let response = new Response({
                 code: code,
                 description: responses[code].description || null,
+                examples: examples,
                 parameters: container,
                 bodies: bodies
             })

@@ -311,6 +311,11 @@ export default class SwaggerSerializer extends BaseSerializer {
             description: response.get('description') || 'stub description'
         }
 
+        let examples = response.get('examples')
+        if (examples) {
+            content.examples = examples
+        }
+
         let container = response.get('parameters')
         let headers = container.get('headers')
         let body = container.get('body')

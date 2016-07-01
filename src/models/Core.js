@@ -342,6 +342,7 @@ export class Body extends Immutable.Record({
 export class Response extends Immutable.Record({
     code: null,
     description: null,
+    examples: null,
     parameters: new ParameterContainer(),
     bodies: Immutable.List()
 }) { }
