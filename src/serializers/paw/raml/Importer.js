@@ -43,12 +43,13 @@ export default class RAMLImporter extends BaseImporter {
             if (this._startsWithRAMLVersion(item)) {
                 reqPromises.push(
                     parser.parse(item)
-                ).then(reqContext => {
-                    return {
-                        context: reqContext,
-                        items: [ item ]
-                    }
-                })
+                        .then(reqContext => {
+                            return {
+                                context: reqContext,
+                                items: [ item ]
+                            }
+                        })
+                )
             }
         }
         return Promise.all(reqPromises)
