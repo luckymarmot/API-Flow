@@ -5,7 +5,7 @@ transfer: deploy
 	cp -r ./build/ "$(extensions_dir)"
 
 deploy:
-	sh deploy.sh
+	sh deploy.sh $(TARGET)
 
 build:
 	npm run compile
@@ -13,6 +13,9 @@ build:
 
 build-web:
 	npm run compile-web
+
+build-worker:
+	npm run compile-worker
 
 build-node: clean
 	npm run compile

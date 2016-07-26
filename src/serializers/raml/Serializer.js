@@ -17,6 +17,19 @@ export default class RAMLSerializer extends BaseSerializer {
         return content
     }
 
+    validate(text) {
+        let lines = text.split('\n')
+        if (!lines[0].startsWith('#%RAML 0.8')) {
+            return 'Not a RAML file'
+        }
+
+        if (lines.length < 10) {
+            return 'generated file of poor quality'
+        }
+
+        return null
+    }
+
     _formatStructure(context) {
         let structure = {}
         let basicInfo = this._formatBasicInfo(context)

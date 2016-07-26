@@ -21,7 +21,7 @@ export class URLResolver {
                     url = new URL(uri, this.item.get('url')).href()
                 }
 
-                const req = new window.XMLHttpRequest()
+                const req = new XMLHttpRequest()
 
                 req.addEventListener('error', (event) => {
                     return reject(new Error(event))
@@ -47,7 +47,7 @@ export class URLResolver {
 export default class BrowserEnvironment extends Environment {
     constructor() {
         super({
-            type: 'node'
+            type: 'web'
         })
         return this
     }

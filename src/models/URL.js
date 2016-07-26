@@ -102,7 +102,9 @@ export default class URL extends Immutable.Record({
             }
         }
 
-        let def = new Immutable.List()
+        let def = new Immutable.List([
+            new Constraint.Enum([ '' ])
+        ])
 
         return this.withMutations(_this => {
             _this

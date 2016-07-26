@@ -10,6 +10,21 @@ export default class PostmanSerializer extends BaseSerializer {
         return JSON.stringify(structure, null, '\t')
     }
 
+    validate(text) {
+        try {
+            let postman = JSON.parse(text)
+            if (
+                postman.collections.length === 0 &&
+                swagger.environments.length === 0
+            ) {
+                return 'generated file of poor quality'
+            }
+        }
+        catch (e) {
+            return e
+        }
+    }
+
     _formatStructure(context) {
         let structure = {
             version: 1,

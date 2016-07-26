@@ -13,6 +13,12 @@ export default class CurlSerializer extends BaseSerializer {
         return content
     }
 
+    validate(text) {
+        if (text.split('\n').length < 10) {
+            return 'generated file of poor quality'
+        }
+    }
+
     _formatContent(context) {
         let [ startInfo, endInfo ] = this._formatInfo(context)
         let group = this._formatGroup(context.get('group'))

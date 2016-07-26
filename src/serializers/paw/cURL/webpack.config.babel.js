@@ -15,7 +15,6 @@ const config = {
     output: {
         path: path.join(
             __dirname,
-            '../../../../',
             './build/com.luckymarmot.PawExtensions.cURLImporter'
         ),
         pathInfo: true,

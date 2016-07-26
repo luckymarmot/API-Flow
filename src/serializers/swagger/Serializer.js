@@ -37,6 +37,23 @@ export default class SwaggerSerializer extends BaseSerializer {
         return JSON.stringify(swagger, null, '  ')
     }
 
+    validate(text) {
+        try {
+            let swagger = JSON.parse(text)
+            if (
+                Object.keys(swagger.paths).length === 0 &&
+                swagger.schemes.length === 0
+            ) {
+                return 'generated file of poor quality'
+            }
+        }
+        catch (e) {
+            return e
+        }
+
+        return null
+    }
+
     _formatInfo(context) {
         let info = context.get('info')
 

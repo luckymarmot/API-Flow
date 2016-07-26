@@ -18,7 +18,8 @@ const config = {
         ),
         pathInfo: true,
         publicPath: '/build/' + target + '/',
-        filename: name + '.js'
+        filename: name + '.js',
+        libraryTarget: 'umd'
     },
     module: {
         loaders: [

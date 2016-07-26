@@ -99,5 +99,3 @@ export default class FlowBrowser {
         })
     }
 }
-
-window.APIFlow = FlowBrowser

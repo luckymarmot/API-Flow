@@ -248,7 +248,7 @@ export default class BaseImporter {
         let dv = new DynamicValue(
             'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
             {
-                schema: reference.toJSONSchema() || {}
+                schema: JSON.stringify(reference.toJSONSchema() || {})
             }
         )
         return dv
@@ -385,7 +385,7 @@ export default class BaseImporter {
         )
         return this.context.createRequest(
             request.get('name'),
-            request.get('method'),
+            (request.get('method') || 'get').toUpperCase(),
             url,
         )
     }
@@ -394,6 +394,7 @@ export default class BaseImporter {
         let protocol = this._toDynamicString(url.get('protocol'), true)
         let host = this._toDynamicString(url.get('host'), true)
         let path = this._toDynamicString(url.get('pathname'), true)
+        let hash = this._toDynamicString(url.get('hash'), true)
 
         if (protocol.length > 0) {
             protocol.appendString(':')
@@ -443,7 +444,17 @@ export default class BaseImporter {
                 },
                 []
             )
-            _url = new DynamicString(..._url.components, ..._params)
+            _url = new DynamicString(
+                ..._url.components,
+                ..._params,
+                ...hash.components
+            )
+        }
+        else {
+            _url = new DynamicString(
+                ..._url.components,
+                ...hash.components
+            )
         }
 
         return _url
@@ -665,12 +676,10 @@ export default class BaseImporter {
     }
 
     _setFormDataBody(pawReq, body) {
-        if (!pawReq.getHeaderByName('Content-Type')) {
-            pawReq.setHeader(
-                'Content-Type',
-                'multipart/form-data'
-            )
-        }
+        pawReq.setHeader(
+            'Content-Type',
+            'multipart/form-data'
+        )
         const keyValues = body.map(param => {
             let key = this._toDynamicString(
                 param.get('key'), true
@@ -690,12 +699,10 @@ export default class BaseImporter {
     }
 
     _setUrlEncodedBody(pawReq, body) {
-        if (!pawReq.getHeaderByName('Content-Type')) {
-            pawReq.setHeader(
-                'Content-Type',
-                'application/x-www-form-urlencoded'
-            )
-        }
+        pawReq.setHeader(
+            'Content-Type',
+            'application/x-www-form-urlencoded'
+        )
         const keyValues = body.map(param => {
             let key = this._toDynamicString(
                 param.get('key'), true
@@ -726,12 +733,10 @@ export default class BaseImporter {
     }
 
     _setJSONBody(pawReq, body) {
-        if (!pawReq.getHeaderByName('Content-Type')) {
-            pawReq.setHeader(
-                'Content-Type',
-                'application/json'
-            )
-        }
+        pawReq.setHeader(
+            'Content-Type',
+            'application/json'
+        )
 
         if (body.size === 0) {
             return pawReq
@@ -863,7 +868,7 @@ export default class BaseImporter {
                             'com.luckymarmot.PawExtensions' +
                             '.JSONSchemaFakerDynamicValue',
                             {
-                                schema: item
+                                schema: JSON.stringify(item)
                             }
                         )
                         components.push(dv)
@@ -882,7 +887,7 @@ export default class BaseImporter {
                 'com.luckymarmot.PawExtensions' +
                 '.JSONSchemaFakerDynamicValue',
                 {
-                    schema: schema
+                    schema: JSON.stringify(schema)
                 }
             )
             components.push(dv)
