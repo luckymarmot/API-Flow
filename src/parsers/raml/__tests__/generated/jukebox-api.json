@@ -1,0 +1,837 @@
+{
+  "title": "Jukebox API",
+  "baseUri": "http://{subDomain}.api.{extension}",
+  "baseUriParameters": {
+    "extension": {
+      "description": "the domain extension",
+      "enum": [
+        "com",
+        "io",
+        "jp"
+      ],
+      "displayName": "extension",
+      "required": true,
+      "type": "string"
+    },
+    "subDomain": {
+      "description": "the sub-domain to hit",
+      "enum": [
+        "jukebox",
+        "live"
+      ],
+      "displayName": "subDomain",
+      "required": true,
+      "type": "string"
+    }
+  },
+  "version": "v1",
+  "schemas": [
+    {
+      "song": "::fileRef::../../some/dir/jukebox-include-song.schema"
+    },
+    {
+      "artist": "::fileRef::../samples/jukebox-include-artist.schema"
+    },
+    {
+      "album": "::fileRef::../samples/jukebox-include-album.schema"
+    }
+  ],
+  "resourceTypes": [
+    {
+      "readOnlyCollection": {
+        "description": "Collection of available <<resourcePathName>> in Jukebox.",
+        "get": {
+          "description": "Get a list of <<resourcePathName>>.",
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "<<exampleCollection>>\n"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "collection": {
+        "description": "Collection of available <<resourcePathName>> in Jukebox.",
+        "get": {
+          "description": "Get a list of <<resourcePathName>>.",
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "<<exampleCollection>>\n"
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "description": "Add a new <<resourcePathName|!singularize>> to Jukebox.\n",
+          "queryParameters": {
+            "access_token": {
+              "description": "The access token provided by the authentication application",
+              "example": "AABBCCDD",
+              "required": true,
+              "type": "string"
+            }
+          },
+          "body": {
+            "application/json": {
+              "schema": "<<resourcePathName|!singularize>>",
+              "example": "<<exampleItem>>\n"
+            }
+          },
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "{ \"message\": \"The <<resourcePathName|!singularize>> has been properly entered\" }\n"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "collection-item": {
+        "description": "Entity representing a <<resourcePathName|!singularize>>",
+        "get": {
+          "description": "Get the <<resourcePathName|!singularize>>\nwith <<resourcePathName|!singularize>>Id =\n{<<resourcePathName|!singularize>>Id}\n",
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "<<exampleItem>>\n"
+                }
+              }
+            },
+            "404": {
+              "body": {
+                "application/json": {
+                  "example": "{\"message\": \"<<resourcePathName|!singularize>> not found\" }\n"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "traits": [
+    {
+      "searchable": {
+        "queryParameters": {
+          "query": {
+            "description": "JSON array [{\"field1\",\"value1\",\"operator1\"},{\"field2\",\"value2\",\"operator2\"},...,{\"fieldN\",\"valueN\",\"operatorN\"}] <<description>>\n",
+            "example": "<<example>>\n",
+            "displayName": "query",
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "orderable": {
+        "queryParameters": {
+          "orderBy": {
+            "description": "Order by field: <<fieldsList>>\n",
+            "type": "string",
+            "required": false,
+            "displayName": "orderBy"
+          },
+          "order": {
+            "description": "Order",
+            "enum": [
+              "desc",
+              "asc"
+            ],
+            "default": "desc",
+            "required": false,
+            "displayName": "order",
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "pageable": {
+        "queryParameters": {
+          "offset": {
+            "description": "Skip over a number of elements by specifying an offset value for the query",
+            "type": "integer",
+            "required": false,
+            "example": 20,
+            "default": 0,
+            "displayName": "offset"
+          },
+          "limit": {
+            "description": "Limit the number of elements on the response",
+            "type": "integer",
+            "required": false,
+            "example": 80,
+            "default": 10,
+            "displayName": "limit"
+          }
+        }
+      }
+    }
+  ],
+  "protocols": [
+    "HTTP"
+  ],
+  "resources": [
+    {
+      "description": "Collection of available songs in Jukebox.",
+      "type": {
+        "collection": {
+          "exampleCollection": "::fileRef::../samples/jukebox-include-songs.sample",
+          "exampleItem": "::fileRef::../samples/jukebox-include-song-new.sample"
+        }
+      },
+      "relativeUri": "/songs",
+      "methods": [
+        {
+          "queryParameters": {
+            "offset": {
+              "description": "Skip over a number of elements by specifying an offset value for the query",
+              "type": "integer",
+              "required": false,
+              "example": 20,
+              "default": 0,
+              "displayName": "offset"
+            },
+            "limit": {
+              "description": "Limit the number of elements on the response",
+              "type": "integer",
+              "required": false,
+              "example": 80,
+              "default": 10,
+              "displayName": "limit"
+            },
+            "orderBy": {
+              "description": "Order by field: songTitle\n",
+              "type": "string",
+              "required": false,
+              "displayName": "orderBy"
+            },
+            "order": {
+              "description": "Order",
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "default": "desc",
+              "required": false,
+              "displayName": "order",
+              "type": "string"
+            },
+            "query": {
+              "description": "JSON array [{\"field1\",\"value1\",\"operator1\"},{\"field2\",\"value2\",\"operator2\"},...,{\"fieldN\",\"valueN\",\"operatorN\"}] with valid searchable fields: songTitle\n",
+              "example": "[\"songTitle\", \"Get L\", \"like\"]\n",
+              "displayName": "query",
+              "type": "string"
+            }
+          },
+          "description": "Get a list of songs.",
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "::fileRef::../samples/jukebox-include-songs.sample\n"
+                }
+              }
+            }
+          },
+          "is": [
+            {
+              "searchable": {
+                "description": "with valid searchable fields: songTitle",
+                "example": "[\"songTitle\", \"Get L\", \"like\"]"
+              }
+            },
+            {
+              "orderable": {
+                "fieldsList": "songTitle"
+              }
+            },
+            "pageable"
+          ],
+          "protocols": [
+            "HTTP"
+          ],
+          "method": "get"
+        },
+        {
+          "description": "Add a new song to Jukebox.\n",
+          "queryParameters": {
+            "access_token": {
+              "description": "The access token provided by the authentication application",
+              "example": "AABBCCDD",
+              "required": true,
+              "type": "string",
+              "displayName": "access_token"
+            }
+          },
+          "body": {
+            "application/json": {
+              "schema": "::fileRef::../../some/dir/jukebox-include-song.schema",
+              "example": "::fileRef::../samples/jukebox-include-song-new.sample\n"
+            }
+          },
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "{ \"message\": \"The song has been properly entered\" }\n"
+                }
+              }
+            }
+          },
+          "protocols": [
+            "HTTP"
+          ],
+          "method": "post"
+        }
+      ],
+      "resources": [
+        {
+          "description": "Entity representing a song",
+          "type": {
+            "collection-item": {
+              "exampleItem": "::fileRef::../samples/jukebox-include-song-retrieve.sample"
+            }
+          },
+          "relativeUri": "/{songId}",
+          "methods": [
+            {
+              "description": "Get the song\nwith songId =\n{songId}\n",
+              "responses": {
+                "200": {
+                  "body": {
+                    "application/json": {
+                      "example": "::fileRef::../samples/jukebox-include-song-retrieve.sample\n"
+                    }
+                  }
+                },
+                "404": {
+                  "body": {
+                    "application/json": {
+                      "example": "{\"message\": \"song not found\" }\n"
+                    }
+                  }
+                }
+              },
+              "method": "get"
+            }
+          ],
+          "resources": [
+            {
+              "description": "The file to be reproduced by the client",
+              "relativeUri": "/file-content",
+              "methods": [
+                {
+                  "description": "Get the file content",
+                  "responses": {
+                    "200": {
+                      "body": {
+                        "binary/octet-stream": {
+                          "example": "::fileRef::../samples/heybulldog.mp3"
+                        }
+                      }
+                    }
+                  },
+                  "method": "get"
+                },
+                {
+                  "description": "Enters the file content for an existing song entity.\n\nThe song needs to be created for the `/songs/{songId}/file-content` to exist.\nYou can use this second resource to get and post the file to reproduce.\n\nUse the \"binary/octet-stream\" content type to specify the content from any consumer (excepting web-browsers).\nUse the \"multipart-form/data\" content type to upload a file which content will become the file-content\n",
+                  "body": {
+                    "binary/octet-stream": null,
+                    "multipart/form-data": {
+                      "formParameters": {
+                        "file": {
+                          "description": "The file to be uploaded",
+                          "required": true,
+                          "type": "file",
+                          "displayName": "file"
+                        }
+                      }
+                    }
+                  },
+                  "method": "post"
+                }
+              ],
+              "relativeUriPathSegments": [
+                "file-content"
+              ]
+            }
+          ],
+          "relativeUriPathSegments": [
+            "{songId}"
+          ],
+          "uriParameters": {
+            "songId": {
+              "type": "string",
+              "required": true,
+              "displayName": "songId"
+            }
+          }
+        }
+      ],
+      "relativeUriPathSegments": [
+        "songs"
+      ]
+    },
+    {
+      "description": "Collection of available artists in Jukebox.",
+      "type": {
+        "collection": {
+          "exampleCollection": "::fileRef::../samples/jukebox-include-artists.sample",
+          "exampleItem": "::fileRef::../samples/jukebox-include-artist-new.sample"
+        }
+      },
+      "relativeUri": "/artists",
+      "methods": [
+        {
+          "queryParameters": {
+            "offset": {
+              "description": "Skip over a number of elements by specifying an offset value for the query",
+              "type": "integer",
+              "required": false,
+              "example": 20,
+              "default": 0,
+              "displayName": "offset"
+            },
+            "limit": {
+              "description": "Limit the number of elements on the response",
+              "type": "integer",
+              "required": false,
+              "example": 80,
+              "default": 10,
+              "displayName": "limit"
+            },
+            "orderBy": {
+              "description": "Order by field: artistName, nationality\n",
+              "type": "string",
+              "required": false,
+              "displayName": "orderBy"
+            },
+            "order": {
+              "description": "Order",
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "default": "desc",
+              "required": false,
+              "displayName": "order",
+              "type": "string"
+            },
+            "query": {
+              "description": "JSON array [{\"field1\",\"value1\",\"operator1\"},{\"field2\",\"value2\",\"operator2\"},...,{\"fieldN\",\"valueN\",\"operatorN\"}] with valid searchable fields: countryCode\n",
+              "example": "[\"countryCode\", \"FRA\", \"equals\"]\n",
+              "displayName": "query",
+              "type": "string"
+            }
+          },
+          "description": "Get a list of artists.",
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "::fileRef::../samples/jukebox-include-artists.sample\n"
+                }
+              }
+            }
+          },
+          "is": [
+            {
+              "searchable": {
+                "description": "with valid searchable fields: countryCode",
+                "example": "[\"countryCode\", \"FRA\", \"equals\"]"
+              }
+            },
+            {
+              "orderable": {
+                "fieldsList": "artistName, nationality"
+              }
+            },
+            "pageable"
+          ],
+          "protocols": [
+            "HTTP"
+          ],
+          "method": "get"
+        },
+        {
+          "description": "Add a new artist to Jukebox.\n",
+          "queryParameters": {
+            "access_token": {
+              "description": "The access token provided by the authentication application",
+              "example": "AABBCCDD",
+              "required": true,
+              "type": "string",
+              "displayName": "access_token"
+            }
+          },
+          "body": {
+            "application/json": {
+              "schema": "::fileRef::../samples/jukebox-include-artist.schema",
+              "example": "::fileRef::../samples/jukebox-include-artist-new.sample\n"
+            }
+          },
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "{ \"message\": \"The artist has been properly entered\" }\n"
+                }
+              }
+            }
+          },
+          "protocols": [
+            "HTTP"
+          ],
+          "method": "post"
+        }
+      ],
+      "resources": [
+        {
+          "description": "Entity representing a artist",
+          "type": {
+            "collection-item": {
+              "exampleItem": "::fileRef::../samples/jukebox-include-artist-retrieve.sample"
+            }
+          },
+          "relativeUri": "/{artistId}",
+          "methods": [
+            {
+              "description": "Get the artist\nwith artistId =\n{artistId}\n",
+              "responses": {
+                "200": {
+                  "body": {
+                    "application/json": {
+                      "example": "::fileRef::../samples/jukebox-include-artist-retrieve.sample\n"
+                    }
+                  }
+                },
+                "404": {
+                  "body": {
+                    "application/json": {
+                      "example": "{\"message\": \"artist not found\" }\n"
+                    }
+                  }
+                }
+              },
+              "method": "get"
+            }
+          ],
+          "resources": [
+            {
+              "description": "Collection of albulms belonging to the artist",
+              "type": {
+                "readOnlyCollection": {
+                  "exampleCollection": "::fileRef::../samples/jukebox-include-artist-albums.sample"
+                }
+              },
+              "relativeUri": "/albums",
+              "methods": [
+                {
+                  "queryParameters": {
+                    "offset": {
+                      "description": "Skip over a number of elements by specifying an offset value for the query",
+                      "type": "integer",
+                      "required": false,
+                      "example": 20,
+                      "default": 0,
+                      "displayName": "offset"
+                    },
+                    "limit": {
+                      "description": "Limit the number of elements on the response",
+                      "type": "integer",
+                      "required": false,
+                      "example": 80,
+                      "default": 10,
+                      "displayName": "limit"
+                    },
+                    "orderBy": {
+                      "description": "Order by field: albumName\n",
+                      "type": "string",
+                      "required": false,
+                      "displayName": "orderBy"
+                    },
+                    "order": {
+                      "description": "Order",
+                      "enum": [
+                        "desc",
+                        "asc"
+                      ],
+                      "default": "desc",
+                      "required": false,
+                      "displayName": "order",
+                      "type": "string"
+                    }
+                  },
+                  "description": "Get a specific artist's albums list",
+                  "responses": {
+                    "200": {
+                      "body": {
+                        "application/json": {
+                          "example": "::fileRef::../samples/jukebox-include-artist-albums.sample\n"
+                        }
+                      }
+                    }
+                  },
+                  "is": [
+                    {
+                      "orderable": {
+                        "fieldsList": "albumName"
+                      }
+                    },
+                    "pageable"
+                  ],
+                  "method": "get"
+                }
+              ],
+              "relativeUriPathSegments": [
+                "albums"
+              ]
+            }
+          ],
+          "relativeUriPathSegments": [
+            "{artistId}"
+          ],
+          "uriParameters": {
+            "artistId": {
+              "type": "string",
+              "required": true,
+              "displayName": "artistId"
+            }
+          }
+        }
+      ],
+      "relativeUriPathSegments": [
+        "artists"
+      ]
+    },
+    {
+      "description": "Collection of available albums in Jukebox.",
+      "type": {
+        "collection": {
+          "exampleCollection": "::fileRef::../samples/jukebox-include-albums.sample",
+          "exampleItem": "::fileRef::../samples/jukebox-include-album-new.sample"
+        }
+      },
+      "relativeUri": "/albums",
+      "methods": [
+        {
+          "queryParameters": {
+            "offset": {
+              "description": "Skip over a number of elements by specifying an offset value for the query",
+              "type": "integer",
+              "required": false,
+              "example": 20,
+              "default": 0,
+              "displayName": "offset"
+            },
+            "limit": {
+              "description": "Limit the number of elements on the response",
+              "type": "integer",
+              "required": false,
+              "example": 80,
+              "default": 10,
+              "displayName": "limit"
+            },
+            "orderBy": {
+              "description": "Order by field: albumName, genre\n",
+              "type": "string",
+              "required": false,
+              "displayName": "orderBy"
+            },
+            "order": {
+              "description": "Order",
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "default": "desc",
+              "required": false,
+              "displayName": "order",
+              "type": "string"
+            },
+            "query": {
+              "description": "JSON array [{\"field1\",\"value1\",\"operator1\"},{\"field2\",\"value2\",\"operator2\"},...,{\"fieldN\",\"valueN\",\"operatorN\"}] with valid searchable fields: genreCode\n",
+              "example": "[\"genreCode\", \"ELE\", \"equals\"]\n",
+              "displayName": "query",
+              "type": "string"
+            }
+          },
+          "description": "Get a list of albums.",
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "::fileRef::../samples/jukebox-include-albums.sample\n"
+                }
+              }
+            }
+          },
+          "is": [
+            {
+              "searchable": {
+                "description": "with valid searchable fields: genreCode",
+                "example": "[\"genreCode\", \"ELE\", \"equals\"]"
+              }
+            },
+            {
+              "orderable": {
+                "fieldsList": "albumName, genre"
+              }
+            },
+            "pageable"
+          ],
+          "protocols": [
+            "HTTP"
+          ],
+          "method": "get"
+        },
+        {
+          "description": "Add a new album to Jukebox.\n",
+          "queryParameters": {
+            "access_token": {
+              "description": "The access token provided by the authentication application",
+              "example": "AABBCCDD",
+              "required": true,
+              "type": "string",
+              "displayName": "access_token"
+            }
+          },
+          "body": {
+            "application/json": {
+              "schema": "::fileRef::../samples/jukebox-include-album.schema",
+              "example": "::fileRef::../samples/jukebox-include-album-new.sample\n"
+            }
+          },
+          "responses": {
+            "200": {
+              "body": {
+                "application/json": {
+                  "example": "{ \"message\": \"The album has been properly entered\" }\n"
+                }
+              }
+            }
+          },
+          "protocols": [
+            "HTTP"
+          ],
+          "method": "post"
+        }
+      ],
+      "resources": [
+        {
+          "description": "Entity representing a album",
+          "type": {
+            "collection-item": {
+              "exampleItem": "::fileRef::../samples/jukebox-include-album-retrieve.sample"
+            }
+          },
+          "relativeUri": "/{albumId}",
+          "methods": [
+            {
+              "description": "Get the album\nwith albumId =\n{albumId}\n",
+              "responses": {
+                "200": {
+                  "body": {
+                    "application/json": {
+                      "example": "::fileRef::../samples/jukebox-include-album-retrieve.sample\n"
+                    }
+                  }
+                },
+                "404": {
+                  "body": {
+                    "application/json": {
+                      "example": "{\"message\": \"album not found\" }\n"
+                    }
+                  }
+                }
+              },
+              "method": "get"
+            }
+          ],
+          "resources": [
+            {
+              "description": "Collection of available songs in Jukebox.",
+              "type": {
+                "readOnlyCollection": {
+                  "exampleCollection": "::fileRef::../samples/jukebox-include-album-songs.sample"
+                }
+              },
+              "relativeUri": "/songs",
+              "methods": [
+                {
+                  "queryParameters": {
+                    "orderBy": {
+                      "description": "Order by field: songTitle\n",
+                      "type": "string",
+                      "required": false,
+                      "displayName": "orderBy"
+                    },
+                    "order": {
+                      "description": "Order",
+                      "enum": [
+                        "desc",
+                        "asc"
+                      ],
+                      "default": "desc",
+                      "required": false,
+                      "displayName": "order",
+                      "type": "string"
+                    }
+                  },
+                  "description": "Get the list of songs for the album with `albumId = {albumId}`",
+                  "responses": {
+                    "200": {
+                      "body": {
+                        "application/json": {
+                          "example": "::fileRef::../samples/jukebox-include-album-songs.sample\n"
+                        }
+                      }
+                    }
+                  },
+                  "is": [
+                    {
+                      "orderable": {
+                        "fieldsList": "songTitle"
+                      }
+                    }
+                  ],
+                  "method": "get"
+                }
+              ],
+              "relativeUriPathSegments": [
+                "songs"
+              ]
+            }
+          ],
+          "relativeUriPathSegments": [
+            "{albumId}"
+          ],
+          "uriParameters": {
+            "albumId": {
+              "type": "string",
+              "required": true,
+              "displayName": "albumId"
+            }
+          }
+        }
+      ],
+      "relativeUriPathSegments": [
+        "albums"
+      ]
+    }
+  ]
+}

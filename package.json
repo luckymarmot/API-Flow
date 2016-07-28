@@ -11,17 +11,21 @@
     "grape"
   ],
   "version": "0.0.22",
-  "main": "lib/index.js",
+  "main": "lib/api-flow.js",
   "license": "MIT",
   "homepage": "https://github.com/luckymarmot/API-Flow",
   "dependencies": {
+    "argparse": "^1.0.7",
     "babel-plugin-transform-flow-strip-types": "6.3.15",
     "babel-polyfill": "6.3.14",
     "babel-runtime": "6.3.19",
     "immutable": "3.7.6",
+    "js-yaml": "3.5.5",
+    "json-schema-faker": "^0.3.1",
+    "raml-parser": "0.8.16",
+    "request": "^2.72.0",
     "swagger-schema-official": "2.0.0-bab6bed",
-    "tv4": "1.2.7",
-    "js-yaml": "3.5.5"
+    "tv4": "1.2.7"
   },
   "devDependencies": {
     "babel-cli": "6.6.5",
@@ -42,12 +46,18 @@
     "eslint": "1.3.1",
     "eslint-loader": "1.0.0",
     "mocha": "2.3.4",
+    "json-loader": "0.5.4",
     "path": "0.12.7",
     "webpack": "1.12.9"
   },
+  "eslintConfig": "./linting/prod.yaml",
   "scripts": {
-    "compile": "babel --ignore='**/__tests__/' -d lib/ src/",
+    "compile": "./node_modules/babel-cli/bin/babel.js --ignore='**/__tests__/' -d lib/ src/",
+    "compile-node": "TARGET=node ./node_modules/webpack/bin/webpack.js",
+    "compile-web": "TARGET=web ./node_modules/webpack/bin/webpack.js",
+    "compile-worker": "TARGET=webworker ./node_modules/webpack/bin/webpack.js",
     "test": "$npm_package_options_mocha \"src/**/__tests__/*-test.js\"",
+    "validate": "node validate.js",
     "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
   },
   "options": {

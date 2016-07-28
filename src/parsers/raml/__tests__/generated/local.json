@@ -1,0 +1,9 @@
+{
+  "title": "MyApi",
+  "documentation": [
+    {
+      "title": "Getting Started",
+      "content": "# Getting Started\n\nThis is a getting started guide."
+    }
+  ]
+}

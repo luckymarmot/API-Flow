@@ -1,6 +1,9 @@
 node_modules/
 src/
+build/
+bin/
 linting/
+.git/
 .babelrc
 .eslintignore
 .gitignore
@@ -8,4 +11,3 @@ linting/
 .npmignore
 Makefile
 webpack.config.babel.js
-
