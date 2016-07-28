@@ -11,12 +11,18 @@ export default class SwaggerImporter extends BaseImporter {
     static fileExtensions = [];
     static inputs = [];
 
+    constructor() {
+        super()
+        this.ENVIRONMENT_DOMAIN_NAME = 'Swagger Environments'
+    }
+
     canImport(context, items) {
         let sum = 0
         for (let item of items) {
             sum += ::this._canImportItem(context, item)
         }
-        return items.length > 0 ? sum / items.length : 0
+        let score = items.length > 0 ? sum / items.length : 0
+        return score
     }
 
     _canImportItem(context, item) {

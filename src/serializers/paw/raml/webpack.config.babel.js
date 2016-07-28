@@ -15,7 +15,8 @@ const config = {
     output: {
         path: path.join(
             __dirname,
-            './build/com.luckymarmot.PawExtensions.RAMLImporter'
+            '../../../../',
+            './build/raml/com.luckymarmot.PawExtensions.RAMLImporter'
         ),
         pathInfo: true,
         publicPath: '/build/',

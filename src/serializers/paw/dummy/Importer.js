@@ -15,6 +15,7 @@ import URL from '../../../models/URL'
 import Group from '../../../models/Group'
 import Request from '../../../models/Request'
 
+import LateResolutionReference from '../../../models/references/LateResolution'
 import JSONSchemaReference from '../../../models/references/JSONSchema'
 import ReferenceContainer from '../../../models/references/Container'
 import ReferenceCache from '../../../models/references/Cache'
@@ -37,7 +38,8 @@ export default class DummyImporter extends BaseImporter {
         for (let item of items) {
             sum += ::this._canImportItem(context, item)
         }
-        return items.length > 0 ? sum / items.length : 0
+        let score = items.length > 0 ? sum / items.length : 0
+        return score
     }
 
     _canImportItem(context, item) {
@@ -60,15 +62,21 @@ export default class DummyImporter extends BaseImporter {
                 name: 'API-Flow Validation'
             })
         })
+
+        /*
         api = this._addEmptyGroupTest(api)
         api = this._addUnnamedGroupTest(api)
         api = this._addSimpleGroupTest(api)
         api = this._addNestedGroupTest(api)
+
         api = this._addMethodTest(api)
         api = this._addURLTest(api)
         api = this._addParameterTest(api)
         api = this._addBodiesTest(api)
         api = this._addAuthTest(api)
+        */
+
+        api = this._addReferenceTest(api)
 
         /*
         let currentReqContext = new Context({
@@ -232,7 +240,7 @@ export default class DummyImporter extends BaseImporter {
 
     _generateSimpleRequests(count) {
         let map = {}
-        for (let i = count; i > 0 ; i--) {
+        for (let i = count; i > 0; i -= 1) {
             let id = this._uuid()
             map[id] = this._generateSimpleRequest()
         }
@@ -306,7 +314,7 @@ export default class DummyImporter extends BaseImporter {
                 }))
                 .set(childGroupId_3, new Group({
                     id: childGroupId_3,
-                    name: 'Empty Child Group',
+                    name: 'Empty Child Group'
                 }))
         })
         return api.setIn([ 'group', 'children', nestedGroupId ], nestedGroup)
@@ -494,7 +502,8 @@ export default class DummyImporter extends BaseImporter {
                 simpleQuery: queryURLReq,
                 hashAndQuery: hashAndQueryURLReq,
                 mild: mildURLReq,
-                complex: complexURLReq
+                complex: complexURLReq,
+                seq: sequenceParamReq
             })
         })
 
@@ -888,19 +897,19 @@ export default class DummyImporter extends BaseImporter {
         let map = {
             simple: new Group({
                 name: 'Text Body Requests',
-                children: SimpleBodyReqs,
+                children: SimpleBodyReqs
             }),
             json: new Group({
                 name: 'JSON Body Requests',
-                children: JSONReqs,
+                children: JSONReqs
             }),
             encoded: new Group({
                 name: 'URLencoded Body Requests',
-                children: UrlEncodedReqs,
+                children: UrlEncodedReqs
             }),
             multipart: new Group({
                 name: 'Multipart Body Requests',
-                children: MultipartReqs,
+                children: MultipartReqs
             })
         }
 
@@ -1484,8 +1493,6 @@ export default class DummyImporter extends BaseImporter {
             ])
         })
 
-
-
         let authGroup = new Group({
             id: authGroupId,
             name: 'Auths Group',
@@ -1493,6 +1500,167 @@ export default class DummyImporter extends BaseImporter {
         })
 
         return api.setIn([ 'group', 'children', authGroupId ], authGroup)
+    }
+
+    _addReferenceTest(api) {
+        let references = this._addReferences()
+        let requests = this._addReferenceReqs()
+
+        let refGroupId = this._uuid()
+        let refGroup = new Group({
+            id: refGroupId,
+            name: 'References Group',
+            children: requests
+        })
+
+        return api.set('references', references)
+            .setIn([ 'group', 'children', refGroupId ], refGroup)
+    }
+
+    _addReferences() {
+        return new Immutable.OrderedMap({
+            dummy: new ReferenceContainer({
+                name: 'dummy',
+                cache: new Immutable.OrderedMap({
+                    '#/dummy/userId': new ReferenceCache({
+                        cached: new JSONSchemaReference({
+                            uri: '#/dummy/userId',
+                            relative: '#/dummy/userId',
+                            resolved: true,
+                            value: {
+                                type: 'integer',
+                                minimum: 10,
+                                maximum: 500
+                            }
+                        })
+                    }),
+                    '#/dummy/songId': new ReferenceCache({
+                        cached: new JSONSchemaReference({
+                            uri: '#/dummy/songId',
+                            relative: '#/dummy/songId',
+                            resolved: true,
+                            value: {
+                                type: 'integer',
+                                minimum: 0,
+                                maximum: 10000
+                            }
+                        })
+                    }),
+                    '#/dummy/complex': new ReferenceCache({
+                        cached: new JSONSchemaReference({
+                            uri: '#/dummy/complex',
+                            relative: '#/dummy/complex',
+                            resolved: true,
+                            value: {
+                                type: 'object',
+                                properties: {
+                                    userId: {
+                                        $ref: '#/dummy/userId'
+                                    },
+                                    songId: {
+                                        $ref: '#/dummy/songId'
+                                    }
+                                },
+                                required: [ 'userId', 'songId' ]
+                            }
+                        })
+                    }),
+                    '#/x-postman/{{objId}}': new ReferenceCache({
+                        cached: new LateResolutionReference({
+                            uri: '#/x-postman/{{objId}}',
+                            relative: '#/x-postman/{{objId}}',
+                            resolved: true,
+                            value: 22
+                        })
+                    }),
+                    '#/x-postman/catch-{{objId}}': new ReferenceCache({
+                        cached: new LateResolutionReference({
+                            uri: '#/x-postman/catch-{{objId}}',
+                            relative: '#/x-postman/catch-{{objId}}',
+                            resolved: true
+                        })
+                    })
+                })
+            })
+        })
+    }
+
+    _addReferenceReqs() {
+        let map = {}
+
+        map.simpleReq = new Request({
+            name: 'Simple Reference Request',
+            method: 'POST',
+            url: new URL('http://echo.luckymarmot.com/references'),
+            parameters: new ParameterContainer({
+                body: new Immutable.List([
+                    new Parameter({
+                        name: 'Simple Reference',
+                        type: 'reference',
+                        value: new JSONSchemaReference({
+                            uri: '#/dummy/userId',
+                            relative: '#/dummy/userId'
+                        })
+                    })
+                ])
+            })
+        })
+
+        map.simpleDeepReq = new Request({
+            name: 'Simple Deep Reference Request',
+            method: 'POST',
+            url: new URL('http://echo.luckymarmot.com/references'),
+            parameters: new ParameterContainer({
+                body: new Immutable.List([
+                    new Parameter({
+                        name: 'Simple Reference',
+                        type: 'reference',
+                        value: new JSONSchemaReference({
+                            uri: '#/dummy/complex',
+                            relative: '#/dummy/complex'
+                        })
+                    })
+                ])
+            })
+        })
+
+        map.simplePostmanReq = new Request({
+            name: 'Simple Postman Type Reference Request',
+            method: 'POST',
+            url: new URL('http://echo.luckymarmot.com/references'),
+            parameters: new ParameterContainer({
+                body: new Immutable.List([
+                    new Parameter({
+                        name: 'Simple Reference',
+                        type: 'reference',
+                        value: new LateResolutionReference({
+                            uri: '#/x-postman/{{objId}}',
+                            relative: '#/x-postman/{{objId}}'
+                        })
+                    })
+                ])
+            })
+        })
+
+        map.simpleDeepPostmanReq = new Request({
+            name: 'Simple Deep Postman Type Reference Request',
+            method: 'POST',
+            url: new URL('http://echo.luckymarmot.com/references'),
+            parameters: new ParameterContainer({
+                body: new Immutable.List([
+                    new Parameter({
+                        name: 'Simple Reference',
+                        type: 'reference',
+                        value: new LateResolutionReference({
+                            uri: '#/x-postman/catch-{{objId}}',
+                            relative: '#/x-postman/catch-{{objId}}'
+                        })
+                    })
+                ])
+            })
+        })
+
+        return new Immutable.OrderedMap(map)
     }
 
     import(context, items, options) {

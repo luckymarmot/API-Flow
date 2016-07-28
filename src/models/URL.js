@@ -210,7 +210,10 @@ export default class URL extends Immutable.Record({
         else if (typeof param === 'undefined' || param === null) {
             return new Parameter({
                 key: name,
-                type: 'string'
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ '' ])
+                ])
             })
         }
         else if (
@@ -231,7 +234,9 @@ export default class URL extends Immutable.Record({
                 type: 'string',
                 internals: param ? new Immutable.List([
                     new Constraint.Enum([ param ])
-                ]) : new Immutable.List()
+                ]) : new Immutable.List([
+                    new Constraint.Enum([ '' ])
+                ])
             })
         }
     }

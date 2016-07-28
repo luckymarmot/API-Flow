@@ -389,7 +389,10 @@ export default class CurlParser {
                 container = container.set('queries', queries)
                 url = url.set('search', new Parameter({
                     key: 'search',
-                    type: 'string'
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ '' ])
+                    ])
                 }))
             }
 
@@ -505,7 +508,10 @@ export default class CurlParser {
             }
             _url = _url.set('username', new Parameter({
                 key: 'username',
-                type: 'string'
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ '' ])
+                ])
             }))
         }
 
@@ -516,7 +522,10 @@ export default class CurlParser {
             }
             _url = _url.set('password', new Parameter({
                 key: 'password',
-                type: 'string'
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ '' ])
+                ])
             }))
         }
 

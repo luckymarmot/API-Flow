@@ -2656,6 +2656,11 @@ export class TestCurlSerializer extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('validate')
+    _testValidate() {
+        // TODO
+    }
+
     //
     // helpers
     //

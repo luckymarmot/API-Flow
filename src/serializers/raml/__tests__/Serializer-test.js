@@ -1809,6 +1809,11 @@ export class TestRAMLSerializer extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('validate')
+    _testValidate() {
+        // TODO
+    }
+
     __init() {
         let serializer = new RAMLSerializer()
         return new ClassMock(serializer, '')

@@ -15,7 +15,7 @@ export default class PostmanSerializer extends BaseSerializer {
             let postman = JSON.parse(text)
             if (
                 postman.collections.length === 0 &&
-                swagger.environments.length === 0
+                postman.environments.length === 0
             ) {
                 return 'generated file of poor quality'
             }

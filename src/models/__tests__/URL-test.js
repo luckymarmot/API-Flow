@@ -97,10 +97,13 @@ export class TestURL extends UnitTest {
         const url = new URL()
         const result = url._formatParam('parameter', param)
 
-        this.assertEqual(result, new Parameter({
+        this.assertJSONEqual(result, new Parameter({
             key: 'parameter',
             value: null,
-            type: 'string'
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum([ '' ])
+            ])
         }))
     }
 

@@ -452,20 +452,13 @@ export default class SwaggerFixtures {
                         new Parameter({
                             name: 'body',
                             value: new JSONSchemaReference({
-                                uri: '',
-                                relative: '',
+                                uri: '#/definitions/Pet',
+                                relative: '#/definitions/Pet',
                                 resolved: true,
-                                value: {
-                                    $ref: new JSONSchemaReference({
-                                        uri: '#/definitions/Pet'
-                                    })
-                                },
-                                dependencies: new Immutable.List([
-                                    new JSONSchemaReference({
-                                        uri: '#/definitions/Pet',
-                                        relative: '#/definitions/Pet'
-                                    })
-                                ])
+                                value: null,
+                                raw: {
+                                    $ref: '#/definitions/Pet'
+                                }
                             }),
                             type: 'reference',
                             description: 'Pet object'

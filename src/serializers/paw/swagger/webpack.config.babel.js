@@ -15,7 +15,8 @@ const config = {
     output: {
         path: path.join(
             __dirname,
-            './build/com.luckymarmot.PawExtensions.SwaggerImporter'
+            '../../../../',
+            './build/swagger/com.luckymarmot.PawExtensions.SwaggerImporter'
         ),
         pathInfo: true,
         publicPath: '/build/',

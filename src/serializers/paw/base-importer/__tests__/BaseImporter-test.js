@@ -137,42 +137,6 @@ export class TestBaseImporter extends UnitTest {
     }
 
     @targets('_toDynamicString')
-    testToDynamicStringWithReference() {
-        const importer = new ClassMock(new BaseImporter(), '')
-        const input = new JSONSchemaReference({
-            uri: '#/definitions/User',
-            relative: '#/definitions/Relative',
-            value: { type: 'string' },
-            resolved: true
-        })
-
-        const expected = new DynamicString(
-            new DynamicValue(
-                'com.luckymarmot.EnvironmentVariableDynamicValue',
-                {
-                    environmentVariable: 12
-                }
-            )
-        )
-
-        importer.spyOn('_castReferenceToDynamicString', () => {
-            return expected
-        })
-
-        let result = importer._toDynamicString(input, true)
-        this.assertTrue(result instanceof DynamicString)
-        this.assertEqual(result.components.length, 1)
-        this.assertEqual(
-            result.components[0].environmentVariable,
-            expected.components[0].environmentVariable
-        )
-        this.assertEqual(
-            result.components[0].type,
-            expected.components[0].type
-        )
-    }
-
-    @targets('_toDynamicString')
     testToDynamicStringWithParameter() {
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
@@ -543,7 +507,7 @@ export class TestBaseImporter extends UnitTest {
         this.assertTrue(contextMock.spy.createRequest.count === 1)
         this.assertEqual(
             contextMock.spy.createRequest.calls[0].slice(0, 2),
-            [ null, null ]
+            [ null, 'GET' ]
         )
         this.assertJSONEqual(
             contextMock.spy.createRequest.calls[0][2].components[0],
@@ -635,7 +599,7 @@ export class TestBaseImporter extends UnitTest {
 
         this.assertEqual(
             contextMock.spy.createRequest.calls[0],
-            [ null, null, 'dummyValue' ]
+            [ null, 'GET', 'dummyValue' ]
         )
     }
 
@@ -1625,7 +1589,7 @@ export class TestBaseImporter extends UnitTest {
         const result = importer._generateUrl(url)
 
         this.assertJSONEqual(
-            [ 'http', ':', '//', 'fakeurl.com', '/fake/path' ],
+            [ 'http', ':', '//', 'fakeurl.com', '/fake/path', '' ],
             result.components
         )
     }
@@ -1702,7 +1666,7 @@ export class TestBaseImporter extends UnitTest {
             'http', ':', '//', 'fakeurl.com', '/fake/path',
             // '?', <- we don't have enough control to mock appendString of
             // any DynamicString, only the ones we provide can be mocked
-            'test', '=', 'new'
+            'test', '=', 'new', ''
         )
 
         this.assertJSONEqual(expected.components, result.components)
@@ -1796,7 +1760,7 @@ export class TestBaseImporter extends UnitTest {
             'http', ':', '//', 'fakeurl.com', '/fake/path',
             // '?', <- we don't have enough control to mock appendString of
             // any DynamicString, only the ones we provide can be mocked
-            'test', '=', 'new', '&', 'api-key', '=', '123123123'
+            'test', '=', 'new', '&', 'api-key', '=', '123123123', ''
         )
 
         this.assertEqual(expected.components, result.components)
@@ -2271,9 +2235,9 @@ export class TestBaseImporter extends UnitTest {
         let expected = new DynamicValue(
             'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
             {
-                schema: {
+                schema: JSON.stringify({
                     $ref: '#/references/User'
-                }
+                })
             }
         )
         let result = importer._setJSONSchemaReference(schemaref)
@@ -2339,12 +2303,12 @@ export class TestBaseImporter extends UnitTest {
             'com.luckymarmot.PawExtensions' +
             '.JSONSchemaFakerDynamicValue',
             {
-                schema: {
+                schema: JSON.stringify({
                     type: 'string',
                     enum: [ 'new', 'old' ],
                     'x-title': 'ignored',
                     default: 'new'
-                }
+                })
             }
         ))
 
@@ -2392,11 +2356,11 @@ export class TestBaseImporter extends UnitTest {
                 'com.luckymarmot.PawExtensions' +
                 '.JSONSchemaFakerDynamicValue',
                 {
-                    schema: {
+                    schema: JSON.stringify({
                         type: 'string',
                         enum: [ 'v0.8', 'v1' ],
                         'x-title': 'version'
-                    }
+                    })
                 }
             ),
             '.luckymarmot.',
@@ -2404,11 +2368,11 @@ export class TestBaseImporter extends UnitTest {
                 'com.luckymarmot.PawExtensions' +
                 '.JSONSchemaFakerDynamicValue',
                 {
-                    schema: {
+                    schema: JSON.stringify({
                         type: 'string',
                         enum: [ 'com', 'co.uk', 'io' ],
                         'x-title': 'extension'
-                    }
+                    })
                 }
             ),
         )
@@ -2460,7 +2424,14 @@ export class TestBaseImporter extends UnitTest {
     }
 
     @targets('serialize')
-    _testSerialize() {}
+    _testSerialize() {
+        // TODO
+    }
+
+    @targets('_setLateResolutionReference')
+    _testSetLateResolutionReference() {
+        // TODO
+    }
     //
     // helpers
     //

@@ -1875,6 +1875,12 @@ export class TestSwaggerSerializer extends UnitTest {
         this.assertEqual(expected, result)
         this.assertEqual(parser.spy._replaceRefs.count, 5)
     }
+
+    @targets('validate')
+    _testValidate() {
+        // TODO
+    }
+
     //
     // helpers
     //

@@ -34,7 +34,6 @@ export default class PostmanParser {
         catch (e) {
             throw new Error('Invalid Postman file (not a valid JSON)')
         }
-
         /* .postman_dump */
         if (obj.collections || obj.environments) {
             if (obj.collections) {
@@ -59,7 +58,6 @@ export default class PostmanParser {
         else {
             throw new Error('Invalid Postman file (missing required keys)')
         }
-
         this.context = ::this._createContext(environments, collections)
         return this.context
     }
@@ -71,7 +69,6 @@ export default class PostmanParser {
             let env = this._importEnvironment(_env)
             envs = envs.set(env.get('id'), env)
         })
-
         let baseGroup = collections.reduce(
             (rootGroup, collection) => {
                 let group = this._importCollection(collection)
@@ -95,7 +92,6 @@ export default class PostmanParser {
             references: envs,
             group: baseGroup
         })
-
         return context
     }
 

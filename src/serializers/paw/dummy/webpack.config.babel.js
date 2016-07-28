@@ -1,6 +1,6 @@
 import path from 'path'
 
-const name = 'cURLImporter'
+const name = 'DummyImporter'
 
 const production = process.env.NODE_ENV === 'production' // eslint-disable-line
 
@@ -16,7 +16,7 @@ const config = {
         path: path.join(
             __dirname,
             '../../../../',
-            './build/cURL/com.luckymarmot.PawExtensions.cURLImporter'
+            './build/dummy/com.luckymarmot.PawExtensions.DummyImporter'
         ),
         pathInfo: true,
         publicPath: '/build/',

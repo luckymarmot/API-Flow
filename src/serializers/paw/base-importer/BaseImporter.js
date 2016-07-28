@@ -4,6 +4,7 @@ import Context, {
 
 import Request from '../../../models/Request'
 
+import LateResolutionReference from '../../../models/references/LateResolution'
 import JSONSchemaReference from '../../../models/references/JSONSchema'
 import Reference from '../../../models/references/Reference'
 
@@ -135,12 +136,12 @@ export default class BaseImporter {
             }
             catch (e) {
                 /* eslint-disable no-console */
-                console.error('got error', e.stack)
+                console.error('got error', JSON.stringify(e), e.stack)
                 /* eslint-enable no-console */
             }
         }).catch(error => {
             /* eslint-disable no-console */
-            console.error('got error', error.stack)
+            console.error('got error', JSON.stringify(error), error.stack)
             /* eslint-enable no-console */
         })
     }
@@ -236,6 +237,9 @@ export default class BaseImporter {
         if (reference instanceof JSONSchemaReference) {
             return this._setJSONSchemaReference(reference)
         }
+        else if (reference instanceof LateResolutionReference) {
+            return this._setLateResolutionReference(reference)
+        }
         else if (reference.get('value') === null) {
             return this._setExoticReference(reference)
         }
@@ -252,6 +256,14 @@ export default class BaseImporter {
             }
         )
         return dv
+    }
+
+    _setLateResolutionReference(reference) {
+        let value = reference.get('value').slice(12)
+        if (value === 'null' || value.match('#/x-postman/')) {
+            value = ''
+        }
+        return value
     }
 
     _setExoticReference(reference) {
@@ -641,6 +653,7 @@ export default class BaseImporter {
 
     _setBody(pawReq, contentType, container) {
         let body = container.get('body')
+
         const bodyRules = {
             'multipart/form-data':
                 ::this._setFormDataBody,
@@ -655,6 +668,9 @@ export default class BaseImporter {
         const rule = bodyRules[contentType]
         if (rule) {
             _pawReq = rule(pawReq, body)
+        }
+        else if (body.size > 1) {
+            _pawReq = this._setUrlEncodedBody(pawReq, body)
         }
         else {
             this._setPlainBody(pawReq, body)
@@ -745,12 +761,14 @@ export default class BaseImporter {
         let param = body.get(0)
         let content = this._toDynamicString(param, true)
 
+        let component = content.getComponentAtIndex(0)
+
         if (
             content.length === 1 &&
-            typeof content.getComponentAtIndex(0) === 'string'
+            typeof component === 'string'
         ) {
             try {
-                pawReq.jsonBody = JSON.parse(content.getComponentAtIndex(0))
+                pawReq.jsonBody = JSON.parse(component)
             }
             catch (e) {
                 /* eslint-disable no-console */
@@ -760,9 +778,6 @@ export default class BaseImporter {
                 /* eslint-enable no-console */
                 pawReq.body = content
             }
-        }
-        else if (content.length === 1) {
-            pawReq.jsonBody = content
         }
         else {
             pawReq.body = content
@@ -780,15 +795,17 @@ export default class BaseImporter {
         }
 
         let envComponents = []
-        if (string instanceof Reference) {
-            envComponents = this._castReferenceToDynamicString(
-                string
-            ).components
-        }
-        else if (string instanceof Parameter) {
-            envComponents = this._castParameterToDynamicString(
-                string
-            ).components
+        if (string instanceof Parameter) {
+            if (string.get('type') === 'reference') {
+                envComponents = this._castReferenceToDynamicString(
+                    string.get('value')
+                ).components
+            }
+            else {
+                envComponents = this._castParameterToDynamicString(
+                    string
+                ).components
+            }
         }
         else if (typeof string === 'string') {
             envComponents.push(string)
@@ -813,7 +830,6 @@ export default class BaseImporter {
                 }
             }
         }
-
 
         return new DynamicString(...components)
     }
@@ -849,7 +865,7 @@ export default class BaseImporter {
     }
 
     _castReferenceToDynamicString(reference) {
-        let dv = this._extractReferenceComponent(reference.get('relative'))
+        let dv = this._extractReferenceComponent(reference)
         return new DynamicString(dv)
     }
 
@@ -880,7 +896,11 @@ export default class BaseImporter {
             }
         }
         else if (schema.enum && schema.enum.length === 1) {
-            components.push(param.generate(false, schema))
+            let generated = param.generate(false, schema)
+            if (generated === null) {
+                generated = ''
+            }
+            components.push(generated)
         }
         else {
             let dv = new DynamicValue(
@@ -902,6 +922,10 @@ export default class BaseImporter {
         }
 
         if (component instanceof Reference) {
+            if (!component.get('relative')) {
+                return this._setReference(component)
+            }
+
             let envVariable = this._getEnvironmentVariable(
                 component.get('relative')
             )

@@ -15,12 +15,17 @@ for line in "${exporters[@]}"; do
         echo "building $line importer";
         if [ -f "./src/serializers/paw/$line/webpack.config.babel.js" ]
         then
-            rm -rf "./src/serializers/paw/$line/build/";
-            BUILD_ENV=build ./node_modules/.bin/webpack --bail --display-error-details --config="./src/serializers/paw/$line/webpack.config.babel.js";
-            cd "./src/serializers/paw/$line/build";
-            identifier=$(ls .);
-            package=$(ls "./$identifier" | sed s/.js$/.zip/);
-            zip -r "$package" "$identifier/";
+            ls ./src/serializers/paw/$line
+            rm -rf "./build/$line/";
+            ./node_modules/webpack/bin/webpack.js --bail --display-error-details --config="./src/serializers/paw/$line/webpack.config.babel.js";
+            cd "./build/$line";
+            files=./*
+            for file in $files
+            do
+                echo "working on folder -> $file"
+                package=$(ls "./$file" | sed s/.js$/.zip/);
+                zip -r "$package" "$file/";
+            done;
             cd $base;
         fi;
     fi;

@@ -350,7 +350,10 @@ export default class PostmanParser {
         let value
         let internals = new Immutable.List()
 
-        if (typeof _value === 'string') {
+        if (_value === null) {
+            value = null
+        }
+        else if (typeof _value === 'string') {
             value = this._referenceEnvironmentVariable(
                 _value
             )
@@ -415,12 +418,12 @@ export default class PostmanParser {
         let type = auth.type || null
 
         let typeMap = {
-            awsv4: this._extractAWSS4Auth,
-            basic: this._extractBasicAuth,
-            digest: this._extractDigestAuth,
-            hawk: this._extractHawkAuth,
-            oauth1: this._extractOAuth1,
-            oauth2: this._extractOAuth2
+            awsv4: ::this._extractAWSS4Auth,
+            basic: ::this._extractBasicAuth,
+            digest: ::this._extractDigestAuth,
+            hawk: ::this._extractHawkAuth,
+            oauth1: ::this._extractOAuth1,
+            oauth2: ::this._extractOAuth2
         }
 
         if (typeMap[type]) {

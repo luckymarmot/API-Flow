@@ -15,7 +15,8 @@ const config = {
     output: {
         path: path.join(
             __dirname,
-            './build/com.luckymarmot.PawExtensions.PostmanImporter'
+            '../../../../',
+            './build/postman/com.luckymarmot.PawExtensions.PostmanImporter'
         ),
         pathInfo: true,
         publicPath: '/build/',

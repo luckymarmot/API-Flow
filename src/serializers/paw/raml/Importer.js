@@ -9,6 +9,11 @@ export default class RAMLImporter extends BaseImporter {
     static fileExtensions = [];
     static inputs = [];
 
+    constructor() {
+        super()
+        this.ENVIRONMENT_DOMAIN_NAME = 'RAML Environments'
+    }
+
     canImport(context, items) {
         let hasRootFile = 0
         for (let item of items) {

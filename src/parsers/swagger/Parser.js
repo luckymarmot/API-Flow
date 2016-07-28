@@ -704,10 +704,10 @@ export default class SwaggerParser {
 
         if (param.schema) {
             let currentURI = this.item.getPath()
-            let uri = (new URL(param.$ref, currentURI)).href()
+            let uri = (new URL(param.schema.$ref, currentURI)).href()
             value = new JSONSchemaReference({
                 uri: uri,
-                relative: uri
+                relative: param.schema.$ref || ''
             }).resolve(param.schema)
             type = 'reference'
             _key = null

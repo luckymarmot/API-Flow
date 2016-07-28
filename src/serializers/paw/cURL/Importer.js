@@ -12,6 +12,7 @@ export default class CurlImporter extends BaseImporter {
 
     constructor() {
         super()
+        this.ENVIRONMENT_DOMAIN_NAME = 'CURL Environments'
     }
 
     canImport(context, items) {
@@ -19,7 +20,8 @@ export default class CurlImporter extends BaseImporter {
         for (let item of items) {
             sum += ::this._canImportItem(context, item)
         }
-        return items.length > 0 ? sum / items.length : 0
+        let score = items.length > 0 ? sum / items.length : 0
+        return score
     }
 
     _canImportItem(context, item) {

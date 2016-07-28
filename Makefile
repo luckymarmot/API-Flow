@@ -19,6 +19,9 @@ build-worker:
 
 build-node: clean
 	npm run compile
+	rm -rf ./dist/node/
+	mkdir -p ./dist/node/
+	zip -r ./dist/node/api-flow.zip ./lib/*
 
 clean:
 	rm -Rf ./lib/

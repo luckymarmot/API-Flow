@@ -14,7 +14,7 @@ const config = {
     ],
     output: {
         path: path.join(__dirname,
-            './build/' + target + '/'
+            './dist/' + target + '/'
         ),
         pathInfo: true,
         publicPath: '/build/' + target + '/',
