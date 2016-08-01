@@ -204,13 +204,15 @@ export default class PostmanParser {
         else {
             let kvList = params.match(/([^\s,]*="[^"]*")|([^\s,]*='[^']*')/g)
             kvList.forEach((kv) => {
-                let [ key, value ] = kv
+                let kvMatch = kv
                     .match(/([^=]*)=["'](.*)["']/)
-                    .slice(1, 3)
-                if (digestMap[key]) {
-                    auth = auth.set(key,
-                        this._referenceEnvironmentVariable(value)
-                    )
+                if (kvMatch) {
+                    let [ key, value ] = kvMatch.slice(1, 3)
+                    if (digestMap[key]) {
+                        auth = auth.set(key,
+                            this._referenceEnvironmentVariable(value)
+                        )
+                    }
                 }
             })
 
