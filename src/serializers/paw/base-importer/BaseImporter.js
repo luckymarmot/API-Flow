@@ -860,9 +860,28 @@ export default class BaseImporter {
             if (typeof component !== 'string') {
                 components.push(component)
             }
-            else {
+            else {// if (component.length < 10000) {
                 // split around special characters
                 const re = /([^\x00-\x1f]+)|([\x00-\x1f]+)/gm
+                let splits = component.match(re)
+                if (splits.length > 0 && splits.length < 50) {
+                    let isRegular = /([^\x00-\x1f]+)/.test(splits[0])
+                    splits.forEach(split => {
+                        if (isRegular) {
+                            components.push(split)
+                        }
+                        else {
+                            components.push(
+                                this._escapeSequenceDynamicValue(split)
+                            )
+                        }
+                        isRegular = !isRegular
+                    })
+                }
+                else {
+                    components.push(component)
+                }
+                /*
                 let m
                 while ((m = re.exec(component)) !== null) {
                     if (m[1]) {
@@ -872,7 +891,13 @@ export default class BaseImporter {
                         components.push(this._escapeSequenceDynamicValue(m[2]))
                     }
                 }
+                */
             }
+            /*
+            else {
+                components.push(component)
+            }
+            */
         }
 
         return new DynamicString(...components)
@@ -892,13 +917,16 @@ export default class BaseImporter {
             '\r': '\\r',
             '\t': '\\t'
         }
-        let escapeSequence = ''
+
+        let sequence = []
         for (let char of seq) {
-            escapeSequence += escapedChars[char] ?
-                escapedChars[char] :
-                '\\x' + this._convertCharToHex(char)
+            sequence.push(
+                escapedChars[char] ?
+                    escapedChars[char] :
+                    '\\x' + this._convertCharToHex(char)
+            )
         }
-        return escapeSequence
+        return sequence.join('')
     }
 
     _escapeSequenceDynamicValue(seq) {
