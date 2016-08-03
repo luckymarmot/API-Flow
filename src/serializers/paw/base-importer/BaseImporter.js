@@ -136,12 +136,12 @@ export default class BaseImporter {
             }
             catch (e) {
                 /* eslint-disable no-console */
-                console.error('got error', JSON.stringify(e), e.stack)
+                console.error('got error', e, JSON.stringify(e), e.stack)
                 /* eslint-enable no-console */
             }
         }).catch(error => {
             /* eslint-disable no-console */
-            console.error('got error', JSON.stringify(error), error.stack)
+            console.error('caught error', error, JSON.stringify(error), error.stack)
             /* eslint-enable no-console */
         })
     }
@@ -225,8 +225,14 @@ export default class BaseImporter {
             for (let uri of uris) {
                 let reference = container.resolve(uri)
                 let content = this._setReference(reference)
-                variablesDict[reference.get('relative')] =
-                    new DynamicString(content)
+                let ds
+                if (content instanceof DynamicString) {
+                    ds = content
+                }
+                else {
+                    ds = new DynamicString(content || '')
+                }
+                variablesDict[reference.get('relative')] = ds
             }
 
             pawEnv.setVariablesValues(variablesDict)
@@ -259,11 +265,49 @@ export default class BaseImporter {
     }
 
     _setLateResolutionReference(reference) {
-        let value = reference.get('value').slice(12)
-        if (value === 'null' || value.match('#/x-postman/')) {
-            value = ''
+
+        let ref = (reference.get('relative') || reference.get('uri') || '')
+            .slice(12)
+        let match = ref.match(/({{[^{}]*}})/g)
+        if (match) {
+            // self reference with null value should return null
+            if (ref === match[0]) {
+                return ''
+            }
+
+            let dvs = match.map(group => {
+                let envVariable = this._getEnvironmentVariable(
+                    '#/x-postman/' + group
+                )
+                return new DynamicValue(
+                    'com.luckymarmot.EnvironmentVariableDynamicValue',
+                    {
+                        environmentVariable: envVariable.id
+                    }
+                )
+            })
+            let strings = ref.split(/{{[^{}]*}}/)
+                .map(seq => {
+                    return this._unescapeURIFragment(seq)
+                })
+            let min = Math.min(strings.length, dvs.length);
+            let components = Array.apply(null, Array(min))
+                .reduce((result, value, index) => {
+                    result.push(strings[index], dvs[index])
+                    return result
+                }, [])
+                .concat((strings.length > min ? strings : dvs).slice(min))
+
+            return new DynamicString(...components)
         }
-        return value
+        else {
+            let value = reference.get('value')
+            return value || ''
+        }
+    }
+
+    _unescapeURIFragment(uriFragment) {
+        return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
     }
 
     _setExoticReference(reference) {
@@ -866,6 +910,9 @@ export default class BaseImporter {
 
     _castReferenceToDynamicString(reference) {
         let dv = this._extractReferenceComponent(reference)
+        if (dv instanceof DynamicString) {
+            return dv
+        }
         return new DynamicString(dv)
     }
 
