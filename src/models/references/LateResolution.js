@@ -31,6 +31,7 @@ export default class LateResolutionReference extends Reference {
             match = ref.match(/{{[^{}]*}}/)
         }
 
+        // slice(12) because we slice out '#/x-postman/' from the ref
         if (ref.slice(12) === 'null') {
             return this.set('value', null)
         }

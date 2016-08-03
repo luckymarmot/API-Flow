@@ -270,6 +270,7 @@ export default class BaseImporter {
     }
 
     _setLateResolutionReference(reference) {
+        // slice(12) because we slice out '#/x-postman/' from the uri
         let ref = (reference.get('relative') || reference.get('uri') || '')
             .slice(12)
         let match = ref.match(/({{[^{}]*}})/g)
