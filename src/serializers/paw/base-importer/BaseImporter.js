@@ -141,7 +141,12 @@ export default class BaseImporter {
             }
         }).catch(error => {
             /* eslint-disable no-console */
-            console.error('caught error', error, JSON.stringify(error), error.stack)
+            console.error(
+                'caught error',
+                error,
+                JSON.stringify(error),
+                error.stack
+            )
             /* eslint-enable no-console */
         })
     }
@@ -265,7 +270,6 @@ export default class BaseImporter {
     }
 
     _setLateResolutionReference(reference) {
-
         let ref = (reference.get('relative') || reference.get('uri') || '')
             .slice(12)
         let match = ref.match(/({{[^{}]*}})/g)
@@ -290,7 +294,7 @@ export default class BaseImporter {
                 .map(seq => {
                     return this._unescapeURIFragment(seq)
                 })
-            let min = Math.min(strings.length, dvs.length);
+            let min = Math.min(strings.length, dvs.length)
             let components = Array.apply(null, Array(min))
                 .reduce((result, value, index) => {
                     result.push(strings[index], dvs[index])
@@ -856,48 +860,39 @@ export default class BaseImporter {
         }
 
         let components = []
+
+        let splitManager = (_isRegular) => {
+            let isRegular = _isRegular
+            return (split) => {
+                if (isRegular) {
+                    components.push(split)
+                }
+                else {
+                    components.push(
+                        this._escapeSequenceDynamicValue(split)
+                    )
+                }
+                isRegular = !isRegular
+            }
+        }
+
         for (let component of envComponents) {
             if (typeof component !== 'string') {
                 components.push(component)
             }
-            else {// if (component.length < 10000) {
+            else {
                 // split around special characters
                 const re = /([^\x00-\x1f]+)|([\x00-\x1f]+)/gm
                 let splits = component.match(re)
                 if (splits.length > 0 && splits.length < 50) {
                     let isRegular = /([^\x00-\x1f]+)/.test(splits[0])
-                    splits.forEach(split => {
-                        if (isRegular) {
-                            components.push(split)
-                        }
-                        else {
-                            components.push(
-                                this._escapeSequenceDynamicValue(split)
-                            )
-                        }
-                        isRegular = !isRegular
-                    })
+                    let splitMapper = splitManager(isRegular)
+                    splits.forEach(splitMapper)
                 }
                 else {
                     components.push(component)
                 }
-                /*
-                let m
-                while ((m = re.exec(component)) !== null) {
-                    if (m[1]) {
-                        components.push(m[1])
-                    }
-                    else {
-                        components.push(this._escapeSequenceDynamicValue(m[2]))
-                    }
-                }
-                */
             }
-            /*
-            else {
-                components.push(component)
-            }
-            */
         }
 
         return new DynamicString(...components)
