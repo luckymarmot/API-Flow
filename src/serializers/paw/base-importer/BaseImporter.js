@@ -136,12 +136,17 @@ export default class BaseImporter {
             }
             catch (e) {
                 /* eslint-disable no-console */
-                console.error('got error', JSON.stringify(e), e.stack)
+                console.error('got error', e, JSON.stringify(e), e.stack)
                 /* eslint-enable no-console */
             }
         }).catch(error => {
             /* eslint-disable no-console */
-            console.error('got error', JSON.stringify(error), error.stack)
+            console.error(
+                'caught error',
+                error,
+                JSON.stringify(error),
+                error.stack
+            )
             /* eslint-enable no-console */
         })
     }
@@ -225,8 +230,14 @@ export default class BaseImporter {
             for (let uri of uris) {
                 let reference = container.resolve(uri)
                 let content = this._setReference(reference)
-                variablesDict[reference.get('relative')] =
-                    new DynamicString(content)
+                let ds
+                if (content instanceof DynamicString) {
+                    ds = content
+                }
+                else {
+                    ds = new DynamicString(content || '')
+                }
+                variablesDict[reference.get('relative')] = ds
             }
 
             pawEnv.setVariablesValues(variablesDict)
@@ -259,11 +270,49 @@ export default class BaseImporter {
     }
 
     _setLateResolutionReference(reference) {
-        let value = reference.get('value').slice(12)
-        if (value === 'null' || value.match('#/x-postman/')) {
-            value = ''
+        // slice(12) because we slice out '#/x-postman/' from the uri
+        let ref = (reference.get('relative') || reference.get('uri') || '')
+            .slice(12)
+        let match = ref.match(/({{[^{}]*}})/g)
+        if (match && ref !== match[0]) {
+            let components = []
+            let baseIndex = 0
+            let re = /({{[^{}]+}})/g
+            let m
+            while ((m = re.exec(ref)) !== null) {
+                let index = m.index
+                if (baseIndex !== index) {
+                    components.push(this._unescapeURIFragment(
+                        ref.slice(baseIndex, index)
+                    ))
+                }
+
+                baseIndex = index + m[0].length
+
+                let envVariable = this._getEnvironmentVariable(
+                    '#/x-postman/' + m[0]
+                )
+
+                let dv = new DynamicValue(
+                    'com.luckymarmot.EnvironmentVariableDynamicValue',
+                    {
+                        environmentVariable: envVariable.id
+                    }
+                )
+
+                components.push(dv)
+            }
+
+            return new DynamicString(...components)
         }
-        return value
+        else {
+            let value = reference.get('value')
+            return value || ''
+        }
+    }
+
+    _unescapeURIFragment(uriFragment) {
+        return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
     }
 
     _setExoticReference(reference) {
@@ -812,6 +861,22 @@ export default class BaseImporter {
         }
 
         let components = []
+
+        let splitManager = (_isRegular) => {
+            let isRegular = _isRegular
+            return (split) => {
+                if (isRegular) {
+                    components.push(split)
+                }
+                else {
+                    components.push(
+                        this._escapeSequenceDynamicValue(split)
+                    )
+                }
+                isRegular = !isRegular
+            }
+        }
+
         for (let component of envComponents) {
             if (typeof component !== 'string') {
                 components.push(component)
@@ -819,14 +884,14 @@ export default class BaseImporter {
             else {
                 // split around special characters
                 const re = /([^\x00-\x1f]+)|([\x00-\x1f]+)/gm
-                let m
-                while ((m = re.exec(component)) !== null) {
-                    if (m[1]) {
-                        components.push(m[1])
-                    }
-                    else {
-                        components.push(this._escapeSequenceDynamicValue(m[2]))
-                    }
+                let splits = component.match(re)
+                if (splits.length > 0 && splits.length < 50) {
+                    let isRegular = /([^\x00-\x1f]+)/.test(splits[0])
+                    let splitMapper = splitManager(isRegular)
+                    splits.forEach(splitMapper)
+                }
+                else {
+                    components.push(component)
                 }
             }
         }
@@ -848,13 +913,16 @@ export default class BaseImporter {
             '\r': '\\r',
             '\t': '\\t'
         }
-        let escapeSequence = ''
+
+        let sequence = []
         for (let char of seq) {
-            escapeSequence += escapedChars[char] ?
-                escapedChars[char] :
-                '\\x' + this._convertCharToHex(char)
+            sequence.push(
+                escapedChars[char] ?
+                    escapedChars[char] :
+                    '\\x' + this._convertCharToHex(char)
+            )
         }
-        return escapeSequence
+        return sequence.join('')
     }
 
     _escapeSequenceDynamicValue(seq) {
@@ -866,6 +934,9 @@ export default class BaseImporter {
 
     _castReferenceToDynamicString(reference) {
         let dv = this._extractReferenceComponent(reference)
+        if (dv instanceof DynamicString) {
+            return dv
+        }
         return new DynamicString(dv)
     }
 

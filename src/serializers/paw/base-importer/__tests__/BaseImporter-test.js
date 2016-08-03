@@ -2423,6 +2423,17 @@ export class TestBaseImporter extends UnitTest {
         this.assertJSONEqual(expected, result)
     }
 
+    @targets('_unescapeURIFragment')
+    testUnescapeURIFragment() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        let input = 'some~1fragment~1~0with~0~1tilde~and/present-and~~10, ~~01'
+        let expected = 'some/fragment/~with~/tilde~and/present-and~/0, ~~1'
+        let result = importer._unescapeURIFragment(input)
+
+        this.assertEqual(expected, result)
+    }
+
     @targets('serialize')
     _testSerialize() {
         // TODO

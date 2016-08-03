@@ -7,6 +7,10 @@ export default class LateResolutionReference extends Reference {
     }
 
     evaluate(references) {
+        if (this.get('value') !== null) {
+            return this
+        }
+
         let ref = this.get('uri')
         let match = ref.match(/{{[^{}]*}}/)
         let maxResolutions = 20
@@ -27,7 +31,12 @@ export default class LateResolutionReference extends Reference {
             match = ref.match(/{{[^{}]*}}/)
         }
 
-        return this.set('value', ref)
+        // slice(12) because we slice out '#/x-postman/' from the ref
+        if (ref.slice(12) === 'null') {
+            return this.set('value', null)
+        }
+
+        return this.set('value', ref.slice(12))
     }
 
     _replaceRef(references, counter) {
@@ -42,6 +51,7 @@ export default class LateResolutionReference extends Reference {
             else {
                 ref = references.resolve('#/x-postman/' + group)
             }
+
             if (ref) {
                 value = ref.get('value')
             }

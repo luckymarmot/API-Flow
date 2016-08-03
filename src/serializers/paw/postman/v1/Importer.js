@@ -58,7 +58,16 @@ export default class PostmanImporter extends BaseImporter {
         })
 
         for (let item of items) {
-            let reqContext = parser.parse(item)
+            let reqContext = null
+            try {
+                reqContext = parser.parse(item)
+            }
+            catch (e) {
+                /* eslint-disable no-console */
+                console.error('@parser error', e, JSON.stringify(e), e.stack)
+                /* eslint-enable no-console */
+                throw e
+            }
             let references = currentReqContext.get('references')
             references = references.mergeDeep(reqContext.get('references'))
             currentReqContext = currentReqContext.set('references', references)

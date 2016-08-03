@@ -104,12 +104,13 @@ export default class PostmanParser {
 
         if (environment.values) {
             let refs = environment.values.map(value => {
-                return new LateResolutionReference({
+                let ref = new LateResolutionReference({
                     uri: '#/x-postman/{{' + value.key + '}}',
                     relative: '#/x-postman/{{' + value.key + '}}',
                     value: value.value,
                     resolved: true
                 })
+                return ref
             })
             env = env.create(refs)
         }
@@ -313,7 +314,7 @@ export default class PostmanParser {
     }
 
     _extractAuth(authLine, helperType, helper) {
-        let [ , scheme, params ] = authLine.match(/([^\s]+)\s(.*)/)
+        let [ , scheme, params ] = authLine.match(/([^\s]+)\s(.*)/) || []
 
         let helperMap = {
             basicAuth: ::this._extractBasicAuth,
