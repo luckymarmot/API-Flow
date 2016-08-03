@@ -15,7 +15,7 @@ make install
 
 This will install the node module dependencies and create the lib folder from which you will be able to run the cli.
 
-### from npm
+### from npm (not yet available)
 just run
 
 ```sh
@@ -49,7 +49,7 @@ promise.then(function(data) {
 ```
 ### Using as a CLI
 ```sh
-node ./node_modules/lib/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
+node ./lib/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
 ```
 ## License
 
