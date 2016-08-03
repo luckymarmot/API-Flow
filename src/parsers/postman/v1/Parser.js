@@ -314,7 +314,7 @@ export default class PostmanParser {
     }
 
     _extractAuth(authLine, helperType, helper) {
-        let [ , scheme, params ] = authLine.match(/([^\s]+)\s(.*)/)
+        let [ , scheme, params ] = authLine.match(/([^\s]+)\s(.*)/) || []
 
         let helperMap = {
             basicAuth: ::this._extractBasicAuth,

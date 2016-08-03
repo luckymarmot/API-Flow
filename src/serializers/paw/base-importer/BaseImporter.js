@@ -273,34 +273,34 @@ export default class BaseImporter {
         let ref = (reference.get('relative') || reference.get('uri') || '')
             .slice(12)
         let match = ref.match(/({{[^{}]*}})/g)
-        if (match) {
-            // self reference with null value should return null
-            if (ref === match[0]) {
-                return ''
-            }
+        if (match && ref !== match[0]) {
+            let components = []
+            let baseIndex = 0
+            let re = /({{[^{}]+}})/g
+            let m
+            while ((m = re.exec(ref)) !== null) {
+                let index = m.index
+                if (baseIndex !== index) {
+                    components.push(this._unescapeURIFragment(
+                        ref.slice(baseIndex, index)
+                    ))
+                }
 
-            let dvs = match.map(group => {
+                baseIndex = index + m[0].length
+
                 let envVariable = this._getEnvironmentVariable(
-                    '#/x-postman/' + group
+                    '#/x-postman/' + m[0]
                 )
-                return new DynamicValue(
+
+                let dv = new DynamicValue(
                     'com.luckymarmot.EnvironmentVariableDynamicValue',
                     {
                         environmentVariable: envVariable.id
                     }
                 )
-            })
-            let strings = ref.split(/{{[^{}]*}}/)
-                .map(seq => {
-                    return this._unescapeURIFragment(seq)
-                })
-            let min = Math.min(strings.length, dvs.length)
-            let components = Array.apply(null, Array(min))
-                .reduce((result, value, index) => {
-                    result.push(strings[index], dvs[index])
-                    return result
-                }, [])
-                .concat((strings.length > min ? strings : dvs).slice(min))
+
+                components.push(dv)
+            }
 
             return new DynamicString(...components)
         }
