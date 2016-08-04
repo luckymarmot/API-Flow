@@ -194,7 +194,7 @@ export default class PostmanParser {
         }
 
         let protocol = url.protocol || 'http'
-        let hostname = url.domain || 'localhost'
+        let hostname = (url.host || []).join('.') || url.domain || 'localhost'
 
         let pathname = ''
         if (url.path) {
@@ -202,16 +202,11 @@ export default class PostmanParser {
                 pathname = url.path
             }
             else if (url.path.length) {
-                pathname = url.path.map(segment => {
-                    if (typeof segment === 'string') {
-                        return segment
-                    }
-                    else {
-                        return segment.value
-                    }
-                })
+                pathname = url.path.join('/')
             }
         }
+
+        pathname = this._replacePathVariables(pathname, url.variable || [])
 
         let port = url.port || null
 
@@ -245,6 +240,38 @@ export default class PostmanParser {
         let pathParams = this._extractPathsVariables(vars)
 
         return [ _url, queries, pathParams ]
+    }
+
+    _replacePathVariables(path, _vars) {
+        let vars = _vars.reduce((dict, obj) => {
+            dict[obj.id] = obj.value
+            return dict
+        }, {})
+
+        let re = /\/:([^:\/{.}]+)/g
+        let str = path
+        let m
+        let lst = []
+        let baseIndex = 0
+        while ((m = re.exec(str)) !== null) {
+            if (
+                vars &&
+                typeof vars[m[1]] !== 'undefined' &&
+                vars[m[1]] !== ''
+            ) {
+                if (baseIndex !== m.index) {
+                    // m.index + 1 to also include the `/`
+                    lst.push(str.slice(baseIndex, m.index + 1))
+                }
+
+                baseIndex = m.index + m[0].length
+
+                lst.push(vars[m[1]])
+            }
+        }
+        lst.push(str.slice(baseIndex))
+
+        return lst.join('')
     }
 
     _generateQueries(queries) {
