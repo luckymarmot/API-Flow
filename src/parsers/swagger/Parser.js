@@ -362,10 +362,13 @@ export default class SwaggerParser {
                     }
                 }
 
-                let validMethods = _methods.filter(filterOtherFieldsOutFunc(true))
+                let validMethods = _methods.filter(
+                    filterOtherFieldsOutFunc(true)
+                )
 
-                let description = _methods.filter(filterOtherFieldsOutFunc(false))
-                    .reduce(createOtherFieldDescFunc(methods), '')
+                let description = _methods.filter(
+                    filterOtherFieldsOutFunc(false)
+                ).reduce(createOtherFieldDescFunc(methods), '')
 
                 if (description) {
                     description = 'The following fields were provided at the ' +
