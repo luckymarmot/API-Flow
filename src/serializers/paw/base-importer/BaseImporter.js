@@ -303,7 +303,9 @@ export default class BaseImporter {
                 components.push(dv)
             }
 
-            components.push(ref.slice(baseIndex, ref.length))
+            components.push(this._unescapeURIFragment(
+                ref.slice(baseIndex, ref.length)
+            ))
 
             return new DynamicString(...components)
         }
