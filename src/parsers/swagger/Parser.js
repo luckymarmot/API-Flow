@@ -325,16 +325,9 @@ export default class SwaggerParser {
     _applyFuncOverPathArchitecture(collection, func) {
         let architecture = {}
 
-        let filterOtherFieldsFunc = (bool) => {
-            if (bool) {
-                return (val) => {
-                    return !(val || '').toLowerCase().startsWith('x-')
-                }
-            }
-            else {
-                return (val) => {
-                    return (val || '').toLowerCase().startsWith('x-')
-                }
+        let filterOtherFieldsOutFunc = (bool) => {
+            return (val) => {
+                return bool !== (val || '').toLowerCase().startsWith('x-')
             }
         }
 
@@ -369,9 +362,9 @@ export default class SwaggerParser {
                     }
                 }
 
-                let validMethods = _methods.filter(filterOtherFieldsFunc(true))
+                let validMethods = _methods.filter(filterOtherFieldsOutFunc(true))
 
-                let description = _methods.filter(filterOtherFieldsFunc(false))
+                let description = _methods.filter(filterOtherFieldsOutFunc(false))
                     .reduce(createOtherFieldDescFunc(methods), '')
 
                 if (description) {
