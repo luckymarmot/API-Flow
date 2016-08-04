@@ -107,7 +107,7 @@ export default class SwaggerParser {
     }
 
     // @NotTested -> assumed valid
-    _createRequest(swaggerCollection, path, method, content) {
+    _createRequest(swaggerCollection, path, method, content, description) {
         const url = this._extractUrlInfo(
             swaggerCollection,
             path,
@@ -128,7 +128,7 @@ export default class SwaggerParser {
         let request = new Request()
         request = this._setTagsAndId(request, content)
         request = this._setSummary(request, path, content)
-        request = this._setDescription(request, content)
+        request = this._setDescription(request, content, description)
         request = this._setBasicInfo(
             request,
             url,
@@ -165,11 +165,17 @@ export default class SwaggerParser {
     }
 
     // @tested
-    _setDescription(request, content) {
+    _setDescription(request, content, description) {
+        let _description = []
         if (content.description) {
-            return request.set('description', content.description)
+            _description.push(content.description)
         }
-        return request
+
+        if (description) {
+            _description.push(description)
+        }
+
+        return request.set('description', _description.join('\n\n') || null)
     }
 
     // @tested
@@ -318,6 +324,20 @@ export default class SwaggerParser {
     // @tested
     _applyFuncOverPathArchitecture(collection, func) {
         let architecture = {}
+
+        let filterOtherFieldsOutFunc = (bool) => {
+            return (val) => {
+                return bool !== (val || '').toLowerCase().startsWith('x-')
+            }
+        }
+
+        let createOtherFieldDescFunc = (methods) => {
+            return (str, field) => {
+                return str + '\n  - ' + field + ': ' +
+                    JSON.stringify(methods[field] || null, null, '  ')
+            }
+        }
+
         for (let path in collection.paths) {
             if (collection.paths.hasOwnProperty(path)) {
                 architecture[path] = architecture[path] || {}
@@ -341,12 +361,27 @@ export default class SwaggerParser {
                         methods[method].parameters = params
                     }
                 }
-                for (let method of _methods) {
+
+                let validMethods = _methods.filter(
+                    filterOtherFieldsOutFunc(true)
+                )
+
+                let description = _methods.filter(
+                    filterOtherFieldsOutFunc(false)
+                ).reduce(createOtherFieldDescFunc(methods), '')
+
+                if (description) {
+                    description = 'The following fields were provided at the ' +
+                        'path level:' + description
+                }
+
+                for (let method of validMethods) {
                     architecture[path][method] = func(
                         collection,
                         path,
                         method,
-                        methods[method]
+                        methods[method],
+                        description
                     )
                 }
             }
