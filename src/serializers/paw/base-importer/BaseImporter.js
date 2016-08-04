@@ -101,10 +101,26 @@ export default class BaseImporter {
             }, () => {
                 return false
             })
-        }, () => {
-            return false
-        }).catch(() => {
-            return false
+        }, (e) => {
+            /* eslint-disable no-console */
+            console.error(
+                '@parser failed with error',
+                e,
+                JSON.stringify(e),
+                e.stack
+            )
+            /* eslint-enable no-console */
+            throw e
+        }).catch((e) => {
+            /* eslint-disable no-console */
+            console.error(
+                '@parser caught error',
+                e,
+                JSON.stringify(e),
+                e.stack
+            )
+            /* eslint-enable no-console */
+            throw e
         })
 
         return importPromise
@@ -136,17 +152,24 @@ export default class BaseImporter {
             }
             catch (e) {
                 /* eslint-disable no-console */
-                console.error('got error', e, JSON.stringify(e), e.stack)
+                console.error(
+                    '@serializer failed with error',
+                    e,
+                    JSON.stringify(e),
+                    e.stack
+                )
+                throw e
                 /* eslint-enable no-console */
             }
         }).catch(error => {
             /* eslint-disable no-console */
             console.error(
-                'caught error',
+                '@serializer caught error',
                 error,
                 JSON.stringify(error),
                 error.stack
             )
+            throw error
             /* eslint-enable no-console */
         })
     }

@@ -1906,19 +1906,22 @@ export class TestBaseImporter extends UnitTest {
         const importer = new ClassMock(new BaseImporter(), '')
         const contextMock = new PawContextMock()
 
+        let dummyError = new Error('dummy error')
+
         importer.spyOn('createRequestContexts', () => {
             return new Promise((_, reject) => {
-                return reject(new Error('dummy error'))
+                return reject(dummyError)
             })
         })
 
         let final = importer.import(contextMock, [ null ], null)
 
-        final.then((status) => {
-            this.assertFalse(status)
+        final.then(() => {
+            this.assertFalse(true)
             done()
         }).catch(err => {
-            done(err)
+            this.assertEqual(err, dummyError)
+            done()
         })
     }
 
@@ -1927,16 +1930,21 @@ export class TestBaseImporter extends UnitTest {
         const importer = new ClassMock(new BaseImporter(), '')
         const contextMock = new PawContextMock()
 
+        let dummyError = new Error('dummy error')
+
         importer.spyOn('createRequestContexts', () => {
             return new Promise(() => {
-                throw new Error('dummy error')
+                throw dummyError
             })
         })
 
         let final = importer.import(contextMock, [ null ], null)
 
-        final.then((status) => {
-            this.assertFalse(status)
+        final.then(() => {
+            this.assertFalse(true)
+            done()
+        }, (status) => {
+            this.assertEqual(status, dummyError)
             done()
         }).catch(err => {
             done(err)
