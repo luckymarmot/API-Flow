@@ -1934,7 +1934,7 @@ export class TestBaseImporter extends UnitTest {
 
         importer.spyOn('createRequestContexts', () => {
             return new Promise(() => {
-                throw new Error('dummy error')
+                throw dummyError
             })
         })
 
@@ -1944,7 +1944,7 @@ export class TestBaseImporter extends UnitTest {
             this.assertFalse(true)
             done()
         }, (status) => {
-            this.assertJSONEqual(status, dummyError)
+            this.assertEqual(status, dummyError)
             done()
         }).catch(err => {
             done(err)
