@@ -303,6 +303,8 @@ export default class BaseImporter {
                 components.push(dv)
             }
 
+            components.push(ref.slice(baseIndex, ref.length))
+
             return new DynamicString(...components)
         }
         else {
