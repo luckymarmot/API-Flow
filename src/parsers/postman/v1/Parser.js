@@ -492,7 +492,11 @@ export default class PostmanParser {
         let lst = []
         let baseIndex = 0
         while ((m = re.exec(str)) !== null) {
-            if (vars && vars[m[1]]) {
+            if (
+                vars &&
+                typeof vars[m[1]] !== 'undefined' &&
+                vars[m[1]] !== ''
+            ) {
                 if (baseIndex !== m.index) {
                     // m.index + 1 to also include the `/`
                     lst.push(str.slice(baseIndex, m.index + 1))
