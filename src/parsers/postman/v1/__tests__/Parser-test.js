@@ -2136,6 +2136,23 @@ export class TestPostmanParser extends UnitTest {
         this.assertJSONEqual(expected, result)
     }
 
+    @targets('_replacePathVariables')
+    testReplacePathVariables() {
+        const parser = new ClassMock(new PostmanParser())
+
+        let path = '/teams/:teamId/users/:userId/songs/:songId/create'
+        let vars = {
+            userId: 123,
+            songId: 42
+        }
+
+        let expected = '/teams/:teamId/users/123/songs/42/create'
+
+        let result = parser._replacePathVariables(path, vars)
+
+        this.assertEqual(expected, result)
+    }
+
     __loadPostmanFile(fileName, extension = 'json') {
         const path = __dirname + '/samples/' + fileName + '.' + extension
         const item = {

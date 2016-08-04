@@ -376,7 +376,9 @@ export default class PostmanParser {
 
     _extractParameters(req) {
         let [ _headers, auths ] = this._extractHeaders(req)
-        let [ url, paths, queries ] = this._extractParamsFromUrl(req.url)
+        let [ url, paths, queries ] = this._extractParamsFromUrl(
+            req.url, req.pathVariables
+        )
         let [ body, headers ] = this._extractBodyParams(req, _headers)
 
         let container = new ParameterContainer({
@@ -428,7 +430,7 @@ export default class PostmanParser {
     }
 
 
-    _extractParamsFromUrl(url) {
+    _extractParamsFromUrl(url, pathVariables) {
         let _url = new URL(url)
         let queries = []
         let paths = []
@@ -439,8 +441,13 @@ export default class PostmanParser {
         let host = this._extractParam(
             'host', _url.generateParam('host')
         )
+
         let path = this._extractParam(
-            'pathname', _url.generateParam('pathname')
+            'pathname',
+            this._replacePathVariables(
+                _url.generateParam('pathname'),
+                pathVariables
+            )
         )
 
         _url = _url
@@ -476,6 +483,29 @@ export default class PostmanParser {
         }
 
         return [ _url, new Immutable.List(paths), new Immutable.List(queries) ]
+    }
+
+    _replacePathVariables(path, vars) {
+        let re = /\/:([^:\/{.}]+)/g
+        let str = path
+        let m
+        let lst = []
+        let baseIndex = 0
+        while ((m = re.exec(str)) !== null) {
+            if (vars && vars[m[1]]) {
+                if (baseIndex !== m.index) {
+                    // m.index + 1 to also include the `/`
+                    lst.push(str.slice(baseIndex, m.index + 1))
+                }
+
+                baseIndex = m.index + m[0].length
+
+                lst.push(vars[m[1]])
+            }
+        }
+        lst.push(str.slice(baseIndex))
+
+        return lst.join('')
     }
 
     _escapeURIFragment(uriFragment) {

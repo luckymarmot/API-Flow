@@ -229,15 +229,34 @@ export default class BaseImporter {
             let uris = container.get('cache').keySeq()
             for (let uri of uris) {
                 let reference = container.resolve(uri)
-                let content = this._setReference(reference)
-                let ds
-                if (content instanceof DynamicString) {
-                    ds = content
+
+                /*
+                    LateResolutionReference defines uris in the form of
+                    `#/x-postman/~1users~1{{userId}}` as this uri uniquely
+                    identifies the char sequence `/user/{{userId}}`. These
+                    uris are necessary to prevent collision when parsing,
+                    however, since Paw has DynamicStrings it can display and
+                    store these references nicely, so we should not save them
+                    as environment variables, but directly as dynamic string
+                    where they are used.
+
+                    .slice(12) is there to remove `#/x-postman/` from the
+                    string before testing to see if it is a root
+                    LateResolutionReference or not.
+                */
+                if (!(reference instanceof LateResolutionReference) ||
+                    (reference.get('uri') || '').slice(12).match(/^{{[^{}]+}}$/)
+                ) {
+                    let content = this._setReference(reference)
+                    let ds
+                    if (content instanceof DynamicString) {
+                        ds = content
+                    }
+                    else {
+                        ds = new DynamicString(content || '')
+                    }
+                    variablesDict[reference.get('relative')] = ds
                 }
-                else {
-                    ds = new DynamicString(content || '')
-                }
-                variablesDict[reference.get('relative')] = ds
             }
 
             pawEnv.setVariablesValues(variablesDict)
@@ -997,7 +1016,18 @@ export default class BaseImporter {
         }
 
         if (component instanceof Reference) {
-            if (!component.get('relative')) {
+            /*
+                `!component.get('relative')` is not related to the explanation
+                below.
+
+                If the component is a LateResolutionReference, we prefer to
+                have directly access to the DynamicString that represents it,
+                than having a reference to it stored in the environment domain.
+            */
+            if (
+                !component.get('relative') ||
+                component instanceof LateResolutionReference
+            ) {
                 return this._setReference(component)
             }
 
