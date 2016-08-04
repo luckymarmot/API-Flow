@@ -166,16 +166,16 @@ export default class SwaggerParser {
 
     // @tested
     _setDescription(request, content, description) {
-        let _description = ''
+        let _description = []
         if (content.description) {
-            _description += content.description
+            _description.push(content.description)
         }
 
         if (description) {
-            _description += description
+            _description.push(description)
         }
 
-        return request.set('description', _description || null)
+        return request.set('description', _description.join('\n\n') || null)
     }
 
     // @tested
