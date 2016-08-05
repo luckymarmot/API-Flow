@@ -27,6 +27,7 @@ export default class BaseImporter {
 
     constructor(context) {
         this.ENVIRONMENT_DOMAIN_NAME = 'Imported Environments'
+        this.currentEnvironmentDomainName = null
         this.context = context || null
     }
 
@@ -127,6 +128,11 @@ export default class BaseImporter {
     }
 
     _importContext(resolver, reqContext, _item, options) {
+        let name = ((_item || {}).file || {}).name || null
+        if (name) {
+            name = name.replace(/\.[^.]*$/, '')
+        }
+        this.currentEnvironmentDomainName = name
         if (!(reqContext instanceof Context)) {
             throw new Error(
                 'createRequestContext ' +
@@ -247,8 +253,11 @@ export default class BaseImporter {
 
         let environments = references.keySeq()
         for (let env of environments) {
-            let pawEnv = this._getEnvironment(environmentDomain, env)
             let container = references.get(env)
+            let pawEnv = this._getEnvironment(
+                environmentDomain,
+                container.get('name') || container.get('id') || env
+            )
             let uris = container.get('cache').keySeq()
             for (let uri of uris) {
                 let reference = container.resolve(uri)
@@ -392,11 +401,15 @@ export default class BaseImporter {
 
     _getEnvironmentDomain() {
         let env = this.context.getEnvironmentDomainByName(
+            this.currentEnvironmentDomainName ||
             this.ENVIRONMENT_DOMAIN_NAME
         )
         if (typeof env === 'undefined') {
             env = this.context
-                .createEnvironmentDomain(this.ENVIRONMENT_DOMAIN_NAME)
+                .createEnvironmentDomain(
+                    this.currentEnvironmentDomainName ||
+                    this.ENVIRONMENT_DOMAIN_NAME
+                )
         }
         return env
     }
