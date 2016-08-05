@@ -87,7 +87,7 @@ export default class PostmanImporter extends BaseImporter {
 
         let current = {
             context: currentReqContext,
-            items: [ items ]
+            items: items
         }
 
         return [ current ]

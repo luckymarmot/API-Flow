@@ -26,6 +26,7 @@ export default class BaseImporter {
     static inputs = [];
 
     constructor(context) {
+        this.CURRENT_ENVIRONMENT_DOMAIN_NAME = null
         this.ENVIRONMENT_DOMAIN_NAME = 'Imported Environments'
         this.context = context || null
     }
@@ -127,6 +128,11 @@ export default class BaseImporter {
     }
 
     _importContext(resolver, reqContext, _item, options) {
+        let name = ((_item || {}).file || {}).name || null
+        if (name) {
+            name = name.replace(/\.[^.]*$/, '')
+        }
+        this.CURRENT_ENVIRONMENT_DOMAIN_NAME = name
         if (!(reqContext instanceof Context)) {
             throw new Error(
                 'createRequestContext ' +
@@ -395,11 +401,15 @@ export default class BaseImporter {
 
     _getEnvironmentDomain() {
         let env = this.context.getEnvironmentDomainByName(
+            this.CURRENT_ENVIRONMENT_DOMAIN_NAME ||
             this.ENVIRONMENT_DOMAIN_NAME
         )
         if (typeof env === 'undefined') {
             env = this.context
-                .createEnvironmentDomain(this.ENVIRONMENT_DOMAIN_NAME)
+                .createEnvironmentDomain(
+                    this.CURRENT_ENVIRONMENT_DOMAIN_NAME ||
+                    this.ENVIRONMENT_DOMAIN_NAME
+                )
         }
         return env
     }
