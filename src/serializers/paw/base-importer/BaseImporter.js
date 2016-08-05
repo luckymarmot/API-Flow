@@ -278,7 +278,14 @@ export default class BaseImporter {
                     else {
                         ds = new DynamicString(content || '')
                     }
-                    variablesDict[reference.get('relative')] = ds
+
+                    let key = reference.get('relative')
+                    if (reference instanceof LateResolutionReference) {
+                        // remove '#/x-postman/' and {{ }}
+                        key = key.slice(12)
+                        key = key.slice(2, key.length - 2)
+                    }
+                    variablesDict[key] = ds
                 }
             }
 
@@ -332,7 +339,7 @@ export default class BaseImporter {
                 baseIndex = index + m[0].length
 
                 let envVariable = this._getEnvironmentVariable(
-                    '#/x-postman/' + m[0]
+                    m[0].slice(2, m[0].length - 2)
                 )
 
                 let dv = new DynamicValue(
