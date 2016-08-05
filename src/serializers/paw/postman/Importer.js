@@ -10,6 +10,7 @@ export default class PostmanImporter extends BaseImporter {
 
     constructor() {
         super()
+        this.ENVIRONMENT_DOMAIN_NAME = 'Postman'
         this.versions = {
             v1: new PostmanV1Importer(),
             v2: new PostmanV2Importer()
