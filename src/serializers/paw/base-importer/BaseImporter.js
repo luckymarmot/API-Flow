@@ -247,8 +247,11 @@ export default class BaseImporter {
 
         let environments = references.keySeq()
         for (let env of environments) {
-            let pawEnv = this._getEnvironment(environmentDomain, env)
             let container = references.get(env)
+            let pawEnv = this._getEnvironment(
+                environmentDomain,
+                container.get('name') || container.get('id') || env
+            )
             let uris = container.get('cache').keySeq()
             for (let uri of uris) {
                 let reference = container.resolve(uri)
