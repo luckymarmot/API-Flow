@@ -463,7 +463,6 @@ export default class CurlParser {
         let headers = _headers
         let contentType = headers.get('Content-Type') || null
 
-        console.log('hey there', urlEncodeFlag, JSON.stringify(body), JSON.stringify(headers))
         if (urlEncodeFlag) {
             // this is not form url encoded, but a plain body string or file
             if (body.count() === 1 && body.getIn([ 0, 'value' ]) === null) {
