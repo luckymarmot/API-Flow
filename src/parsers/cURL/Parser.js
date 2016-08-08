@@ -471,6 +471,11 @@ export default class CurlParser {
                         this._formatParameter('body', body.getIn([ 0, 'key' ]))
                     ])
                 }
+                else {
+                    body = new Immutable.List([
+                        this._formatParameter(null, body.getIn([ 0, 'key' ]))
+                    ])
+                }
             }
             // if no Content-Type is set, or not set to
             // application/x-www-form-urlencoded consider the body as

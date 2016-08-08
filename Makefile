@@ -34,6 +34,8 @@ test:
 lint:
 	npm run lint
 
+validate: test lint
+
 npm-install:
 	npm install
 

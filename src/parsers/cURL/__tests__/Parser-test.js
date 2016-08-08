@@ -1102,12 +1102,10 @@ export class TestCurlParser extends UnitTest {
                     ]),
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'key',
-                            name: 'key',
-                            value: null,
+                            value: 'key',
                             type: 'string',
                             internals: new Immutable.List([
-                                new Constraint.Enum([ null ])
+                                new Constraint.Enum([ 'key' ])
                             ])
                         })
                     ])
@@ -1138,12 +1136,10 @@ export class TestCurlParser extends UnitTest {
                     ]),
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'content',
-                            name: 'content',
-                            value: null,
+                            value: 'content',
                             type: 'string',
                             internals: new Immutable.List([
-                                new Constraint.Enum([ null ])
+                                new Constraint.Enum([ 'content' ])
                             ])
                         })
                     ])
@@ -1389,12 +1385,10 @@ export class TestCurlParser extends UnitTest {
                     ]),
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'sometext',
-                            name: 'sometext',
-                            value: null,
+                            value: 'sometext',
                             type: 'string',
                             internals: new Immutable.List([
-                                new Constraint.Enum([ null ])
+                                new Constraint.Enum([ 'sometext' ])
                             ])
                         })
                     ])
@@ -1469,12 +1463,10 @@ export class TestCurlParser extends UnitTest {
                     ]),
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'sometext',
-                            name: 'sometext',
-                            value: null,
+                            value: 'sometext',
                             type: 'string',
                             internals: new Immutable.List([
-                                new Constraint.Enum([ null ])
+                                new Constraint.Enum([ 'sometext' ])
                             ])
                         })
                     ])
@@ -1549,12 +1541,10 @@ export class TestCurlParser extends UnitTest {
                     ]),
                     body: new Immutable.List([
                         new Parameter({
-                            key: 'sometext',
-                            name: 'sometext',
-                            value: null,
+                            value: 'sometext',
                             type: 'string',
                             internals: new Immutable.List([
-                                new Constraint.Enum([ null ])
+                                new Constraint.Enum([ 'sometext' ])
                             ])
                         })
                     ])
@@ -1734,12 +1724,10 @@ export class TestCurlParser extends UnitTest {
                     ]),
                     body: new Immutable.List([
                         new Parameter({
-                            key: '@filename.txt',
-                            name: '@filename.txt',
-                            value: null,
+                            value: '@filename.txt',
                             type: 'string',
                             internals: new Immutable.List([
-                                new Constraint.Enum([ null ])
+                                new Constraint.Enum([ '@filename.txt' ])
                             ])
                         })
                     ])
