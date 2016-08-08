@@ -463,12 +463,18 @@ export default class CurlParser {
         let headers = _headers
         let contentType = headers.get('Content-Type') || null
 
+        console.log('hey there', urlEncodeFlag, JSON.stringify(body), JSON.stringify(headers))
         if (urlEncodeFlag) {
             // this is not form url encoded, but a plain body string or file
             if (body.count() === 1 && body.getIn([ 0, 'value' ]) === null) {
                 if (body.getIn([ 0, 'key' ]) instanceof ExoticReference) {
                     body = new Immutable.List([
                         this._formatParameter('body', body.getIn([ 0, 'key' ]))
+                    ])
+                }
+                else {
+                    body = new Immutable.List([
+                        this._formatParameter(null, body.getIn([ 0, 'key' ]))
                     ])
                 }
             }
