@@ -37,16 +37,22 @@ export default class PostmanParser {
         /* .postman_dump */
         if (obj.collections || obj.environments) {
             if (
-                Array.isArray(obj.collections) ||
-                typeof obj.collection[Symbol.iterator] === 'function'
+                obj.collections &&
+                (
+                    Array.isArray(obj.collections) ||
+                    typeof obj.collection[Symbol.iterator] === 'function'
+                )
             ) {
                 for (let collection of obj.collections) {
                     collections.push(collection)
                 }
             }
             if (
-                Array.isArray(obj.environments) ||
-                typeof obj.environments[Symbol.iterator] === 'function'
+                obj.environments &&
+                (
+                    Array.isArray(obj.environments) ||
+                    typeof obj.environments[Symbol.iterator] === 'function'
+                )
             ) {
                 for (let environment of obj.environments) {
                     environments.push(environment)
