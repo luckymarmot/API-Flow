@@ -37,7 +37,7 @@ export default class PostmanParser {
         /* .postman_dump */
         if (obj.collections || obj.environments) {
             if (
-                Array.isArray(obj.collections)||
+                Array.isArray(obj.collections) ||
                 typeof obj.collection[Symbol.iterator] === 'function'
             ) {
                 for (let collection of obj.collections) {

@@ -167,9 +167,9 @@ export default class BaseImporter {
             /* eslint-disable no-console */
             console.error(
                 '@resolver failed with error',
-                e,
-                JSON.stringify(e),
-                e.stack
+                error,
+                JSON.stringify(error),
+                error.stack
             )
             throw error
             /* eslint-enable no-console */
