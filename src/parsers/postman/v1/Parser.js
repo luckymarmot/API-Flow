@@ -36,12 +36,18 @@ export default class PostmanParser {
         }
         /* .postman_dump */
         if (obj.collections || obj.environments) {
-            if (obj.collections) {
+            if (
+                Array.isArray(obj.collections)||
+                typeof obj.collection[Symbol.iterator] === 'function'
+            ) {
                 for (let collection of obj.collections) {
                     collections.push(collection)
                 }
             }
-            if (obj.environments) {
+            if (
+                Array.isArray(obj.environments) ||
+                typeof obj.environments[Symbol.iterator] === 'function'
+            ) {
                 for (let environment of obj.environments) {
                     environments.push(environment)
                 }
@@ -122,6 +128,12 @@ export default class PostmanParser {
     _importCollection(collection) {
         if (!collection.requests) {
             throw new Error('Invalid Postman file (missing data)')
+        }
+
+        if (typeof collection.requests[Symbol.iterator] !== 'function') {
+            let msg = 'Invalid collection format: collections should have ' +
+                'a list of requests - found' + typeof collection.requests
+            throw new Error(msg)
         }
 
         let requestsById = {}

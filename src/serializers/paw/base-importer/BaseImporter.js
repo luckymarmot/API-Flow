@@ -41,18 +41,14 @@ export default class BaseImporter {
     }
 
     importString(context, string) {
-        const requestContext = this.createRequestContextFromString(
-            context,
-            string
-        )
-        if (!(requestContext instanceof Context)) {
-            throw new Error(
-                'createRequestContextFromString ' +
-                'did not return an instance of RequestContext'
-            )
-        }
-        this._importPawRequests(requestContext)
-        return true
+        let items = [
+            {
+                content: string,
+                url: 'http://localhost/'
+            }
+        ]
+
+        return this.import(context, items)
     }
 
     /*
@@ -167,6 +163,16 @@ export default class BaseImporter {
                 throw e
                 /* eslint-enable no-console */
             }
+        }, error => {
+            /* eslint-disable no-console */
+            console.error(
+                '@resolver failed with error',
+                e,
+                JSON.stringify(e),
+                e.stack
+            )
+            throw error
+            /* eslint-enable no-console */
         }).catch(error => {
             /* eslint-disable no-console */
             console.error(
