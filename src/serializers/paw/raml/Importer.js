@@ -7,7 +7,6 @@ export default class RAMLImporter extends BaseImporter {
     static title = 'RAML Importer';
 
     static fileExtensions = [];
-    static inputs = [];
 
     constructor() {
         super()

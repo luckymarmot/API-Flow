@@ -161,6 +161,9 @@ export default class SwaggerParser {
         if (content.summary) {
             return request.set('name', content.summary)
         }
+        else if (content.operationId) {
+            return request.set('name', content.operationId)
+        }
         return request.set('name', path)
     }
 
