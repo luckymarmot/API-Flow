@@ -168,9 +168,9 @@ export class TestBaseImporter extends UnitTest {
         this.assertEqual(
             mockedImporter.spy._castParameterToDynamicString.count, 1
         )
-        this.assertEqual(
+        this.assertJSONEqual(
             mockedImporter.spy._castParameterToDynamicString.calls,
-            [ [ input ] ]
+            [ [ input, null ] ]
         )
 
         this.assertTrue(result instanceof DynamicString)
@@ -1342,16 +1342,16 @@ export class TestBaseImporter extends UnitTest {
         this.assertJSONEqual(
             importer.spy._toDynamicString.calls,
             [
-                [ 'test', true ],
+                [ 'test', true, 'body' ],
                 [ new Parameter({
                     key: 'test',
                     value: 'value'
-                }), true ],
-                [ 'sec', true ],
+                }), true, 'body' ],
+                [ 'sec', true, 'body' ],
                 [ new Parameter({
                     key: 'sec',
                     value: 'ond'
-                }), true ]
+                }), true, 'body' ]
             ]
         )
 
@@ -2223,6 +2223,10 @@ export class TestBaseImporter extends UnitTest {
     testSetJSONSchemaReference() {
         const importer = new ClassMock(new BaseImporter(), '')
 
+        importer.options = {
+            jsfInEnv: true
+        }
+
         let schemaref = new JSONSchemaReference({
             uri: '#/references/Friend',
             relative: '#/references/Friend',
@@ -2451,6 +2455,12 @@ export class TestBaseImporter extends UnitTest {
     _testSetLateResolutionReference() {
         // TODO
     }
+
+    @targets('_useJSF')
+    _testUseJSF() {
+        // TODO
+    }
+
     //
     // helpers
     //

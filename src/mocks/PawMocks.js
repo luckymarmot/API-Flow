@@ -163,6 +163,18 @@ export class DynamicString extends Mock {
     }
 }
 
+export class InputField extends Mock {
+    constructor(key, name, type, options, prefix = '') {
+        let obj = {
+            key: key,
+            name: name,
+            type: type,
+            options: options
+        }
+        super(obj, prefix)
+    }
+}
+
 export const registerImporter = (_class) => {
     return _class
 }

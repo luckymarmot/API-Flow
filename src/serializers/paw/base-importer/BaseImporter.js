@@ -18,7 +18,8 @@ import PawEnvironment from '../../../models/environments/PawEnvironment'
 
 import {
     DynamicValue,
-    DynamicString
+    DynamicString,
+    InputField
 } from '../../../mocks/PawShims'
 
 export default class BaseImporter {
@@ -93,7 +94,6 @@ export default class BaseImporter {
     }
 
     import(context, items, options) {
-        console.log('@opts', JSON.stringify((options || {}).inputs || {}, null, '  '))
         this.options = (options || {}).inputs || {}
         this.context = context
 
@@ -1084,7 +1084,7 @@ export default class BaseImporter {
             }
             components.push(generated)
         }
-        else if (this._useJSF(source)){
+        else if (this._useJSF(source)) {
             let dv = new DynamicValue(
                 'com.luckymarmot.PawExtensions' +
                 '.JSONSchemaFakerDynamicValue',
@@ -1099,15 +1099,16 @@ export default class BaseImporter {
     }
 
     _useJSF(source) {
-        console.log('@useJSF', source, JSON.stringify(this.options))
-        console.log('@useJSF1', 'url', source === 'url', this.options.jsfInPath)
-        console.log('@useJSF1', 'query', source === 'query', this.options.jsfInQuery)
-        console.log('@useJSF1', 'body', source === 'body', this.options.jsfInBody)
-        console.log('@useJSF1', 'headers', source === 'headers', this.options.jsfInHeaders)
-        return (source  === 'url' && this.options.jsfInPath) ||
-            (source  === 'query' && this.options.jsfInQuery) ||
-            (source  === 'body' && this.options.jsfInBody) ||
-            (source  === 'headers' && this.options.jsfInHeaders)
+        /* eslint-disable no-extra-parens */
+        if ([ 'url', 'query', 'body', 'headers' ].indexOf(source) < 0) {
+            return true
+        }
+
+        return (source === 'url' && this.options.jsfInPath) ||
+            (source === 'query' && this.options.jsfInQuery) ||
+            (source === 'body' && this.options.jsfInBody) ||
+            (source === 'headers' && this.options.jsfInHeaders)
+        /* eslint-enable no-extra-parens */
     }
 
     _extractReferenceComponent(component) {
