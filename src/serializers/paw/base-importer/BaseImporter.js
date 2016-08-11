@@ -23,7 +23,38 @@ import {
 
 export default class BaseImporter {
     static fileExtensions = [];
-    static inputs = [];
+    static inputs = [
+        new InputField(
+            'jsfInEnv',
+            'Use JSON Schema Faker for environment variables',
+            'Checkbox',
+            { defaultValue: true }
+        ),
+        new InputField(
+            'jsfInPath',
+            'Use JSON Schema Faker for path parameters',
+            'Checkbox',
+            { defaultValue: true }
+        ),
+        new InputField(
+            'jsfInQuery',
+            'Use JSON Schema Faker for query parameters',
+            'Checkbox',
+            { defaultValue: true }
+        ),
+        new InputField(
+            'jsfInHeaders',
+            'Use JSON Schema Faker for headers',
+            'Checkbox',
+            { defaultValue: true }
+        ),
+        new InputField(
+            'jsfInBody',
+            'Use JSON Schema Faker for body',
+            'Checkbox',
+            { defaultValue: true }
+        )
+    ];
 
     constructor(context) {
         this.ENVIRONMENT_DOMAIN_NAME = 'Imported Environments'
@@ -62,6 +93,8 @@ export default class BaseImporter {
     }
 
     import(context, items, options) {
+        console.log('@opts', JSON.stringify((options || {}).inputs || {}, null, '  '))
+        this.options = (options || {}).inputs || {}
         this.context = context
 
         let parsePromiseOrResult = this.createRequestContexts(
@@ -324,12 +357,18 @@ export default class BaseImporter {
     }
 
     _setJSONSchemaReference(reference) {
-        let dv = new DynamicValue(
-            'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
-            {
-                schema: JSON.stringify(reference.toJSONSchema() || {})
-            }
-        )
+        let dv
+        if (this.options.jsfInEnv) {
+            dv = new DynamicValue(
+                'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
+                {
+                    schema: JSON.stringify(reference.toJSONSchema() || {})
+                }
+            )
+        }
+        else {
+            dv = ''
+        }
         return dv
     }
 
@@ -524,10 +563,10 @@ export default class BaseImporter {
     }
 
     _generateUrl(url, queries, auths) {
-        let protocol = this._toDynamicString(url.get('protocol'), true)
-        let host = this._toDynamicString(url.get('host'), true)
-        let path = this._toDynamicString(url.get('pathname'), true)
-        let hash = this._toDynamicString(url.get('hash'), true)
+        let protocol = this._toDynamicString(url.get('protocol'), true, 'url')
+        let host = this._toDynamicString(url.get('host'), true, 'url')
+        let path = this._toDynamicString(url.get('pathname'), true, 'url')
+        let hash = this._toDynamicString(url.get('hash'), true, 'url')
 
         if (protocol.length > 0) {
             protocol.appendString(':')
@@ -551,7 +590,7 @@ export default class BaseImporter {
             let _params = queryParams.reduce(
                 (params, keyValue) => {
                     let dynKey = this._toDynamicString(
-                        keyValue.get('key'), true
+                        keyValue.get('key'), true, 'query'
                     ).components.map((component) => {
                         if (typeof component === 'string') {
                             return encodeURI(component)
@@ -559,7 +598,7 @@ export default class BaseImporter {
                         return component
                     })
                     let dynValue = this._toDynamicString(
-                        keyValue, true
+                        keyValue, true, 'query'
                     ).components.map((component) => {
                         if (typeof component === 'string') {
                             return encodeURI(component)
@@ -608,8 +647,8 @@ export default class BaseImporter {
         let headers = container.getHeadersSet()
         headers.forEach((param) => {
             pawReq.setHeader(
-                this._toDynamicString(param.get('key'), true),
-                this._toDynamicString(param, true)
+                this._toDynamicString(param.get('key'), true, 'headers'),
+                this._toDynamicString(param, true, 'headers')
             )
         })
         return pawReq
@@ -620,10 +659,10 @@ export default class BaseImporter {
             'com.luckymarmot.BasicAuthDynamicValue',
             {
                 username: this._toDynamicString(
-                    auth.get('username') || '', true
+                    auth.get('username') || '', true, 'auth'
                 ),
                 password: this._toDynamicString(
-                    auth.get('password') || '', true
+                    auth.get('password') || '', true, 'auth'
                 )
             }
         )
@@ -634,10 +673,10 @@ export default class BaseImporter {
             'com.luckymarmot.PawExtensions.DigestAuthDynamicValue',
             {
                 username: this._toDynamicString(
-                    auth.get('username'), true
+                    auth.get('username'), true, 'auth'
                 ),
                 password: this._toDynamicString(
-                    auth.get('password'), true
+                    auth.get('password'), true, 'auth'
                 )
             }
         )
@@ -648,28 +687,28 @@ export default class BaseImporter {
             'com.luckymarmot.OAuth1HeaderDynamicValue',
             {
                 callback: this._toDynamicString(
-                    auth.get('callback') || '', true
+                    auth.get('callback') || '', true, 'auth'
                 ),
                 consumerKey: this._toDynamicString(
-                    auth.get('consumerKey') || '', true
+                    auth.get('consumerKey') || '', true, 'auth'
                 ),
                 consumerSecret: this._toDynamicString(
-                    auth.get('consumerSecret') || '', true
+                    auth.get('consumerSecret') || '', true, 'auth'
                 ),
                 tokenSecret: this._toDynamicString(
-                    auth.get('tokenSecret') || '', true
+                    auth.get('tokenSecret') || '', true, 'auth'
                 ),
                 algorithm: auth.get('algorithm') || '',
                 nonce: this._toDynamicString(
-                    auth.get('nonce') || '', true
+                    auth.get('nonce') || '', true, 'auth'
                 ),
                 additionalParamaters: auth
                     .get('additionalParamaters') || '',
                 timestamp: this._toDynamicString(
-                    auth.get('timestamp') || '', true
+                    auth.get('timestamp') || '', true, 'auth'
                 ),
                 token: this._toDynamicString(
-                    auth.get('token') || '', true
+                    auth.get('token') || '', true, 'auth'
                 )
             }
         )
@@ -687,10 +726,10 @@ export default class BaseImporter {
             {
                 grantType: grantMap[auth.get('flow')] || 0,
                 authorizationUrl: this._toDynamicString(
-                    auth.get('authorizationUrl') || '', true
+                    auth.get('authorizationUrl') || '', true, 'auth'
                 ),
                 accessTokenUrl: this._toDynamicString(
-                    auth.get('tokenUrl') || '', true
+                    auth.get('tokenUrl') || '', true, 'auth'
                 ),
                 scope: (auth.get('scopes') || []).join(' ')
             }
@@ -702,16 +741,16 @@ export default class BaseImporter {
             'com.shigeoka.PawExtensions.AWSSignature4DynamicValue',
             {
                 key: this._toDynamicString(
-                    auth.get('key') || '', true
+                    auth.get('key') || '', true, 'auth'
                 ),
                 secret: this._toDynamicString(
-                    auth.get('secret') || '', true
+                    auth.get('secret') || '', true, 'auth'
                 ),
                 region: this._toDynamicString(
-                    auth.get('region') || '', true
+                    auth.get('region') || '', true, 'auth'
                 ),
                 service: this._toDynamicString(
-                    auth.get('service') || '', true
+                    auth.get('service') || '', true, 'auth'
                 )
             }
         )
@@ -722,13 +761,13 @@ export default class BaseImporter {
             'uk.co.jalada.PawExtensions.HawkDynamicValue',
             {
                 key: this._toDynamicString(
-                    auth.get('key') || '', true
+                    auth.get('key') || '', true, 'auth'
                 ),
                 id: this._toDynamicString(
-                    auth.get('id') || '', true
+                    auth.get('id') || '', true, 'auth'
                 ),
                 algorithm: this._toDynamicString(
-                    auth.get('algorithm') || '', true
+                    auth.get('algorithm') || '', true, 'auth'
                 )
             }
         )
@@ -754,8 +793,8 @@ export default class BaseImporter {
             else if (auth instanceof ApiKeyAuth) {
                 if (auth.get('in') === 'header') {
                     pawReq.setHeader(
-                        this._toDynamicString(auth.get('name'), true),
-                        this._toDynamicString(auth.get('key'), true)
+                        this._toDynamicString(auth.get('name'), true, 'auth'),
+                        this._toDynamicString(auth.get('key'), true, 'auth')
                     )
                 }
             }
@@ -819,10 +858,10 @@ export default class BaseImporter {
         )
         const keyValues = body.map(param => {
             let key = this._toDynamicString(
-                param.get('key'), true
+                param.get('key'), true, 'body'
             )
             let value = this._toDynamicString(
-                param.get, true
+                param.get, true, 'body'
             )
             return [ key, value, true ]
         }).toArray()
@@ -842,10 +881,10 @@ export default class BaseImporter {
         )
         const keyValues = body.map(param => {
             let key = this._toDynamicString(
-                param.get('key'), true
+                param.get('key'), true, 'body'
             )
             let value = this._toDynamicString(
-                param, true
+                param, true, 'body'
             )
             return [ key, value, true ]
         }).toArray()
@@ -861,7 +900,7 @@ export default class BaseImporter {
     _setPlainBody(pawReq, body) {
         if (body.size > 0) {
             let param = body.get(0)
-            pawReq.body = this._toDynamicString(param, true)
+            pawReq.body = this._toDynamicString(param, true, 'body')
         }
         else {
             pawReq.body = ''
@@ -880,7 +919,7 @@ export default class BaseImporter {
         }
 
         let param = body.get(0)
-        let content = this._toDynamicString(param, true)
+        let content = this._toDynamicString(param, true, 'body')
 
         let component = content.getComponentAtIndex(0)
 
@@ -907,7 +946,7 @@ export default class BaseImporter {
         return pawReq
     }
 
-    _toDynamicString(string, defaultToEmpty) {
+    _toDynamicString(string, defaultToEmpty, source) {
         if (!string) {
             if (defaultToEmpty) {
                 return new DynamicString('')
@@ -924,7 +963,7 @@ export default class BaseImporter {
             }
             else {
                 envComponents = this._castParameterToDynamicString(
-                    string
+                    string, source
                 ).components
             }
         }
@@ -1012,7 +1051,7 @@ export default class BaseImporter {
         return new DynamicString(dv)
     }
 
-    _castParameterToDynamicString(param) {
+    _castParameterToDynamicString(param, source) {
         let schema = param.getJSONSchema(false)
 
         let components = []
@@ -1022,7 +1061,7 @@ export default class BaseImporter {
                     if (schema.enum && schema.enum.length === 1) {
                         components.push(param.generate())
                     }
-                    else {
+                    else if (this._useJSF(source)) {
                         let dv = new DynamicValue(
                             'com.luckymarmot.PawExtensions' +
                             '.JSONSchemaFakerDynamicValue',
@@ -1045,7 +1084,7 @@ export default class BaseImporter {
             }
             components.push(generated)
         }
-        else {
+        else if (this._useJSF(source)){
             let dv = new DynamicValue(
                 'com.luckymarmot.PawExtensions' +
                 '.JSONSchemaFakerDynamicValue',
@@ -1057,6 +1096,18 @@ export default class BaseImporter {
         }
 
         return new DynamicString(...components)
+    }
+
+    _useJSF(source) {
+        console.log('@useJSF', source, JSON.stringify(this.options))
+        console.log('@useJSF1', 'url', source === 'url', this.options.jsfInPath)
+        console.log('@useJSF1', 'query', source === 'query', this.options.jsfInQuery)
+        console.log('@useJSF1', 'body', source === 'body', this.options.jsfInBody)
+        console.log('@useJSF1', 'headers', source === 'headers', this.options.jsfInHeaders)
+        return (source  === 'url' && this.options.jsfInPath) ||
+            (source  === 'query' && this.options.jsfInQuery) ||
+            (source  === 'body' && this.options.jsfInBody) ||
+            (source  === 'headers' && this.options.jsfInHeaders)
     }
 
     _extractReferenceComponent(component) {

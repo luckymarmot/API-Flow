@@ -8,7 +8,6 @@ export default class CurlImporter extends BaseImporter {
     static title = 'cURL Importer';
 
     static fileExtensions = [];
-    static inputs = [];
 
     constructor() {
         super()

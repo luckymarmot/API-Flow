@@ -9,7 +9,6 @@ export default class SwaggerImporter extends BaseImporter {
     static title = 'Swagger Importer';
 
     static fileExtensions = [];
-    static inputs = [];
 
     constructor() {
         super()

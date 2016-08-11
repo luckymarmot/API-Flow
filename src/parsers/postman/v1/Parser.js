@@ -136,9 +136,14 @@ export default class PostmanParser {
             throw new Error('Invalid Postman file (missing data)')
         }
 
-        if (typeof collection.requests[Symbol.iterator] !== 'function') {
+        if (
+            !Array.isArray(collection.requests) &&
+            typeof collection.requests[Symbol.iterator] !== 'function'
+        ) {
             let msg = 'Invalid collection format: collections should have ' +
-                'a list of requests - found' + typeof collection.requests
+                'a list of requests - found: ' + typeof collection.requests +
+                ' instead for collection ' + collection.name + ' with id ' +
+                collection.id
             throw new Error(msg)
         }
 

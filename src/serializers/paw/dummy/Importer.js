@@ -26,7 +26,6 @@ export default class DummyImporter extends BaseImporter {
     static title = 'Dummy Importer';
 
     static fileExtensions = [];
-    static inputs = [];
 
     constructor() {
         super()
