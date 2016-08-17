@@ -1,3 +1,5 @@
+import { registerImporter } from '../../../mocks/PawShims'
+
 import BaseImporter from '../base-importer/BaseImporter'
 
 import CurlParser from '../../../parsers/cURL/Parser'

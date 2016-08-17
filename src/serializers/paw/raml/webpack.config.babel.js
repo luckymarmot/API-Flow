@@ -1,6 +1,14 @@
 import path from 'path'
+import Importer from './Importer'
 
-const name = 'RAMLImporter'
+if (!Importer.identifier) {
+    let msg = 'Importer requires an identifier like: ' +
+        'com.luckymarmot.PawExtensions.MySuperImporter'
+    throw new Error(msg)
+}
+
+const name = Importer.identifier.split('.').slice(-1)
+const folder = __dirname.match(/([^/]+)$/)[1]
 
 const production = process.env.NODE_ENV === 'production' // eslint-disable-line
 
@@ -16,10 +24,10 @@ const config = {
         path: path.join(
             __dirname,
             '../../../../',
-            './build/raml/com.luckymarmot.PawExtensions.RAMLImporter'
+            './dist/paw/importers/' + folder + '/' +
+            Importer.identifier
         ),
         pathInfo: true,
-        publicPath: '/build/',
         filename: name + '.js'
     },
     module: {

@@ -1,43 +1,31 @@
+BASE=$(shell pwd)
+SCRIPTS=$(BASE)/scripts
 extensions_dir=$(HOME)/Library/Containers/com.luckymarmot.Paw/Data/Library/Application Support/com.luckymarmot.Paw/Extensions/
 
-transfer: deploy
-	mkdir -p "$(extensions_dir)"
-	cp -r ./build/ "$(extensions_dir)"
+all: configure pack
 
-deploy:
-	sh deploy.sh $(TARGET)
+configure:
+	sh "$(SCRIPTS)/configure.sh" $(BASE)
 
-build:
-	npm run compile
-	cp README.md LICENSE ./lib/
+runners:
+	sh "$(SCRIPTS)/runners.sh" $(BASE) $(TARGET)
 
-build-web:
-	npm run compile-web
+importers:
+	sh "$(SCRIPTS)/importers.sh" $(BASE) $(TARGET)
 
-build-worker:
-	npm run compile-worker
+generators:
+	sh "$(SCRIPTS)/generators.sh" $(BASE) $(TARGET)
 
-build-node: clean
-	npm run compile
-	rm -rf ./dist/node/
-	mkdir -p ./dist/node/
-	zip -r ./dist/node/api-flow.zip ./lib/*
+transfer: importers generators
+	sh "$(SCRIPTS)/transfer.sh" $(BASE) $(extensions_dir) $(TARGET)
 
-clean:
-	rm -Rf ./lib/
-
-install: clean npm-install build
-
-test:
-	npm test
+pack: importers generators
+	sh "$(SCRIPTS)/pack.sh" $(BASE) $(TARGET)
 
 lint:
-	npm run lint
+	sh "$(SCRIPTS)/lint.sh" $(BASE)
 
-validate: test lint
+test:
+	sh "$(SCRIPTS)/test.sh" $(BASE)
 
-npm-install:
-	npm install
-
-publish: install
-	npm publish
+validate: lint test
