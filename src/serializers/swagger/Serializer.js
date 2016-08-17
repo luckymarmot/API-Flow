@@ -225,6 +225,10 @@ export default class SwaggerSerializer extends BaseSerializer {
     _formatContent(context, request, schemes) {
         let _content = {}
 
+        if (request.get('name')) {
+            _content.summary = request.get('name')
+        }
+
         if (request.get('description')) {
             _content.description = request.get('description')
         }
@@ -393,9 +397,13 @@ export default class SwaggerSerializer extends BaseSerializer {
         let body = container.get('body')
         let path = container.get('path')
 
-        let params = headers.map(param => {
-            return this._formatParam('header', param)
+        let params = path.map(param => {
+            return this._formatParam('path', param)
         }).concat(
+        headers.map(param => {
+            return this._formatParam('header', param)
+        })
+        ).concat(
         queries.map(param => {
             return this._formatParam('query', param)
         })
@@ -435,10 +443,6 @@ export default class SwaggerSerializer extends BaseSerializer {
 
 
             return formatted
-        })
-        ).concat(
-        path.map(param => {
-            return this._formatParam('path', param)
         })
         )
 
