@@ -8,6 +8,7 @@ import Options from '../models/options/Options'
 import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
 import PostmanParser from '../parsers/postman/Parser'
+import PawCloudParser from '../parsers/pawcloud/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
@@ -45,7 +46,8 @@ export default class FlowCLI {
             metavar: 'format',
             help:
                 'The format of the source file',
-            choices: [ 'swagger', 'raml', 'postman-1', 'postman-2' ],
+            choices: [ 'swagger', 'raml', 'postman-1', 'postman-2',
+                       'pawcloud' ],
             defaultValue: [ 'swagger' ],
             nargs: 1,
             action: 'store'
@@ -163,7 +165,8 @@ export default class FlowCLI {
             swagger: SwaggerParser,
             raml: RAMLParser,
             'postman-1': PostmanParser,
-            'postman-2': () => { return new PostmanParser('v2') }
+            'postman-2': () => { return new PostmanParser('v2') },
+            pawcloud: PawCloudParser,
         }
 
         let serializerMap = {

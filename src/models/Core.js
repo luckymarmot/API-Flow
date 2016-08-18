@@ -355,7 +355,7 @@ export default class Context extends Immutable.Record({
 }) {
     getRequests() {
         if (!this.get('group')) {
-            return null
+            return Immutable.List()
         }
         return this.get('group').getRequests()
     }

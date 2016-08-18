@@ -31,9 +31,11 @@ export default class PawParser {
 
     constructor() {
         this.references = new Immutable.List()
+        this.dvManager = null
     }
 
     generate(ctx, reqs, opts) {
+        this.dvManager = new DynamicValueManager(ctx)
         let group = this._parseGroup(ctx, reqs, opts)
         let references = this._parseDomains(ctx, reqs, opts)
         let info = this._parseInfo(ctx, reqs, opts)
@@ -141,8 +143,6 @@ export default class PawParser {
     }
 
     _formatURL(req) {
-        let manager = new DynamicValueManager()
-
         let ds = req.getUrlBase(true)
 
         if (!ds || !ds.length) {
@@ -187,7 +187,7 @@ export default class PawParser {
                 }
             }
             else {
-                let val = manager.convert(component)
+                let val = this.dvManager.convert(component)
                 if (val instanceof JSONSchemaReference) {
                     let title = val.get('value')['x-title']
                     if (title) {
@@ -229,7 +229,6 @@ export default class PawParser {
                         dvNames[identifier] = 1
                     }
                     currentStepString += '{' + identifier + '}'
-
                     let param = new Parameter({
                         key: identifier,
                         name: identifier,
@@ -340,13 +339,11 @@ export default class PawParser {
         let param = null
         let auths = _auths
 
-        let manager = new DynamicValueManager()
-
         if (ds.length > 1) {
             let value = new Immutable.List()
             for (let component of ds.components) {
                 let [ _param, auth ] = this
-                    ._formatHeaderComponent(null, component, manager)
+                    ._formatHeaderComponent(null, component, this.dvManager)
 
                 if (_param) {
                     value = value.push(_param)
@@ -368,7 +365,7 @@ export default class PawParser {
         else {
             let [ _param, auth ] = this
                 ._formatHeaderComponent(
-                    key, ds.getComponentAtIndex(0) || '', manager
+                    key, ds.getComponentAtIndex(0) || '', this.dvManager
                 )
 
             if (_param) {
@@ -383,11 +380,11 @@ export default class PawParser {
         return [ param, auths ]
     }
 
-    _formatHeaderComponent(key, component, manager) {
+    _formatHeaderComponent(key, component, dvManager) {
         let param = null
         let auth = null
 
-        let val = manager.convert(component)
+        let val = dvManager.convert(component)
 
         if (typeof component === 'string') {
             param = this._formatParam(key, component)
@@ -442,13 +439,12 @@ export default class PawParser {
 
     _formatQueryParam(key, ds) {
         let param = null
-        let manager = new DynamicValueManager()
 
         if (ds.length > 1) {
             let value = new Immutable.List()
             for (let component of ds.components) {
                 let _param = this._formatQueryComponent(
-                    null, component, manager
+                    null, component, this.dvManager
                 )
                 value = value.push(_param)
             }
@@ -463,7 +459,7 @@ export default class PawParser {
         }
         else {
             let _param = this._formatQueryComponent(
-                key, ds.getComponentAtIndex(0) || '', manager
+                key, ds.getComponentAtIndex(0) || '', this.dvManager
             )
             param = _param
         }
@@ -471,10 +467,10 @@ export default class PawParser {
         return param
     }
 
-    _formatQueryComponent(key, component, manager) {
+    _formatQueryComponent(key, component, dvManager) {
         let param = null
 
-        let val = manager.convert(component)
+        let val = dvManager.convert(component)
 
         if (typeof component === 'string') {
             param = this._formatParam(key, component)

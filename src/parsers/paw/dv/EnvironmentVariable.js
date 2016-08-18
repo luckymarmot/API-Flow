@@ -7,6 +7,9 @@ export default class EnvironmentVariable extends DynamicValueConverter {
     convert(dv, ctx) {
         let id = dv.environmentVariable
         let variable = ctx.getEnvironmentVariableById(id)
+        if (variable === null) {
+            return null
+        }
         let name = variable.name
         let currentValue = variable.getCurrentValue()
 
