@@ -115,6 +115,7 @@ export class PawRequestMock extends Mock {
             getUrl: () => {},
             getUrlBase: () => {},
             getUrlParams: () => {},
+            getUrlParameters: () => {},
             getHeaders: () => {},
             getHeaderByName: () => {},
             setHeader: () => {},

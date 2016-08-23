@@ -184,7 +184,6 @@ export default class FlowCLI {
 
         let content
         let item
-        console.error('@options', JSON.stringify(options, null, '  '))
         if (options.getIn([ 'resolver', 'base' ]) === 'local') {
             let _path = path.resolve('./', input)
             content = fs.readFileSync(_path).toString()

@@ -1,6 +1,6 @@
 BASE=$(shell pwd)
 SCRIPTS=$(BASE)/scripts
-extensions_dir=$(HOME)/Library/Containers/com.luckymarmot.Paw/Data/Library/Application Support/com.luckymarmot.Paw/Extensions/
+extensions_dir=$(HOME)/Library/Containers/com.luckymarmot.Paw/Data/Library/Application\ Support/com.luckymarmot.Paw/Extensions/
 
 all: configure pack
 
@@ -29,3 +29,6 @@ test:
 	sh "$(SCRIPTS)/test.sh" $(BASE)
 
 validate: lint test
+
+watch:
+	sh "$(SCRIPTS)/watch.sh" $(BASE) $(COMMAND)

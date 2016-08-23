@@ -5,13 +5,24 @@ import {
 } from '../../models/Core'
 
 import Reference from '../../models/references/Reference'
+import JSONSchemaReference from '../../models/references/JSONSchema'
 
 export default class SwaggerSerializer extends BaseSerializer {
+    constructor() {
+        super()
+        this.includeOptional = false
+        this.references = null
+        this.host = null
+    }
+
     serialize(context) {
+        this.references = context.get('references')
+
         let info = this._formatInfo(context)
 
         let requests = context.getRequests()
         let [ host, schemes ] = this._formatHost(requests)
+        this.host = host
         let [ paths, securityDefs ] = this._formatPaths(
             context, requests, schemes
         )
@@ -148,25 +159,37 @@ export default class SwaggerSerializer extends BaseSerializer {
             return [ 'localhost', [] ]
         }
 
-        let url = requests.getIn([ 0, 'url' ])
-        let schemes = [ 'http', 'https', 'ws', 'wss' ]
-        let usedSchemes = []
-        for (let scheme of schemes) {
-            let used = requests.reduce((bool, req) => {
+        let urlMap = {}
+        let reducer = (scheme) => {
+            return (bool, req) => {
+                let generatedHost = req.getIn([ 'url', 'host' ]).generate()
+                urlMap[generatedHost] = (urlMap[generatedHost] || 0) + 1
                 let value = req
                     .get('url')
                     ._getParamValue('protocol')
                     .indexOf(scheme) >= 0
                 return bool && value
-            }, true)
+            }
+        }
+
+        let schemes = [ 'http', 'https', 'ws', 'wss' ]
+        let usedSchemes = []
+        for (let scheme of schemes) {
+            let used = requests.reduce(reducer(scheme), true)
 
             if (used) {
                 usedSchemes.push(scheme)
             }
         }
 
-        let generated = url.get('host').generate()
-        return [ generated || 'localhost', usedSchemes ]
+        let bestHost = Object.keys(urlMap).reduce((best, key) => {
+            if (urlMap[key] > (urlMap[best] || -1)) {
+                return key
+            }
+            return best
+        }, 'localhost')
+
+        return [ bestHost, usedSchemes ]
     }
 
     _formatPaths(context, requests, schemes) {
@@ -225,6 +248,11 @@ export default class SwaggerSerializer extends BaseSerializer {
     _formatContent(context, request, schemes) {
         let _content = {}
 
+        let currentHost = request.getIn([ 'url', 'host' ]).generate()
+        if (currentHost !== this.host) {
+            _content['x-host'] = currentHost
+        }
+
         if (request.get('name')) {
             _content.summary = request.get('name')
         }
@@ -260,7 +288,11 @@ export default class SwaggerSerializer extends BaseSerializer {
             _content.produces = produces
         }
 
-        _content.parameters = ::this._formatParameters(context, request)
+        _content.parameters = ::this._formatParameters(
+            context,
+            request,
+            consumes
+        )
         let [ definitions, security ] = ::this._formatSecurity(context, request)
         let responses = ::this._formatResponses(context, request)
 
@@ -389,7 +421,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         return _responseMap
     }
 
-    _formatParameters(context, request) {
+    _formatParameters(context, request, consumes) {
         let container = request.get('parameters')
 
         let headers = container.get('headers')
@@ -397,56 +429,107 @@ export default class SwaggerSerializer extends BaseSerializer {
         let body = container.get('body')
         let path = container.get('path')
 
-        let params = path.map(param => {
-            return this._formatParam('path', param)
-        }).concat(
-        headers.map(param => {
-            return this._formatParam('header', param)
-        })
-        ).concat(
-        queries.map(param => {
-            return this._formatParam('query', param)
-        })
-        ).concat(
-        body.map(param => {
-            let formatted
-            let domain = this._getContentTypeDomain(param)
+        if (consumes.length > 0) {
+            headers = headers.filter(header => {
+                return header.get('key') !== 'Content-Type'
+            })
+        }
 
-            if (
-                domain.indexOf('application/x-www-form-urlencoded') >= 0 ||
-                domain.indexOf('multipart/form-data') >= 0
-            ) {
-                formatted = this._formatParam('body', param, true)
-            }
-            else {
-                formatted = this._formatParam('body', param, false)
-            }
-
-            if (typeof formatted.$ref === 'undefined') {
-                formatted.in = 'formData'
-            }
-            else {
-                if (typeof formatted.$ref === 'object') {
-                    formatted.schema = formatted.$ref || {}
-                }
-                else {
-                    formatted.schema = {
-                        $ref: formatted.$ref
-                    }
-                }
-                delete formatted.$ref
-                delete formatted.type
-                if (formatted.name === null) {
-                    delete formatted.name
-                }
-            }
-
-
-            return formatted
-        })
-        )
+        let params = path.map(::this._formatPathParam)
+            .concat(headers.map(::this._formatHeaderParam))
+            .concat(queries.map(::this._formatQueryParam))
+            .concat(body.map(::this._formatBodyParam))
 
         return this._dropDuplicateParameters(params)
+    }
+
+    _formatPathParam(param) {
+        return this._formatParam('path', param)
+    }
+
+    _formatHeaderParam(param) {
+        return this._formatParam('header', param)
+    }
+
+    _formatQueryParam(param) {
+        return this._formatParam('query', param)
+    }
+
+    _formatBodyParam(param) {
+        let domain = this._getContentTypeDomain(param)
+
+        if (
+            domain.indexOf('application/x-www-form-urlencoded') >= 0 ||
+            domain.indexOf('multipart/form-data') >= 0
+        ) {
+            return this._formatParam('formData', param)
+        }
+
+        let schema = {}
+        let name
+
+        const stdTypes = {
+            string: 'string',
+            number: 'number',
+            integer: 'integer',
+            boolean: 'boolean',
+            array: 'array',
+            object: 'object'
+        }
+
+        if (stdTypes[param.get('type')]) {
+            schema.type = param.get('type')
+            if (param.get('value')) {
+                schema.default = param.get('value')
+            }
+            name = param.get('key') || 'body'
+        }
+        else if (param.get('type') === 'reference') {
+            let ref = param.get('value')
+
+            let rawName = ref.get('relative') || ref.get('uri') || 'body'
+            name = rawName.split('/').slice(-1)[0]
+
+            if (ref instanceof JSONSchemaReference) {
+                if (this._isInlineRef(ref)) {
+                    schema = ref.get('value')
+                }
+                else {
+                    schema = {
+                        $ref: ref.get('relative') || ref.get('uri')
+                    }
+                }
+            }
+            else if (this._isInlineRef(ref)) {
+                schema = {
+                    type: 'string',
+                    default: JSON.stringify(ref.get('value'))
+                }
+            }
+            else {
+                schema = {
+                    $ref: ref.get('relative') || ref.get('uri')
+                }
+            }
+        }
+
+        let formatted = {
+            name: name,
+            in: 'body',
+            schema: schema
+        }
+
+        return formatted
+    }
+
+    _isInlineRef(reference) {
+        let uri = reference.get('uri')
+        if (uri) {
+            return this.references.valueSeq().filter(container => {
+                return !!container.getIn([ 'cache', uri ])
+            }).size > 0
+        }
+        return true
     }
 
     _getContentTypeDomain(param) {
@@ -505,14 +588,26 @@ export default class SwaggerSerializer extends BaseSerializer {
 
         let _schema = _param.getJSONSchema(false, replaceRefs)
         if (_param.get('type') === 'reference') {
-            param.$ref = {}
-            Object.assign(param.$ref, _schema)
+            let value = _param.get('value')
+            if (value.get('relative') || value.get('uri')) {
+                param.$ref = {
+                    $ref: value.get('uri')
+                }
+            }
+            else {
+                param.$ref = {}
+                Object.assign(param.$ref, _schema)
+            }
         }
         else {
             Object.assign(param, _schema)
         }
 
-        if (_param.get('externals').size > 0) {
+        if (!stdTypes[param.type] && param.type !== 'array') {
+            param.type = 'string'
+        }
+
+        if (_param.get('externals').size > 0 && this.includeOptional) {
             param['x-use-with'] = []
 
             _param.get('externals').forEach(external => {
@@ -702,10 +797,15 @@ export default class SwaggerSerializer extends BaseSerializer {
                     let ref = container.resolve(key).get('value')
 
                     if (typeof ref === 'undefined' || ref === null) {
-                        subTree = ''
+                        Object.assign(subTree, {
+                            type: 'string'
+                        })
                     }
                     else if (typeof ref === 'string') {
-                        subTree = ref
+                        Object.assign(subTree, {
+                            type: 'string',
+                            default: ref
+                        })
                     }
                     else {
                         // object assignement

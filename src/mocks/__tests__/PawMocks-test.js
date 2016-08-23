@@ -246,6 +246,7 @@ export class TestPawMocks extends UnitTest {
             'getUrl',
             'getUrlBase',
             'getUrlParams',
+            'getUrlParameters',
             'getHeaders',
             'getHeaderByName',
             'setHeader',

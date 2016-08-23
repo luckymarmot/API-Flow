@@ -13,6 +13,10 @@ export default class DynamicValueConverter {
     }
 
     _extractValueFromDV(dvOrString) {
+        if (typeof dvOrString === 'undefined') {
+            return null
+        }
+
         if (typeof dvOrString !== 'string' && dvOrString.getEvaluatedString) {
             return dvOrString.getEvaluatedString()
         }

@@ -5,8 +5,7 @@ import Auth from '../../../models/Auth'
 
 export default class OAuth2 extends DynamicValueConverter {
     convert(dv) {
-        console.log('@convert oauth2', dv.grantType, dv.authorizationURL, dv.accessTokenURL, dv.scope)
-        let grantType = this._extractValueFromDV(dv.grantType) || null
+        let grantType = this._extractValueFromDV(dv.grantType) || 0
         let authorizationURL = this
             ._extractValueFromDV(dv.authorizationURL || '') || null
         let accessTokenURL = this
@@ -20,11 +19,14 @@ export default class OAuth2 extends DynamicValueConverter {
             3: 'password'
         }
 
-        let scopes = scope.split(/[;,\s]/).filter(d => {
-            return d !== ''
-        }).map(d => {
-            return d.trim()
-        });
+        let scopes = []
+        if (scope) {
+            scopes = scope.split(/[;,\s]/).filter(d => {
+                return d !== ''
+            }).map(d => {
+                return d.trim()
+            })
+        }
 
         return new Auth.OAuth2({
             flow: grantMap[grantType] || null,

@@ -22,6 +22,7 @@ import URL from '../../../models/URL'
 import { Info } from '../../../models/Utils'
 
 import JSONSchemaReference from '../../../models/references/JSONSchema'
+import ExoticReference from '../../../models/references/Exotic'
 import ReferenceContainer from '../../../models/references/Container'
 
 import DynamicValueManager from '../dv/DVManager'
@@ -405,6 +406,10 @@ export class TestPawParser extends UnitTest {
             return [ new Immutable.List() ]
         })
 
+        paw.spyOn('_formatBodies', () => {
+            return 42
+        })
+
         paw.spyOn('_formatHeaders', () => {
             return [ new Immutable.List(), new Immutable.List() ]
         })
@@ -418,8 +423,13 @@ export class TestPawParser extends UnitTest {
         })
 
         const expected = new Request({
-            url: new URL('localhost'),
-            method: 'get'
+            url: new URL({
+                protocol: 'http',
+                host: 'localhost',
+                pathname: '/'
+            }),
+            method: 'get',
+            bodies: 42
         })
 
         const result = paw._parseRequest(ctx, req)
@@ -441,10 +451,11 @@ export class TestPawParser extends UnitTest {
             type: 'string',
             internals: new Immutable.List([
                 new Constraint.Enum([ value ])
-            ])
+            ]),
+            externals: 42
         })
 
-        const result = paw._formatParam(key, value)
+        const result = paw._formatParam(key, value, 42)
 
         this.assertJSONEqual(expected, result)
     }
@@ -471,10 +482,11 @@ export class TestPawParser extends UnitTest {
             key: key,
             name: key,
             value: value,
-            type: 'reference'
+            type: 'reference',
+            externals: 42
         })
 
-        const result = paw._formatReferenceParam(key, value)
+        const result = paw._formatReferenceParam(key, value, 42)
 
         this.assertJSONEqual(expected, result)
     }
@@ -530,10 +542,11 @@ export class TestPawParser extends UnitTest {
             key: 'Content-Type',
             name: 'Content-Type',
             value: value,
-            type: 'reference'
+            type: 'reference',
+            externals: 42
         })
 
-        const result = paw._formatReferenceParam(null, value)
+        const result = paw._formatReferenceParam(null, value, 42)
 
         this.assertJSONEqual(expected, result)
     }
@@ -582,6 +595,7 @@ export class TestPawParser extends UnitTest {
     @targets('_formatHeaderParam')
     testFormatHeaderParamCallsFormatHeaderComponentWithKeyIfOnlyOneComponent() {
         const paw = this.__init()
+        paw.dvManager = new DynamicValueManager()
         const ds = new DynamicString('a simple dynamic string')
         ds.length = 1
 
@@ -591,12 +605,12 @@ export class TestPawParser extends UnitTest {
 
         const key = 'Content-Type'
 
-        paw._formatHeaderParam(key, ds, new Immutable.List())
+        paw._formatHeaderParam(key, ds, new Immutable.List(), 42)
 
         this.assertEqual(paw.spy._formatHeaderComponent.count, 1)
         this.assertJSONEqual(
             paw.spy._formatHeaderComponent.calls[0],
-            [ key, '', new DynamicValueManager() ]
+            [ key, '', paw.dvManager, 42 ]
         )
     }
 
@@ -621,12 +635,13 @@ export class TestPawParser extends UnitTest {
                 format: 'sequence',
                 value: new Immutable.List([
                     12, 12
-                ])
+                ]),
+                externals: 42
             }),
             auths
         ]
 
-        const result = paw._formatHeaderParam(key, ds, auths)
+        const result = paw._formatHeaderParam(key, ds, auths, 42)
 
         this.assertJSONEqual(expected, result)
     }
@@ -701,12 +716,13 @@ export class TestPawParser extends UnitTest {
                 value: component,
                 internals: new Immutable.List([
                     new Constraint.Enum([ component ])
-                ])
+                ]),
+                externals: 42
             }),
             null
         ]
 
-        const result = paw._formatHeaderComponent(key, component, dvm)
+        const result = paw._formatHeaderComponent(key, component, dvm, 42)
 
         this.assertJSONEqual(expected, result)
         this.assertEqual(dvm.spy.convert.count, 1)
@@ -814,7 +830,7 @@ export class TestPawParser extends UnitTest {
         paw.references = new Immutable.List()
         const dvm = new ClassMock(new DynamicValueManager(), '')
 
-        paw.spyOn('_formatReferenceParam', () => {
+        paw.spyOn('_formatParamWithConstraints', () => {
             return 12
         })
 
@@ -843,7 +859,7 @@ export class TestPawParser extends UnitTest {
         const result = paw._formatHeaderComponent(key, component, dvm)
 
         this.assertJSONEqual(expected, result)
-        this.assertEqual(paw.spy._formatReferenceParam.count, 1)
+        this.assertEqual(paw.spy._formatParamWithConstraints.count, 1)
     }
 
     @targets('_formatHeaderComponent')
@@ -871,13 +887,13 @@ export class TestPawParser extends UnitTest {
             null
         ]
 
-        const result = paw._formatHeaderComponent(key, component, dvm)
+        const result = paw._formatHeaderComponent(key, component, dvm, 42)
 
         this.assertJSONEqual(expected, result)
         this.assertEqual(paw.spy._formatParam.count, 1)
         this.assertEqual(
             paw.spy._formatParam.calls[0],
-            [ key, 'some evaluated dv' ]
+            [ key, 'some evaluated dv', 42 ]
         )
     }
 
@@ -992,10 +1008,11 @@ export class TestPawParser extends UnitTest {
             format: 'sequence',
             value: new Immutable.List([
                 12, 12
-            ])
+            ]),
+            externals: 42
         })
 
-        const result = paw._formatQueryParam(key, ds)
+        const result = paw._formatQueryParam(key, ds, 42)
 
         this.assertJSONEqual(expected, result)
     }
@@ -1062,10 +1079,11 @@ export class TestPawParser extends UnitTest {
             value: component,
             internals: new Immutable.List([
                 new Constraint.Enum([ component ])
-            ])
+            ]),
+            externals: 42
         })
 
-        const result = paw._formatQueryComponent(key, component, dvm)
+        const result = paw._formatQueryComponent(key, component, dvm, 42)
 
         this.assertJSONEqual(expected, result)
         this.assertEqual(dvm.spy.convert.count, 1)
@@ -1077,7 +1095,7 @@ export class TestPawParser extends UnitTest {
         paw.references = new Immutable.List()
         const dvm = new ClassMock(new DynamicValueManager(), '')
 
-        paw.spyOn('_formatReferenceParam', () => {
+        paw.spyOn('_formatParamWithConstraints', () => {
             return 12
         })
 
@@ -1103,7 +1121,7 @@ export class TestPawParser extends UnitTest {
         const result = paw._formatQueryComponent(key, component, dvm)
 
         this.assertJSONEqual(expected, result)
-        this.assertEqual(paw.spy._formatReferenceParam.count, 1)
+        this.assertEqual(paw.spy._formatParamWithConstraints.count, 1)
     }
 
     @targets('_formatQueryComponent')
@@ -1128,13 +1146,13 @@ export class TestPawParser extends UnitTest {
 
         const expected = 12
 
-        const result = paw._formatQueryComponent(key, component, dvm)
+        const result = paw._formatQueryComponent(key, component, dvm, 42)
 
         this.assertJSONEqual(expected, result)
         this.assertEqual(paw.spy._formatParam.count, 1)
         this.assertEqual(
             paw.spy._formatParam.calls[0],
-            [ key, 'some evaluated dv' ]
+            [ key, 'some evaluated dv', 42 ]
         )
     }
 
@@ -1160,69 +1178,100 @@ export class TestPawParser extends UnitTest {
     }
 
     @targets('_formatPlainBody')
-    testFormatPlainBodyCallsFormatParam() {
+    testFormatPlainBodyCallsFormatReferenceParam() {
         const paw = this.__init()
+
+        paw.dvManager = {
+            convert: () => new ExoticReference()
+        }
+
         const content = {
             getEvaluatedString: () => {
                 return 'test content'
-            }
+            },
+            getComponentAtIndex: () => {
+                return 'test content'
+            },
+            length: 1
         }
 
-        paw.spyOn('_formatParam', () => {
+        paw.spyOn('_formatReferenceParam', () => {
             return 12
         })
 
         paw._formatPlainBody(content)
 
-        this.assertEqual(paw.spy._formatParam.count, 1)
+        this.assertEqual(paw.spy._formatReferenceParam.count, 1)
     }
 
     @targets('_formatPlainBody')
     testFormatPlainBodyCallsFormatParamWithCorrectArguments() {
         const paw = this.__init()
+
+        paw.dvManager = {
+            convert: () => new ExoticReference()
+        }
+
         const content = {
             getEvaluatedString: () => {
                 return 'test content'
-            }
+            },
+            getComponentAtIndex: () => {
+                return 'test content'
+            },
+            length: 1
         }
 
-        paw.spyOn('_formatParam', () => {
+        paw.spyOn('_formatReferenceParam', () => {
             return 12
         })
 
-        paw._formatPlainBody(content)
+        paw._formatPlainBody(content, 42)
 
-        this.assertEqual(paw.spy._formatParam.count, 1)
-        this.assertEqual(
-            paw.spy._formatParam.calls[0],
-            [ 'body', 'test content' ]
+        this.assertEqual(paw.spy._formatReferenceParam.count, 1)
+        this.assertJSONEqual(
+            paw.spy._formatReferenceParam.calls[0],
+            [ null, new ExoticReference(), 42 ]
         )
     }
 
     @targets('_formatPlainBody')
     testFormatPlainBodyReturnsExpectedParam() {
         const paw = this.__init()
+        paw.dvManager = new DynamicValueManager()
+
         const content = {
             getEvaluatedString: () => {
                 return 'test content'
-            }
+            },
+            getComponentAtIndex: () => {
+                return 'test content'
+            },
+            length: 1
         }
 
         paw.spyOn('_formatParam', () => {
             return 12
         })
 
-        const expected = [
-            12,
-            'text/plain'
-        ]
+        const expected = new Parameter({
+            name: 'body',
+            value: new JSONSchemaReference({
+                value: {
+                    type: 'string',
+                    default: 'test content'
+                },
+                resolved: true
+            }),
+            type: 'reference'
+        })
 
-        const result = paw._formatPlainBody(content)
+        const result = paw._formatPlainBody(content, new Immutable.List())
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
-    @targets('_formatPlainBody')
+    @targets('_formatBody')
     testFormatBodyCallsAllGetBodyMethodsFromRequest() {
         const [ paw, ctx, req ] = this.__init(3)
 
@@ -1344,9 +1393,22 @@ export class TestPawParser extends UnitTest {
         paw._formatBody(req)
 
         this.assertEqual(paw.spy._formatPlainBody.count, 1)
-        this.assertEqual(
+        this.assertJSONEqual(
             paw.spy._formatPlainBody.calls[0],
-            [ 12 ]
+            [
+                12,
+                new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        type: 'string',
+                        internals: new Immutable.List([
+                            new Constraint.Enum([
+                                'text/plain'
+                            ])
+                        ])
+                    })
+                ])
+            ]
         )
     }
 
@@ -1370,16 +1432,28 @@ export class TestPawParser extends UnitTest {
         })
 
         paw.spyOn('_formatPlainBody', () => {
-            return [ 12, 42 ]
+            return 12
         })
 
         const expected = [
-            new Immutable.List([ 12 ]), 42
+            new Immutable.List([ 12 ]),
+            'text/plain',
+            new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'text/plain'
+                        ])
+                    ])
+                })
+            ])
         ]
 
         const result = paw._formatBody(req)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_formatBody')
@@ -1451,12 +1525,23 @@ export class TestPawParser extends UnitTest {
 
         const expected = [
             new Immutable.List([ 12, 12, 12 ]),
-            'application/x-www-form-urlencoded'
+            'application/x-www-form-urlencoded',
+            new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'application/x-www-form-urlencoded'
+                        ])
+                    ])
+                })
+            ])
         ]
 
         const result = paw._formatBody(req)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_formatBody')
@@ -1528,12 +1613,21 @@ export class TestPawParser extends UnitTest {
 
         const expected = [
             new Immutable.List([ 12, 12, 12 ]),
-            'multipart/form-data'
+            'multipart/form-data',
+            new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'multipart/form-data' ])
+                    ])
+                })
+            ])
         ]
 
         const result = paw._formatBody(req)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_formatBody')
@@ -1592,17 +1686,26 @@ export class TestPawParser extends UnitTest {
         })
 
         paw.spyOn('_formatPlainBody', () => {
-            return [ 12, 42 ]
+            return 14
         })
 
         const expected = [
-            new Immutable.List([ 12 ]),
-            42
+            new Immutable.List([ 14 ]),
+            'text/plain',
+            new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ 'text/plain' ])
+                    ])
+                })
+            ])
         ]
 
         const result = paw._formatBody(req)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_formatAuth')
@@ -1868,6 +1971,7 @@ export class TestPawParser extends UnitTest {
 
     __init(size) {
         const paw = new ClassMock(new PawParser(), '')
+        paw.references = new Immutable.List()
         const ctx = new PawContextMock({}, '')
         const req = new PawRequestMock({}, '')
 

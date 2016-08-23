@@ -60,7 +60,8 @@ export class Parameter extends Immutable.Record({
             if (ref instanceof Reference) {
                 delete constraintSet.type
                 if (typeof ref.get('value') === 'string') {
-                    constraintSet.$ref = ref.get('value')
+                    constraintSet.type = 'string'
+                    constraintSet.default = ref.get('value')
                 }
                 else if (
                     ref.get('value') &&
@@ -355,7 +356,7 @@ export default class Context extends Immutable.Record({
 }) {
     getRequests() {
         if (!this.get('group')) {
-            return null
+            return new Immutable.List()
         }
         return this.get('group').getRequests()
     }

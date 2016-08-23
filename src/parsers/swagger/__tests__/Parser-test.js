@@ -1032,8 +1032,8 @@ export class TestSwaggerParser extends UnitTest {
     @targets('_updateParametersInMethod')
     testUpdateParametersInMethodWithOnlyContentParams() {
         const parser = this.__init()
-        const content = { parameters:
-            [
+        const content = {
+            parameters: [
                 {
                     name: 'param#1',
                     value: 'content'
@@ -1063,8 +1063,8 @@ export class TestSwaggerParser extends UnitTest {
                 value: 'super'
             }
         ]
-        const content = { parameters:
-            [
+        const content = {
+            parameters: [
                 {
                     name: 'param#1',
                     value: 'content'

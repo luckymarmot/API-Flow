@@ -662,6 +662,7 @@ export class TestSwaggerSerializer extends UnitTest {
         const expected = [
             null,
             {
+                'x-host': 'test.com',
                 description: 'simple request description',
                 tags: [ 'first', 'second' ],
                 operationId: 'ae256',
@@ -740,6 +741,7 @@ export class TestSwaggerSerializer extends UnitTest {
         const expected = [
             'security definitions',
             {
+                'x-host': 'test.com',
                 description: 'simple request description',
                 tags: [ 'first', 'second' ],
                 operationId: 'ae256',
@@ -962,7 +964,7 @@ export class TestSwaggerSerializer extends UnitTest {
 
         const expected = []
 
-        const result = parser._formatParameters(context, request)
+        const result = parser._formatParameters(context, request, [])
 
         this.assertEqual(expected, result)
     }
@@ -1002,15 +1004,15 @@ export class TestSwaggerSerializer extends UnitTest {
         const expected = [
             { c: 1 },
             {
-                c: 6,
-                in: 'formData'
+                in: 'body',
+                schema: {}
             }
         ]
 
-        const result = parser._formatParameters(context, request)
+        const result = parser._formatParameters(context, request, [])
 
         this.assertJSONEqual(expected, result)
-        this.assertEqual(parser.spy._formatParam.count, 8)
+        this.assertEqual(parser.spy._formatParam.count, 7)
     }
 
     @targets('_formatParam')
@@ -1022,7 +1024,7 @@ export class TestSwaggerSerializer extends UnitTest {
         const expected = {
             in: 'query',
             name: null,
-            type: null,
+            type: 'string',
             required: false
         }
 
@@ -1066,6 +1068,7 @@ export class TestSwaggerSerializer extends UnitTest {
             minimumLength: 10,
             maximumLength: 50,
             'x-title': 'Content-Type',
+            /* Optional:
             'x-use-with': [
                 {
                     name: 'Content-MD5',
@@ -1074,6 +1077,7 @@ export class TestSwaggerSerializer extends UnitTest {
                     'x-title': 'Content-MD5'
                 }
             ],
+            */
             description: 'the mime type of the request',
             'x-example': [ 'application/json' ],
             'x-format': 'lowercase'
@@ -1132,6 +1136,7 @@ export class TestSwaggerSerializer extends UnitTest {
                 'x-title': 'access-type'
             },
             'x-title': 'Content-Type',
+            /* Optional:
             'x-use-with': [
                 {
                     name: 'Content-MD5',
@@ -1140,6 +1145,7 @@ export class TestSwaggerSerializer extends UnitTest {
                     'x-title': 'Content-MD5'
                 }
             ],
+            */
             description: 'the mime type of the request',
             'x-example': [ 'application/json' ],
             'x-format': 'lowercase'
@@ -1419,7 +1425,8 @@ export class TestSwaggerSerializer extends UnitTest {
                     'Content-Type': {
                         default: 'application/json',
                         type: 'string',
-                        'x-title': 'Content-Type',
+                        'x-title': 'Content-Type'
+                        /* Optional:
                         'x-use-with': [
                             {
                                 name: 'Content-Type',
@@ -1428,11 +1435,13 @@ export class TestSwaggerSerializer extends UnitTest {
                                 'x-title': 'Content-Type'
                             }
                         ]
+                        */
                     },
                     'Set-Cookie': {
                         default: 'UserID=JohnDoe; Max-Age=3600; Version=1',
                         type: 'string',
-                        'x-title': 'Set-Cookie',
+                        'x-title': 'Set-Cookie'
+                        /* Optional:
                         'x-use-with': [
                             {
                                 name: 'Content-Type',
@@ -1441,6 +1450,7 @@ export class TestSwaggerSerializer extends UnitTest {
                                 'x-title': 'Content-Type'
                             }
                         ]
+                        */
                     }
                 }
             }

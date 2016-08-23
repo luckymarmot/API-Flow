@@ -6,6 +6,10 @@ import JSONSchemaFaker from './JSONSchemaFaker'
 import OAuth2 from './OAuth2'
 
 export default class DynamicValueManager {
+    constructor(ctx) {
+        this.ctx = ctx
+    }
+
     convert(dvOrString) {
         let dv
 
@@ -17,25 +21,24 @@ export default class DynamicValueManager {
         }
 
         let identifier = dv.type
-        console.log('@type', identifier)
 
         let identifierMap = {
             'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue':
-                this._convertJSF,
+                ::this._convertJSF,
             'com.luckymarmot.EnvironmentVariableDynamicValue':
-                this._convertEnvironmentVariable,
+                ::this._convertEnvironmentVariable,
             'uk.co.jalada.PawExtensions.HawkDynamicValue':
-                this._convertHawk,
+                ::this._convertHawk,
             'com.shigeoka.PawExtensions.AWSSignature4DynamicValue':
-                this._convertAWSSig4,
+                ::this._convertAWSSig4,
             'com.luckymarmot.PawExtensions.DigestAuthDynamicValue':
-                this._convertDigestAuth,
+                ::this._convertDigestAuth,
             'com.luckymarmot.OAuth2DynamicValue':
-                this._convertOAuth2
+                ::this._convertOAuth2
         }
 
         if (identifierMap[identifier]) {
-            return identifierMap[identifier](dv)
+            return identifierMap[identifier](dv, this.ctx)
         }
 
         return dv.getEvaluatedString()
@@ -51,8 +54,8 @@ export default class DynamicValueManager {
         return digest.dv
     }
 
-    _convertEnvironmentVariable(dv) {
-        let ev = new EnvironmentVariable(dv)
+    _convertEnvironmentVariable(dv, ctx) {
+        let ev = new EnvironmentVariable(dv, ctx)
         return ev.dv
     }
 
