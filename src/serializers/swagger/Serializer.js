@@ -505,9 +505,13 @@ export default class SwaggerSerializer extends BaseSerializer {
                 }
             }
             else if (this._isInlineRef(ref)) {
+                let value = ref.get('value')
+                if (typeof value !== 'string') {
+                    value = JSON.stringify(value, null, '  ')
+                }
                 schema = {
                     type: 'string',
-                    default: JSON.stringify(ref.get('value'))
+                    default: value
                 }
             }
             else {

@@ -2244,7 +2244,7 @@ export class TestSwaggerSerializer extends UnitTest {
             in: 'body',
             schema: {
                 type: 'string',
-                default: '"something"'
+                default: 'something'
             }
         }
         const result = parser._formatBodyParam(input)

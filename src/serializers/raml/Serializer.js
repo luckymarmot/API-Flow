@@ -8,7 +8,14 @@ import URL from '../../models/URL'
 import JSONSchemaReference from '../../models/references/JSONSchema'
 
 export default class RAMLSerializer extends BaseSerializer {
+    constructor() {
+        super()
+        this.references = null
+    }
+
     serialize(context) {
+        this.references = context.get('references')
+
         let content = '#%RAML 0.8\n'
         let structure = this._formatStructure(context)
 
@@ -625,7 +632,7 @@ export default class RAMLSerializer extends BaseSerializer {
         return result
     }
 
-    _formatBody(container, bodies, removeRequired = false) {
+    _formatBody(container, bodies) {
         let result = {}
         let _body = {}
         bodies.forEach(body => {
@@ -653,9 +660,7 @@ export default class RAMLSerializer extends BaseSerializer {
                 _body[constraint] = {}
                 let params = filtered.get('body')
                 params.forEach(param => {
-                    let named = this._convertParameterToNamedParameter(
-                        param, removeRequired
-                    )
+                    let named = this._formatBodyParam(param)
 
                     if (named.schema) {
                         Object.assign(_body[constraint], named)
@@ -668,6 +673,38 @@ export default class RAMLSerializer extends BaseSerializer {
             result.body = _body
         }
         return result
+    }
+
+    _formatBodyParam(param) {
+        if (param.get('type') === 'reference') {
+            let ref = param.get('value')
+            if (this._isInlineRef(ref)) {
+                return {
+                    schema: JSON.stringify(ref.get('value'), null, '  ')
+                }
+            }
+            else {
+                let uri = ref.get('relative') || ref.get('uri')
+                return {
+                    schema: uri
+                }
+            }
+        }
+
+        let named = this._convertParameterToNamedParameter(
+            param, true
+        )
+        return named
+    }
+
+    _isInlineRef(reference) {
+        let uri = reference.get('uri')
+        if (uri) {
+            return this.references.valueSeq().filter(container => {
+                return !!container.getIn([ 'cache', uri ])
+            }).count() === 0
+        }
+        return true
     }
 
     _getContentTypeConstraint(body) {
@@ -699,6 +736,17 @@ export default class RAMLSerializer extends BaseSerializer {
                     if (uri) {
                         schemas[uri] = value
                     }
+                }
+                else {
+                    let uri = ref.get('relative')
+                    let value = ref.get('value')
+                    if (typeof value !== 'string') {
+                        value = JSON.stringify(value, null, '  ')
+                    }
+                    schemas[uri] = JSON.stringify({
+                        type: 'string',
+                        default: value
+                    }, null, '  ')
                 }
             })
         })

@@ -185,7 +185,11 @@ export default class PawParser {
 
         let url = {}
 
-        let pathParams = []
+        let parameters = {
+            protocol: {},
+            host: {},
+            pathname: {}
+        }
 
         let dvNames = {}
 
@@ -224,7 +228,8 @@ export default class PawParser {
                             title,
                             externals
                         )
-                        pathParams.push(param)
+                        let step = stepOrder[currentStepIndex]
+                        parameters[step][title] = param
                     }
                     else {
                         let identifier = 'Object'
@@ -243,7 +248,8 @@ export default class PawParser {
                             externals
                         )
 
-                        pathParams.push(param)
+                        let step = stepOrder[currentStepIndex]
+                        parameters[step][identifier] = param
                     }
                 }
                 else {
@@ -267,7 +273,8 @@ export default class PawParser {
                         externals: externals
                     })
 
-                    pathParams.push(param)
+                    let step = stepOrder[currentStepIndex]
+                    parameters[step][identifier] = param
                 }
             }
         }
@@ -282,7 +289,96 @@ export default class PawParser {
             url.pathname = '/' + url.pathname
         }
 
+        url.protocol = this._formatURIComponent(
+            'protocol',
+            url.protocol,
+            parameters.protocol
+        )
+
+        url.host = this._formatURIComponent(
+            'host',
+            url.host,
+            parameters.host
+        )
+
+        url.pathname = this._formatURIComponent(
+            'pathname',
+            url.pathname,
+            parameters.pathname
+        )
+
+        let pathParams = Object.values(parameters.pathname)
+
         return [ url, new Immutable.List(pathParams) ]
+    }
+
+    _formatURIComponent(source, content, parameters) {
+        let re = /{([^{}]*)}/g
+        let m
+
+        let currentIndex = 0
+        let sequence = []
+
+        while ((m = re.exec(content)) !== null) {
+            if (currentIndex !== m.index) {
+                let substr = content.slice(currentIndex, m.index)
+                let param = new Parameter({
+                    type: 'string',
+                    value: substr,
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            substr
+                        ])
+                    ])
+                })
+                sequence.push(param)
+            }
+
+            let _param = parameters[m[1]]
+            if (!_param) {
+                _param = new Parameter({
+                    key: m[1],
+                    name: m[1],
+                    type: 'string',
+                    value: m[1],
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            m[1]
+                        ])
+                    ])
+                })
+            }
+
+            sequence.push(_param)
+
+            currentIndex = m.index + m[0].length
+        }
+
+        if (currentIndex < content.length - 1) {
+            let substr = content.slice(currentIndex, content.length)
+            let param = new Parameter({
+                type: 'string',
+                value: substr,
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        substr
+                    ])
+                ])
+            })
+            sequence.push(param)
+        }
+
+        if (sequence.length > 1) {
+            return new Parameter({
+                key: source,
+                name: source,
+                type: 'string',
+                format: 'sequence',
+                value: new Immutable.List(sequence)
+            })
+        }
+
+        return sequence[0]
     }
 
     _formatParamWithConstraints(_key, schema, _name, externals) {

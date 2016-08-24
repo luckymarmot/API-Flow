@@ -2036,16 +2036,40 @@ export class TestPawParser extends UnitTest {
 
         const expected = [
             {
-                protocol: 'https',
-                host: 'fakeurl.com',
-                pathname: '/path'
+                protocol: new Parameter({
+                    type: 'string',
+                    value: 'https',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'https'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    type: 'string',
+                    value: 'fakeurl.com',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'fakeurl.com'
+                        ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    type: 'string',
+                    value: '/path',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path'
+                        ])
+                    ])
+                })
             },
             new Immutable.List()
         ]
 
         const result = paw._formatURL(req, 42)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_formatURL')
@@ -2068,16 +2092,40 @@ export class TestPawParser extends UnitTest {
 
         const expected = [
             {
-                protocol: 'https',
-                host: 'fakeurl.com',
-                pathname: '/path'
+                protocol: new Parameter({
+                    type: 'string',
+                    value: 'https',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'https'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    type: 'string',
+                    value: 'fakeurl.com',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'fakeurl.com'
+                        ])
+                    ])
+                }),
+                pathname: new Parameter({
+                    type: 'string',
+                    value: '/path',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path'
+                        ])
+                    ])
+                })
             },
             new Immutable.List()
         ]
 
         const result = paw._formatURL(req, 42)
 
-        this.assertEqual(expected, result)
+        this.assertJSONEqual(expected, result)
     }
 
     @targets('_formatURL')
@@ -2124,23 +2172,54 @@ export class TestPawParser extends UnitTest {
 
         const expected = [
             {
-                protocol: 'https',
-                host: 'fakeurl.{tld}',
-                pathname: '/path'
-            },
-            new Immutable.List([
-                new Parameter({
-                    key: 'tld',
-                    name: 'tld',
+                protocol: new Parameter({
                     type: 'string',
+                    value: 'https',
                     internals: new Immutable.List([
                         new Constraint.Enum([
-                            'co.uk', 'fr', 'de'
+                            'https'
                         ])
-                    ]),
-                    externals: 42
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
+                    type: 'string',
+                    format: 'sequence',
+                    value: new Immutable.List([
+                        new Parameter({
+                            type: 'string',
+                            value: 'fakeurl.',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'fakeurl.'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'tld',
+                            name: 'tld',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'co.uk', 'fr', 'de'
+                                ])
+                            ]),
+                            externals: 42
+                        })
+                    ])
+                }),
+                pathname: new Parameter({
+                    type: 'string',
+                    value: '/path',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path'
+                        ])
+                    ])
                 })
-            ])
+            },
+            new Immutable.List()
         ]
 
         const result = paw._formatURL(req, 42)
@@ -2191,23 +2270,54 @@ export class TestPawParser extends UnitTest {
 
         const expected = [
             {
-                protocol: 'https',
-                host: 'fakeurl.{Object}',
-                pathname: '/path'
-            },
-            new Immutable.List([
-                new Parameter({
-                    key: 'Object',
-                    name: 'Object',
+                protocol: new Parameter({
                     type: 'string',
+                    value: 'https',
                     internals: new Immutable.List([
                         new Constraint.Enum([
-                            'co.uk', 'fr', 'de'
+                            'https'
                         ])
-                    ]),
-                    externals: 42
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
+                    type: 'string',
+                    format: 'sequence',
+                    value: new Immutable.List([
+                        new Parameter({
+                            type: 'string',
+                            value: 'fakeurl.',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'fakeurl.'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'Object',
+                            name: 'Object',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'co.uk', 'fr', 'de'
+                                ])
+                            ]),
+                            externals: 42
+                        })
+                    ])
+                }),
+                pathname: new Parameter({
+                    type: 'string',
+                    value: '/path',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path'
+                        ])
+                    ])
                 })
-            ])
+            },
+            new Immutable.List()
         ]
 
         const result = paw._formatURL(req, 42)
@@ -2246,19 +2356,50 @@ export class TestPawParser extends UnitTest {
 
         const expected = [
             {
-                protocol: 'https',
-                host: 'fakeurl.{dv}',
-                pathname: '/path'
-            },
-            new Immutable.List([
-                new Parameter({
-                    key: 'dv',
-                    name: 'dv',
+                protocol: new Parameter({
                     type: 'string',
-                    value: 'com',
-                    externals: 42
+                    value: 'https',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'https'
+                        ])
+                    ])
+                }),
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
+                    type: 'string',
+                    format: 'sequence',
+                    value: new Immutable.List([
+                        new Parameter({
+                            type: 'string',
+                            value: 'fakeurl.',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'fakeurl.'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'dv',
+                            name: 'dv',
+                            type: 'string',
+                            value: 'com',
+                            externals: 42
+                        })
+                    ])
+                }),
+                pathname: new Parameter({
+                    type: 'string',
+                    value: '/path',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path'
+                        ])
+                    ])
                 })
-            ])
+            },
+            new Immutable.List()
         ]
 
         const result = paw._formatURL(req, 42)
@@ -2315,32 +2456,70 @@ export class TestPawParser extends UnitTest {
 
         const expected = [
             {
-                protocol: '{protocol}',
-                host: '{sub}.fakeurl.{tld}',
-                pathname: '/path/{userId}'
-            },
-            new Immutable.List([
-                new Parameter({
+                protocol: new Parameter({
                     key: 'protocol',
                     name: 'protocol',
                     type: 'string',
                     value: 'https',
                     externals: 42
                 }),
-                new Parameter({
-                    key: 'sub',
-                    name: 'sub',
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
                     type: 'string',
-                    value: 'live',
-                    externals: 42
+                    format: 'sequence',
+                    value: new Immutable.List([
+                        new Parameter({
+                            key: 'sub',
+                            name: 'sub',
+                            type: 'string',
+                            value: 'live',
+                            externals: 42
+                        }),
+                        new Parameter({
+                            type: 'string',
+                            value: '.fakeurl.',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    '.fakeurl.'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'tld',
+                            name: 'tld',
+                            type: 'string',
+                            value: 'com',
+                            externals: 42
+                        })
+                    ])
                 }),
-                new Parameter({
-                    key: 'tld',
-                    name: 'tld',
+                pathname: new Parameter({
+                    key: 'pathname',
+                    name: 'pathname',
                     type: 'string',
-                    value: 'com',
-                    externals: 42
-                }),
+                    format: 'sequence',
+                    value: new Immutable.List([
+                        new Parameter({
+                            type: 'string',
+                            value: '/path/',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    '/path/'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'userId',
+                            name: 'userId',
+                            type: 'string',
+                            value: '12309841',
+                            externals: 42
+                        })
+                    ])
+                })
+            },
+            new Immutable.List([
                 new Parameter({
                     key: 'userId',
                     name: 'userId',
@@ -2390,6 +2569,138 @@ export class TestPawParser extends UnitTest {
         const result = paw._formatParamWithConstraints(
             key, schema, name, externals
         )
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatURIComponent')
+    testFormatURIComponentWithSimpleString() {
+        const paw = this.__init()
+
+        const source = 'host'
+        const content = 'fakeurl.com'
+        const parameters = {}
+
+        const expected = new Parameter({
+            type: 'string',
+            value: 'fakeurl.com',
+            internals: new Immutable.List([
+                new Constraint.Enum([
+                    'fakeurl.com'
+                ])
+            ])
+        })
+
+        const result = paw._formatURIComponent(source, content, parameters)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatURIComponent')
+    testFormatURIComponentWithParameter() {
+        const paw = this.__init()
+
+        const source = 'host'
+        const content = 'fakeurl.{tld}'
+        const parameters = {
+            tld: new Parameter({
+                key: 'tld',
+                name: 'tld',
+                type: 'string'
+            })
+        }
+
+        const expected = new Parameter({
+            key: source,
+            name: source,
+            type: 'string',
+            format: 'sequence',
+            value: new Immutable.List([
+                new Parameter({
+                    type: 'string',
+                    value: 'fakeurl.',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'fakeurl.'
+                        ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'tld',
+                    name: 'tld',
+                    type: 'string'
+                })
+            ])
+        })
+
+        const result = paw._formatURIComponent(source, content, parameters)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatURIComponent')
+    testFormatURIComponentWithMissingParameter() {
+        const paw = this.__init()
+
+        const source = 'host'
+        const content = 'fakeurl.{tld}'
+        const parameters = {}
+
+        const expected = new Parameter({
+            key: source,
+            name: source,
+            type: 'string',
+            format: 'sequence',
+            value: new Immutable.List([
+                new Parameter({
+                    type: 'string',
+                    value: 'fakeurl.',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'fakeurl.'
+                        ])
+                    ])
+                }),
+                new Parameter({
+                    key: 'tld',
+                    name: 'tld',
+                    type: 'string',
+                    value: 'tld',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'tld'
+                        ])
+                    ])
+                })
+            ])
+        })
+
+        const result = paw._formatURIComponent(source, content, parameters)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatURIComponent')
+    testFormatURIComponentWithSingleParameter() {
+        const paw = this.__init()
+
+        const source = 'host'
+        const content = '{host}'
+        const parameters = {
+            host: new Parameter({
+                type: 'string',
+                value: 'fakeurl.com',
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        'fakeurl.com'
+                    ])
+                ])
+            })
+        }
+
+        const expected = parameters.host
+
+        const result = paw._formatURIComponent(source, content, parameters)
 
         this.assertJSONEqual(expected, result)
     }

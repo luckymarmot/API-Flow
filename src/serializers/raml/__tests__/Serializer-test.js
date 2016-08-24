@@ -1486,6 +1486,10 @@ export class TestRAMLSerializer extends UnitTest {
         const expected = {
             schemas: [
                 {
+                    'some-song.mp3': JSON.stringify({
+                        type: 'string',
+                        default: 'null'
+                    }, null, '  '),
                     'other.json': '!include other.json',
                     '#/definitions/User': JSON.stringify({
                         test: 12
@@ -1808,6 +1812,178 @@ export class TestRAMLSerializer extends UnitTest {
 
         this.assertEqual(expected, result)
     }
+
+    @targets('_isInlineRef')
+    testIsInlineRefWithEmptyReferenceMap() {
+        const parser = this.__init()
+
+        parser.references = new Immutable.OrderedMap()
+
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        const expected = true
+        const result = parser._isInlineRef(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_isInlineRef')
+    testIsInlineRefWithEmptyContainer() {
+        const parser = this.__init()
+
+        parser.references = new Immutable.OrderedMap({
+            paw: new ReferenceContainer()
+        })
+
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        const expected = true
+        const result = parser._isInlineRef(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_isInlineRef')
+    testIsInlineRefWithNoMatchingReference() {
+        const parser = this.__init()
+
+        let references = new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/definitions/Team'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/Admin'
+            })
+        ])
+
+        parser.references = new Immutable.OrderedMap({
+            paw: (new ReferenceContainer()).create(references)
+        })
+
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        const expected = true
+        const result = parser._isInlineRef(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_isInlineRef')
+    testIsInlineRefWithMatchingRef() {
+        const parser = this.__init()
+
+        let references = new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/definitions/Team'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/User'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/Admin'
+            })
+        ])
+
+        parser.references = new Immutable.OrderedMap({
+            paw: (new ReferenceContainer()).create(references)
+        })
+
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        const expected = false
+        const result = parser._isInlineRef(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamCallsConvertToNamedParameterIfNotReference() {
+        const s = this.__init()
+
+        s.spyOn('_convertParameterToNamedParameter', () => {
+            return 12
+        })
+
+        const input = new Parameter({
+            type: 'string'
+        })
+
+        const expected = 12
+        const result = s._formatBodyParam(input)
+
+        this.assertEqual(s.spy._convertParameterToNamedParameter.count, 1)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamCallsIsInlineRefIfReference() {
+        const s = this.__init()
+
+        s.spyOn('_isInlineRef', () => {
+            return true
+        })
+
+        const input = new Parameter({
+            type: 'reference',
+            value: new JSONSchemaReference({
+                value: {
+                    type: 'integer',
+                    default: 42
+                }
+            })
+        })
+
+        const expected = {
+            schema: JSON.stringify({
+                type: 'integer',
+                default: 42
+            }, null, '  ')
+        }
+        const result = s._formatBodyParam(input)
+
+        this.assertEqual(s.spy._convertParameterToNamedParameter.count, 0)
+        this.assertEqual(s.spy._isInlineRef.count, 1)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamReturnsExpectedSchemaIfNotInline() {
+        const s = this.__init()
+
+        s.spyOn('_isInlineRef', () => {
+            return false
+        })
+
+        const input = new Parameter({
+            type: 'reference',
+            value: new JSONSchemaReference({
+                uri: '#/definitions/User',
+                relative: '#/definitions/User',
+                value: {
+                    type: 'integer',
+                    default: 42
+                }
+            })
+        })
+
+        const expected = {
+            schema: '#/definitions/User'
+        }
+        const result = s._formatBodyParam(input)
+
+        this.assertEqual(s.spy._convertParameterToNamedParameter.count, 0)
+        this.assertEqual(s.spy._isInlineRef.count, 1)
+        this.assertEqual(expected, result)
+    }
+
 
     @targets('validate')
     _testValidate() {
