@@ -487,7 +487,11 @@ export default class SwaggerSerializer extends BaseSerializer {
         else if (param.get('type') === 'reference') {
             let ref = param.get('value')
 
-            let rawName = ref.get('relative') || ref.get('uri') || 'body'
+            let rawName = ref.get('relative') ||
+                ref.get('uri') ||
+                param.get('key') ||
+                'body'
+
             name = rawName.split('/').slice(-1)[0]
 
             if (ref instanceof JSONSchemaReference) {
@@ -527,7 +531,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         if (uri) {
             return this.references.valueSeq().filter(container => {
                 return !!container.getIn([ 'cache', uri ])
-            }).size > 0
+            }).count() === 0
         }
         return true
     }

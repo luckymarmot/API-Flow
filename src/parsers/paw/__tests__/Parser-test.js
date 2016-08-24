@@ -10,6 +10,7 @@ import {
 import PawParser from '../Parser'
 
 import Context, {
+    Body,
     Parameter
 } from '../../../models/Core'
 
@@ -31,6 +32,7 @@ import {
     ClassMock,
     PawContextMock,
     DynamicString,
+    DynamicValue,
     PawRequestMock
 } from '../../../mocks/PawMocks'
 
@@ -1967,6 +1969,429 @@ export class TestPawParser extends UnitTest {
         const result = paw._parseInfo()
 
         this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodies')
+    testFormatBodies() {
+        // TODO implement test
+        const paw = this.__init()
+
+        const contentType = 42
+
+        const expected = new Immutable.List([
+            new Body({
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        type: 'string',
+                        value: contentType
+                    })
+                ])
+            })
+        ])
+        const result = paw._formatBodies(contentType)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatURL')
+    testFormatURLWithNullDs() {
+        /* eslint-disable no-unused-vars */
+        const [ paw, ctx, req ] = this.__init(3)
+        /* eslint-enable no-unused-vars */
+
+        req.spyOn('getUrlBase', () => {
+            return null
+        })
+
+        const expected = [
+            {
+                protocol: 'http',
+                host: 'localhost',
+                pathname: '/'
+            },
+            new Immutable.List()
+        ]
+        const result = paw._formatURL(req, 42)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatURL')
+    testFormatURLWithSimpleString() {
+        /* eslint-disable no-unused-vars */
+        const [ paw, ctx, req ] = this.__init(3)
+        /* eslint-enable no-unused-vars */
+
+        let url = new DynamicString('https://fakeurl.com/path')
+
+        url.length = 1
+        url.$$_spyOn('getComponentAtIndex', () => {
+            return 'https://fakeurl.com/path'
+        })
+
+        req.spyOn('getUrlBase', () => {
+            return url
+        })
+
+        const expected = [
+            {
+                protocol: 'https',
+                host: 'fakeurl.com',
+                pathname: '/path'
+            },
+            new Immutable.List()
+        ]
+
+        const result = paw._formatURL(req, 42)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatURL')
+    testFormatURLWithSplitString() {
+        /* eslint-disable no-unused-vars */
+        const [ paw, ctx, req ] = this.__init(3)
+        /* eslint-enable no-unused-vars */
+
+        let content = [ 'https://fakeurl', '.com/path' ]
+        let url = new DynamicString(...content)
+
+        url.length = 2
+        url.$$_spyOn('getComponentAtIndex', () => {
+            return content.shift()
+        })
+
+        req.spyOn('getUrlBase', () => {
+            return url
+        })
+
+        const expected = [
+            {
+                protocol: 'https',
+                host: 'fakeurl.com',
+                pathname: '/path'
+            },
+            new Immutable.List()
+        ]
+
+        const result = paw._formatURL(req, 42)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatURL')
+    testFormatURLWithNamedJSF() {
+        /* eslint-disable no-unused-vars */
+        const [ paw, ctx, req ] = this.__init(3)
+        /* eslint-enable no-unused-vars */
+
+        let jsf = new JSONSchemaReference({
+            value: {
+                type: 'string',
+                enum: [ 'co.uk', 'fr', 'de' ],
+                'x-title': 'tld'
+            },
+            resolved: true
+        })
+
+        paw.dvManager = new ClassMock(new DynamicValueManager(), '')
+        paw.dvManager.spyOn('convert', () => {
+            return jsf
+        })
+
+        let jsfdv = new DynamicValue(
+            'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
+            {
+                schema: {
+                    type: 'string',
+                    enum: [ 'com', 'io', 'jp' ],
+                    'x-title': 'tld'
+                }
+            }
+        )
+        let content = [ 'https://fakeurl.', jsfdv, '/path' ]
+        let url = new DynamicString(...content)
+
+        url.length = 3
+        url.$$_spyOn('getComponentAtIndex', () => {
+            return content.shift()
+        })
+
+        req.spyOn('getUrlBase', () => {
+            return url
+        })
+
+        const expected = [
+            {
+                protocol: 'https',
+                host: 'fakeurl.{tld}',
+                pathname: '/path'
+            },
+            new Immutable.List([
+                new Parameter({
+                    key: 'tld',
+                    name: 'tld',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'co.uk', 'fr', 'de'
+                        ])
+                    ]),
+                    externals: 42
+                })
+            ])
+        ]
+
+        const result = paw._formatURL(req, 42)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatURL')
+    testFormatURLWithUnnamedJSF() {
+        /* eslint-disable no-unused-vars */
+        const [ paw, ctx, req ] = this.__init(3)
+        /* eslint-enable no-unused-vars */
+
+        let jsf = new JSONSchemaReference({
+            value: {
+                type: 'string',
+                enum: [ 'co.uk', 'fr', 'de' ]
+            },
+            resolved: true
+        })
+
+        paw.dvManager = new ClassMock(new DynamicValueManager(), '')
+        paw.dvManager.spyOn('convert', () => {
+            return jsf
+        })
+
+        let jsfdv = new DynamicValue(
+            'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
+            {
+                schema: {
+                    type: 'string',
+                    enum: [ 'com', 'io', 'jp' ],
+                    'x-title': 'tld'
+                }
+            }
+        )
+        let content = [ 'https://fakeurl.', jsfdv, '/path' ]
+        let url = new DynamicString(...content)
+
+        url.length = 3
+        url.$$_spyOn('getComponentAtIndex', () => {
+            return content.shift()
+        })
+
+        req.spyOn('getUrlBase', () => {
+            return url
+        })
+
+        const expected = [
+            {
+                protocol: 'https',
+                host: 'fakeurl.{Object}',
+                pathname: '/path'
+            },
+            new Immutable.List([
+                new Parameter({
+                    key: 'Object',
+                    name: 'Object',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'co.uk', 'fr', 'de'
+                        ])
+                    ]),
+                    externals: 42
+                })
+            ])
+        ]
+
+        const result = paw._formatURL(req, 42)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatURL')
+    testFormatURLWithExoticDV() {
+        /* eslint-disable no-unused-vars */
+        const [ paw, ctx, req ] = this.__init(3)
+        /* eslint-enable no-unused-vars */
+
+        paw.dvManager = new ClassMock(new DynamicValueManager(), '')
+        paw.dvManager.spyOn('convert', () => {
+            return 'evaluated string of dv - not used'
+        })
+
+        let dv = new DynamicValue('some.unknown.dv', {}, '')
+
+        dv.spyOn('getEvaluatedString', () => {
+            return 'com'
+        })
+
+        let content = [ 'https://fakeurl.', dv, '/path' ]
+        let url = new DynamicString(...content)
+
+        url.length = 3
+        url.$$_spyOn('getComponentAtIndex', () => {
+            return content.shift()
+        })
+
+        req.spyOn('getUrlBase', () => {
+            return url
+        })
+
+        const expected = [
+            {
+                protocol: 'https',
+                host: 'fakeurl.{dv}',
+                pathname: '/path'
+            },
+            new Immutable.List([
+                new Parameter({
+                    key: 'dv',
+                    name: 'dv',
+                    type: 'string',
+                    value: 'com',
+                    externals: 42
+                })
+            ])
+        ]
+
+        const result = paw._formatURL(req, 42)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatURL')
+    testFormatURLWithMultipleDVs() {
+        /* eslint-disable no-unused-vars */
+        const [ paw, ctx, req ] = this.__init(3)
+        /* eslint-enable no-unused-vars */
+
+        paw.dvManager = new ClassMock(new DynamicValueManager(), '')
+        paw.dvManager.spyOn('convert', () => {
+            return 'evaluated string of dv - not used'
+        })
+
+        let protocol = new DynamicValue('some.generator.protocol', {}, '')
+
+        protocol.spyOn('getEvaluatedString', () => {
+            return 'https'
+        })
+
+        let sub = new DynamicValue('some.generator.sub', {}, '')
+
+        sub.spyOn('getEvaluatedString', () => {
+            return 'live'
+        })
+
+        let tld = new DynamicValue('some.generator.tld', {}, '')
+
+        tld.spyOn('getEvaluatedString', () => {
+            return 'com'
+        })
+
+        let path = new DynamicValue('some.generator.userId', {}, '')
+
+        path.spyOn('getEvaluatedString', () => {
+            return '12309841'
+        })
+
+        let content = [ protocol, '://', sub, '.fakeurl.', tld, '/path/', path ]
+        let url = new DynamicString(...content)
+
+        url.length = 7
+        url.$$_spyOn('getComponentAtIndex', () => {
+            return content.shift()
+        })
+
+        req.spyOn('getUrlBase', () => {
+            return url
+        })
+
+        const expected = [
+            {
+                protocol: '{protocol}',
+                host: '{sub}.fakeurl.{tld}',
+                pathname: '/path/{userId}'
+            },
+            new Immutable.List([
+                new Parameter({
+                    key: 'protocol',
+                    name: 'protocol',
+                    type: 'string',
+                    value: 'https',
+                    externals: 42
+                }),
+                new Parameter({
+                    key: 'sub',
+                    name: 'sub',
+                    type: 'string',
+                    value: 'live',
+                    externals: 42
+                }),
+                new Parameter({
+                    key: 'tld',
+                    name: 'tld',
+                    type: 'string',
+                    value: 'com',
+                    externals: 42
+                }),
+                new Parameter({
+                    key: 'userId',
+                    name: 'userId',
+                    type: 'string',
+                    value: '12309841',
+                    externals: 42
+                })
+            ])
+        ]
+
+        const result = paw._formatURL(req, 42)
+
+        this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatParamWithConstraints')
+    testFormatParamWithConstraints() {
+        // TODO implement test
+        const paw = this.__init()
+
+        const key = 'userId'
+        const name = 'User Id'
+        const schema = {
+            type: 'integer',
+            minimum: 0,
+            maximum: 100,
+            exclusiveMaximum: true,
+            multipleOf: 5,
+            enum: [ 12, 15, 20, 25, 89, 1385 ]
+        }
+        const externals = 42
+
+        const expected = new Parameter({
+            key: key,
+            name: name,
+            type: 'integer',
+            internals: new Immutable.List([
+                new Constraint.Minimum(0),
+                new Constraint.Maximum(100),
+                new Constraint.ExclusiveMaximum(100),
+                new Constraint.MultipleOf(5),
+                new Constraint.Enum([ 12, 15, 20, 25, 89, 1385 ])
+            ]),
+            externals: externals
+        })
+
+        const result = paw._formatParamWithConstraints(
+            key, schema, name, externals
+        )
+
+        this.assertJSONEqual(expected, result)
     }
 
     __init(size) {

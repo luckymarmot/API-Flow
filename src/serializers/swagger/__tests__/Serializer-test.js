@@ -31,6 +31,7 @@ import Request from '../../../models/Request'
 import ReferenceContainer from '../../../models/references/Container'
 import ReferenceCache from '../../../models/references/Cache'
 import JSONSchemaReference from '../../../models/references/JSONSchema'
+import ExoticReference from '../../../models/references/Exotic'
 
 import {
     ClassMock
@@ -1884,6 +1885,410 @@ export class TestSwaggerSerializer extends UnitTest {
 
         this.assertEqual(expected, result)
         this.assertEqual(parser.spy._replaceRefs.count, 5)
+    }
+
+    @targets('_formatPathParam')
+    testFormatPathParamCallsFormatParam() {
+        const parser = this.__init()
+
+        parser.spyOn('_formatParam', () => {
+            return 42
+        })
+
+        const expected = 42
+        const result = parser._formatPathParam(null)
+
+        this.assertEqual(parser.spy._formatParam.count, 1)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatHeaderParam')
+    testFormatHeaderParamCallsFormatParam() {
+        const parser = this.__init()
+
+        parser.spyOn('_formatParam', () => {
+            return 42
+        })
+
+        const expected = 42
+        const result = parser._formatHeaderParam(null)
+
+        this.assertEqual(parser.spy._formatParam.count, 1)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatQueryParam')
+    testFormatQueryParamCallsFormatParam() {
+        const parser = this.__init()
+
+        parser.spyOn('_formatParam', () => {
+            return 42
+        })
+
+        const expected = 42
+        const result = parser._formatQueryParam(null)
+
+        this.assertEqual(parser.spy._formatParam.count, 1)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_isInlineRef')
+    testIsInlineRefWithEmptyReferenceMap() {
+        const parser = this.__init()
+
+        parser.references = new Immutable.OrderedMap()
+
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        const expected = true
+        const result = parser._isInlineRef(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_isInlineRef')
+    testIsInlineRefWithEmptyContainer() {
+        const parser = this.__init()
+
+        parser.references = new Immutable.OrderedMap({
+            paw: new ReferenceContainer()
+        })
+
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        const expected = true
+        const result = parser._isInlineRef(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_isInlineRef')
+    testIsInlineRefWithNoMatchingReference() {
+        const parser = this.__init()
+
+        let references = new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/definitions/Team'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/Admin'
+            })
+        ])
+
+        parser.references = new Immutable.OrderedMap({
+            paw: (new ReferenceContainer()).create(references)
+        })
+
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        const expected = true
+        const result = parser._isInlineRef(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_isInlineRef')
+    testIsInlineRefWithMatchingRef() {
+        const parser = this.__init()
+
+        let references = new Immutable.List([
+            new JSONSchemaReference({
+                uri: '#/definitions/Team'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/User'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/Admin'
+            })
+        ])
+
+        parser.references = new Immutable.OrderedMap({
+            paw: (new ReferenceContainer()).create(references)
+        })
+
+        const input = new JSONSchemaReference({
+            uri: '#/definitions/User'
+        })
+
+        const expected = false
+        const result = parser._isInlineRef(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamCallsGetContentTypeDomain() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'multipart/form-data'
+        })
+
+        parser.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        const expected = 12
+        const result = parser._formatBodyParam()
+
+        this.assertEqual(parser.spy._getContentTypeDomain.count, 1)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamCallsFormatParamIfTypeIsURLEncoded() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'application/x-www-form-urlencoded'
+        })
+
+        parser.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        const expected = 12
+        const result = parser._formatBodyParam()
+
+        this.assertEqual(parser.spy._formatParam.count, 1)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamCallsFormatParamIfTypeIsMultipart() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'multipart/form-data'
+        })
+
+        parser.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        const expected = 12
+        const result = parser._formatBodyParam()
+
+        this.assertEqual(parser.spy._formatParam.count, 1)
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamDoesNotCallFormatParamIfTypeIsText() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'text/plain'
+        })
+
+        parser.spyOn('_formatParam', () => {
+            return 12
+        })
+
+        const input = new Parameter({
+            key: 'userId',
+            name: 'User Id',
+            type: 'string',
+            externals: new Immutable.List([
+                new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'text/plain'
+                        ])
+                    ])
+                })
+            ])
+        })
+
+        parser._formatBodyParam(input)
+
+        this.assertEqual(parser.spy._formatParam.count, 0)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamReturnsExpectedStructureWithSimpleType() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'text/plain'
+        })
+
+        const input = new Parameter({
+            key: 'userId',
+            name: 'User Id',
+            type: 'string'
+        })
+
+        const expected = {
+            name: 'userId',
+            in: 'body',
+            schema: {
+                type: 'string'
+            }
+        }
+        const result = parser._formatBodyParam(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamReturnsExpectedStructureWithInlineJSONSchemaReference() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'text/plain'
+        })
+
+        parser.spyOn('_isInlineRef', () => {
+            return true
+        })
+
+        const input = new Parameter({
+            key: 'userId',
+            name: 'User Id',
+            type: 'reference',
+            value: new JSONSchemaReference({
+                value: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100
+                }
+            })
+        })
+
+        const expected = {
+            name: 'userId',
+            in: 'body',
+            schema: {
+                type: 'integer',
+                minimum: 0,
+                maximum: 100
+            }
+        }
+        const result = parser._formatBodyParam(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamReturnsExpectedStructureWithJSONSchemaReference() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'text/plain'
+        })
+
+        parser.spyOn('_isInlineRef', () => {
+            return false
+        })
+
+        const input = new Parameter({
+            key: 'userId',
+            name: 'User Id',
+            type: 'reference',
+            value: new JSONSchemaReference({
+                uri: '#/definitions/User',
+                relative: '#/definitions/User',
+                value: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100
+                }
+            })
+        })
+
+        const expected = {
+            name: 'User',
+            in: 'body',
+            schema: {
+                $ref: '#/definitions/User'
+            }
+        }
+        const result = parser._formatBodyParam(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamReturnsExpectedStructureWithInlineExoticReference() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'text/plain'
+        })
+
+        parser.spyOn('_isInlineRef', () => {
+            return true
+        })
+
+        const input = new Parameter({
+            key: 'userId',
+            name: 'User Id',
+            type: 'reference',
+            value: new ExoticReference({
+                value: 'something'
+            })
+        })
+
+        const expected = {
+            name: 'userId',
+            in: 'body',
+            schema: {
+                type: 'string',
+                default: '"something"'
+            }
+        }
+        const result = parser._formatBodyParam(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBodyParam')
+    testFormatBodyParamReturnsExpectedStructureWitExoticReference() {
+        const parser = this.__init()
+
+        parser.spyOn('_getContentTypeDomain', () => {
+            return 'text/plain'
+        })
+
+        parser.spyOn('_isInlineRef', () => {
+            return false
+        })
+
+        const input = new Parameter({
+            key: 'userId',
+            name: 'User Id',
+            type: 'reference',
+            value: new ExoticReference({
+                uri: '#/definitions/Exotic',
+                relative: '#/definitions/Exotic',
+                value: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100
+                }
+            })
+        })
+
+        const expected = {
+            name: 'Exotic',
+            in: 'body',
+            schema: {
+                $ref: '#/definitions/Exotic'
+            }
+        }
+        const result = parser._formatBodyParam(input)
+
+        this.assertEqual(expected, result)
     }
 
     @targets('validate')

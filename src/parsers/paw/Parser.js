@@ -152,6 +152,7 @@ export default class PawParser {
                 constraints: new Immutable.List([
                     new Parameter({
                         key: 'Content-Type',
+                        type: 'string',
                         value: contentType
                     })
                 ])
