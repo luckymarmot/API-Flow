@@ -138,9 +138,26 @@ export class Parameter extends Immutable.Record({
 
         constraintSet = this._replaceRefs(constraintSet)
 
+        if (
+            constraintSet.type === 'string' &&
+            constraintSet.format !== 'sequence' &&
+            !constraintSet.faker &&
+            !constraintSet['x-faker']
+        ) {
+            constraintSet['x-faker'] = 'company.bsNoun'
+        }
+
         jsf.format('sequence', function(gen, schema) {
             let result = ''
             for (let item of schema['x-sequence']) {
+                if (
+                    item.type === 'string' &&
+                    item.format !== 'sequence' &&
+                    !item.faker &&
+                    !item['x-faker']
+                ) {
+                    item['x-faker'] = 'company.bsNoun'
+                }
                 result += jsf(item)
             }
             return result
