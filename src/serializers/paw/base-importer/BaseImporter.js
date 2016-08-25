@@ -18,12 +18,13 @@ import PawEnvironment from '../../../models/environments/PawEnvironment'
 
 import {
     DynamicValue,
-    DynamicString,
-    InputField
+    DynamicString
+    // InputField
 } from '../../../mocks/PawShims'
 
 export default class BaseImporter {
     static fileExtensions = [];
+    /*
     static inputs = [
         new InputField(
             'jsfInEnv',
@@ -56,6 +57,7 @@ export default class BaseImporter {
             { defaultValue: true }
         )
     ];
+    */
 
     constructor(context) {
         this.ENVIRONMENT_DOMAIN_NAME = 'Imported Environments'
@@ -95,6 +97,11 @@ export default class BaseImporter {
 
     import(context, items, options) {
         this.options = (options || {}).inputs || {}
+        this.options.jsfInBody = true
+        this.options.jsfInEnv = true
+        this.options.jsfInPath = true
+        this.options.jsfInQuery = true
+        this.options.jsfInHeaders = true
         this.context = context
 
         let parsePromiseOrResult = this.createRequestContexts(
