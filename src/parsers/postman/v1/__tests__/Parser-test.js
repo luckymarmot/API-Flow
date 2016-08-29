@@ -502,7 +502,9 @@ export class TestPostmanParser extends UnitTest {
             return val
         })
 
+        /* eslint-disable quotes */
         let params = `username="user", password='pass', this='garbage'`
+        /* eslint-enable quotes */
 
         const expected = new Auth.Digest({
             username: 'user',

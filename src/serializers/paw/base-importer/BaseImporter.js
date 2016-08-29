@@ -24,36 +24,49 @@ import {
 
 export default class BaseImporter {
     static fileExtensions = [];
+
     static inputs = [
         new InputField(
-            'jsfInEnv',
-            'Use JSON Schema Faker for environment variables',
+            'jsfInProtocol',
+            'Replace schemas by randomizers in protocol params',
             'Checkbox',
-            { defaultValue: true }
+            { defaultValue: false, persisted: true }
+        ),
+        new InputField(
+            'jsfInHost',
+            'Replace schemas by randomizers in host params',
+            'Checkbox',
+            { defaultValue: false, persisted: true }
         ),
         new InputField(
             'jsfInPath',
-            'Use JSON Schema Faker for path parameters',
+            'Replace schemas by randomizers in path params',
             'Checkbox',
-            { defaultValue: true }
+            { defaultValue: true, persisted: true }
         ),
         new InputField(
             'jsfInQuery',
-            'Use JSON Schema Faker for query parameters',
+            'Replace schemas by randomizers in query params',
             'Checkbox',
-            { defaultValue: true }
+            { defaultValue: true, persisted: true }
         ),
         new InputField(
             'jsfInHeaders',
-            'Use JSON Schema Faker for headers',
+            'Replace schemas by randomizers in headers',
             'Checkbox',
-            { defaultValue: true }
+            { defaultValue: true, persisted: true }
         ),
         new InputField(
             'jsfInBody',
-            'Use JSON Schema Faker for body',
+            'Replace schemas by randomizers in body',
             'Checkbox',
-            { defaultValue: true }
+            { defaultValue: true, persisted: true }
+        ),
+        new InputField(
+            'jsfInEnv',
+            'Replace schemas by randomizers in Environments',
+            'Checkbox',
+            { defaultValue: true, persisted: true }
         )
     ];
 
@@ -95,6 +108,14 @@ export default class BaseImporter {
 
     import(context, items, options) {
         this.options = (options || {}).inputs || {}
+        /*
+        this.options.jsfInBody = true
+        this.options.jsfInEnv = true
+        this.options.jsfInPath = true
+        this.options.jsfInQuery = true
+        this.options.jsfInHeaders = true
+        */
+
         this.context = context
 
         let parsePromiseOrResult = this.createRequestContexts(
@@ -563,9 +584,9 @@ export default class BaseImporter {
     }
 
     _generateUrl(url, queries, auths) {
-        let protocol = this._toDynamicString(url.get('protocol'), true, 'url')
-        let host = this._toDynamicString(url.get('host'), true, 'url')
-        let path = this._toDynamicString(url.get('pathname'), true, 'url')
+        let protocol = this._formatProtocolParam(url.get('protocol'))
+        let host = this._toDynamicString(url.get('host'), true, 'host')
+        let path = this._toDynamicString(url.get('pathname'), true, 'pathname')
         let hash = this._toDynamicString(url.get('hash'), true, 'url')
 
         if (protocol.length > 0) {
@@ -630,6 +651,24 @@ export default class BaseImporter {
         }
 
         return _url
+    }
+
+    _formatProtocolParam(protocol) {
+        if (this._useJSF('protocol')) {
+            return this._toDynamicString(protocol, true, 'protocol')
+        }
+
+        let schema = protocol.getJSONSchema(false)
+
+        if (schema && schema.enum.indexOf('https') >= 0) {
+            return new DynamicString('https')
+        }
+        else if (schema && schema.enum.indexOf('wss') >= 0) {
+            return new DynamicString('wss')
+        }
+        else {
+            return this._toDynamicString(protocol, true, 'protocol')
+        }
     }
 
     _extractQueryParamsFromAuth(auths) {
@@ -1071,6 +1110,9 @@ export default class BaseImporter {
                         )
                         components.push(dv)
                     }
+                    else {
+                        components.push(param.generate(false, item))
+                    }
                 }
                 else {
                     components.push(param.generate(false, item))
@@ -1094,17 +1136,35 @@ export default class BaseImporter {
             )
             components.push(dv)
         }
+        else {
+            let generated = param.generate(false, schema)
+            if (generated === null) {
+                generated = ''
+            }
+            components.push(generated)
+        }
 
         return new DynamicString(...components)
     }
 
     _useJSF(source) {
-        /* eslint-disable no-extra-parens */
-        if ([ 'url', 'query', 'body', 'headers' ].indexOf(source) < 0) {
+        let validSources = [
+            'protocol',
+            'host',
+            'pathname',
+            'query',
+            'body',
+            'headers'
+        ]
+
+        if (validSources.indexOf(source) < 0) {
             return true
         }
 
-        return (source === 'url' && this.options.jsfInPath) ||
+        /* eslint-disable no-extra-parens */
+        return (source === 'protocol' && this.options.jsfInProtocol) ||
+            (source === 'host' && this.options.jsfInHost) ||
+            (source === 'pathname' && this.options.jsfInPath) ||
             (source === 'query' && this.options.jsfInQuery) ||
             (source === 'body' && this.options.jsfInBody) ||
             (source === 'headers' && this.options.jsfInHeaders)

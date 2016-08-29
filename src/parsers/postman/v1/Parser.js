@@ -242,8 +242,6 @@ export default class PostmanParser {
 
             return auth
         }
-
-        return null
     }
 
     _extractAWSS4Auth(params, helper) {

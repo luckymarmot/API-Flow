@@ -1,10 +1,9 @@
 import Immutable from 'immutable'
 
-import { registerCodeGenerator } from '../../mocks/PawShims'
-
 import DynamicValueManager from './dv/DVManager'
 
 import Context, {
+    Body,
     Parameter,
     ParameterContainer
 } from '../../models/Core'
@@ -16,12 +15,12 @@ import Group from '../../models/Group'
 import Auth from '../../models/Auth'
 import Reference from '../../models/references/Reference'
 import ReferenceContainer from '../../models/references/Container'
+import JSONSchemaReference from '../../models/references/JSONSchema'
 
 import {
     Info
 } from '../../models/Utils'
 
-@registerCodeGenerator
 export default class PawParser {
     static identifier =
         'com.luckymarmot.PawExtensions.API-Flow'
@@ -33,9 +32,11 @@ export default class PawParser {
 
     constructor() {
         this.references = new Immutable.List()
+        this.dvManager = null
     }
 
     generate(ctx, reqs, opts) {
+        this.dvManager = new DynamicValueManager(ctx)
         let group = this._parseGroup(ctx, reqs, opts)
         let references = this._parseDomains(ctx, reqs, opts)
         let info = this._parseInfo(ctx, reqs, opts)
@@ -106,17 +107,19 @@ export default class PawParser {
     _parseRequest(ctx, req) {
         let id = req.id || null
         let name = req.name || null
-        let url = req.getUrlBase(false) || 'localhost'
+        let [ body, contentType, externals ] = this._formatBody(req)
+        let bodies = this._formatBodies(contentType)
+        let [ url, pathParams ] = this._formatURL(req, externals)
         let method = req.method || 'get'
         let description = req.description || null
-        let [ body, contentType ] = this._formatBody(req)
 
         let [ headers, auths ] = this._formatHeaders(
-            req.getHeaders(true), contentType, new Immutable.List()
+            req.getHeaders(true), contentType, new Immutable.List(), externals
         )
 
         let queries = this._formatQueries(
-            req.getUrlParams(true)
+            req.getUrlParameters(true),
+            externals
         )
 
         let auth = this._formatAuth(req)
@@ -131,31 +134,320 @@ export default class PawParser {
             method: method,
             description: description,
             parameters: new ParameterContainer({
+                path: pathParams,
                 headers: headers,
                 queries: queries,
                 body: body
             }),
+            bodies: bodies,
             auths: auths
         })
 
         return request
     }
 
-    _formatParam(key, value) {
+    _formatBodies(contentType) {
+        return new Immutable.List([
+            new Body({
+                constraints: new Immutable.List([
+                    new Parameter({
+                        key: 'Content-Type',
+                        type: 'string',
+                        value: contentType
+                    })
+                ])
+            })
+        ])
+    }
+
+    _formatURL(req, externals) {
+        let ds = req.getUrlBase(true)
+
+        if (!ds || !ds.length) {
+            return [
+                {
+                    protocol: 'http',
+                    host: 'localhost',
+                    pathname: '/'
+                },
+                new Immutable.List()
+            ]
+        }
+
+        let stepOrder = [ 'protocol', 'host', 'pathname' ]
+        let stepMarkers = {
+            protocol: '://',
+            host: '/',
+            pathname: '\\?'
+        }
+        let currentStepIndex = 0
+        let currentStepString = ''
+
+        let url = {}
+
+        let parameters = {
+            protocol: {},
+            host: {},
+            pathname: {}
+        }
+
+        let dvNames = {}
+
+        for (let index = 0; index < ds.length; index += 1) {
+            let component = ds.getComponentAtIndex(index)
+            if (typeof component === 'string') {
+                let step = stepOrder[currentStepIndex]
+                let marker = stepMarkers[step]
+                let m = component.match(marker)
+                while (m) {
+                    currentStepString += component.slice(0, m.index)
+                    component = component.slice(m.index + marker.length)
+                    url[step] = currentStepString
+
+                    currentStepString = ''
+                    currentStepIndex += 1
+                    step = stepOrder[currentStepIndex]
+                    marker = stepMarkers[step]
+                    m = component.match(marker)
+                }
+
+                if (!m) {
+                    currentStepString += component
+                }
+            }
+            else {
+                let val = this.dvManager.convert(component)
+                if (val instanceof JSONSchemaReference) {
+                    let title = val.get('value')['x-title']
+                    if (title) {
+                        currentStepString += '{' + title + '}'
+
+                        let param = this._formatParamWithConstraints(
+                            title,
+                            val.get('value'),
+                            title,
+                            externals
+                        )
+                        let step = stepOrder[currentStepIndex]
+                        parameters[step][title] = param
+                    }
+                    else {
+                        let identifier = 'Object'
+                        identifier = dvNames[identifier] ?
+                            identifier + '_' + dvNames :
+                            identifier
+
+                        dvNames[identifier] = (dvNames[identifier] || 0) + 1
+
+                        currentStepString += '{' + identifier + '}'
+
+                        let param = this._formatParamWithConstraints(
+                            identifier,
+                            val.get('value'),
+                            identifier,
+                            externals
+                        )
+
+                        let step = stepOrder[currentStepIndex]
+                        parameters[step][identifier] = param
+                    }
+                }
+                else {
+                    let identifier = component.type
+                        .match('\.([^.]+)$')[1]
+                        .replace('DynamicValue', '')
+                    if (dvNames[identifier]) {
+                        dvNames[identifier] += 1
+                        identifier += '_' + dvNames[identifier]
+                    }
+                    else {
+                        dvNames[identifier] = 1
+                    }
+                    currentStepString += '{' + identifier + '}'
+
+                    let param = new Parameter({
+                        key: identifier,
+                        name: identifier,
+                        value: component.getEvaluatedString(),
+                        type: 'string',
+                        externals: externals
+                    })
+
+                    let step = stepOrder[currentStepIndex]
+                    parameters[step][identifier] = param
+                }
+            }
+        }
+
+        let step = stepOrder[currentStepIndex]
+        url[step] = currentStepString
+
+        if (typeof url.pathname === 'undefined') {
+            url.pathname = '/'
+        }
+        else {
+            url.pathname = '/' + url.pathname
+        }
+
+        url.protocol = this._formatURIComponent(
+            'protocol',
+            url.protocol,
+            parameters.protocol
+        )
+
+        url.host = this._formatURIComponent(
+            'host',
+            url.host,
+            parameters.host
+        )
+
+        url.pathname = this._formatURIComponent(
+            'pathname',
+            url.pathname,
+            parameters.pathname
+        )
+
+        let pathParams = Object.values(parameters.pathname)
+
+        return [ url, new Immutable.List(pathParams) ]
+    }
+
+    _formatURIComponent(source, content, parameters) {
+        let re = /{([^{}]*)}/g
+        let m
+
+        let currentIndex = 0
+        let sequence = []
+
+        while ((m = re.exec(content)) !== null) {
+            if (currentIndex !== m.index) {
+                let substr = content.slice(currentIndex, m.index)
+                let param = new Parameter({
+                    type: 'string',
+                    value: substr,
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            substr
+                        ])
+                    ])
+                })
+                sequence.push(param)
+            }
+
+            let _param = parameters[m[1]]
+            if (!_param) {
+                _param = new Parameter({
+                    key: m[1],
+                    name: m[1],
+                    type: 'string',
+                    value: m[1],
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            m[1]
+                        ])
+                    ])
+                })
+            }
+
+            sequence.push(_param)
+
+            currentIndex = m.index + m[0].length
+        }
+
+        if (currentIndex < content.length - 1) {
+            let substr = content.slice(currentIndex, content.length)
+            let param = new Parameter({
+                type: 'string',
+                value: substr,
+                internals: new Immutable.List([
+                    new Constraint.Enum([
+                        substr
+                    ])
+                ])
+            })
+            sequence.push(param)
+        }
+
+        if (sequence.length > 1) {
+            return new Parameter({
+                key: source,
+                name: source,
+                type: 'string',
+                format: 'sequence',
+                value: new Immutable.List(sequence)
+            })
+        }
+
+        return sequence[0]
+    }
+
+    _formatParamWithConstraints(_key, schema, _name, externals) {
+        let name = _name ? _name : _key
+
+        let internalsMap = {
+            maximum: Constraint.Maximum,
+            minimum: Constraint.Minimum,
+            maxLength: Constraint.MaxLength,
+            minLength: Constraint.MinLength,
+            pattern: Constraint.Pattern,
+            maxItems: Constraint.MaxItems,
+            minItems: Constraint.MinItems,
+            uniqueItems: Constraint.UniqueItems,
+            enum: Constraint.Enum,
+            multipleOf: Constraint.MultipleOf
+        }
+
+        let type = schema.type || null
+
+        let internals = []
+        let keys = Object.keys(schema)
+        for (let key of keys) {
+            if (internalsMap[key]) {
+                let constraint = new internalsMap[key](schema[key])
+                internals.push(constraint)
+            }
+
+            if (key === 'exclusiveMaximum') {
+                internals.push(
+                    new Constraint.ExclusiveMaximum(schema.maximum)
+                )
+            }
+
+            if (key === 'exclusiveMinimum') {
+                internals.push(
+                    new Constraint.ExclusiveMinimum(schema.minimum)
+                )
+            }
+        }
+
         let param = new Parameter({
-            key: key,
-            name: key,
-            value: value,
-            type: 'string',
-            internals: new Immutable.List([
-                new Constraint.Enum([ value ])
-            ])
+            key: _key,
+            name: name,
+            type: type,
+            internals: new Immutable.List(internals),
+            externals: externals
         })
 
         return param
     }
 
-    _formatReferenceParam(_key, ref) {
+    _formatParam(key, value, externals) {
+        let name = key ? key : 'body'
+        let param = new Parameter({
+            key: key,
+            name: name,
+            value: value,
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum([ value ])
+            ]),
+            externals: externals
+        })
+
+        return param
+    }
+
+    _formatReferenceParam(_key, ref, externals) {
         let key = _key
         if (!key) {
             key = this._unescapeURIFragment(
@@ -167,7 +459,8 @@ export default class PawParser {
             key: key,
             name: key,
             value: ref,
-            type: 'reference'
+            type: 'reference',
+            externals: externals
         })
 
         return param
@@ -177,17 +470,20 @@ export default class PawParser {
         return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
     }
 
-    _formatHeaderParam(key, ds, _auths) {
+    _formatHeaderParam(key, ds, _auths, externals) {
         let param = null
         let auths = _auths
-
-        let manager = new DynamicValueManager()
 
         if (ds.length > 1) {
             let value = new Immutable.List()
             for (let component of ds.components) {
                 let [ _param, auth ] = this
-                    ._formatHeaderComponent(null, component, manager)
+                    ._formatHeaderComponent(
+                        null,
+                        component,
+                        this.dvManager,
+                        externals
+                    )
 
                 if (_param) {
                     value = value.push(_param)
@@ -203,13 +499,17 @@ export default class PawParser {
                 name: key,
                 type: 'string',
                 format: 'sequence',
-                value: value
+                value: value,
+                externals: externals
             })
         }
         else {
             let [ _param, auth ] = this
                 ._formatHeaderComponent(
-                    key, ds.getComponentAtIndex(0) || '', manager
+                    key,
+                    ds.getComponentAtIndex(0) || '',
+                    this.dvManager,
+                    externals
                 )
 
             if (_param) {
@@ -224,41 +524,54 @@ export default class PawParser {
         return [ param, auths ]
     }
 
-    _formatHeaderComponent(key, component, manager) {
+    _formatHeaderComponent(key, component, dvManager, externals) {
         let param = null
         let auth = null
 
-        let val = manager.convert(component)
+        let val = dvManager.convert(component)
 
         if (typeof component === 'string') {
-            param = this._formatParam(key, component)
+            param = this._formatParam(key, component, externals)
         }
         else if (
             val instanceof Auth.Digest ||
             val instanceof Auth.AWSSig4 ||
-            val instanceof Auth.Hawk
+            val instanceof Auth.Hawk ||
+            val instanceof Auth.OAuth2
         ) {
             auth = val
         }
+        else if (val instanceof JSONSchemaReference) {
+            param = this._formatParamWithConstraints(
+                key,
+                val.get('value'),
+                key,
+                externals
+            )
+        }
         else if (val instanceof Reference) {
-            param = this._formatReferenceParam(key, val)
+            param = this._formatReferenceParam(key, val, externals)
             this.references = this.references.push(val)
         }
         else {
-            param = this._formatParam(key, component.getEvaluatedString())
+            param = this._formatParam(
+                key,
+                component.getEvaluatedString(),
+                externals
+            )
         }
 
         return [ param, auth ]
     }
 
-    _formatHeaders(headers, contentType, _auths) {
+    _formatHeaders(headers, contentType, _auths, externals) {
         let auths = _auths
         let keys = Object.keys(headers)
 
         let params = []
         for (let key of keys) {
             let header = this._formatHeaderParam(
-                key, headers[key], auths
+                key, headers[key], auths, externals
             )
 
             let param = header[0]
@@ -270,22 +583,24 @@ export default class PawParser {
         }
 
         if (!headers['Content-Type'] && contentType) {
-            let param = this._formatParam('Content-Type', contentType)
+            let param = this._formatParam(
+                'Content-Type',
+                contentType,
+                externals)
             params.push(param)
         }
 
         return [ new Immutable.List(params), auths ]
     }
 
-    _formatQueryParam(key, ds) {
+    _formatQueryParam(key, ds, externals) {
         let param = null
-        let manager = new DynamicValueManager()
 
         if (ds.length > 1) {
             let value = new Immutable.List()
             for (let component of ds.components) {
                 let _param = this._formatQueryComponent(
-                    null, component, manager
+                    null, component, this.dvManager, externals
                 )
                 value = value.push(_param)
             }
@@ -295,12 +610,16 @@ export default class PawParser {
                 name: key,
                 type: 'string',
                 format: 'sequence',
-                value: value
+                value: value,
+                externals: externals
             })
         }
         else {
             let _param = this._formatQueryComponent(
-                key, ds.getComponentAtIndex(1) || '', manager
+                key,
+                ds.getComponentAtIndex(0) || '',
+                this.dvManager,
+                externals
             )
             param = _param
         }
@@ -308,40 +627,138 @@ export default class PawParser {
         return param
     }
 
-    _formatQueryComponent(key, component, manager) {
+    _formatQueryComponent(key, component, dvManager, externals) {
         let param = null
 
-        let val = manager.convert(component)
+        let val = dvManager.convert(component)
 
         if (typeof component === 'string') {
-            param = this._formatParam(key, component)
+            param = this._formatParam(key, component, externals)
+        }
+        else if (val instanceof JSONSchemaReference) {
+            param = this._formatParamWithConstraints(
+                key, val.get('value'), key, externals
+            )
         }
         else if (val instanceof Reference) {
-            param = this._formatReferenceParam(key, val)
+            param = this._formatReferenceParam(key, val, externals)
             this.references = this.references.push(val)
         }
         else {
-            param = this._formatParam(key, component.getEvaluatedString())
+            param = this._formatParam(
+                key, component.getEvaluatedString(), externals
+            )
         }
 
         return param
     }
 
-    _formatQueries(queries) {
+    _formatQueries(queries, externals) {
         let keys = Object.keys(queries)
 
         let params = []
         for (let key of keys) {
-            let query = this._formatQueryParam(key, queries[key])
+            let query = this._formatQueryParam(key, queries[key], externals)
             params.push(query)
         }
 
         return new Immutable.List(params)
     }
 
-    _formatPlainBody(content) {
-        let param = this._formatParam('body', content.getEvaluatedString())
-        return [ param, 'text/plain' ]
+    _formatPlainBody(content, externals) {
+        let param = null
+        if (typeof content === 'string') {
+            let schema = {
+                type: 'string',
+                default: content
+            }
+
+            let ref = new JSONSchemaReference({
+                uri: null,
+                relative: null,
+                value: schema,
+                // TODO fix this, not correct atm
+                resolved: true
+            })
+
+            param = new Parameter({
+                key: null,
+                name: 'body',
+                value: ref,
+                type: 'reference',
+                externals: externals
+            })
+        }
+
+        if (content.length > 1) {
+            let schema = {
+                type: 'string',
+                default: content.getEvaluatedString()
+            }
+
+            let ref = new JSONSchemaReference({
+                uri: null,
+                relative: null,
+                value: schema,
+                // TODO fix this, not correct atm
+                resolved: true
+            })
+
+            param = new Parameter({
+                key: null,
+                name: 'body',
+                value: ref,
+                type: 'reference',
+                externals: externals
+            })
+        }
+        else if (content.length === 1) {
+            let val = this.dvManager.convert(content.getComponentAtIndex(0))
+            param = null
+
+            if (val instanceof JSONSchemaReference) {
+                param = new Parameter({
+                    key: null,
+                    name: 'body',
+                    value: val,
+                    type: 'reference',
+                    externals: externals
+                })
+
+                this.references = this.references.push(val)
+            }
+            else if (val instanceof Reference) {
+                param = this._formatReferenceParam(null, val, externals)
+                this.references = this.references.push(val)
+            }
+            else {
+                let schema = {
+                    type: 'string',
+                    default: val
+                }
+
+                let ref = new JSONSchemaReference({
+                    uri: null,
+                    relative: null,
+                    value: schema,
+                    // TODO fix this, not correct atm
+                    resolved: true
+                })
+
+                param = new Parameter({
+                    key: null,
+                    name: 'body',
+                    value: ref,
+                    type: 'reference',
+                    externals: externals
+                })
+            }
+
+            return param
+        }
+
+        // DynamicString had no content, returning null
+        return null
     }
 
     _formatBody(req) {
@@ -352,37 +769,87 @@ export default class PawParser {
         let urlEncoded = req.getUrlEncodedBody(true)
         let formData = req.getMultipartBody(true)
 
-        if (body.length === 1) {
+        let external = null
+
+        if (body && body.length === 1) {
             if (
+                urlEncoded &&
                 urlEncoded !== null
             ) {
                 contentType = 'application/x-www-form-urlencoded'
+                external = new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ contentType ])
+                    ])
+                })
+
                 let keys = Object.keys(urlEncoded)
                 for (let key of keys) {
-                    let param = this._formatQueryParam(key, urlEncoded[key])
+                    let param = this._formatQueryParam(
+                        key,
+                        urlEncoded[key],
+                        new Immutable.List([ external ])
+                    )
                     params.push(param)
                 }
             }
             else if (
+                formData &&
                 formData !== null
             ) {
                 contentType = 'multipart/form-data'
+                external = new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([ contentType ])
+                    ])
+                })
 
                 let keys = Object.keys(formData)
                 for (let key of keys) {
-                    let param = this._formatQueryParam(key, formData[key])
+                    let param = this._formatQueryParam(
+                        key,
+                        formData[key],
+                        new Immutable.List([ external ])
+                    )
                     params.push(param)
                 }
             }
         }
 
-        if (params.length === 0) {
-            let [ param, cType ] = this._formatPlainBody(body)
-            params.push(param)
-            contentType = cType
+        if (body && params.length === 0) {
+            contentType = 'text/plain'
+            external = new Parameter({
+                key: 'Content-Type',
+                type: 'string',
+                internals: new Immutable.List([
+                    new Constraint.Enum([ contentType ])
+                ])
+            })
+
+            let param = this._formatPlainBody(
+                body,
+                new Immutable.List([ external ])
+            )
+
+            if (param) {
+                params.push(param)
+            }
         }
 
-        return [ new Immutable.List(params), contentType ]
+        let externals = []
+        if (external) {
+            externals.push(external)
+        }
+
+        return [
+            new Immutable.List(params),
+            contentType,
+            new Immutable.List(externals)
+        ]
     }
 
     _formatAuth(req) {

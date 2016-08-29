@@ -245,15 +245,43 @@ export default class FlowCLI {
                     return final
                 }
                 catch (e) {
-                    console.error('got error', e.stack)
+                    console.error('@serializer threw error',
+                        e,
+                        e.stack,
+                        JSON.stringify(e, null, '  ')
+                    )
+                    throw e
                 }
+            },
+            error => {
+                console.error('@resolver failed with error',
+                    error,
+                    error.stack,
+                    JSON.stringify(error, null, '  ')
+                )
+                throw error
             }).catch(error => {
-                console.error('got error', error.stack)
+                console.error('@resolver caught error',
+                    error,
+                    error.stack,
+                    JSON.stringify(error, null, '  ')
+                )
+                throw error
             })
         }, error => {
-            console.error('got promise error', error.stack)
+            console.error('@parser failed with error',
+                error,
+                error.stack,
+                JSON.stringify(error)
+            )
+            throw error
         }).catch(err => {
-            console.error('caught error', err, err.stack)
+            console.error('@parser caught error',
+                err,
+                err.stack,
+                JSON.stringify(err)
+            )
+            throw err
         })
         /* eslint-enable no-console */
     }

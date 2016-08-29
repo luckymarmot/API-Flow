@@ -4,6 +4,11 @@ import Group from '../../models/Group'
 import JSONSchemaReference from '../../models/references/JSONSchema'
 
 export default class PostmanSerializer extends BaseSerializer {
+    constructor() {
+        super()
+        this.references = null
+        this.usedReferences = []
+    }
     serialize(context) {
         let structure = this._formatStructure(context)
 
@@ -26,13 +31,16 @@ export default class PostmanSerializer extends BaseSerializer {
     }
 
     _formatStructure(context) {
+        this.references = context.get('references')
+
         let structure = {
             version: 1,
             collections: [
                 this._formatCollection(context)
-            ],
-            environments: []
+            ]
         }
+
+        structure.environments = [ this._formatEnvironments() ]
 
         return structure
     }
@@ -135,39 +143,46 @@ export default class PostmanSerializer extends BaseSerializer {
     }
 
     _formatSequenceParam(_param) {
-        if (_param.get('format') !== 'sequence') {
-            return _param.generate()
-        }
-
-        let schema = _param.getJSONSchema()
-
-        if (!schema['x-sequence']) {
-            return _param.generate()
-        }
-
-        for (let sub of schema['x-sequence']) {
-            if (sub['x-title']) {
-                sub.enum = [ '{{' + sub['x-title'] + '}}' ]
-            }
-        }
-
-        let generated = _param.generate(false, schema)
-        return generated
+        return _param.generate()
     }
 
     _formatQueries(parameters) {
         let queries = parameters.get('queries')
 
-        let formatted = '?'
+        if (queries.size > 0) {
+            return '?' + queries.map(this._formatQueryParam).join('&')
+        }
 
-        queries.forEach(query => {
-            formatted +=
-                query.get('key') +
-                '={{' + query.get('key') + '}}' +
-                '&'
-        })
+        return ''
+    }
 
-        return formatted.slice(0, -1)
+    _formatQueryParam(param) {
+        let key = param.get('key')
+        let pair = null
+
+        let validTypes = {
+            string: true,
+            number: true,
+            integer: true,
+            boolean: true
+        }
+
+        let type = param.get('type')
+        let format = param.get('format')
+        if (validTypes[type] && !(type === 'string' && format === 'sequence')) {
+            let value = param.get('value')
+            if (typeof value !== 'undefined' && value !== null) {
+                pair = value
+            }
+            else {
+                pair = param.generate()
+            }
+        }
+        else {
+            pair = '{{' + key + '}}'
+        }
+
+        return key + '=' + pair
     }
 
     _formatHeaders(parameters) {
@@ -208,11 +223,23 @@ export default class PostmanSerializer extends BaseSerializer {
             data = ''
             params.forEach(_body => {
                 if (_body.get('value') instanceof JSONSchemaReference) {
-                    data += JSON.stringify(
-                        _body.getJSONSchema(false),
-                        null,
-                        '  '
-                    )
+                    let ref = _body.get('value')
+                    if (this._isInlineRef(ref)) {
+                        data += JSON.stringify(
+                            _body.getJSONSchema(false),
+                            null,
+                            '  '
+                        )
+                    }
+                    else {
+                        let rawName = ref.get('relative') ||
+                            ref.get('uri') ||
+                            _body.get('key') ||
+                            'body'
+                        let name = rawName.split('/').slice(-1)[0]
+                        data += '{{' + name + '}}'
+                        this.usedReferences.push(ref)
+                    }
                 }
                 else {
                     data += _body.generate()
@@ -222,16 +249,61 @@ export default class PostmanSerializer extends BaseSerializer {
         else {
             data = []
             params.forEach(body => {
-                data.push({
-                    key: body.get('key'),
-                    value: '{{' + body.get('key') + '}}',
-                    type: body.get('type'),
-                    enabled: true
-                })
+                data.push(this._formatBodyParam(body))
             })
         }
 
         return [ dataMode, data ]
+    }
+
+    _isInlineRef(reference) {
+        let uri = reference.get('uri')
+        if (uri) {
+            return this.references.valueSeq().filter(container => {
+                return !!container.getIn([ 'cache', uri ])
+            }).count() === 0
+        }
+        return true
+    }
+
+    _formatBodyParam(param) {
+        let key = param.get('key')
+        let pair = null
+
+        let validTypes = {
+            string: true,
+            number: true,
+            integer: true,
+            boolean: true
+        }
+
+        let type = param.get('type')
+        let format = param.get('format')
+        if (validTypes[type] && !(type === 'string' && format === 'sequence')) {
+            let value = param.get('value')
+            if (typeof value !== 'undefined' && value !== null) {
+                pair = value
+            }
+            else {
+                pair = param.generate()
+            }
+        }
+        else if (type === 'reference') {
+            let ref = param.get('value')
+            let rawName = ref.get('relative') || ref.get('uri') || key
+
+            pair = '{{' + rawName.split('/').slice(-1)[0] + '}}'
+        }
+        else {
+            pair = '{{' + key + '}}'
+        }
+
+        return {
+            key: param.get('key'),
+            value: pair,
+            type: param.get('type'),
+            enabled: true
+        }
     }
 
     _extractContentTypeFromBody(body) {
@@ -252,5 +324,34 @@ export default class PostmanSerializer extends BaseSerializer {
         })
 
         return order
+    }
+
+    _formatEnvironments() {
+        let environmentId = this._uuid()
+
+        let values = this.usedReferences.map(ref => {
+            let rawName = ref.get('relative') || ref.get('uri')
+            let name = rawName.split('/').slice(-1)[0]
+
+            let value = ref.get('value')
+            if (typeof value !== 'string') {
+                value = JSON.stringify(value)
+            }
+
+            let envVariable = {
+                key: name,
+                value: value,
+                type: 'text',
+                enabled: true
+            }
+            return envVariable
+        })
+
+        return {
+            id: environmentId,
+            name: 'API-Flow Imports',
+            values: values,
+            timestamp: Date.now()
+        }
     }
 }

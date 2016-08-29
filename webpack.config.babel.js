@@ -1,11 +1,10 @@
-import webpack from 'webpack'
 import path from 'path'
 
 const name = 'api-flow'
 
 const production = process.env.NODE_ENV === 'production' // eslint-disable-line
 
-const target = process.env.TARGET
+const target = process.env.TARGET_ENV
 
 const config = {
     target: target,

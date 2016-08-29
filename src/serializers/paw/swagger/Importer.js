@@ -1,3 +1,5 @@
+import { registerImporter } from '../../../mocks/PawShims'
+
 import yaml from 'js-yaml'
 
 import BaseImporter from '../base-importer/BaseImporter'

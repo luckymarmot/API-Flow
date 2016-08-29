@@ -4,7 +4,15 @@ import JSONSchemaReference from '../../../models/references/JSONSchema'
 
 export default class JSONSchemaFaker extends DynamicValueConverter {
     convert(dv) {
-        let schema = dv.schema
+        let schema
+
+        try {
+            schema = JSON.parse(dv.schema || '{}')
+        }
+        catch (e) {
+            schema = {}
+        }
+
         let ref = new JSONSchemaReference({
             value: schema,
             resolved: true

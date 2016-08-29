@@ -71,7 +71,6 @@ rules:
   no-caller: 2
   no-div-regex: 2
   no-else-return: 0 # nicer to have strong if/else logic
-  no-empty-label: 2
   no-eq-null: 2
   no-eval: 2
   no-extend-native: 2
@@ -194,9 +193,10 @@ rules:
   - before: false
     after: true
   sort-vars: 0
-  space-after-keywords:
+  keyword-spacing:
   - 1
-  - always
+  - before: true
+    after: true
   space-before-blocks:
   - 1
   - always
@@ -217,8 +217,6 @@ rules:
   - 1
   - never
   space-infix-ops:
-    - 1
-  space-return-throw-case:
     - 1
   space-unary-ops:
   - 1
@@ -245,4 +243,3 @@ rules:
   max-statements: 0
   no-bitwise: 0
   no-plusplus: 2
-  
