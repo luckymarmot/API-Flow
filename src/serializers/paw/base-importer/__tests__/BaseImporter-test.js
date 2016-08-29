@@ -1537,6 +1537,16 @@ export class TestBaseImporter extends UnitTest {
     testGenerateUrlWithSimpleUrl() {
         const importer = new ClassMock(new BaseImporter(), '')
 
+        importer.options = {
+            jsfInEnv: true,
+            jsfInPath: true,
+            jsfInBody: true,
+            jsfInHost: false,
+            jsfInQuery: true,
+            jsfInHeaders: true,
+            jsfInProtocol: false
+        }
+
         importer.spyOn('_toDynamicString', (string) => {
             if (string instanceof Parameter) {
                 let dynStr = new DynamicString(string.generate())
@@ -1597,6 +1607,16 @@ export class TestBaseImporter extends UnitTest {
     @targets('_generateUrl')
     testGenerateUrlWithSimpleQueryParams() {
         const importer = new ClassMock(new BaseImporter(), '')
+
+        importer.options = {
+            jsfInEnv: true,
+            jsfInPath: true,
+            jsfInBody: true,
+            jsfInHost: false,
+            jsfInQuery: true,
+            jsfInHeaders: true,
+            jsfInProtocol: false
+        }
 
         importer.spyOn('_toDynamicString', (string) => {
             let dyn
@@ -1675,6 +1695,16 @@ export class TestBaseImporter extends UnitTest {
     @targets('_generateUrl')
     testGenerateUrlWithQueriesAndAuthParams() {
         const importer = new ClassMock(new BaseImporter(), '')
+
+        importer.options = {
+            jsfInEnv: true,
+            jsfInPath: true,
+            jsfInBody: true,
+            jsfInHost: false,
+            jsfInQuery: true,
+            jsfInHeaders: true,
+            jsfInProtocol: false
+        }
 
         importer.spyOn('_toDynamicString', (string) => {
             let dyn
@@ -2458,6 +2488,11 @@ export class TestBaseImporter extends UnitTest {
 
     @targets('_useJSF')
     _testUseJSF() {
+        // TODO
+    }
+
+    @targets('_formatProtocolParam')
+    _testFormatProtocolParam() {
         // TODO
     }
 

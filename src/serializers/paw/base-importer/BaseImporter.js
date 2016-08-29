@@ -27,44 +27,44 @@ export default class BaseImporter {
 
     static inputs = [
         new InputField(
-            'jsfInEnv',
-            'Use JSON Schema Faker for environment variables',
-            'Checkbox',
-            { defaultValue: true, persisted: true }
-        ),
-        new InputField(
             'jsfInProtocol',
-            'Use JSON Schema Faker for protocol parameters',
+            'Replace schemas by randomizers in protocol params',
             'Checkbox',
-            { defaultValue: true, persisted: true }
+            { defaultValue: false, persisted: true }
         ),
         new InputField(
             'jsfInHost',
-            'Use JSON Schema Faker for host parameters',
+            'Replace schemas by randomizers in host params',
             'Checkbox',
-            { defaultValue: true, persisted: true }
+            { defaultValue: false, persisted: true }
         ),
         new InputField(
             'jsfInPath',
-            'Use JSON Schema Faker for path parameters',
+            'Replace schemas by randomizers in path params',
             'Checkbox',
             { defaultValue: true, persisted: true }
         ),
         new InputField(
             'jsfInQuery',
-            'Use JSON Schema Faker for query parameters',
+            'Replace schemas by randomizers in query params',
             'Checkbox',
             { defaultValue: true, persisted: true }
         ),
         new InputField(
             'jsfInHeaders',
-            'Use JSON Schema Faker for headers',
+            'Replace schemas by randomizers in headers',
             'Checkbox',
             { defaultValue: true, persisted: true }
         ),
         new InputField(
             'jsfInBody',
-            'Use JSON Schema Faker for body',
+            'Replace schemas by randomizers in body',
+            'Checkbox',
+            { defaultValue: true, persisted: true }
+        ),
+        new InputField(
+            'jsfInEnv',
+            'Replace schemas by randomizers in Environments',
             'Checkbox',
             { defaultValue: true, persisted: true }
         )
@@ -584,9 +584,7 @@ export default class BaseImporter {
     }
 
     _generateUrl(url, queries, auths) {
-        let protocol = this._toDynamicString(
-            url.get('protocol'), true, 'protocol'
-        )
+        let protocol = this._formatProtocolParam(url.get('protocol'))
         let host = this._toDynamicString(url.get('host'), true, 'host')
         let path = this._toDynamicString(url.get('pathname'), true, 'pathname')
         let hash = this._toDynamicString(url.get('hash'), true, 'url')
@@ -653,6 +651,24 @@ export default class BaseImporter {
         }
 
         return _url
+    }
+
+    _formatProtocolParam(protocol) {
+        if (this._useJSF('protocol')) {
+            return this._toDynamicString(protocol, true, 'protocol')
+        }
+
+        let schema = protocol.getJSONSchema(false)
+
+        if (schema && schema.enum.indexOf('https') >= 0) {
+            return new DynamicString('https')
+        }
+        else if (schema && schema.enum.indexOf('wss') >= 0) {
+            return new DynamicString('wss')
+        }
+        else {
+            return this._toDynamicString(protocol, true, 'protocol')
+        }
     }
 
     _extractQueryParamsFromAuth(auths) {
