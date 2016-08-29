@@ -546,6 +546,8 @@ export default class CurlSerializer extends BaseSerializer {
             container = bodies.get(0).filter(container)
         }
 
+        let hostDescriptions = this._formatHostParams(req)
+
         let pathDescriptions = []
         container.get('path').forEach(param => {
             let formatted = this._formatParamDescription(param)
@@ -579,6 +581,12 @@ export default class CurlSerializer extends BaseSerializer {
         })
 
         let formatted = []
+        if (hostDescriptions.length > 0) {
+            let host = '#'.repeat(headerType) + ' Host Parameters\n\n' +
+                hostDescriptions.join('\n')
+            formatted.push(host)
+        }
+
         if (pathDescriptions.length > 0) {
             let path = '#'.repeat(headerType) + ' Path Parameters\n\n' +
                 pathDescriptions.join('\n')
@@ -604,6 +612,29 @@ export default class CurlSerializer extends BaseSerializer {
         }
 
         return formatted.join('\n\n')
+    }
+
+    _formatHostParams(req) {
+        let hostParams = []
+        let host = req.getIn([ 'url', 'host' ])
+
+        if (
+            host &&
+            host.get('type') === 'string' &&
+            host.get('format') === 'sequence'
+        ) {
+            let sequence = host.get('value')
+            sequence.forEach(sub => {
+                if (sub.get('key') !== null) {
+                    let formatted = this._formatParamDescription(sub)
+                    if (formatted) {
+                        hostParams.push(formatted)
+                    }
+                }
+            })
+        }
+
+        return hostParams
     }
 
     _formatParamDescription(param) {

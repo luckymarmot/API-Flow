@@ -757,8 +757,8 @@ export default class PawParser {
             return param
         }
 
-        // FIXME What should we do if the DynamicString has no components
-        return param
+        // DynamicString had no content, returning null
+        return null
     }
 
     _formatBody(req) {
@@ -834,13 +834,21 @@ export default class PawParser {
                 body,
                 new Immutable.List([ external ])
             )
-            params.push(param)
+
+            if (param) {
+                params.push(param)
+            }
+        }
+
+        let externals = []
+        if (external) {
+            externals.push(external)
         }
 
         return [
             new Immutable.List(params),
             contentType,
-            new Immutable.List([ external ])
+            new Immutable.List(externals)
         ]
     }
 

@@ -2656,6 +2656,69 @@ export class TestCurlSerializer extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('_formatHostParams')
+    testFormatHostParamsWithSimpleHost() {
+        const s = this.__init()
+
+        const req = new Request({
+            url: new URL({
+                host: 'simplehost.com'
+            })
+        })
+
+        const expected = []
+        const result = s._formatHostParams(req)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatHostParams')
+    testFormatHostParamsWithSequenceHostCallsFormatParamDescription() {
+        const s = this.__init()
+
+        s.spyOn('_formatParamDescription', () => {
+            return 12
+        })
+
+        const req = new Request({
+            url: new URL({
+                host: new Parameter({
+                    key: 'host',
+                    name: 'host',
+                    type: 'string',
+                    format: 'sequence',
+                    value: new Immutable.List([
+                        new Parameter({
+                            type: 'string',
+                            value: 'echo.paw.',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'echo.paw.'
+                                ])
+                            ])
+                        }),
+                        new Parameter({
+                            key: 'tld',
+                            name: 'tld',
+                            type: 'string',
+                            internals: new Immutable.List([
+                                new Constraint.Enum([
+                                    'cloud', 'io', 'com'
+                                ])
+                            ])
+                        })
+                    ])
+                })
+            })
+        })
+
+        const expected = [ 12 ]
+        const result = s._formatHostParams(req)
+
+        this.assertEqual(s.spy._formatParamDescription.count, 1)
+        this.assertEqual(expected, result)
+    }
+
     @targets('validate')
     _testValidate() {
         // TODO
