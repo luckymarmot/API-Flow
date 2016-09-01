@@ -354,7 +354,14 @@ export default class BaseImporter {
                         key = key.slice(12)
                         key = key.slice(2, key.length - 2)
                     }
-                    variablesDict[key] = ds
+
+                    if (
+                        key !== null &&
+                        key !== '' &&
+                        typeof key !== 'undefined'
+                    ) {
+                        variablesDict[key] = ds
+                    }
                 }
             }
 
