@@ -370,7 +370,7 @@ export default class PawParser {
             currentIndex = m.index + m[0].length
         }
 
-        if (currentIndex <= content.length - 1) {
+        if (currentIndex < content.length) {
             let substr = content.slice(currentIndex, content.length)
             let param = new Parameter({
                 type: 'string',
