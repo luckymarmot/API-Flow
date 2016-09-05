@@ -13,6 +13,20 @@ export default class JSONSchemaFaker extends DynamicValueConverter {
             schema = {}
         }
 
+        if (!schema.type) {
+            let keys = Object.keys(schema).filter(key => {
+                return [
+                    'x-title', 'title', 'description', 'x-description'
+                ].indexOf(key) < 0
+            })
+
+            if (keys.length === 0) {
+                schema.enum = [ '' ]
+            }
+
+            schema.type = 'string'
+        }
+
         let ref = new JSONSchemaReference({
             value: schema,
             resolved: true
