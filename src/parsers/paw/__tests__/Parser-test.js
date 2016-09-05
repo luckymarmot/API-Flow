@@ -2026,6 +2026,10 @@ export class TestPawParser extends UnitTest {
         let url = new DynamicString('https://fakeurl.com/path')
 
         url.length = 1
+        url.$$_spyOn('getEvaluatedString', () => {
+            return 'https://fakeurl.com/path'
+        })
+
         url.$$_spyOn('getComponentAtIndex', () => {
             return 'https://fakeurl.com/path'
         })
@@ -2082,6 +2086,10 @@ export class TestPawParser extends UnitTest {
         let url = new DynamicString(...content)
 
         url.length = 2
+        url.$$_spyOn('getEvaluatedString', () => {
+            return 'https://fakeurl.com/path'
+        })
+
         url.$$_spyOn('getComponentAtIndex', () => {
             return content.shift()
         })
@@ -2162,6 +2170,11 @@ export class TestPawParser extends UnitTest {
         let url = new DynamicString(...content)
 
         url.length = 3
+        url.$$_spyOn('getEvaluatedString', () => {
+            return 'https://fakeurl.com/path'
+        })
+
+
         url.$$_spyOn('getComponentAtIndex', () => {
             return content.shift()
         })
@@ -2260,6 +2273,10 @@ export class TestPawParser extends UnitTest {
         let url = new DynamicString(...content)
 
         url.length = 3
+        url.$$_spyOn('getEvaluatedString', () => {
+            return 'https://fakeurl.com/path'
+        })
+
         url.$$_spyOn('getComponentAtIndex', () => {
             return content.shift()
         })
@@ -2346,6 +2363,10 @@ export class TestPawParser extends UnitTest {
         let url = new DynamicString(...content)
 
         url.length = 3
+        url.$$_spyOn('getEvaluatedString', () => {
+            return 'https://fakeurl.com/path'
+        })
+
         url.$$_spyOn('getComponentAtIndex', () => {
             return content.shift()
         })
@@ -2446,6 +2467,10 @@ export class TestPawParser extends UnitTest {
         let url = new DynamicString(...content)
 
         url.length = 7
+        url.$$_spyOn('getEvaluatedString', () => {
+            return 'https://fakeurl.com/path'
+        })
+
         url.$$_spyOn('getComponentAtIndex', () => {
             return content.shift()
         })

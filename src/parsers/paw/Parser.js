@@ -193,6 +193,14 @@ export default class PawParser {
 
         let dvNames = {}
 
+        let evaluatedHost = ds.getEvaluatedString()
+        if (
+            typeof evaluatedHost === 'string' &&
+            !evaluatedHost.match('://')
+        ) {
+            currentStepIndex = 1
+        }
+
         for (let index = 0; index < ds.length; index += 1) {
             let component = ds.getComponentAtIndex(index)
             if (typeof component === 'string') {
@@ -282,7 +290,15 @@ export default class PawParser {
         let step = stepOrder[currentStepIndex]
         url[step] = currentStepString
 
-        if (typeof url.pathname === 'undefined') {
+        if (typeof url.protocol === 'undefined') {
+            url.protocol = 'http'
+        }
+
+        if (typeof url.host === 'undefined') {
+            url.host = 'localhost'
+        }
+
+        if (typeof url.pathname === 'undefined' || url.pathname === '') {
             url.pathname = '/'
         }
         else {
@@ -354,7 +370,7 @@ export default class PawParser {
             currentIndex = m.index + m[0].length
         }
 
-        if (currentIndex < content.length - 1) {
+        if (currentIndex < content.length) {
             let substr = content.slice(currentIndex, content.length)
             let param = new Parameter({
                 type: 'string',
