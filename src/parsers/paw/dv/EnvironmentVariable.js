@@ -8,7 +8,7 @@ export default class EnvironmentVariable extends DynamicValueConverter {
         let id = dv.environmentVariable
         let variable = ctx.getEnvironmentVariableById(id)
 
-        if (variable === null) {
+        if (typeof variable === 'undefined' || variable === null) {
             return null
         }
 
