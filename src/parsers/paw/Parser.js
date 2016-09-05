@@ -203,27 +203,47 @@ export default class PawParser {
 
         for (let index = 0; index < ds.length; index += 1) {
             let component = ds.getComponentAtIndex(index)
-            if (typeof component === 'string') {
+            if (typeof component === 'string' ||
+                component.type
+                ===
+                'com.luckymarmot.EnvironmentVariableDynamicValue'
+            ) {
+                let content
+                if (typeof component === 'string') {
+                    content = component
+                }
+                else {
+                    content = component.getEvaluatedString()
+                }
+
                 let step = stepOrder[currentStepIndex]
                 let marker = stepMarkers[step]
-                let m = component.match(marker)
+                let m = content.match(marker)
+
                 while (m) {
-                    currentStepString += component.slice(0, m.index)
-                    component = component.slice(m.index + marker.length)
+                    currentStepString += content.slice(0, m.index)
+                    content = content.slice(m.index + marker.length)
                     url[step] = currentStepString
 
                     currentStepString = ''
                     currentStepIndex += 1
                     step = stepOrder[currentStepIndex]
                     marker = stepMarkers[step]
-                    m = component.match(marker)
+                    m = content.match(marker)
                 }
 
                 if (!m) {
-                    currentStepString += component
+                    currentStepString += content
                 }
             }
             else {
+                /*
+                    FIXME: If the JSONSchemaReference generates more than one
+                    block of the url, the code generators will output garbage.
+
+                    Possible Fix, check if the JSF generates more than one block
+                    and act accordingly (use getEvaluatedString)
+                */
                 let val = this.dvManager.convert(component)
                 if (val instanceof JSONSchemaReference) {
                     let title = val.get('value')['x-title']
