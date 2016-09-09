@@ -2196,6 +2196,34 @@ export class TestSwaggerParser extends UnitTest {
         this.assertJSONEqual(expected, result)
     }
 
+    @targets('detect')
+    testDetectWithSwaggerFile() {
+        const parser = this.__init()
+
+        let input = JSON.stringify({
+            swagger: '2.0',
+            info: {},
+            paths: {}
+        })
+
+        let expected = 1
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('detect')
+    testDetectWithNotASwaggerFile() {
+        const parser = this.__init()
+
+        let input = 'Some Content: ....'
+
+        let expected = 0
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
     //
     // helpers
     //

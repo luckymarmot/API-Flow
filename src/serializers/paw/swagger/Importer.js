@@ -1,7 +1,5 @@
 import { registerImporter } from '../../../mocks/PawShims'
 
-import yaml from 'js-yaml'
-
 import BaseImporter from '../base-importer/BaseImporter'
 import SwaggerParser from '../../../parsers/swagger/Parser'
 
@@ -14,6 +12,7 @@ export default class SwaggerImporter extends BaseImporter {
 
     constructor() {
         super()
+        this.parser = new SwaggerParser()
         this.ENVIRONMENT_DOMAIN_NAME = 'Swagger Environments'
     }
 
@@ -27,27 +26,7 @@ export default class SwaggerImporter extends BaseImporter {
     }
 
     _canImportItem(context, item) {
-        let swag
-        try {
-            swag = JSON.parse(item.content)
-        }
-        catch (jsonParseError) {
-            try {
-                swag = yaml.safeLoad(item.content)
-            }
-            catch (yamlParseError) {
-                return 0
-            }
-        }
-        if (swag) {
-            // converting objects to bool to number, fun stuff
-            let score = 0
-            score += swag.swagger ? 1 / 3 : 0
-            score += swag.swagger === '2.0' ? 1 / 3 : 0
-            score += swag.info ? 1 / 3 : 0
-            return score
-        }
-        return 0
+        return this.parser.detect(item.content)
     }
 
     /*
@@ -57,7 +36,7 @@ export default class SwaggerImporter extends BaseImporter {
         - options
     */
     createRequestContexts(context, items) {
-        const parser = new SwaggerParser()
+        const parser = this.parser
 
         let reqContexts = []
         for (let item of items) {

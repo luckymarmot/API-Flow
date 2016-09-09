@@ -1,5 +1,8 @@
 import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
+import PostmanParserV1 from '../parsers/postman/v1/Parser'
+import PostmanParserV2 from '../parsers/postman/v2/Parser'
+import CurlParser from '../parsers/curl/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
@@ -14,6 +17,26 @@ import BrowserEnvironment, {
 import Options from '../models/options/Options'
 
 export default class FlowBrowser {
+    detect(content) {
+        let parserMap = {
+            swagger: SwaggerParser,
+            raml: RAMLParser,
+            'postman-1': PostmanParserV1,
+            'postman-2': PostmanParserV2,
+            curl: CurlParser
+        }
+
+        let score = {}
+
+        let parsers = Object.keys(parserMap)
+        for (let parser of parsers) {
+            let _parser = new parserMap[parser]()
+            score[parser] = _parser.detect(content)
+        }
+
+        return score
+    }
+
     transform(input, callback, _opts) {
         let parserMap = {
             swagger: SwaggerParser,

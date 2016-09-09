@@ -31,6 +31,32 @@ export default class SwaggerParser {
         this.item = new Item()
     }
 
+    detect(content) {
+        let swag
+        try {
+            swag = JSON.parse(content)
+        }
+        catch (jsonParseError) {
+            try {
+                swag = yaml.safeLoad(content)
+            }
+            catch (yamlParseError) {
+                return 0
+            }
+        }
+        if (swag) {
+            // converting objects to bool to number, fun stuff
+            let score = 0
+            score += swag.swagger ? 1 / 3 : 0
+            score += swag.swagger === '2.0' ? 1 / 3 : 0
+            score += swag.info ? 1 / 3 : 0
+            score += swag.paths ? 1 / 3 : 0
+            score = score > 1 ? 1 : score
+            return score
+        }
+        return 0
+    }
+
     // @NotTested -> assumed valid
     parse(item) {
         this.item = new Item(item)

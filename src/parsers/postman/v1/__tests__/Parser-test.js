@@ -2155,6 +2155,84 @@ export class TestPostmanParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('detect')
+    testDetectWithPostmanDumpFile() {
+        const parser = new ClassMock(new PostmanParser())
+
+        let input = JSON.stringify({
+            collections: [],
+            environments: [],
+            id: '1234567890',
+            name: 'some export name'
+        })
+
+        let expected = 1
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('detect')
+    testDetectWithPostmanCollectionV1File() {
+        const parser = new ClassMock(new PostmanParser())
+
+        let input = JSON.stringify({
+            id: '1234567890',
+            name: 'some export name',
+            timestamp: Date.now(),
+            requests: []
+        })
+
+        let expected = 1
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('detect')
+    testDetectWithPostmanEnvironmentFile() {
+        const parser = new ClassMock(new PostmanParser())
+
+        let input = JSON.stringify({
+            id: '1234567890',
+            name: 'some export name',
+            timestamp: Date.now(),
+            values: []
+        })
+
+        let expected = 1
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('detect')
+    testDetectWithNonJSONFile() {
+        const parser = new ClassMock(new PostmanParser())
+
+        let input = 'toto:123'
+
+        let expected = 0
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('detect')
+    testDetectWithPostmanCollectionV2File() {
+        const parser = new ClassMock(new PostmanParser())
+
+        let input = JSON.stringify({
+            info: 'some info object',
+            item: 'some item to export'
+        })
+
+        let expected = 0
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
     __loadPostmanFile(fileName, extension = 'json') {
         const path = __dirname + '/samples/' + fileName + '.' + extension
         const item = {

@@ -21,6 +21,26 @@ export default class FlowWorker {
         this.queue = []
     }
 
+    detect(content) {
+        let parserMap = {
+            swagger: SwaggerParser,
+            raml: RAMLParser,
+            'postman-1': PostmanParserV1,
+            'postman-2': PostmanParserV2,
+            curl: CurlParser
+        }
+
+        let score = {}
+
+        let parsers = Object.keys(parserMap)
+        for (let parser of parsers) {
+            let _parser = new parserMap[parser]()
+            score[parser] = _parser.detect(content)
+        }
+
+        return score
+    }
+
     transform(input, callback, _opts) {
         let parserMap = {
             swagger: SwaggerParser,
@@ -204,6 +224,7 @@ export default class FlowWorker {
         }
     }
 
+    // TODO add detect
     onMessage(msg) {
         if (arguments.length > 0) {
             let query = this.processArguments(msg.data)

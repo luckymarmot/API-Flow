@@ -14,6 +14,7 @@ export default class CurlImporter extends BaseImporter {
     constructor() {
         super()
         this.ENVIRONMENT_DOMAIN_NAME = 'CURL Environments'
+        this.parser = new CurlParser()
     }
 
     canImport(context, items) {
@@ -26,10 +27,7 @@ export default class CurlImporter extends BaseImporter {
     }
 
     _canImportItem(context, item) {
-        if (item.content.match(/curl\s/i)) {
-            return 1
-        }
-        return 0
+        return this.parser.detect(item.content)
     }
 
     /*
@@ -39,7 +37,7 @@ export default class CurlImporter extends BaseImporter {
         - options
     */
     createRequestContexts(context, items) {
-        const parser = new CurlParser()
+        const parser = this.parser
 
         let reqContexts = []
         for (let item of items) {
