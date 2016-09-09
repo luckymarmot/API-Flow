@@ -138,7 +138,7 @@ export default class CurlParser {
                 let container = this._createParameterContainer(
                     headers, queries, body
                 )
-                this.requests = this.requests.concat(
+                requests = requests.concat(
                     this._generateRequests(
                         urls, method, container, auth, timeout
                     )
@@ -354,11 +354,13 @@ export default class CurlParser {
     }
 
     _generateRequests(urls, method, container, auth, timeout) {
-        return urls.map(url => {
+        let requests = urls.map(url => {
             return this._createRequest(
                 url, method, container, auth, timeout
             )
         })
+
+        return requests
     }
 
     _createParameterContainer(headers, queries, body) {

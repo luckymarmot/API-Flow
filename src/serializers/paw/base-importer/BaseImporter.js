@@ -245,6 +245,7 @@ export default class BaseImporter {
     }
 
     _importPawRequests(requestContext, item, options) {
+        const requests = requestContext.getRequests()
         const group = requestContext.get('group')
         const references = requestContext.get('references')
 
@@ -256,7 +257,7 @@ export default class BaseImporter {
             return
         }
 
-        let parent
+        let parent = null
         let name
         if (group.get('name')) {
             name = group.get('name')
@@ -268,22 +269,29 @@ export default class BaseImporter {
             name = item.url
         }
 
-        parent = this.context.createRequestGroup(name)
+        if (requests.size > 1) {
+            parent = this.context.createRequestGroup(name)
+        }
 
-        if (options && options.parent) {
+        if (options && options.parent && parent) {
             options.parent.appendChild(parent)
+            if (
+                options &&
+                options.order !== null &&
+                typeof options.order !== 'undefined'
+            ) {
+                parent.order = options.order
+            }
         }
 
-        if (
-            options &&
-            options.order !== null &&
-            typeof options.order !== 'undefined'
-        ) {
-            parent.order = options.order
-        }
+        console.log('@parent', parent, JSON.stringify(parent))
 
         let manageRequestGroups = (current, parentGroup) => {
-            if (current === parentGroup.name || current === '') {
+            if (
+                !parentGroup ||
+                current === parentGroup.name ||
+                current === ''
+            ) {
                 return parentGroup
             }
             let pawGroup = this.context.createRequestGroup(current)
@@ -546,7 +554,12 @@ export default class BaseImporter {
             pawRequest.timeout = timeout * 1000
         }
 
-        parent.appendChild(pawRequest)
+        if (parent) {
+            parent.appendChild(pawRequest)
+        }
+        else if (options && options.parent) {
+            options.parent.appendChild(pawRequest)
+        }
 
         // order
         if (options && options.order) {
