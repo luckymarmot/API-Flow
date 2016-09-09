@@ -284,8 +284,6 @@ export default class BaseImporter {
             }
         }
 
-        console.log('@parent', parent, JSON.stringify(parent))
-
         let manageRequestGroups = (current, parentGroup) => {
             if (
                 !parentGroup ||
