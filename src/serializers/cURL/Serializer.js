@@ -540,6 +540,10 @@ export default class CurlSerializer extends BaseSerializer {
     }
 
     _formatParameterDescriptions(req, headerType = 4) {
+        let headerStr = ''
+        for (let i = 0; i < headerType; i += 1) {
+            headerStr += '#'
+        }
         let container = req.get('parameters')
         let bodies = req.get('bodies')
         if (bodies.size > 0) {
@@ -582,31 +586,31 @@ export default class CurlSerializer extends BaseSerializer {
 
         let formatted = []
         if (hostDescriptions.length > 0) {
-            let host = '#'.repeat(headerType) + ' Host Parameters\n\n' +
+            let host = headerStr + ' Host Parameters\n\n' +
                 hostDescriptions.join('\n')
             formatted.push(host)
         }
 
         if (pathDescriptions.length > 0) {
-            let path = '#'.repeat(headerType) + ' Path Parameters\n\n' +
+            let path = headerStr + ' Path Parameters\n\n' +
                 pathDescriptions.join('\n')
             formatted.push(path)
         }
 
         if (queryDescriptions.length > 0) {
-            let query = '#'.repeat(headerType) + ' Query Parameters\n\n' +
+            let query = headerStr + ' Query Parameters\n\n' +
                 queryDescriptions.join('\n')
             formatted.push(query)
         }
 
         if (headerDescriptions.length > 0) {
-            let header = '#'.repeat(headerType) + ' Header Parameters\n\n' +
+            let header = headerStr + ' Header Parameters\n\n' +
                 headerDescriptions.join('\n')
             formatted.push(header)
         }
 
         if (bodyDescriptions.length > 0) {
-            let body = '#'.repeat(headerType) + ' Body Parameters\n\n' +
+            let body = headerStr + ' Body Parameters\n\n' +
                 bodyDescriptions.join('\n')
             formatted.push(body)
         }
