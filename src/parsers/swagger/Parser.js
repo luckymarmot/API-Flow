@@ -462,6 +462,8 @@ export default class SwaggerParser {
         let refs = ref
             .resolve(JSON.stringify(collection))
             .get('dependencies')
+
+        console.log('&&&&&&&', JSON.stringify(refs, null, 2))
         return refs
     }
 
@@ -587,7 +589,8 @@ export default class SwaggerParser {
                 let headerNames = Object.keys(responses[code].headers)
                 for (let header of headerNames) {
                     let param = this._extractParam(
-                        responses[code].headers[header]
+                        responses[code].headers[header],
+                        externals
                     )
                     headers = headers.push(param)
                 }
@@ -768,7 +771,9 @@ export default class SwaggerParser {
 
         if (param.schema) {
             let currentURI = this.item.getPath()
+            // console.log('#########', param.schema.$ref, currentURI)
             let uri = (new URL(param.schema.$ref, currentURI)).href()
+            console.log('@uri', uri)
             value = new JSONSchemaReference({
                 uri: uri,
                 relative: param.schema.$ref || ''
@@ -785,7 +790,9 @@ export default class SwaggerParser {
         if (param['x-use-with']) {
             _externals = new Immutable.List()
             for (let external of param['x-use-with']) {
-                _externals = _externals.push(this._extractParam(external))
+                _externals = _externals.push(
+                    this._extractParam(external, new Immutable.List())
+                )
             }
         }
 

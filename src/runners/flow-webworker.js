@@ -18,7 +18,8 @@ import Options from '../models/options/Options'
 
 export default class FlowWorker {
     constructor() {
-        this.queue = []
+        this.transformQueue = []
+        this.detectQueue = []
     }
 
     detect(content) {
@@ -71,6 +72,7 @@ export default class FlowWorker {
             throw new Error('unrecognized target format')
         }
 
+        let url = null
         let contentPromise
         if (base === 'raw') {
             contentPromise = new Promise((resolve) => {
@@ -79,6 +81,7 @@ export default class FlowWorker {
         }
         else {
             contentPromise = (new URLResolver()).resolve(input)
+            url = input
         }
 
         let parser = new parserMap[source]()
@@ -88,7 +91,7 @@ export default class FlowWorker {
 
         contentPromise.then((content) => {
             let item = {
-                url: input,
+                url: url,
                 content: content
             }
 
@@ -114,6 +117,7 @@ export default class FlowWorker {
                                 opts.get('serializer')
                             )
                         let error = serializer.validate(final)
+                        // console.log('@final ----', final)
                         callback(error, final)
                     }
                     catch (e) {
@@ -130,21 +134,23 @@ export default class FlowWorker {
         })
     }
 
-    generateResponseCallback(content, uuid) {
+    generateTransformResponseCallback(content, otherArgs) {
         return function(err, data) {
             if (!err) {
                 self.postMessage({
+                    action: 'transform',
                     success: true,
                     generated: data,
-                    uuid: uuid
+                    ...otherArgs
                 })
             }
             else {
                 self.postMessage({
+                    action: 'transform',
                     success: false,
                     error: JSON.stringify(err),
                     generated: data,
-                    uuid: uuid
+                    ...otherArgs
                 })
             }
         }
@@ -192,45 +198,98 @@ export default class FlowWorker {
             value: '*'
         }
     */
-    processArguments(args) {
+    processTransformArguments(args) {
         let valid = this.validateArguments(args)
         if (!valid) {
             return null
         }
 
-        let content = args.content
-        let resolutionOptions = args.resolutionOptions || null
+        let {
+            content,
+            resolutionOptions,
+            sourceFormat,
+            contentType,
+            targetFormat,
+            ...other
+        } = args
+
         let flowOptions = {
             parser: {
-                name: args.sourceFormat
+                name: sourceFormat
             },
             resolver: {
-                base: args.contentType,
+                base: contentType,
                 resolve: resolutionOptions
             },
             serializer: {
-                name: args.targetFormat
+                name: targetFormat
             }
         }
 
-        let callback = this.generateResponseCallback(content, args.uuid)
+        let callback = this.generateTransformResponseCallback(content, other)
         return [ content, callback, flowOptions ]
     }
 
-    processQueue() {
-        while (this.queue.length > 0) {
-            let query = this.queue.shift()
+    processDetectArguments(parameters) {
+        if (!parameters.content) {
+            return null
+        }
+
+        let { content, ...other } = parameters
+
+        return [ content, other ]
+    }
+
+    processArguments(args) {
+        let { action, ...parameters } = args
+        if (action === 'transform') {
+            return [ action, this.processTransformArguments(parameters) ]
+        }
+        else if (action === 'detect') {
+            return [ action, this.processDetectArguments(parameters) ]
+        }
+        return [ null, null ]
+    }
+
+    processTransformQueue() {
+        while (this.transformQueue.length > 0) {
+            let query = this.transformQueue.shift()
             this.transform(...query)
         }
     }
 
-    // TODO add detect
+    processDetectQueue() {
+        while (this.detectQueue.length > 0) {
+            let [ content, otherArgs ] = this.detectQueue.shift()
+            let scores = this.detect(content)
+            self.postMessage({
+                action: 'detect',
+                success: true,
+                generated: scores,
+                ...otherArgs
+            })
+        }
+    }
+
     onMessage(msg) {
         if (arguments.length > 0) {
-            let query = this.processArguments(msg.data)
+            let [ action, query ] = this.processArguments(msg.data)
             if (query) {
-                this.queue.push(query)
-                this.processQueue()
+                if (action === 'transform') {
+                    this.transformQueue.push(query)
+                    this.processTransformQueue()
+                }
+                else if (action === 'detect') {
+                    this.detectQueue.push(query)
+                    this.processDetectQueue()
+                }
+                else {
+                    self.postMessage({
+                        success: false,
+                        error: 'invalid action',
+                        ...msg.data
+                    })
+                }
             }
             else {
                 self.postMessage({
@@ -238,8 +297,14 @@ export default class FlowWorker {
                     error: 'invalid query',
                     ...msg.data
                 })
-                // TODO send Invalid Query message
             }
+        }
+        else {
+            self.postMessage({
+                success: false,
+                error: 'no query provided',
+                ...msg.data
+            })
         }
     }
 }
