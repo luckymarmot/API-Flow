@@ -6,6 +6,7 @@ import {
 
 import Reference from '../../models/references/Reference'
 import JSONSchemaReference from '../../models/references/JSONSchema'
+import Auth from '../../models/Auth'
 
 export default class SwaggerSerializer extends BaseSerializer {
     constructor() {
@@ -682,12 +683,6 @@ export default class SwaggerSerializer extends BaseSerializer {
     }
 
     _formatSecurity(context, request) {
-        const securityMap = {
-            BasicAuth: ::this._formatBasicAuth,
-            ApiKeyAuth: ::this._formatApiKeyAuth,
-            OAuth2Auth: ::this._formatOAuth2Auth
-        }
-
         let _definitions = new Immutable.Map()
         let _security = []
 
@@ -696,7 +691,18 @@ export default class SwaggerSerializer extends BaseSerializer {
                 _security.push(null)
             }
             else {
-                let rule = securityMap[auth.constructor.name]
+                let rule = null
+
+                if (auth instanceof Auth.Basic) {
+                    rule = ::this._formatBasicAuth
+                }
+                else if (auth instanceof Auth.ApiKey) {
+                    rule = ::this._formatApiKeyAuth
+                }
+                else if (auth instanceof Auth.OAuth2) {
+                    rule = :: this._formatOAuth2Auth
+                }
+
                 if (rule) {
                     let [ definition, security ] = rule(context, auth)
                     _security.push(security)

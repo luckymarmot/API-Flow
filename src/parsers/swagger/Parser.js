@@ -463,7 +463,6 @@ export default class SwaggerParser {
             .resolve(JSON.stringify(collection))
             .get('dependencies')
 
-        console.log('&&&&&&&', JSON.stringify(refs, null, 2))
         return refs
     }
 
@@ -771,9 +770,7 @@ export default class SwaggerParser {
 
         if (param.schema) {
             let currentURI = this.item.getPath()
-            // console.log('#########', param.schema.$ref, currentURI)
             let uri = (new URL(param.schema.$ref, currentURI)).href()
-            console.log('@uri', uri)
             value = new JSONSchemaReference({
                 uri: uri,
                 relative: param.schema.$ref || ''

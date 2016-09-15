@@ -22,7 +22,8 @@ export class TestParserOptions extends UnitTest {
     testNormalizeWithStringOpts() {
         const expected = {
             name: 'raml',
-            instance: null
+            instance: null,
+            isDefault: false
         }
 
         const result = ParserOptions.normalize('raml')
@@ -33,7 +34,8 @@ export class TestParserOptions extends UnitTest {
     testNormalizeWithStringOptsNormalizesString() {
         const expected = {
             name: 'raml',
-            instance: null
+            instance: null,
+            isDefault: false
         }
 
         const result = ParserOptions.normalize('RaMl')
@@ -67,10 +69,12 @@ export class TestParserOptions extends UnitTest {
     }
 
     testConstructorWithInvalidKeysInObjectOpts() {
-        const expected = new ParserOptions({
+        let expected = new ParserOptions({
             name: 'swagger',
             instance: null
         })
+
+        expected = expected.set('isDefault', true)
 
         const result = new ParserOptions({
             some: 'key'
@@ -82,7 +86,8 @@ export class TestParserOptions extends UnitTest {
     testNormalizeWithSimpleObjectOpts() {
         const expected = {
             name: 'raml',
-            instance: null
+            instance: null,
+            isDefault: false
         }
 
         const result = ParserOptions.normalize({
@@ -95,7 +100,8 @@ export class TestParserOptions extends UnitTest {
     testNormalizeDropsInstanceIfNameNotCustom() {
         const expected = {
             name: 'raml',
-            instance: null
+            instance: null,
+            isDefault: false
         }
 
         const result = ParserOptions.normalize({
@@ -109,7 +115,8 @@ export class TestParserOptions extends UnitTest {
     testNormalizeKeepsInstanceIfNameIsCustom() {
         const expected = {
             name: 'custom',
-            instance: 'my super instance'
+            instance: 'my super instance',
+            isDefault: false
         }
 
         const result = ParserOptions.normalize({
