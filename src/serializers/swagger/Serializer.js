@@ -785,7 +785,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         let references = context.get('references')
         references.forEach(container => {
             container.get('cache').forEach((cache, key) => {
-                if (key && key.startsWith('#/')) {
+                if (key && key.indexOf('#/') === 0) {
                     let pathFragments = key
                         .split('/')
                         .slice(1)

@@ -88,7 +88,7 @@ export default class RAMLParser {
     _findReferences(obj) {
         let refs = new Immutable.List()
 
-        if (typeof obj === 'string' && obj.startsWith('::fileRef::')) {
+        if (typeof obj === 'string' && obj.indexOf('::fileRef::') === 0) {
             let rel = obj.slice(11)
             let uri = __path.resolve(__path.dirname(
                 this.item.getPath()
@@ -131,7 +131,7 @@ export default class RAMLParser {
 
     _createJSONSchemaReference(_rel, item) {
         let rel = _rel
-        if (rel.startsWith('::fileRef::')) {
+        if (rel.indexOf('::fileRef::') === 0) {
             rel = rel.slice(11)
             let uri = __path.resolve(__path.dirname(
                 item.getPath()
@@ -162,7 +162,7 @@ export default class RAMLParser {
                     resolved: true
                 })
             }
-            else if (!rel.startsWith('#/')) {
+            else if (!(rel.indexOf('#/') === 0)) {
                 rel = '#/' + _rel
             }
         }
@@ -177,7 +177,7 @@ export default class RAMLParser {
     }
 
     _replaceReferences(obj) {
-        if (typeof obj === 'string' && obj.startsWith('::fileRef::')) {
+        if (typeof obj === 'string' && obj.indexOf('::fileRef::') === 0) {
             let rel = obj.slice(11)
             let uri = __path.resolve(__path.dirname(
                 this.item.getPath()

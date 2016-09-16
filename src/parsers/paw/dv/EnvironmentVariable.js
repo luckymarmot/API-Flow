@@ -47,7 +47,7 @@ export default class EnvironmentVariable extends DynamicValueConverter {
     }
 
     _convertNameToFragment(name) {
-        if (name.startsWith('#')) {
+        if (name.indexOf('#') === 0) {
             return name
         }
 
