@@ -26,7 +26,7 @@ export default class RAMLSerializer extends BaseSerializer {
 
     validate(text) {
         let lines = text.split('\n')
-        if (!lines[0].startsWith('#%RAML 0.8')) {
+        if (!(lines[0].indexOf('#%RAML 0.8') === 0)) {
             return 'Not a RAML file'
         }
 

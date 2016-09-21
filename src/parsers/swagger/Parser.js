@@ -356,7 +356,8 @@ export default class SwaggerParser {
 
         let filterOtherFieldsOutFunc = (bool) => {
             return (val) => {
-                return bool !== (val || '').toLowerCase().startsWith('x-')
+                let _bool = (val || '').toLowerCase().indexOf('x-') === 0
+                return bool !== _bool
             }
         }
 
@@ -480,11 +481,11 @@ export default class SwaggerParser {
             collection.basePath.length > 0
         ) {
             basePath = collection.basePath
-            if (!basePath.startsWith('/')) {
+            if (!(basePath.indexOf('/') === 0)) {
                 basePath = '/' + basePath
             }
 
-            if (basePath.endsWith('/')) {
+            if (!(basePath.indexOf('/') === 0)) {
                 basePath = basePath.substr(0, basePath.length - 1)
             }
         }
@@ -870,7 +871,7 @@ export default class SwaggerParser {
             if (paths.hasOwnProperty(path)) {
                 let nodes = path.split('/')
 
-                if (path.startsWith('/') === true) {
+                if (path.indexOf('/') === 0) {
                     nodes.splice(0, 1)
                 }
 

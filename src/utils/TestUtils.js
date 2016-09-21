@@ -35,7 +35,7 @@ class UnitTest {
         let tests = {}
 
         for (let fname of Object.getOwnPropertyNames(prototype)) {
-            if (fname.startsWith('test')) {
+            if (fname.indexOf('test') === 0) {
                 const newFnName = this._parseFnName(fname)
 
                 tests[newFnName] = ::Object.getPrototypeOf(this)[fname]
@@ -50,7 +50,7 @@ class UnitTest {
         let tests = {}
 
         for (let fname of Object.getOwnPropertyNames(prototype)) {
-            if (fname.startsWith('_test')) {
+            if (fname.indexOf('_test') === 0) {
                 const newFnName = this._parseSkippedFnName(fname)
 
                 tests[newFnName] = ::Object.getPrototypeOf(this)[fname]
