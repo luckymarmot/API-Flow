@@ -258,7 +258,6 @@ export class Parameter extends Immutable.Record({
 
     isValid(param) {
         let list = this.get('externals')
-
         // No external constraint
         if (list.size === 0) {
             return true

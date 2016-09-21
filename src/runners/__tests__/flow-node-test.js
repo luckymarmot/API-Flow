@@ -19,7 +19,7 @@ import Options from '../../models/options/Options'
 
 @registerTest
 @against(FlowCLI)
-export class TestContextResolver extends UnitTest {
+export class TestNodeRunner extends UnitTest {
 
     @targets('_createParser')
     testCreateParserReturnsArgumentParser() {
@@ -56,6 +56,12 @@ export class TestContextResolver extends UnitTest {
     }
 
     @targets('run')
+    _testRun() {}
+
+    @targets('detect')
+    _testRun() {}
+
+    @targets('transform')
     _testRun() {}
 
     __init(argv = [ 'fake-source.json' ]) {

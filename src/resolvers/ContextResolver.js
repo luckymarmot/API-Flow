@@ -111,7 +111,7 @@ export default class ContextResolver {
             }
         }
 
-        if (!resolve) {
+        if (!resolve && dataUri) {
             return new Promise((_resolve) => {
                 return _resolve(reference.set('resolved', true))
             })

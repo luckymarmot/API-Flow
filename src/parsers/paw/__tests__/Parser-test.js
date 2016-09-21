@@ -607,12 +607,12 @@ export class TestPawParser extends UnitTest {
 
         const key = 'Content-Type'
 
-        paw._formatHeaderParam(key, ds, new Immutable.List(), 42)
+        paw._formatHeaderParam(key, ds, new Immutable.List(), 42, null)
 
         this.assertEqual(paw.spy._formatHeaderComponent.count, 1)
         this.assertJSONEqual(
             paw.spy._formatHeaderComponent.calls[0],
-            [ key, '', paw.dvManager, 42 ]
+            [ key, '', paw.dvManager, 42, null ]
         )
     }
 
@@ -1729,7 +1729,6 @@ export class TestPawParser extends UnitTest {
 
         paw._formatAuth(req)
 
-        this.assertEqual(req.spy.getHttpBasicAuth.count, 1)
         this.assertEqual(req.spy.getOAuth1.count, 1)
         this.assertEqual(req.spy.getOAuth2.count, 1)
     }
@@ -1752,38 +1751,6 @@ export class TestPawParser extends UnitTest {
         })
 
         const expected = new Immutable.List()
-
-        const result = paw._formatAuth(req)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatAuth')
-    testFormatAuthReturnsBasicAuthIfAppropriate() {
-        const paw = this.__init()
-        const req = new PawRequestMock({}, '')
-
-        req.spyOn('getHttpBasicAuth', () => {
-            return {
-                username: 'username',
-                password: 'password'
-            }
-        })
-
-        req.spyOn('getOAuth1', () => {
-            return null
-        })
-
-        req.spyOn('getOAuth2', () => {
-            return null
-        })
-
-        const expected = new Immutable.List([
-            new Auth.Basic({
-                username: 'username',
-                password: 'password'
-            })
-        ])
 
         const result = paw._formatAuth(req)
 
@@ -2728,6 +2695,80 @@ export class TestPawParser extends UnitTest {
         const result = paw._formatURIComponent(source, content, parameters)
 
         this.assertJSONEqual(expected, result)
+    }
+
+    @targets('_formatAuthFromHeader')
+    testFormatAuthFromHeaderWithInvalidStringComponent() {
+        const paw = this.__init()
+
+        const component = 'useless'
+
+        const expected = null
+        const result = paw._formatAuthFromHeader(component)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatAuthFromHeader')
+    testFormatAuthFromHeaderWithDynamicStringComponentCallsEvalString() {
+        const paw = this.__init()
+
+        const component = new DynamicString('useless')
+        component.$$_spyOn('getEvaluatedString', () => {
+            return 'useless'
+        })
+
+        const expected = null
+        const result = paw._formatAuthFromHeader(component)
+
+        this.assertEqual(expected, result)
+        this.assertEqual(component.$$_spy.getEvaluatedString.count, 1)
+    }
+
+    @targets('_formatAuthFromHeader')
+    testFormatAuthFromHeaderCallsFormatBasicAuthIfSchemeMatches() {
+        const paw = this.__init()
+
+        paw.spyOn('_formatBasicAuth', () => {
+            return null
+        })
+
+        const params = 'am9uOnBhc3M='
+        const component = 'Basic ' + params
+
+        const expected = null
+        const result = paw._formatAuthFromHeader(component)
+
+        this.assertEqual(expected, result)
+        this.assertEqual(paw.spy._formatBasicAuth.count, 1)
+        this.assertEqual(paw.spy._formatBasicAuth.calls[0], [ params ])
+    }
+
+    @targets('_formatBasicAuth')
+    testFormatBasicAuthParsesValidBase64() {
+        const paw = this.__init()
+
+        const params = 'am9uOnBhc3M='
+
+        const expected = new Auth.Basic({
+            username: 'jon',
+            password: 'pass'
+        })
+        const result = paw._formatBasicAuth(params)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatBasicAuth')
+    testFormatBasicAuthDoesNotCrashWithInvalidBase64() {
+        const paw = this.__init()
+
+        const params = 'invalid base64'
+
+        const expected = new Auth.Basic()
+        const result = paw._formatBasicAuth(params)
+
+        this.assertEqual(expected, result)
     }
 
     __init(size) {

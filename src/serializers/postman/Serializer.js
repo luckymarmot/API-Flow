@@ -3,6 +3,10 @@ import BaseSerializer from '../BaseSerializer'
 import Group from '../../models/Group'
 import JSONSchemaReference from '../../models/references/JSONSchema'
 
+import Auth from '../../models/Auth'
+
+import Base64 from '../../utils/Base64'
+
 export default class PostmanSerializer extends BaseSerializer {
     constructor() {
         super()
@@ -123,7 +127,7 @@ export default class PostmanSerializer extends BaseSerializer {
 
         let parameters = request.get('parameters')
         let queries = this._formatQueries(parameters)
-        let headers = this._formatHeaders(parameters)
+        let headers = this._formatHeaders(parameters, request.get('auths'))
         let bodies = request.get('bodies')
         let [ dataMode, data ] = this._formatBody(parameters, bodies)
 
@@ -185,16 +189,66 @@ export default class PostmanSerializer extends BaseSerializer {
         return key + '=' + pair
     }
 
-    _formatHeaders(parameters) {
+    _formatHeaders(parameters, auths) {
         let headers = parameters.get('headers')
 
         let formatted = ''
         headers.forEach(header => {
             let generated = header.generate()
-            formatted = header.get('key') + ': ' + generated + '\n'
+            formatted += header.get('key') + ': ' + generated + '\n'
         })
 
+        let authHeader = this._formatAuthHeader(auths)
+        formatted += authHeader
+
         return formatted
+    }
+
+    _formatAuthHeader(auths) {
+        if (auths.size > 0) {
+            let auth = auths.get(0)
+
+            if (auth instanceof Auth.Basic) {
+                return this._formatBasicAuthHeader(auth)
+            }
+            else if (auth instanceof Auth.Digest) {
+                return this._formatDigestAuthHeader(auth)
+            }
+            else if (auth instanceof Auth.OAuth1) {
+                return this._formatOAuth1AuthHeader(auth)
+            }
+            else if (auth instanceof Auth.AWSSig4) {
+                return this._formatAWSSig4AuthHeader(auth)
+            }
+        }
+    }
+
+    _formatBasicAuthHeader(auth) {
+        let authBlock = auth.get('username') + ':' + auth.get('password')
+        let encoded = Base64.encode(authBlock)
+        return 'Authorization: Basic ' + encoded + '\n'
+    }
+
+    _formatDigestAuthHeader() {
+        return 'Authorization: Digest\n'
+    }
+
+    _formatOAuth1AuthHeader(auth) {
+        let oauth1Map = {
+            consumer_key: auth.get('consumerKey') || '',
+            oauth_signature_method: auth.get('algorithm') || '',
+            oauth_version: '1.0'
+        }
+
+        let params = Object.keys(oauth1Map).map(key => {
+            return key + '="' + oauth1Map[key] + '"'
+        }).join(', ')
+
+        return 'Authorization: OAuth ' + params
+    }
+
+    _formatAWSSig4AuthHeader() {
+        return 'Authorization: AWS4-HMAC-SHA256\n'
     }
 
     _formatBody(parameters, bodies) {

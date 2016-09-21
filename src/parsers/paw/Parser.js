@@ -21,6 +21,8 @@ import {
     Info
 } from '../../models/Utils'
 
+import Base64 from '../../utils/Base64'
+
 export default class PawParser {
     static identifier =
         'com.luckymarmot.PawExtensions.API-Flow'
@@ -124,7 +126,7 @@ export default class PawParser {
 
         let auth = this._formatAuth(req)
         if (auth) {
-            auths = auths.push(auth)
+            auths = auths.concat(auth)
         }
 
         let request = new Request({
@@ -506,20 +508,21 @@ export default class PawParser {
         return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
     }
 
-    _formatHeaderParam(key, ds, _auths, externals) {
+    _formatHeaderParam(key, ds, _auths, externals, isAuth) {
         let param = null
         let auths = _auths
 
         if (ds.length > 1) {
             let value = new Immutable.List()
-            for (let component of ds.components) {
-                let [ _param, auth ] = this
-                    ._formatHeaderComponent(
-                        null,
-                        component,
-                        this.dvManager,
-                        externals
-                    )
+            if (isAuth) {
+                let content = ds.getEvaluatedString()
+                let [ _param, auth ] = this._formatHeaderComponent(
+                    null,
+                    content,
+                    this.dvManager,
+                    externals,
+                    isAuth
+                )
 
                 if (_param) {
                     value = value.push(_param)
@@ -529,15 +532,35 @@ export default class PawParser {
                     auths = auths.push(auth)
                 }
             }
+            else {
+                for (let component of ds.components) {
+                    let [ _param, auth ] = this
+                    ._formatHeaderComponent(
+                        null,
+                        component,
+                        this.dvManager,
+                        externals,
+                        isAuth
+                    )
 
-            param = new Parameter({
-                key: key,
-                name: key,
-                type: 'string',
-                format: 'sequence',
-                value: value,
-                externals: externals
-            })
+                    if (_param) {
+                        value = value.push(_param)
+                    }
+
+                    if (auth) {
+                        auths = auths.push(auth)
+                    }
+                }
+
+                param = new Parameter({
+                    key: key,
+                    name: key,
+                    type: 'string',
+                    format: 'sequence',
+                    value: value,
+                    externals: externals
+                })
+            }
         }
         else {
             let [ _param, auth ] = this
@@ -545,7 +568,8 @@ export default class PawParser {
                     key,
                     ds.getComponentAtIndex(0) || '',
                     this.dvManager,
-                    externals
+                    externals,
+                    isAuth
                 )
 
             if (_param) {
@@ -560,11 +584,17 @@ export default class PawParser {
         return [ param, auths ]
     }
 
-    _formatHeaderComponent(key, component, dvManager, externals) {
+    _formatHeaderComponent(key, component, dvManager, externals, isAuth) {
         let param = null
         let auth = null
 
         let val = dvManager.convert(component)
+        if (isAuth) {
+            auth = this._formatAuthFromHeader(component)
+            if (auth) {
+                return [ param, auth ]
+            }
+        }
 
         if (typeof component === 'string') {
             param = this._formatParam(key, component, externals)
@@ -600,14 +630,67 @@ export default class PawParser {
         return [ param, auth ]
     }
 
+    _formatAuthFromHeader(component) {
+        let content = null
+
+        if (component && typeof component.getEvaluatedString === 'function') {
+            content = component.getEvaluatedString()
+        }
+        else if (typeof component === 'string') {
+            content = component
+        }
+
+        let [ , scheme, params ] = content.match(/([^\s]+)\s(.*)/) || []
+
+        const schemeSetupMap = {
+            Basic: ::this._formatBasicAuth
+        }
+
+
+        let setup = schemeSetupMap[scheme]
+        if (setup) {
+            return setup(params)
+        }
+
+        return null
+    }
+
+    _formatBasicAuth(paramLine) {
+        let match = null
+        try {
+            match = Base64.decode(paramLine).match(/([^:]*):?(.*)/)
+        }
+        catch (e) {
+            return new Auth.Basic()
+        }
+
+        if (match) {
+            let user = match[1]
+            let pass = match[2]
+
+            let auth = new Auth.Basic({
+                username: user,
+                password: pass
+            })
+
+            return auth
+        }
+
+        return new Auth.Basic()
+    }
+
     _formatHeaders(headers, contentType, _auths, externals) {
         let auths = _auths
         let keys = Object.keys(headers)
 
         let params = []
         for (let key of keys) {
+            let isAuth = false
+            if (key === 'Authorization') {
+                isAuth = true
+            }
             let header = this._formatHeaderParam(
-                key, headers[key], auths, externals
+                key, headers[key], auths, externals, isAuth
             )
 
             let param = header[0]
@@ -889,18 +972,10 @@ export default class PawParser {
     }
 
     _formatAuth(req) {
-        let basic = req.getHttpBasicAuth(false)
         let oauth1 = req.getOAuth1(false)
         let oauth2 = req.getOAuth2(false)
 
         let auths = []
-        if (basic) {
-            let auth = new Auth.Basic({
-                username: basic.username || null,
-                password: basic.password || null
-            })
-            auths.push(auth)
-        }
 
         if (oauth1) {
             let auth = new Auth.OAuth1({

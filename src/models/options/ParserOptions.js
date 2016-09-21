@@ -2,7 +2,8 @@ import Immutable from 'immutable'
 
 export default class ParserOptions extends Immutable.Record({
     name: 'swagger',
-    instance: null
+    instance: null,
+    isDefault: true
 }) {
     constructor(opts) {
         let normalized = ParserOptions.normalize(opts)
@@ -15,6 +16,7 @@ export default class ParserOptions extends Immutable.Record({
             parser = {
                 name: parser.toLowerCase()
             }
+            parser.isDefault = false
         }
         else if (!parser || typeof parser !== 'object') {
             parser = {
@@ -23,6 +25,9 @@ export default class ParserOptions extends Immutable.Record({
         }
         else if (!parser.name || typeof parser.name !== 'string') {
             parser.name = 'swagger'
+        }
+        else {
+            parser.isDefault = false
         }
 
         if (parser.name !== 'custom') {

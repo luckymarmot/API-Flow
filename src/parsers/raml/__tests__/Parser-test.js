@@ -2349,6 +2349,31 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('detect')
+    testDetectWithRAMLFile() {
+        const parser = new ClassMock(new RAMLParser())
+
+        let input = '#%RAML 0.8' +
+            '\nSomeContent:.....'
+
+        let expected = 1
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('detect')
+    testDetectWithNotARAMLFile() {
+        const parser = new ClassMock(new RAMLParser())
+
+        let input = 'SomeContent:.....'
+
+        let expected = 0
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
     __init(file) {
         let raml = this.__loadRAMLObject(file)
         let parser = new RAMLParser()

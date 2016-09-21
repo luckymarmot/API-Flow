@@ -12,6 +12,7 @@ export default class RAMLImporter extends BaseImporter {
 
     constructor() {
         super()
+        this.parser = new RAMLParser()
         this.ENVIRONMENT_DOMAIN_NAME = 'RAML Environments'
     }
 
@@ -27,12 +28,7 @@ export default class RAMLImporter extends BaseImporter {
         Only root files starts with RAML version.
     */
     _startsWithRAMLVersion(item) {
-        let firstLine = item.content.split('\n', 1)[0]
-        let match = firstLine.match(/#%RAML (0\.8|1\.0)/)
-        if (match) {
-            return 1
-        }
-        return 0
+        return this.parser.detect(item.content)
     }
 
     /*
@@ -42,7 +38,7 @@ export default class RAMLImporter extends BaseImporter {
         - options
     */
     createRequestContexts(context, items) {
-        const parser = new RAMLParser()
+        const parser = this.parser
 
         let reqPromises = []
         for (let item of items) {

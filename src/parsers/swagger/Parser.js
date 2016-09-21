@@ -31,6 +31,32 @@ export default class SwaggerParser {
         this.item = new Item()
     }
 
+    detect(content) {
+        let swag
+        try {
+            swag = JSON.parse(content)
+        }
+        catch (jsonParseError) {
+            try {
+                swag = yaml.safeLoad(content)
+            }
+            catch (yamlParseError) {
+                return 0
+            }
+        }
+        if (swag) {
+            // converting objects to bool to number, fun stuff
+            let score = 0
+            score += swag.swagger ? 1 / 3 : 0
+            score += swag.swagger === '2.0' ? 1 / 3 : 0
+            score += swag.info ? 1 / 3 : 0
+            score += swag.paths ? 1 / 3 : 0
+            score = score > 1 ? 1 : score
+            return score
+        }
+        return 0
+    }
+
     // @NotTested -> assumed valid
     parse(item) {
         this.item = new Item(item)
@@ -436,6 +462,7 @@ export default class SwaggerParser {
         let refs = ref
             .resolve(JSON.stringify(collection))
             .get('dependencies')
+
         return refs
     }
 
@@ -561,7 +588,8 @@ export default class SwaggerParser {
                 let headerNames = Object.keys(responses[code].headers)
                 for (let header of headerNames) {
                     let param = this._extractParam(
-                        responses[code].headers[header]
+                        responses[code].headers[header],
+                        externals
                     )
                     headers = headers.push(param)
                 }
@@ -759,7 +787,9 @@ export default class SwaggerParser {
         if (param['x-use-with']) {
             _externals = new Immutable.List()
             for (let external of param['x-use-with']) {
-                _externals = _externals.push(this._extractParam(external))
+                _externals = _externals.push(
+                    this._extractParam(external, new Immutable.List())
+                )
             }
         }
 

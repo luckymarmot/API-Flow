@@ -20,6 +20,15 @@ export default class CurlParser {
         this.idx = -1
     }
 
+    detect(content) {
+        let hasCurl = content.match(/curl\s/)
+        if (hasCurl) {
+            return 1
+        }
+
+        return 0
+    }
+
     _getArg() {
         if (this.idx < this.args.count()) {
             return this.args.get(this.idx)

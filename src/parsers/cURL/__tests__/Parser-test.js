@@ -4194,6 +4194,28 @@ export class TestCurlParser extends UnitTest {
         ]))
     }
 
+    testDetectCurl() {
+        const parser = new CurlParser()
+
+        let input = 'curl http:httpbin.org/get -X GET'
+
+        let expected = 1
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    testDetectNotACurl() {
+        const parser = new CurlParser()
+
+        let input = 'not a c.u.r.l file'
+
+        let expected = 0
+        let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
     //
     // helpers
     //

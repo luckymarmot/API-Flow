@@ -923,9 +923,14 @@ export default class CurlSerializer extends BaseSerializer {
 
     // NOTE: not sure this works as expected
     _escape(string) {
-        return string
-            .replace(/\\/, '\\')
-            .replace(/\$/, '\$')
-            .replace(/"/, '\"')
+        if (typeof string === 'string') {
+            return string
+                .replace(/\\/, '\\')
+                .replace(/\$/, '\$')
+                .replace(/"/, '\"')
+        }
+        else {
+            return string
+        }
     }
 }

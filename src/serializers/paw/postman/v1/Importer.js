@@ -11,6 +11,7 @@ export default class PostmanImporter extends BaseImporter {
 
     constructor() {
         super()
+        this.parser = new PostmanParser()
         this.ENVIRONMENT_DOMAIN_NAME = 'Postman Environments'
     }
 
@@ -23,24 +24,7 @@ export default class PostmanImporter extends BaseImporter {
     }
 
     _canImportItem(context, item) {
-        let postman
-        try {
-            postman = JSON.parse(item.content)
-        }
-        catch (jsonParseError) {
-            return 0
-        }
-        if (postman) {
-            let score = 0
-            score += postman.collections ? 1 / 2 : 0
-            score += postman.environments ? 1 / 2 : 0
-            score += postman.id && postman.name && postman.timestamp ? 1 / 2 : 0
-            score += postman.requests ? 1 / 2 : 0
-            score += postman.values ? 1 / 2 : 0
-            score = score < 1 ? score : 1
-            return score
-        }
-        return 0
+        return this.parser.detect(item.content)
     }
 
     /*
@@ -50,7 +34,7 @@ export default class PostmanImporter extends BaseImporter {
         - options
     */
     createRequestContexts(context, items) {
-        const parser = new PostmanParser()
+        const parser = this.parser
         let currentReqContext = new Context({
             group: new Group({
                 name: 'Postman'

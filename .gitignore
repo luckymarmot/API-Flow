@@ -48,7 +48,11 @@ crashlytics.properties
 crashlytics-build.properties
 
 # Build
-build/
+bin/
+dist/
+releases/
+resources/
 node_modules/
 lib/
 .DS_Store
+deploy-script.sh

@@ -332,12 +332,12 @@ export class TestContextResolver extends UnitTest {
             }
         })
 
-        const reference = new JSONSchemaReference({
+        const friendReference = new JSONSchemaReference({
             uri: '#/references/Friend'
         })
 
         let container = new ReferenceContainer()
-        container = container.update(reference)
+        container = container.update(friendReference)
 
         let references = new Immutable.OrderedMap({
             schemas: container
@@ -345,8 +345,39 @@ export class TestContextResolver extends UnitTest {
 
         let expectedContainer = new ReferenceContainer()
         expectedContainer = container.update(
-            reference.set('resolved', true)
-        )
+            new JSONSchemaReference({
+                uri: '#/references/Friend',
+                resolved: true,
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/User'
+                    })
+                },
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/User',
+                        relative: '#/references/User'
+                    })
+                ])
+            })
+        ).create([
+            new JSONSchemaReference({
+                uri: '#/references/User',
+                relative: '#/references/User',
+                resolved: true,
+                value: {
+                    $ref: new JSONSchemaReference({
+                        uri: '#/references/Friend'
+                    })
+                },
+                dependencies: new Immutable.List([
+                    new JSONSchemaReference({
+                        uri: '#/references/Friend',
+                        relative: '#/references/Friend'
+                    })
+                ])
+            })
+        ])
 
         let expected = new Context({
             references: new Immutable.OrderedMap({

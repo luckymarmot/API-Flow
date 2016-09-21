@@ -33,6 +33,15 @@ export default class RAMLParser {
         this.item = new Item()
     }
 
+    detect(content) {
+        let firstLine = content.split('\n', 1)[0]
+        let match = firstLine.match(/#%RAML (0\.8|1\.0)/)
+        if (match) {
+            return 1
+        }
+        return 0
+    }
+
     parse(_item) {
         this.item = new Item(_item)
         this.reader.setBaseItem(this.item)
