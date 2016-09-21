@@ -114,10 +114,18 @@ export default class PostmanParser {
 
         if (this.references) {
             let keys = envs.keySeq()
-            for (let key of keys) {
-                let container = envs.get(key)
-                container = container.create(this.references)
-                envs = envs.set(key, container)
+
+            if (keys.length === 0) {
+                envs = envs.set('defpostmanenv', (new ReferenceContainer({
+                    name: 'Default Postman Environment'
+                })).create(this.references))
+            }
+            else {
+                for (let key of keys) {
+                    let container = envs.get(key)
+                    container = container.create(this.references)
+                    envs = envs.set(key, container)
+                }
             }
         }
 
@@ -453,9 +461,7 @@ export default class PostmanParser {
                     }
                 }
                 else {
-                    headerSet = headerSet.set(match[1],
-                        this._referenceEnvironmentVariable(match[2])
-                    )
+                    headerSet = headerSet.set(match[1], match[2])
                 }
             }
         }
@@ -617,23 +623,23 @@ export default class PostmanParser {
             params.push(param)
         }
         else if (req.dataMode === 'urlencoded' || req.dataMode === 'params') {
-            let contentType = this._extractContentType(headers)
-            if (!contentType && req.dataMode === 'urlencoded') {
-                let header = this._extractParam(
-                    'Content-Type', 'application/x-www-form-urlencoded'
-                )
-                contentType = 'application/x-www-form-urlencoded'
-                headers = headers.push(header)
-            }
-            else if (!contentType && req.dataMode === 'params') {
-                let header = this._extractParam(
-                    'Content-Type', 'multipart/form-data'
-                )
-                contentType = 'multipart/form-data'
-                headers = headers.push(header)
-            }
+            if (req.data && req.data.length) {
+                let contentType = this._extractContentType(headers)
+                if (!contentType && req.dataMode === 'urlencoded') {
+                    let header = this._extractParam(
+                        'Content-Type', 'application/x-www-form-urlencoded'
+                    )
+                    contentType = 'application/x-www-form-urlencoded'
+                    headers = headers.push(header)
+                }
+                else if (!contentType && req.dataMode === 'params') {
+                    let header = this._extractParam(
+                        'Content-Type', 'multipart/form-data'
+                    )
+                    contentType = 'multipart/form-data'
+                    headers = headers.push(header)
+                }
 
-            if (req.data) {
                 for (let _param of req.data) {
                     let param = this._extractParam(_param.key, _param.value)
                     if (contentType) {
