@@ -1212,7 +1212,6 @@ export default class BaseImporter {
                 return this._setReference(component)
             }
 
-            // This is going to cause confusion
             if (component instanceof LateResolutionReference) {
                 let match = (component.get('uri') || '')
                 .slice(12)
