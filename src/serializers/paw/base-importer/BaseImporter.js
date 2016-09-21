@@ -448,7 +448,10 @@ export default class BaseImporter {
         }
         else {
             let value = reference.get('value')
-            return value || ''
+            if (typeof value !== 'string' || value === '') {
+                return ref.slice(2, ref.length - 2)
+            }
+            return value
         }
     }
 
@@ -1204,10 +1207,30 @@ export default class BaseImporter {
                 than having a reference to it stored in the environment domain.
             */
             if (
-                !component.get('relative') ||
-                component instanceof LateResolutionReference
+                !component.get('relative')
             ) {
                 return this._setReference(component)
+            }
+
+            // This is going to cause confusion
+            if (component instanceof LateResolutionReference) {
+                let match = (component.get('uri') || '')
+                .slice(12)
+                .match(/^{{[^{}]+}}$/)
+                if (!match) {
+                    return this._setReference(component)
+                }
+                else {
+                    let envVariable = this._getEnvironmentVariable(
+                        match[0].slice(2, match[0].length - 2)
+                    )
+                    return new DynamicValue(
+                        'com.luckymarmot.EnvironmentVariableDynamicValue',
+                        {
+                            environmentVariable: envVariable.id
+                        }
+                    )
+                }
             }
 
             let envVariable = this._getEnvironmentVariable(
