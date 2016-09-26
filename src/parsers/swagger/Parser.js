@@ -485,7 +485,7 @@ export default class SwaggerParser {
                 basePath = '/' + basePath
             }
 
-            if (!(basePath.indexOf('/') === 0)) {
+            if (basePath.indexOf('/') === basePath.length - 1) {
                 basePath = basePath.substr(0, basePath.length - 1)
             }
         }

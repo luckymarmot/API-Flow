@@ -625,8 +625,14 @@ export default class PostmanParser {
 
     _extractBodyParams(body, _headers) {
         let headers = _headers
+
+        if (!body) {
+            return [ new Immutable.List(), headers ]
+        }
+
         let params = []
         let contentType = this._extractContentType(headers)
+
         if (body.mode === 'raw') {
             let param = this._extractParam('body', body.raw || null)
             params.push(param)
