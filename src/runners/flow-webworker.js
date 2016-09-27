@@ -201,7 +201,6 @@ export default class FlowWorker {
     processTransformArguments(args) {
         let valid = this.validateArguments(args)
         if (!valid) {
-            console.log('not valid')
             return null
         }
 
@@ -227,7 +226,6 @@ export default class FlowWorker {
             }
         }
 
-        console.log('flowOpts', flowOptions)
         let callback = this.generateTransformResponseCallback(content, other)
         return [ content, callback, flowOptions ]
     }
@@ -245,7 +243,6 @@ export default class FlowWorker {
     processArguments(args) {
         let { action, ...parameters } = args
         if (action === 'transform') {
-            console.log('in transform process')
             return [ action, this.processTransformArguments(parameters) ]
         }
         else if (action === 'detect') {
@@ -295,7 +292,6 @@ export default class FlowWorker {
                 }
             }
             else {
-                console.log('msg was', msg, action, query)
                 self.postMessage({
                     success: false,
                     error: 'invalid query',
