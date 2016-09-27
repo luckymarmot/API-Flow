@@ -781,7 +781,12 @@ export default class SwaggerParser {
         }
 
         if (param.type === 'array') {
-            value = this._extractParam(param.items, externals)
+            if (param.items) {
+                value = this._extractParam(param.items, externals)
+            }
+            else {
+                value = new Immutable.List()
+            }
             format = param.collectionFormat || null
         }
 
