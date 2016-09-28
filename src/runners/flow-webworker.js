@@ -161,10 +161,10 @@ export default class FlowWorker {
             args.content &&
             [ 'remote', 'raw' ]
                 .indexOf((args.contentType || '').toLowerCase()) >= 0 &&
-            [ 'swagger', 'raml', 'postman', 'curl' ]
+            [ 'swagger', 'raml', 'postman-1', 'postman-2', 'curl' ]
                 .indexOf((args.sourceFormat || '').toLowerCase()) >= 0 &&
             [ 'paw', 'swagger', 'raml', 'postman', 'curl' ]
-                .indexOf((args.sourceFormat || '').toLowerCase()) >= 0
+                .indexOf((args.targetFormat || '').toLowerCase()) >= 0
         return isValid
     }
 

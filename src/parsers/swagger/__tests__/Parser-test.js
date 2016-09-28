@@ -2050,7 +2050,7 @@ export class TestSwaggerParser extends UnitTest {
     }
 
     @targets('_extractReferences')
-    testExtractReferences() {
+    testExtractReferencesWithSimpleCases() {
         const parser = this.__init()
         const item = new Item({
             file: {
@@ -2099,6 +2099,137 @@ export class TestSwaggerParser extends UnitTest {
             new JSONSchemaReference({
                 uri: '#/definitions/Missing',
                 relative: '#/definitions/Missing'
+            }),
+            new JSONSchemaReference({
+                uri: 'external.json#/definitions/Other',
+                relative: 'external.json#/definitions/Other'
+            })
+        ])
+
+        let result = parser._extractReferences(item, collection)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_extractReferences')
+    testExtractReferencesWithComplexCases() {
+        const parser = this.__init()
+        const item = new Item({
+            file: {
+                name: 'uber.json',
+                path: '/some/path/to/file/'
+            }
+        })
+
+        const collection = {
+            definitions: {
+                User: {
+                    type: 'object',
+                    properties: {
+                        userId: {
+                            type: 'integer'
+                        },
+                        owns: {
+                            type: 'array',
+                            items: {
+                                $ref: '#/definitions/Product'
+                            }
+                        }
+                    }
+                },
+                Product: {
+                    type: 'object',
+                    properties: {
+                        productId: {
+                            type: 'integer'
+                        },
+                        owner: {
+                            $ref: '#/definitions/User'
+                        },
+                        price: {
+                            type: 'number',
+                            minimum: 0
+                        }
+                    }
+                },
+                Superfluous: {
+                    value: false
+                }
+            },
+            paths: {
+                '/users/{userId}/update': {
+                    post: {
+                        parameters: [
+                            {
+                                name: 'body',
+                                in: 'body',
+                                schema: {
+                                    $ref: '#/definitions/User'
+                                }
+                            }
+                        ]
+                    }
+                },
+                '/users/{userId}/items/{productId}/create': {
+                    put: {
+                        parameters: [
+                            {
+                                name: 'body',
+                                in: 'body',
+                                schema: {
+                                    $ref: '#/definitions/Product'
+                                }
+                            }
+                        ]
+                    }
+                },
+                '/users/{userId}/history': {
+                    get: {
+                        description: 'Missing definition',
+                        responses: {
+                            200: {
+                                $ref: '#/definitions/History'
+                            }
+                        }
+                    },
+                    post: {
+                        parameters: [
+                            {
+                                name: 'body',
+                                description: 'External definition',
+                                in: 'body',
+                                schema: {
+                                    $ref: 'external.json#/definitions/Other'
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        const expected = new Immutable.List([
+            // Product and User definitions are found 2 times, and are
+            // therefore included twice
+            new JSONSchemaReference({
+                uri: '#/definitions/Product',
+                relative: '#/definitions/Product'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/User',
+                relative: '#/definitions/User'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/User',
+                relative: '#/definitions/User'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/Product',
+                relative: '#/definitions/Product'
+            }),
+            new JSONSchemaReference({
+                uri: '#/definitions/History',
+                relative: '#/definitions/History'
             }),
             new JSONSchemaReference({
                 uri: 'external.json#/definitions/Other',

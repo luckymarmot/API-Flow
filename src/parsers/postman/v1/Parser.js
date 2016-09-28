@@ -32,13 +32,19 @@ export default class PostmanParser {
         }
         if (typeof postman === 'object') {
             let score = 0
+            /* eslint-disable no-extra-paren */
             score += postman.collections ? 1 / 2 : 0
             score += postman.environments ? 1 / 2 : 0
-            score += postman.id && postman.name && postman.timestamp ? 1 / 2 : 0
+            score +=
+                postman.id &&
+                postman.name &&
+                typeof postman.timestamp !== 'undefined'
+             ? 1 / 2 : 0
             score += postman.requests ? 1 / 2 : 0
             score += postman.values ? 1 / 2 : 0
             score = score < 1 ? score : 1
             return score
+            /* eslint-enable no-extra-paren */
         }
         return 0
     }
@@ -115,7 +121,7 @@ export default class PostmanParser {
         if (this.references) {
             let keys = envs.keySeq()
 
-            if (keys.length === 0) {
+            if (keys.size === 0) {
                 envs = envs.set('defpostmanenv', (new ReferenceContainer({
                     name: 'Default Postman Environment'
                 })).create(this.references))
