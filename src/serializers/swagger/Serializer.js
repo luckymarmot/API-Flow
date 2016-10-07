@@ -555,13 +555,48 @@ export default class SwaggerSerializer extends BaseSerializer {
 
     _dropDuplicateParameters(params) {
         let paramMap = {}
-        return params.filter(param => {
+
+        params.forEach(param => {
             if (!paramMap[param.in + '-' + param.name]) {
-                paramMap[param.in + '-' + param.name] = true
-                return true
+                paramMap[param.in + '-' + param.name] = param
             }
-            return false
+            else if (
+                (param.in === 'formData' || param.in === 'query') &&
+                !param.collectionFormat
+            ) {
+                let _param = paramMap[param.in + '-' + param.name]
+                if (
+                    _param.enum &&
+                    _param.enum.length === 1 &&
+                    _param.enum[0] === _param.default
+                ) {
+                    delete _param.enum
+                }
+
+                let { name, description } = _param
+                let location = _param.in
+
+                delete _param.required
+                delete _param.in
+                delete _param.name
+
+                let multiParam = {
+                    in: location,
+                    name,
+                    type: 'array',
+                    items: _param,
+                    collectionFormat: 'multi',
+                    'x-title': name
+                }
+
+                if (description) {
+                    multiParam.description = description
+                }
+                paramMap[param.in + '-' + param.name] = multiParam
+            }
         })
+
+        return Object.values(paramMap)
     }
 
     _formatParam(source, _param, replaceRefs = true) {

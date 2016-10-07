@@ -626,7 +626,21 @@ export default class RAMLSerializer extends BaseSerializer {
 
         queries.forEach(param => {
             let named = this._convertParameterToNamedParameter(param)
-            Object.assign(result, named)
+            let name = Object.keys(named)[0]
+            let _param = result[name]
+            if (_param) {
+                if (
+                    _param.enum &&
+                    _param.enum.length === 1 &&
+                    _param.enum[0] === _param.default
+                ) {
+                    delete _param.enum
+                }
+                _param.repeat = true
+            }
+            else {
+                Object.assign(result, named)
+            }
         })
 
         return result
@@ -653,7 +667,21 @@ export default class RAMLSerializer extends BaseSerializer {
                 let params = filtered.get('body')
                 params.forEach(param => {
                     let named = this._convertParameterToNamedParameter(param)
-                    Object.assign(_body[constraint].formParameters, named)
+                    let name = Object.keys(named)[0]
+                    let _param = _body[constraint].formParameters[name]
+                    if (_param) {
+                        if (
+                            _param.enum &&
+                            _param.enum.length === 1 &&
+                            _param.enum[0] === _param.default
+                        ) {
+                            delete _param.enum
+                        }
+                        _param.repeat = true
+                    }
+                    else {
+                        Object.assign(_body[constraint].formParameters, named)
+                    }
                 })
             }
             else {
