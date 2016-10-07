@@ -590,8 +590,6 @@ export default class PawParser {
 
         let val = dvManager.convert(component)
 
-        console.log('_formatHeaderComponent', key, isAuth, val, component)
-
         if (isAuth) {
             auth = this._formatAuthFromHeader(component)
             if (auth) {
