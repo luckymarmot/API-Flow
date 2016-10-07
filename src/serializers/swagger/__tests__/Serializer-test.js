@@ -1799,7 +1799,11 @@ export class TestSwaggerSerializer extends UnitTest {
         const expected = [
             {
                 name: 'api_key',
-                in: 'query'
+                in: 'query',
+                type: 'array',
+                items: {},
+                collectionFormat: 'multi',
+                'x-title': 'api_key'
             },
             {
                 name: 'Content-MD5',

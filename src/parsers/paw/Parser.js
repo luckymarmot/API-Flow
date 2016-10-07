@@ -517,7 +517,7 @@ export default class PawParser {
             if (isAuth) {
                 let content = ds.getEvaluatedString()
                 let [ _param, auth ] = this._formatHeaderComponent(
-                    null,
+                    'Authorization',
                     content,
                     this.dvManager,
                     externals,
@@ -525,7 +525,7 @@ export default class PawParser {
                 )
 
                 if (_param) {
-                    value = value.push(_param)
+                    param = _param
                 }
 
                 if (auth) {
@@ -589,6 +589,7 @@ export default class PawParser {
         let auth = null
 
         let val = dvManager.convert(component)
+
         if (isAuth) {
             auth = this._formatAuthFromHeader(component)
             if (auth) {
@@ -777,8 +778,14 @@ export default class PawParser {
 
         let params = []
         for (let key of keys) {
-            let query = this._formatQueryParam(key, queries[key], externals)
-            params.push(query)
+            let array = Array.isArray(queries[key]) ?
+                queries[key] :
+                [ queries[key] ]
+
+            for (let ds of array) {
+                let query = this._formatQueryParam(key, ds, externals)
+                params.push(query)
+            }
         }
 
         return new Immutable.List(params)
@@ -906,12 +913,19 @@ export default class PawParser {
 
                 let keys = Object.keys(urlEncoded)
                 for (let key of keys) {
-                    let param = this._formatQueryParam(
-                        key,
-                        urlEncoded[key],
-                        new Immutable.List([ external ])
-                    )
-                    params.push(param)
+                    let array = Array.isArray(urlEncoded[key]) ?
+                        urlEncoded[key] :
+                        [ urlEncoded[key] ]
+
+                    for (let ds of array) {
+                        let param = this._formatQueryParam(
+                            key,
+                            ds,
+                            new Immutable.List([ external ])
+                        )
+
+                        params.push(param)
+                    }
                 }
             }
             else if (
