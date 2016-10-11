@@ -2157,7 +2157,7 @@ export class TestPostmanParser extends UnitTest {
 
     @targets('detect')
     testDetectWithPostmanDumpFile() {
-        const parser = new ClassMock(new PostmanParser())
+        const parser = new PostmanParser()
 
         let input = JSON.stringify({
             collections: [],
@@ -2174,7 +2174,7 @@ export class TestPostmanParser extends UnitTest {
 
     @targets('detect')
     testDetectWithPostmanCollectionV1File() {
-        const parser = new ClassMock(new PostmanParser())
+        const parser = new PostmanParser()
 
         let input = JSON.stringify({
             id: '1234567890',
@@ -2191,7 +2191,7 @@ export class TestPostmanParser extends UnitTest {
 
     @targets('detect')
     testDetectWithPostmanEnvironmentFile() {
-        const parser = new ClassMock(new PostmanParser())
+        const parser = new PostmanParser()
 
         let input = JSON.stringify({
             id: '1234567890',
@@ -2208,7 +2208,7 @@ export class TestPostmanParser extends UnitTest {
 
     @targets('detect')
     testDetectWithNonJSONFile() {
-        const parser = new ClassMock(new PostmanParser())
+        const parser = new PostmanParser()
 
         let input = 'toto:123'
 
@@ -2220,7 +2220,7 @@ export class TestPostmanParser extends UnitTest {
 
     @targets('detect')
     testDetectWithPostmanCollectionV2File() {
-        const parser = new ClassMock(new PostmanParser())
+        const parser = new PostmanParser()
 
         let input = JSON.stringify({
             info: 'some info object',
@@ -2229,6 +2229,110 @@ export class TestPostmanParser extends UnitTest {
 
         let expected = 0
         let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWith() {
+
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithPostmanDumpFile() {
+        const parser = new PostmanParser()
+
+        let input = JSON.stringify({
+            collections: [],
+            environments: [],
+            id: '1234567890'
+        })
+
+        let expected = null
+        let result = parser.getAPIName(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithSingleCollectionInPostmanDumpFile() {
+        const parser = new PostmanParser()
+
+        let input = JSON.stringify({
+            collections: [
+                {
+                    name: 'my collection'
+                }
+            ],
+            environments: [],
+            id: '1234567890'
+        })
+
+        let expected = 'my collection'
+        let result = parser.getAPIName(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithPostmanCollectionV1File() {
+        const parser = new PostmanParser()
+
+        let input = JSON.stringify({
+            id: '1234567890',
+            name: 'some export name',
+            timestamp: Date.now(),
+            requests: []
+        })
+
+        let expected = 'some export name'
+        let result = parser.getAPIName(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithPostmanEnvironmentFile() {
+        const parser = new PostmanParser()
+
+        let input = JSON.stringify({
+            id: '1234567890',
+            name: 'some export name',
+            timestamp: Date.now(),
+            values: []
+        })
+
+        let expected = 'some export name'
+        let result = parser.getAPIName(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithNonJSONFile() {
+        const parser = new PostmanParser()
+
+        let input = 'toto:123'
+
+        let expected = null
+        let result = parser.getAPIName(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithPostmanCollectionV2File() {
+        const parser = new PostmanParser()
+
+        let input = JSON.stringify({
+            info: {
+                name: 'some info object'
+            },
+            item: 'some item to export'
+        })
+
+        let expected = null
+        let result = parser.getAPIName(input)
 
         this.assertEqual(expected, result)
     }

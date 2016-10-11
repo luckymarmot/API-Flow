@@ -1,6 +1,6 @@
 import Immutable from 'immutable'
-import Request from '../../../../../models/Request'
-import Group from '../../../../../models/Group'
+import Request from '../../../../models/Request'
+import Group from '../../../../models/Group'
 
 export default class BaseImporterFixtures {
     static getApplyFuncOverGroupTreeCases() {

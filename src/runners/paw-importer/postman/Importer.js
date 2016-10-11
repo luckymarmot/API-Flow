@@ -1,6 +1,6 @@
 import { registerImporter } from '../../../mocks/PawShims'
 
-import BaseImporter from '../base-importer/BaseImporter'
+import BaseImporter from '../../../serializers/paw/Serializer'
 
 import PostmanV1Importer from './v1/Importer'
 import PostmanV2Importer from './v2/Importer'

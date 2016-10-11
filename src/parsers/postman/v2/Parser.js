@@ -21,12 +21,7 @@ import Request from '../../../models/Request'
 import Auth from '../../../models/Auth'
 
 export default class PostmanParser {
-    constructor() {
-        this.context = new Context()
-        this.references = new Immutable.List()
-    }
-
-    detect(content) {
+    static detect(content) {
         let postman
         try {
             postman = JSON.parse(content)
@@ -42,6 +37,35 @@ export default class PostmanParser {
             return score
         }
         return 0
+    }
+
+    static getAPIName(content) {
+        let postman
+        try {
+            postman = JSON.parse(content)
+        }
+        catch (jsonParseError) {
+            return null
+        }
+
+        if (postman && postman.info) {
+            return postman.info.name || null
+        }
+
+        return null
+    }
+
+    constructor() {
+        this.context = new Context()
+        this.references = new Immutable.List()
+    }
+
+    detect() {
+        return PostmanParser.detect(...arguments)
+    }
+
+    getAPIName() {
+        return PostmanParser.getAPIName(...arguments)
     }
 
     // @tested

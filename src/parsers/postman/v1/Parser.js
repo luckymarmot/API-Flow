@@ -17,12 +17,7 @@ import Request from '../../../models/Request'
 import Auth from '../../../models/Auth'
 
 export default class PostmanParser {
-    constructor() {
-        this.context = new Context()
-        this.references = new Immutable.List()
-    }
-
-    detect(content) {
+    static detect(content) {
         let postman
         try {
             postman = JSON.parse(content)
@@ -47,6 +42,48 @@ export default class PostmanParser {
             /* eslint-enable no-extra-paren */
         }
         return 0
+    }
+
+    static getAPIName(content) {
+        let postman
+        try {
+            postman = JSON.parse(content)
+        }
+        catch (jsonParseError) {
+            return null
+        }
+
+        // Postman Dump
+        if (
+            postman && postman.collections && postman.collections.length === 1
+        ) {
+            return postman.collections[0].name || null
+        }
+
+        // Postman Environment or Postman Collection
+        if (
+            postman &&
+            postman.id &&
+            typeof postman.timestamp !== 'undefined' &&
+            postman.name
+        ) {
+            return postman.name
+        }
+
+        return null
+    }
+
+    constructor() {
+        this.context = new Context()
+        this.references = new Immutable.List()
+    }
+
+    detect() {
+        return this.constructor.detect(...arguments)
+    }
+
+    getAPIName() {
+        return PostmanParser.getAPIName(...arguments)
     }
 
     // @tested

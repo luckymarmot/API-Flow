@@ -1,28 +1,28 @@
 import Context, {
     Parameter
-} from '../../../models/Core'
+} from '../../models/Core'
 
-import Request from '../../../models/Request'
+import Request from '../../models/Request'
 
-import LateResolutionReference from '../../../models/references/LateResolution'
-import JSONSchemaReference from '../../../models/references/JSONSchema'
-import Reference from '../../../models/references/Reference'
+import LateResolutionReference from '../../models/references/LateResolution'
+import JSONSchemaReference from '../../models/references/JSONSchema'
+import Reference from '../../models/references/Reference'
 
 import {
     ApiKeyAuth
-} from '../../../models/Auth'
+} from '../../models/Auth'
 
-import Item from '../../../models/Item'
-import ContextResolver from '../../../resolvers/ContextResolver'
-import PawEnvironment from '../../../models/environments/PawEnvironment'
+import Item from '../../models/Item'
+import ContextResolver from '../../resolvers/ContextResolver'
+import PawEnvironment from '../../models/environments/PawEnvironment'
 
 import {
     DynamicValue,
     DynamicString,
     InputField
-} from '../../../mocks/PawShims'
+} from '../../mocks/PawShims'
 
-export default class BaseImporter {
+export default class PawSerializer {
     static fileExtensions = [];
 
     static inputs = [

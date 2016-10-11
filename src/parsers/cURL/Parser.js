@@ -14,19 +14,31 @@ import Request from '../../models/Request'
 import Group from '../../models/Group'
 
 export default class CurlParser {
-    constructor() {
-        this.context = new Context()
-        this.args = null
-        this.idx = -1
-    }
-
-    detect(content) {
+    static detect(content) {
         let hasCurl = content.match(/curl\s/)
         if (hasCurl) {
             return 1
         }
 
         return 0
+    }
+
+    static getAPIName() {
+        return null
+    }
+
+    constructor() {
+        this.context = new Context()
+        this.args = null
+        this.idx = -1
+    }
+
+    detect() {
+        return CurlParser.detect(...arguments)
+    }
+
+    getAPIName() {
+        return CurlParser.getAPIName(...arguments)
     }
 
     _getArg() {

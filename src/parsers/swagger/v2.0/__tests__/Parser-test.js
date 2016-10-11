@@ -3,33 +3,33 @@ import {
     registerTest,
     targets,
     against
-} from '../../../utils/TestUtils'
+} from '../../../../utils/TestUtils'
 import Immutable from 'immutable'
 import fs from 'fs'
 
-import SwaggerParser from '../Parser'
+import SwaggerParser from '../../Parser'
 
 import {
     Body,
     Parameter
-} from '../../../models/Core'
+} from '../../../../models/Core'
 
 import {
     Info, Contact, License
-} from '../../../models/Utils'
+} from '../../../../models/Utils'
 
-import Group from '../../../models/Group'
-import Constraint from '../../../models/Constraint'
-import Auth from '../../../models/Auth'
-import Request from '../../../models/Request'
-import URL from '../../../models/URL'
-import Item from '../../../models/Item'
+import Group from '../../../../models/Group'
+import Constraint from '../../../../models/Constraint'
+import Auth from '../../../../models/Auth'
+import Request from '../../../../models/Request'
+import URL from '../../../../models/URL'
+import Item from '../../../../models/Item'
 
-import JSONSchemaReference from '../../../models/references/JSONSchema'
+import JSONSchemaReference from '../../../../models/references/JSONSchema'
 
 import {
     ClassMock
-} from '../../../mocks/PawMocks'
+} from '../../../../mocks/PawMocks'
 
 import SwaggerFixtures from './fixtures/Parser-fixtures'
 
@@ -2351,6 +2351,36 @@ export class TestSwaggerParser extends UnitTest {
 
         let expected = 0
         let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testgetAPINameWithSwaggerFile() {
+        const parser = this.__init()
+
+        let input = JSON.stringify({
+            swagger: '2.0',
+            info: {
+                title: 'Some API Name'
+            },
+            paths: {}
+        })
+
+        let expected = 'Some API Name'
+        let result = parser.getAPIName(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithNotASwaggerFile() {
+        const parser = this.__init()
+
+        let input = 'Some Content: ....'
+
+        let expected = null
+        let result = parser.getAPIName(input)
 
         this.assertEqual(expected, result)
     }

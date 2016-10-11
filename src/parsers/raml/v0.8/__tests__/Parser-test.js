@@ -6,32 +6,32 @@ import {
     registerTest,
     against,
     targets
-} from '../../../utils/TestUtils'
+} from '../../../../utils/TestUtils'
 
 import {
     ClassMock
-} from '../../../mocks/PawMocks'
+} from '../../../../mocks/PawMocks'
 
-import Constraint from '../../../models/Constraint'
-import Auth from '../../../models/Auth'
+import Constraint from '../../../../models/Constraint'
+import Auth from '../../../../models/Auth'
 
 import Context, {
     Body,
     Response,
     Parameter,
     ParameterContainer
-} from '../../../models/Core'
+} from '../../../../models/Core'
 
-import Request from '../../../models/Request'
-import URL from '../../../models/URL'
-import Item from '../../../models/Item'
-import { Info } from '../../../models/Utils'
+import Request from '../../../../models/Request'
+import URL from '../../../../models/URL'
+import Item from '../../../../models/Item'
+import { Info } from '../../../../models/Utils'
 
-import ExoticReference from '../../../models/references/Exotic'
-import JSONSchemaReference from '../../../models/references/JSONSchema'
+import ExoticReference from '../../../../models/references/Exotic'
+import JSONSchemaReference from '../../../../models/references/JSONSchema'
 
 import RAMLParser from '../Parser'
-import ShimmingFileReader from '../FileReader'
+import ShimmingFileReader from '../../FileReader'
 
 @registerTest
 @against(RAMLParser)
@@ -2370,6 +2370,33 @@ export class TestRAMLParser extends UnitTest {
 
         let expected = 0
         let result = parser.detect(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithRAMLFile() {
+        const parser = new ClassMock(new RAMLParser())
+
+        let input = '#%RAML 0.8' +
+            '\ntitle: My Super Title' +
+            '\nContent: ....' +
+            '\n  title: Some Not relevant title'
+
+        let expected = 'My Super Title'
+        let result = parser.getAPIName(input)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('getAPIName')
+    testGetAPINameWithNotARAMLFile() {
+        const parser = new ClassMock(new RAMLParser())
+
+        let input = 'SomeContent:.....'
+
+        let expected = null
+        let result = parser.getAPIName(input)
 
         this.assertEqual(expected, result)
     }
