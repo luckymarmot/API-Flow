@@ -17,18 +17,22 @@ import Request from '../../../models/Request'
 import Auth from '../../../models/Auth'
 
 export default class PostmanParser {
-    constructor() {
-        this.context = new Context()
-        this.references = new Immutable.List()
-    }
+    static format = 'postman'
+    static version = 'v1'
 
-    detect(content) {
+    static detect(content) {
+        let detection = {
+            format: PostmanParser.format,
+            version: PostmanParser.version,
+            score: 0
+        }
+
         let postman
         try {
             postman = JSON.parse(content)
         }
         catch (jsonParseError) {
-            return 0
+            return [ detection ]
         }
         if (typeof postman === 'object') {
             let score = 0
@@ -43,10 +47,53 @@ export default class PostmanParser {
             score += postman.requests ? 1 / 2 : 0
             score += postman.values ? 1 / 2 : 0
             score = score < 1 ? score : 1
-            return score
+            detection.score = score
+            return [ detection ]
             /* eslint-enable no-extra-paren */
         }
-        return 0
+        return [ detection ]
+    }
+
+    static getAPIName(content) {
+        let postman
+        try {
+            postman = JSON.parse(content)
+        }
+        catch (jsonParseError) {
+            return null
+        }
+
+        // Postman Dump
+        if (
+            postman && postman.collections && postman.collections.length === 1
+        ) {
+            return postman.collections[0].name || null
+        }
+
+        // Postman Environment or Postman Collection
+        if (
+            postman &&
+            postman.id &&
+            typeof postman.timestamp !== 'undefined' &&
+            postman.name
+        ) {
+            return postman.name
+        }
+
+        return null
+    }
+
+    constructor() {
+        this.context = new Context()
+        this.references = new Immutable.List()
+    }
+
+    detect() {
+        return this.constructor.detect(...arguments)
+    }
+
+    getAPIName() {
+        return PostmanParser.getAPIName(...arguments)
     }
 
     // @tested

@@ -1,7 +1,7 @@
 import { registerImporter } from '../../../mocks/PawShims'
 
 import Immutable from 'immutable'
-import BaseImporter from '../base-importer/BaseImporter'
+import BaseImporter from '../../../serializers/paw/Serializer'
 
 import jsf from 'json-schema-faker'
 

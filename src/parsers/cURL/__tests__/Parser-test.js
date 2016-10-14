@@ -4199,7 +4199,7 @@ export class TestCurlParser extends UnitTest {
 
         let input = 'curl http:httpbin.org/get -X GET'
 
-        let expected = 1
+        let expected = [ { format: 'curl', version: 'v1', score: 1 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)
@@ -4210,7 +4210,7 @@ export class TestCurlParser extends UnitTest {
 
         let input = 'not a c.u.r.l file'
 
-        let expected = 0
+        let expected = [ { format: 'curl', version: 'v1', score: 0 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)

@@ -4,27 +4,27 @@ import Context, {
     Body,
     Parameter,
     ParameterContainer
-} from '../../../../models/Core'
+} from '../../../models/Core'
 
-import ReferenceContainer from '../../../../models/references/Container'
-import JSONSchemaReference from '../../../../models/references/JSONSchema'
-import ExoticReference from '../../../../models/references/Exotic'
+import ReferenceContainer from '../../../models/references/Container'
+import JSONSchemaReference from '../../../models/references/JSONSchema'
+import ExoticReference from '../../../models/references/Exotic'
 
-import Request from '../../../../models/Request'
-import Constraint from '../../../../models/Constraint'
-import URL from '../../../../models/URL'
-import Auth from '../../../../models/Auth'
+import Request from '../../../models/Request'
+import Constraint from '../../../models/Constraint'
+import URL from '../../../models/URL'
+import Auth from '../../../models/Auth'
 
-import PawEnvironment from '../../../../models/environments/PawEnvironment'
-import ContextResolver from '../../../../resolvers/ContextResolver'
+import PawEnvironment from '../../../models/environments/PawEnvironment'
+import ContextResolver from '../../../resolvers/ContextResolver'
 
 import {
     UnitTest,
     registerTest,
     targets, against
-} from '../../../../utils/TestUtils'
+} from '../../../utils/TestUtils'
 
-import BaseImporterFixtures from './fixtures/BaseImporter-fixtures'
+import BaseImporterFixtures from './fixtures/Serializer-fixtures'
 
 import {
     DynamicString,
@@ -33,9 +33,9 @@ import {
     PawRequestMock,
     ClassMock,
     Mock
-} from '../../../../mocks/PawMocks'
+} from '../../../mocks/PawMocks'
 
-import BaseImporter from '../BaseImporter'
+import BaseImporter from '../Serializer'
 
 @registerTest
 @against(BaseImporter, [
@@ -46,7 +46,7 @@ import BaseImporter from '../BaseImporter'
     'createRequestContextFromString',
     '_importPawRequest'
 ])
-export class TestBaseImporter extends UnitTest {
+export class TestPawSerializer extends UnitTest {
 
     @targets('_convertCharToHex')
     testConvertCharToHex() {

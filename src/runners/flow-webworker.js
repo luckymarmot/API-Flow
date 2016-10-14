@@ -1,7 +1,6 @@
 import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
-import PostmanParserV1 from '../parsers/postman/v1/Parser'
-import PostmanParserV2 from '../parsers/postman/v2/Parser'
+import PostmanParser from '../parsers/postman/Parser'
 import CurlParser from '../parsers/curl/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
@@ -22,49 +21,74 @@ export default class FlowWorker {
         this.detectQueue = []
     }
 
-    detect(content) {
+    detectFormat(content) {
         let parserMap = {
             swagger: SwaggerParser,
             raml: RAMLParser,
-            'postman-1': PostmanParserV1,
-            'postman-2': PostmanParserV2,
+            postman: PostmanParser,
             curl: CurlParser
         }
 
-        let score = {}
+        let scores = []
 
         let parsers = Object.keys(parserMap)
         for (let parser of parsers) {
-            let _parser = new parserMap[parser]()
-            score[parser] = _parser.detect(content)
+            scores = scores.concat(parserMap[parser].detect(content))
         }
 
-        return score
+        return new Promise((resolve) => {
+            resolve(scores)
+        })
     }
 
-    transform(input, callback, _opts) {
+    detectName(content) {
         let parserMap = {
             swagger: SwaggerParser,
             raml: RAMLParser,
-            'postman-1': PostmanParserV1,
-            'postman-2': PostmanParserV2,
+            postman: PostmanParser,
+            curl: CurlParser
+        }
+
+        let name = null
+        let parsers = Object.keys(parserMap)
+        for (let parser of parsers) {
+            let proposed = parserMap[parser].getAPIName(content)
+            if (!name) {
+                name = proposed
+            }
+            else if (proposed && proposed.length > name.length) {
+                name = proposed
+            }
+        }
+
+        return new Promise((resolve) => {
+            resolve(name)
+        })
+    }
+
+    transform(input, _opts) {
+        let parserMap = {
+            swagger: SwaggerParser,
+            raml: RAMLParser,
+            postman: PostmanParser,
             curl: CurlParser
         }
 
         let serializerMap = {
             swagger: SwaggerSerializer,
             raml: RAMLSerializer,
-            'postman-2': PostmanSerializer,
+            postman: PostmanSerializer,
             curl: CurlSerializer
         }
 
         let opts = new Options(_opts)
 
-        let source = opts.getIn([ 'parser', 'name' ])
+        let sourceFormat = opts.getIn([ 'parser', 'name' ])
+        let sourceVersion = opts.getIn([ 'parser', 'version' ])
         let target = opts.getIn([ 'serializer', 'name' ])
         let base = opts.getIn([ 'resolver', 'base' ])
 
-        if (!parserMap[source]) {
+        if (!parserMap[sourceFormat]) {
             throw new Error('unrecognized source format')
         }
 
@@ -84,12 +108,12 @@ export default class FlowWorker {
             url = input
         }
 
-        let parser = new parserMap[source]()
+        let parser = new parserMap[sourceFormat](sourceVersion)
         let serializer = new serializerMap[target]()
         let environment = new BrowserEnvironment()
         let resolver = new ContextResolver(environment)
 
-        contentPromise.then((content) => {
+        return contentPromise.then((content) => {
             let item = {
                 url: url,
                 content: content
@@ -104,8 +128,8 @@ export default class FlowWorker {
                 })
             }
 
-            promise.then(context => {
-                resolver.resolveAll(
+            return promise.then(context => {
+                return resolver.resolveAll(
                     parser.item,
                     context,
                     opts.get('resolver')
@@ -117,194 +141,209 @@ export default class FlowWorker {
                                 opts.get('serializer')
                             )
                         let error = serializer.validate(final)
-                        // console.log('@final ----', final)
-                        callback(error, final)
+                        if (error) {
+                            throw error
+                        }
+                        else {
+                            return final
+                        }
                     }
                     catch (e) {
-                        callback(e.stack, null)
+                        throw e
                     }
                 }).catch(error => {
-                    callback(error.stack)
+                    throw error
                 })
             }, error => {
-                callback(error.stack)
+                throw error
             }).catch(err => {
-                callback(err.stack)
+                throw err
             })
         })
-    }
-
-    generateTransformResponseCallback(content, otherArgs) {
-        return function(err, data) {
-            if (!err) {
-                self.postMessage({
-                    action: 'transform',
-                    success: true,
-                    generated: data,
-                    ...otherArgs
-                })
-            }
-            else {
-                self.postMessage({
-                    action: 'transform',
-                    success: false,
-                    error: JSON.stringify(err),
-                    generated: data,
-                    ...otherArgs
-                })
-            }
-        }
     }
 
     validateArguments(args) {
         let isValid =
             args.content &&
             [ 'remote', 'raw' ]
-                .indexOf((args.contentType || '').toLowerCase()) >= 0 &&
-            [ 'swagger', 'raml', 'postman-1', 'postman-2', 'curl' ]
-                .indexOf((args.sourceFormat || '').toLowerCase()) >= 0 &&
+                .indexOf((args.mode || '').toLowerCase()) >= 0 &&
+            [ 'swagger', 'raml', 'postman', 'curl' ]
+                .indexOf((args.source.format || '').toLowerCase()) >= 0 &&
             [ 'paw', 'swagger', 'raml', 'postman', 'curl' ]
-                .indexOf((args.targetFormat || '').toLowerCase()) >= 0
+                .indexOf((args.target.format || '').toLowerCase()) >= 0
         return isValid
     }
 
-    /*
-        args: {
-            content: (url | string)
-            contentType: (enum: ["remote", "raw"])
-            sourceFormat (enum: [
-                "swagger",
-                "raml",
-                "postman-1",
-                "postman-2",
-                "curl"
-            ])
-            targetFormat (enum: ["paw", "swagger", "raml", "postman-2", "curl"])
-            resolutionOptions: {
-                local: Boolean(true),
-                remote: Boolean(true),
-                custom: [ParameterResolutionOption | ReferenceResolutionOption]
+    extractActionAndQuery(data) {
+        let { action, ...parameters } = data
+
+        let extractorMap = {
+            transform: ::this.extractTransformQuery,
+            detectFormat: ::this.extractDetectFormatQuery,
+            detectName: ::this.extractDetectNameQuery
+        }
+
+        let extractor = extractorMap[action]
+
+        if (!extractor) {
+            return {
+                extraneous: data
             }
         }
 
-        ParameterResolutionOption: {
-            key: '*',
-            value: *''
+        let { query, ...extraneous } = extractor(parameters)
+
+        if (!query) {
+            return {
+                extraneous
+            }
         }
 
-        ReferenceResolutionOption: {
-            uri: '*',
-            resolve: Boolean(true),
-            value: '*'
+        return {
+            action,
+            query,
+            extraneous
         }
-    */
-    processTransformArguments(args) {
-        let valid = this.validateArguments(args)
+    }
+
+    extractTransformQuery(parameters) {
+        let valid = this.validateArguments(parameters)
         if (!valid) {
-            return null
+            return {
+                extraneous: parameters
+            }
         }
 
         let {
             content,
+            mode,
+            source,
+            target,
             resolutionOptions,
-            sourceFormat,
-            contentType,
-            targetFormat,
-            ...other
-        } = args
+            ...extraneous
+        } = parameters
 
         let flowOptions = {
             parser: {
-                name: sourceFormat
+                name: source.format,
+                version: source.version
             },
             resolver: {
-                base: contentType,
+                base: mode,
                 resolve: resolutionOptions
             },
             serializer: {
-                name: targetFormat
+                name: target.format,
+                version: target.version
             }
         }
 
-        let callback = this.generateTransformResponseCallback(content, other)
-        return [ content, callback, flowOptions ]
-    }
-
-    processDetectArguments(parameters) {
-        if (!parameters.content) {
-            return null
-        }
-
-        let { content, ...other } = parameters
-
-        return [ content, other ]
-    }
-
-    processArguments(args) {
-        let { action, ...parameters } = args
-        if (action === 'transform') {
-            return [ action, this.processTransformArguments(parameters) ]
-        }
-        else if (action === 'detect') {
-            return [ action, this.processDetectArguments(parameters) ]
-        }
-        return [ null, null ]
-    }
-
-    processTransformQueue() {
-        while (this.transformQueue.length > 0) {
-            let query = this.transformQueue.shift()
-            this.transform(...query)
+        return {
+            query: [ content, flowOptions ],
+            extraneous
         }
     }
 
-    processDetectQueue() {
-        while (this.detectQueue.length > 0) {
-            let [ content, otherArgs ] = this.detectQueue.shift()
-            let scores = this.detect(content)
+    extractDetectFormatQuery(parameters) {
+        let { content, ...extraneous } = parameters
+        return {
+            query: [ content ],
+            extraneous
+        }
+    }
+
+    extractDetectNameQuery(parameters) {
+        let { content, ...extraneous } = parameters
+        return {
+            query: [ content ],
+            extraneous
+        }
+    }
+
+    postSuccess(action, extraneous) {
+        return (data) => {
             self.postMessage({
-                action: 'detect',
+                action,
                 success: true,
-                generated: scores,
-                ...otherArgs
+                result: data,
+                ...extraneous
+            })
+        }
+    }
+
+    postError(action, extraneous) {
+        return (_error) => {
+            let error = _error
+
+            if (_error instanceof Error) {
+                error = _error.msg
+            }
+
+            self.postMessage({
+                action,
+                success: false,
+                error,
+                ...extraneous
+            })
+        }
+    }
+
+    // TODO Handle Failures differently from Errors
+    postFailure(action, extraneous) {
+        return (_error) => {
+            let error = _error
+
+            if (_error instanceof Error) {
+                error = _error.msg
+            }
+
+            self.postMessage({
+                action,
+                success: false,
+                error,
+                ...extraneous
             })
         }
     }
 
     onMessage(msg) {
-        if (arguments.length > 0) {
-            let [ action, query ] = this.processArguments(msg.data)
-            if (query) {
-                if (action === 'transform') {
-                    this.transformQueue.push(query)
-                    this.processTransformQueue()
+        if (msg) {
+            let {
+                action,
+                query,
+                extraneous
+            } = this.extractActionAndQuery(msg.data)
+            if (action && query) {
+                let actionMap = {
+                    transform: ::this.transform,
+                    detectName: ::this.detectName,
+                    detectFormat: ::this.detectFormat
                 }
-                else if (action === 'detect') {
-                    this.detectQueue.push(query)
-                    this.processDetectQueue()
+
+                let actor = actionMap[action]
+                if (!actor) {
+                    // TODO send message about internal conflict
+                    let error = 'Internal Error: ' +
+                        'ApiFlow did not find any actors for this action ' +
+                        'despite validating the action. This should not happen'
+                    return this.postFailure(action, extraneous)(error)
                 }
-                else {
-                    self.postMessage({
-                        success: false,
-                        error: 'invalid action',
-                        ...msg.data
-                    })
-                }
+
+                let promise = actor(...query)
+
+                promise
+                    .then(
+                        this.postSuccess(action, extraneous),
+                        this.postError(action, extraneous)
+                    )
+                    .catch(this.postFailure(action, extraneous))
             }
             else {
-                self.postMessage({
-                    success: false,
-                    error: 'invalid query',
-                    ...msg.data
-                })
+                this.postError(action, extraneous)('Unrecognized action')
             }
         }
         else {
-            self.postMessage({
-                success: false,
-                error: 'no query provided',
-                ...msg.data
-            })
+            this.postError(null, null)('ApiFlow does not accept empty message')
         }
     }
 }

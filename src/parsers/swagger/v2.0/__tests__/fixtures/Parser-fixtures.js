@@ -1,6 +1,6 @@
 import Immutable from 'immutable'
 
-import Constraint from '../../../../models/Constraint'
+import Constraint from '../../../../../models/Constraint'
 
 import {
     Context,
@@ -8,12 +8,12 @@ import {
     ParameterContainer,
     Response,
     Body
-} from '../../../../models/Core'
+} from '../../../../../models/Core'
 
-import Request from '../../../../models/Request'
-import Auth from '../../../../models/Auth'
-import URL from '../../../../models/URL'
-import JSONSchemaReference from '../../../../models/references/JSONSchema'
+import Request from '../../../../../models/Request'
+import Auth from '../../../../../models/Auth'
+import URL from '../../../../../models/URL'
+import JSONSchemaReference from '../../../../../models/references/JSONSchema'
 
 /* eslint-disable no-undefined */
 
