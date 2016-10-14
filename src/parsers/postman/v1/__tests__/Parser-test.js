@@ -2166,7 +2166,7 @@ export class TestPostmanParser extends UnitTest {
             name: 'some export name'
         })
 
-        let expected = 1
+        let expected = [ { format: 'postman', version: 'v1', score: 1 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)
@@ -2183,7 +2183,7 @@ export class TestPostmanParser extends UnitTest {
             requests: []
         })
 
-        let expected = 1
+        let expected = [ { format: 'postman', version: 'v1', score: 1 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)
@@ -2200,7 +2200,7 @@ export class TestPostmanParser extends UnitTest {
             values: []
         })
 
-        let expected = 1
+        let expected = [ { format: 'postman', version: 'v1', score: 1 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)
@@ -2212,7 +2212,7 @@ export class TestPostmanParser extends UnitTest {
 
         let input = 'toto:123'
 
-        let expected = 0
+        let expected = [ { format: 'postman', version: 'v1', score: 0 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)
@@ -2227,15 +2227,10 @@ export class TestPostmanParser extends UnitTest {
             item: 'some item to export'
         })
 
-        let expected = 0
+        let expected = [ { format: 'postman', version: 'v1', score: 0 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)
-    }
-
-    @targets('getAPIName')
-    testGetAPINameWith() {
-
     }
 
     @targets('getAPIName')

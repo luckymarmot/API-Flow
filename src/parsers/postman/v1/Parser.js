@@ -17,13 +17,22 @@ import Request from '../../../models/Request'
 import Auth from '../../../models/Auth'
 
 export default class PostmanParser {
+    static format = 'postman'
+    static version = 'v1'
+
     static detect(content) {
+        let detection = {
+            format: PostmanParser.format,
+            version: PostmanParser.version,
+            score: 0
+        }
+
         let postman
         try {
             postman = JSON.parse(content)
         }
         catch (jsonParseError) {
-            return 0
+            return [ detection ]
         }
         if (typeof postman === 'object') {
             let score = 0
@@ -38,10 +47,11 @@ export default class PostmanParser {
             score += postman.requests ? 1 / 2 : 0
             score += postman.values ? 1 / 2 : 0
             score = score < 1 ? score : 1
-            return score
+            detection.score = score
+            return [ detection ]
             /* eslint-enable no-extra-paren */
         }
-        return 0
+        return [ detection ]
     }
 
     static getAPIName(content) {

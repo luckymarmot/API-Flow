@@ -205,6 +205,8 @@ export default class PawSerializer {
                 if (options && options.order) {
                     options.order += 1
                 }
+
+                return true
             }
             catch (e) {
                 /* eslint-disable no-console */

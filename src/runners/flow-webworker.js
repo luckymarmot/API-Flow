@@ -29,14 +29,16 @@ export default class FlowWorker {
             curl: CurlParser
         }
 
-        let score = {}
+        let scores = []
 
         let parsers = Object.keys(parserMap)
         for (let parser of parsers) {
-            score[parser] = parserMap[parser].detect(content)
+            scores = scores.concat(parserMap[parser].detect(content))
         }
 
-        return score
+        return new Promise((resolve) => {
+            resolve(scores)
+        })
     }
 
     detectName(content) {
@@ -51,15 +53,20 @@ export default class FlowWorker {
         let parsers = Object.keys(parserMap)
         for (let parser of parsers) {
             let proposed = parserMap[parser].getAPIName(content)
-            if (proposed && proposed.length > name.length) {
+            if (!name) {
+                name = proposed
+            }
+            else if (proposed && proposed.length > name.length) {
                 name = proposed
             }
         }
 
-        return name
+        return new Promise((resolve) => {
+            resolve(name)
+        })
     }
 
-    transform(input, callback, _opts) {
+    transform(input, _opts) {
         let parserMap = {
             swagger: SwaggerParser,
             raml: RAMLParser,
@@ -122,7 +129,7 @@ export default class FlowWorker {
             }
 
             return promise.then(context => {
-                resolver.resolveAll(
+                return resolver.resolveAll(
                     parser.item,
                     context,
                     opts.get('resolver')
@@ -134,8 +141,6 @@ export default class FlowWorker {
                                 opts.get('serializer')
                             )
                         let error = serializer.validate(final)
-                        // console.log('@final ----', final)
-                        callback(error, final)
                         if (error) {
                             throw error
                         }
@@ -144,172 +149,30 @@ export default class FlowWorker {
                         }
                     }
                     catch (e) {
-                        callback(e.stack, null)
+                        throw e
                     }
                 }).catch(error => {
-                    callback(error.stack)
+                    throw error
                 })
             }, error => {
-                callback(error.stack)
+                throw error
             }).catch(err => {
-                callback(err.stack)
+                throw err
             })
         })
-    }
-
-    generateTransformResponseCallback(content, otherArgs) {
-        return function(err, data) {
-            if (!err) {
-                self.postMessage({
-                    action: 'transform',
-                    success: true,
-                    generated: data,
-                    ...otherArgs
-                })
-            }
-            else {
-                self.postMessage({
-                    action: 'transform',
-                    success: false,
-                    error: JSON.stringify(err),
-                    generated: data,
-                    ...otherArgs
-                })
-            }
-        }
     }
 
     validateArguments(args) {
         let isValid =
             args.content &&
             [ 'remote', 'raw' ]
-                .indexOf((args.contentType || '').toLowerCase()) >= 0 &&
-            [ 'swagger', 'raml', 'postman-1', 'postman-2', 'curl' ]
-                .indexOf((args.sourceFormat || '').toLowerCase()) >= 0 &&
+                .indexOf((args.mode || '').toLowerCase()) >= 0 &&
+            [ 'swagger', 'raml', 'postman', 'curl' ]
+                .indexOf((args.source.format || '').toLowerCase()) >= 0 &&
             [ 'paw', 'swagger', 'raml', 'postman', 'curl' ]
-                .indexOf((args.targetFormat || '').toLowerCase()) >= 0
+                .indexOf((args.target.format || '').toLowerCase()) >= 0
         return isValid
     }
-
-    /*
-        args: {
-            content: (url | string)
-            contentType: (enum: ["remote", "raw"])
-            sourceFormat (enum: [
-                "swagger",
-                "raml",
-                "postman-1",
-                "postman-2",
-                "curl"
-            ])
-            targetFormat (enum: ["paw", "swagger", "raml", "postman-2", "curl"])
-            resolutionOptions: {
-                local: Boolean(true),
-                remote: Boolean(true),
-                custom: [ParameterResolutionOption | ReferenceResolutionOption]
-            }
-        }
-
-        ParameterResolutionOption: {
-            key: '*',
-            value: *''
-        }
-
-        ReferenceResolutionOption: {
-            uri: '*',
-            resolve: Boolean(true),
-            value: '*'
-        }
-    */
-    processTransformArguments(args) {
-        let valid = this.validateArguments(args)
-        if (!valid) {
-            return null
-        }
-
-        let {
-            content,
-            resolutionOptions,
-            sourceFormat,
-            contentType,
-            targetFormat,
-            ...other
-        } = args
-
-        let flowOptions = {
-            parser: {
-                name: sourceFormat
-            },
-            resolver: {
-                base: contentType,
-                resolve: resolutionOptions
-            },
-            serializer: {
-                name: targetFormat
-            }
-        }
-
-        let callback = this.generateTransformResponseCallback(content, other)
-        return [ content, callback, flowOptions ]
-    }
-
-    processDetectArguments(parameters) {
-        if (!parameters.content) {
-            return null
-        }
-
-        let { content, ...other } = parameters
-
-        return [ content, other ]
-    }
-
-    processArguments(args) {
-        let { action, ...parameters } = args
-        if (action === 'transform') {
-            return [ action, this.processTransformArguments(parameters) ]
-        }
-        else if (action === 'detectName' || action === 'detectFormat') {
-            return [ action, this.processDetectArguments(parameters) ]
-        }
-        return [ null, null ]
-    }
-
-    processTransformQueue() {
-        while (this.transformQueue.length > 0) {
-            let query = this.transformQueue.shift()
-            this.transform(...query)
-        }
-    }
-
-    processDetectFormatQueue() {
-        while (this.detectNameQueue.length > 0) {
-            let [ content, otherArgs ] = this.detectQueue.shift()
-            let scores = this.detect(content)
-            self.postMessage({
-                action: 'detect',
-                success: true,
-                generated: scores,
-                ...otherArgs
-            })
-        }
-    }
-
-    processDetectNameQueue() {
-        while (this.detectNameQueue.length > 0) {
-            let [ content, otherArgs ] = this.detectQueue.shift()
-            let scores = this.detect(content)
-            self.postMessage({
-                action: 'detect',
-                success: true,
-                generated: scores,
-                ...otherArgs
-            })
-        }
-    }
-
-
-    /* NEW API */
-
 
     extractActionAndQuery(data) {
         let { action, ...parameters } = data
@@ -330,6 +193,12 @@ export default class FlowWorker {
 
         let { query, ...extraneous } = extractor(parameters)
 
+        if (!query) {
+            return {
+                extraneous
+            }
+        }
+
         return {
             action,
             query,
@@ -340,12 +209,14 @@ export default class FlowWorker {
     extractTransformQuery(parameters) {
         let valid = this.validateArguments(parameters)
         if (!valid) {
-            return null
+            return {
+                extraneous: parameters
+            }
         }
 
         let {
             content,
-            contentType,
+            mode,
             source,
             target,
             resolutionOptions,
@@ -358,7 +229,7 @@ export default class FlowWorker {
                 version: source.version
             },
             resolver: {
-                base: contentType,
+                base: mode,
                 resolve: resolutionOptions
             },
             serializer: {
@@ -367,12 +238,8 @@ export default class FlowWorker {
             }
         }
 
-        let callback = this.generateTransformResponseCallback(
-            content, extraneous
-        )
-
         return {
-            query: [ content, callback, flowOptions ],
+            query: [ content, flowOptions ],
             extraneous
         }
     }
@@ -479,49 +346,6 @@ export default class FlowWorker {
             this.postError(null, null)('ApiFlow does not accept empty message')
         }
     }
-
-    /*
-    onMessage(msg) {
-        if (arguments.length > 0) {
-            let [ action, query ] = this.processArguments(msg.data)
-            if (query) {
-                if (action === 'transform') {
-                    this.transformQueue.push(query)
-                    this.processTransformQueue()
-                }
-                else if (action === 'detectFormat') {
-                    this.detectFormatQueue.push(query)
-                    this.processDetectFormatQueue()
-                }
-                else if (action === 'detectName') {
-                    this.detectNameQueue.push(query)
-                    this.processDetectNameQueue()
-                }
-                else {
-                    self.postMessage({
-                        success: false,
-                        error: 'invalid action',
-                        ...msg.data
-                    })
-                }
-            }
-            else {
-                self.postMessage({
-                    success: false,
-                    error: 'invalid query',
-                    ...msg.data
-                })
-            }
-        }
-        else {
-            self.postMessage({
-                success: false,
-                error: 'no query provided',
-                ...msg.data
-            })
-        }
-    }
-    */
 }
 
 let worker = new FlowWorker()

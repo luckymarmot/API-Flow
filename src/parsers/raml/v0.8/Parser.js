@@ -27,13 +27,23 @@ import Auth from '../../../models/Auth'
 import ShimmingFileReader from '../FileReader'
 
 export default class RAMLParser {
+    static format = 'raml'
+    static version = 'v0.8'
+
     static detect(content) {
+        let detection = {
+            format: RAMLParser.format,
+            version: RAMLParser.version,
+            score: 0
+        }
+
         let firstLine = content.split('\n', 1)[0]
         let match = firstLine.match(/#%RAML (0\.8|1\.0)/)
         if (match) {
-            return 1
+            detection.score = 1
+            return [ detection ]
         }
-        return 0
+        return [ detection ]
     }
 
     static getAPIName(content) {

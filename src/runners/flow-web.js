@@ -79,7 +79,7 @@ export default class FlowBrowser {
         let environment = new BrowserEnvironment()
         let resolver = new ContextResolver(environment)
 
-        contentPromise.then((content) => {
+        return contentPromise.then((content) => {
             let item = {
                 url: input,
                 content: content
@@ -94,8 +94,8 @@ export default class FlowBrowser {
                 })
             }
 
-            promise.then(context => {
-                resolver.resolveAll(
+            return promise.then(context => {
+                return resolver.resolveAll(
                     parser.item,
                     context,
                     opts.get('resolver')
@@ -107,9 +107,11 @@ export default class FlowBrowser {
                                 opts.get('serializer')
                             )
                         callback(null, final)
+                        return final
                     }
                     catch (e) {
                         callback(e.stack, null)
+                        throw e
                     }
                 }).catch(error => {
                     callback(error.stack)

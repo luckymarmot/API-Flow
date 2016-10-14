@@ -2356,7 +2356,7 @@ export class TestRAMLParser extends UnitTest {
         let input = '#%RAML 0.8' +
             '\nSomeContent:.....'
 
-        let expected = 1
+        let expected = [ { format: 'raml', version: 'v0.8', score: 1 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)
@@ -2368,7 +2368,7 @@ export class TestRAMLParser extends UnitTest {
 
         let input = 'SomeContent:.....'
 
-        let expected = 0
+        let expected = [ { format: 'raml', version: 'v0.8', score: 0 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)

@@ -26,7 +26,17 @@ import ReferenceContainer from '../../../models/references/Container'
 import JSONSchemaReference from '../../../models/references/JSONSchema'
 
 export default class SwaggerParser {
+    static version = 'v2.0'
+    static format = 'swagger'
+
     static detect(content) {
+        let parser = SwaggerParser
+        let detection = {
+            format: parser.format,
+            version: parser.version,
+            score: 0
+        }
+
         let swag
         try {
             swag = JSON.parse(content)
@@ -36,9 +46,10 @@ export default class SwaggerParser {
                 swag = yaml.safeLoad(content)
             }
             catch (yamlParseError) {
-                return 0
+                return [ detection ]
             }
         }
+
         if (swag) {
             // converting objects to bool to number, fun stuff
             let score = 0
@@ -47,9 +58,11 @@ export default class SwaggerParser {
             score += swag.info ? 1 / 3 : 0
             score += swag.paths ? 1 / 3 : 0
             score = score > 1 ? 1 : score
-            return score
+            detection.score = score
+            return [ detection ]
         }
-        return 0
+
+        return [ detection ]
     }
 
     static getAPIName(content) {

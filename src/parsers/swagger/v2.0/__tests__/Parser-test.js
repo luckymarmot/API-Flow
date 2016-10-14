@@ -2337,7 +2337,7 @@ export class TestSwaggerParser extends UnitTest {
             paths: {}
         })
 
-        let expected = 1
+        let expected = [ { format: 'swagger', version: 'v2.0', score: 1 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)
@@ -2349,7 +2349,7 @@ export class TestSwaggerParser extends UnitTest {
 
         let input = 'Some Content: ....'
 
-        let expected = 0
+        let expected = [ { format: 'swagger', version: 'v2.0', score: 0 } ]
         let result = parser.detect(input)
 
         this.assertEqual(expected, result)

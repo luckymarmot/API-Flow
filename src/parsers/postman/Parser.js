@@ -6,7 +6,7 @@ export default class PostmanParser {
         let scorev1 = PostmanParserV1.detect(...arguments)
         let scorev2 = PostmanParserV2.detect(...arguments)
 
-        return Math.max(scorev1, scorev2)
+        return scorev1.concat(scorev2)
     }
 
     static getAPIName() {

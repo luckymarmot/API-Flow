@@ -14,13 +14,23 @@ import Request from '../../models/Request'
 import Group from '../../models/Group'
 
 export default class CurlParser {
+    static format = 'curl'
+    static version = 'v1'
+
     static detect(content) {
-        let hasCurl = content.match(/curl\s/)
-        if (hasCurl) {
-            return 1
+        let detection = {
+            format: CurlParser.format,
+            version: CurlParser.version,
+            score: 0
         }
 
-        return 0
+        let hasCurl = content.match(/curl\s/)
+        if (hasCurl) {
+            detection.score = 1
+            return [ detection ]
+        }
+
+        return [ detection ]
     }
 
     static getAPIName() {

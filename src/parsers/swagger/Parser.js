@@ -6,6 +6,13 @@ export default class SwaggerParser {
 
         return scorev2
     }
+
+    static getAPIName() {
+        let namev2 = SwaggerParserV2.getAPIName(...arguments)
+
+        return namev2
+    }
+
     constructor(version = 'v2.0') {
         let versionMap = {
             'v2.0': SwaggerParserV2
