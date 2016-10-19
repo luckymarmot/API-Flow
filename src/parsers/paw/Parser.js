@@ -1023,7 +1023,7 @@ export default class PawParser {
                 flow: grantMap[oauth2.grantType] || null,
                 authorizationUrl: oauth2.authorizationUrl || null,
                 tokenUrl: oauth2.tokenUrl || null,
-                scopes: scopes
+                scopes: new Immutable.List(scopes)
             })
             auths.push(auth)
         }

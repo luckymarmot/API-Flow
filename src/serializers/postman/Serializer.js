@@ -344,9 +344,14 @@ export default class PostmanSerializer extends BaseSerializer {
         }
         else if (type === 'reference') {
             let ref = param.get('value')
-            let rawName = ref.get('relative') || ref.get('uri') || key
 
-            pair = '{{' + rawName.split('/').slice(-1)[0] + '}}'
+            if (this._isInlineRef(ref)) {
+                pair = param.generate()
+            }
+            else {
+                let rawName = ref.get('relative') || ref.get('uri') || key
+                pair = '{{' + rawName.split('/').slice(-1)[0] + '}}'
+            }
         }
         else {
             pair = '{{' + key + '}}'
@@ -355,7 +360,7 @@ export default class PostmanSerializer extends BaseSerializer {
         return {
             key: param.get('key'),
             value: pair,
-            type: param.get('type'),
+            type: 'text',
             enabled: true
         }
     }

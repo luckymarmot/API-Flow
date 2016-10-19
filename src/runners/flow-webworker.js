@@ -89,11 +89,15 @@ export default class FlowWorker {
         let base = opts.getIn([ 'resolver', 'base' ])
 
         if (!parserMap[sourceFormat]) {
-            throw new Error('unrecognized source format')
+            return new Promise((_, reject) => {
+                reject(new Error('unrecognized source format'))
+            })
         }
 
         if (!serializerMap[target]) {
-            throw new Error('unrecognized target format')
+            return new Promise((_, reject) => {
+                reject(new Error('unrecognized target format'))
+            })
         }
 
         let url = null
@@ -113,6 +117,7 @@ export default class FlowWorker {
         let environment = new BrowserEnvironment()
         let resolver = new ContextResolver(environment)
 
+        console.log('starting parse')
         return contentPromise.then((content) => {
             let item = {
                 url: url,
@@ -129,11 +134,13 @@ export default class FlowWorker {
             }
 
             return promise.then(context => {
+                console.log('parse is done')
                 return resolver.resolveAll(
                     parser.item,
                     context,
                     opts.get('resolver')
                 ).then(_context => {
+                    console.log('resolution is done')
                     try {
                         let final = serializer
                             .serialize(
@@ -141,6 +148,7 @@ export default class FlowWorker {
                                 opts.get('serializer')
                             )
                         let error = serializer.validate(final)
+                        console.log('serialization is done', error, final)
                         if (error) {
                             throw error
                         }
@@ -149,6 +157,7 @@ export default class FlowWorker {
                         }
                     }
                     catch (e) {
+                        console.log('got error', e)
                         throw e
                     }
                 }).catch(error => {
@@ -159,6 +168,8 @@ export default class FlowWorker {
             }).catch(err => {
                 throw err
             })
+        }, error => {
+            throw error
         })
     }
 
