@@ -13,6 +13,7 @@ export default class PostmanSerializer extends BaseSerializer {
         this.references = null
         this.usedReferences = []
     }
+
     serialize(context) {
         let structure = this._formatStructure(context)
 

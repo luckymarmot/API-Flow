@@ -84,7 +84,7 @@ export default class RAMLParser {
             }
             return
         }, error => {
-            throw new Error(error.message)
+            throw error
         })
     }
 
