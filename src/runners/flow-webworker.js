@@ -67,26 +67,26 @@ export default class FlowWorker {
     }
 
     transform(input, _opts) {
-        let parserMap = {
+        const parserMap = {
             swagger: SwaggerParser,
             raml: RAMLParser,
             postman: PostmanParser,
             curl: CurlParser
         }
 
-        let serializerMap = {
+        const serializerMap = {
             swagger: SwaggerSerializer,
             raml: RAMLSerializer,
             postman: PostmanSerializer,
             curl: CurlSerializer
         }
 
-        let opts = new Options(_opts)
+        const opts = new Options(_opts)
 
-        let sourceFormat = opts.getIn([ 'parser', 'name' ])
-        let sourceVersion = opts.getIn([ 'parser', 'version' ])
-        let target = opts.getIn([ 'serializer', 'name' ])
-        let base = opts.getIn([ 'resolver', 'base' ])
+        const sourceFormat = opts.getIn([ 'parser', 'name' ])
+        const sourceVersion = opts.getIn([ 'parser', 'version' ])
+        const target = opts.getIn([ 'serializer', 'name' ])
+        const base = opts.getIn([ 'resolver', 'base' ])
 
         if (!parserMap[sourceFormat]) {
             return new Promise((_, reject) => {
@@ -112,10 +112,10 @@ export default class FlowWorker {
             url = input
         }
 
-        let parser = new parserMap[sourceFormat](sourceVersion)
-        let serializer = new serializerMap[target]()
-        let environment = new BrowserEnvironment()
-        let resolver = new ContextResolver(environment)
+        const parser = new parserMap[sourceFormat](sourceVersion)
+        const serializer = new serializerMap[target]()
+        const environment = new BrowserEnvironment()
+        const resolver = new ContextResolver(environment)
 
         return contentPromise.then((content) => {
             let item = {
@@ -123,7 +123,15 @@ export default class FlowWorker {
                 content: content
             }
 
-            let promise = parser.parse(item, opts.get('parser'))
+            let promise
+            try {
+                promise = parser.parse(item, opts.get('parser'))
+            }
+            catch (e) {
+                return new Promise((resolve, reject) => {
+                    reject(e)
+                })
+            }
 
             if (typeof promise.then !== 'function') {
                 let value = promise
@@ -165,6 +173,8 @@ export default class FlowWorker {
             })
         }, error => {
             throw error
+        }).catch(err => {
+            throw err
         })
     }
 
@@ -282,7 +292,7 @@ export default class FlowWorker {
             let error = _error
 
             if (_error instanceof Error) {
-                error = _error.msg
+                error = _error.message || _error.name || 'unknown error'
             }
 
             self.postMessage({
@@ -300,7 +310,7 @@ export default class FlowWorker {
             let error = _error
 
             if (_error instanceof Error) {
-                error = _error.msg
+                error = _error.message || _error.name || 'unknown error'
             }
 
             self.postMessage({
