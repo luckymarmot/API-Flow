@@ -889,7 +889,7 @@ export default class PawParser {
 
     _formatBody(req) {
         let params = []
-        let contentType
+        let contentType = req.getHeaderByName('Content-Type')
 
         let body = req.getBody(true)
         let urlEncoded = req.getUrlEncodedBody(true)
@@ -902,7 +902,7 @@ export default class PawParser {
                 urlEncoded &&
                 urlEncoded !== null
             ) {
-                contentType = 'application/x-www-form-urlencoded'
+                contentType = contentType || 'application/x-www-form-urlencoded'
                 external = new Parameter({
                     key: 'Content-Type',
                     type: 'string',
@@ -932,7 +932,7 @@ export default class PawParser {
                 formData &&
                 formData !== null
             ) {
-                contentType = 'multipart/form-data'
+                contentType = contentType || 'multipart/form-data'
                 external = new Parameter({
                     key: 'Content-Type',
                     type: 'string',
@@ -954,7 +954,7 @@ export default class PawParser {
         }
 
         if (body && params.length === 0) {
-            contentType = 'text/plain'
+            contentType = contentType || 'text/plain'
             external = new Parameter({
                 key: 'Content-Type',
                 type: 'string',
@@ -1023,7 +1023,7 @@ export default class PawParser {
                 flow: grantMap[oauth2.grantType] || null,
                 authorizationUrl: oauth2.authorizationUrl || null,
                 tokenUrl: oauth2.tokenUrl || null,
-                scopes: scopes
+                scopes: new Immutable.List(scopes)
             })
             auths.push(auth)
         }

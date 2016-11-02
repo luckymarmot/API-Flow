@@ -84,7 +84,11 @@ export default class RAMLParser {
             }
             return
         }, error => {
-            throw new Error(error.message)
+            let msg = 'failed to parse RAML file'
+            if (error.message) {
+                msg += ' with reason: ' + error.message
+            }
+            throw new Error(msg)
         })
     }
 

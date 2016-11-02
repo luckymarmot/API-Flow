@@ -799,7 +799,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         let scopeDescriptions = {}
         let security
         if (scopes) {
-            scopes = scopes.toJS()
+            scopes = Array.isArray(scopes) ? scopes : scopes.toJS()
             security = {
                 oauth_2_auth: scopes
             }
