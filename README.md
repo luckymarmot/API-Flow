@@ -51,10 +51,14 @@ promise.then(function(data) {
 ```sh
 node ./lib/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
 ```
+
+## Contributing
+PRs are welcomed!
+We require that organizations that want to extend API-Flow to support their format write both a parser and a serializer, and not simply a serializer.
+
 ## License
 
-This repository is released under the [MIT License](LICENSE). Feel free to fork, and modify! PRs are welcomed!
-
+This repository is released under the [MIT License](LICENSE). Feel free to fork, and modify!
 Copyright © 2016 Paw Inc.
 
 ## Contributors
