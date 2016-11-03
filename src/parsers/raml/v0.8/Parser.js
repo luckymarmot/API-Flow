@@ -24,7 +24,7 @@ import JSONSchemaReference from '../../../models/references/JSONSchema'
 import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
 
-import ShimmingFileReader from '../FileReader'
+import ShimmingFileResolver from '../resolvers/FileResolver'
 
 export default class RAMLParser {
     static format = 'raml'
@@ -38,7 +38,7 @@ export default class RAMLParser {
         }
 
         let firstLine = content.split('\n', 1)[0]
-        let match = firstLine.match(/#%RAML (0\.8|1\.0)/)
+        let match = firstLine.match(/#%RAML 0\.8/)
         if (match) {
             detection.score = 1
             return [ detection ]
@@ -56,7 +56,7 @@ export default class RAMLParser {
     }
 
     constructor(items) {
-        this.reader = new ShimmingFileReader(items)
+        this.reader = new ShimmingFileResolver(items)
         this.context = new Context()
         this.item = new Item()
     }

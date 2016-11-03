@@ -31,7 +31,7 @@ import ExoticReference from '../../../../models/references/Exotic'
 import JSONSchemaReference from '../../../../models/references/JSONSchema'
 
 import RAMLParser from '../Parser'
-import ShimmingFileReader from '../../FileReader'
+import ShimmingFileReader from '../../resolvers/FileReader'
 
 @registerTest
 @against(RAMLParser)
