@@ -46,6 +46,7 @@ export class TestParserOptions extends UnitTest {
     testNormalizeWithEmptyObjectOpts() {
         const expected = {
             name: 'swagger',
+            version: null,
             instance: null
         }
 
@@ -58,6 +59,7 @@ export class TestParserOptions extends UnitTest {
         const expected = {
             some: 'key',
             name: 'swagger',
+            version: null,
             instance: null
         }
 
