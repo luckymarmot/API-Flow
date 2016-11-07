@@ -2,6 +2,7 @@ import Immutable from 'immutable'
 
 export default class ParserOptions extends Immutable.Record({
     name: 'swagger',
+    version: null,
     instance: null,
     isDefault: true
 }) {
@@ -25,6 +26,10 @@ export default class ParserOptions extends Immutable.Record({
         }
         else if (!parser.name || typeof parser.name !== 'string') {
             parser.name = 'swagger'
+
+            if (typeof parser.version !== 'string') {
+                parser.version = null
+            }
         }
         else {
             parser.isDefault = false
