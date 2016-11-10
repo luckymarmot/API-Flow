@@ -151,30 +151,45 @@ export default class ResolverOptions extends Immutable.Record({
             }
         }
         else {
+            let _set = (obj, k, v) => {
+                obj[k] = v
+                return obj
+            }
+
+            if (typeof resolver.set === 'function') {
+                _set = (obj, k, v) => {
+                    return obj.set(k, v)
+                }
+            }
+
             if (!resolver.base || typeof resolver.base !== 'string') {
-                resolver.base = 'remote'
+                resolver = _set(resolver, 'base', 'remote')
             }
 
             if (typeof resolver.resolve === 'boolean') {
-                resolver.resolve = new ResolutionOptions({
+                resolver = _set(resolver, 'resolve', new ResolutionOptions({
                     remote: resolver.resolve,
                     local: resolver.resolve
-                })
+                }))
             }
             else if (
                 typeof resolver.resolve === 'undefined' ||
                 resolver.resolve === null ||
                 typeof resolver.resolve !== 'object'
             ) {
-                resolver.resolve = new ResolutionOptions()
+                resolver = _set(resolver, 'resolve', new ResolutionOptions())
             }
             else if (typeof resolver.resolve[Symbol.iterator] === 'function') {
-                resolver.resolve = new ResolutionOptions({
+                resolver = _set(resolver, 'resolve', new ResolutionOptions({
                     custom: resolver.resolve
-                })
+                }))
             }
             else {
-                resolver.resolve = new ResolutionOptions(resolver.resolve)
+                resolver = _set(
+                    resolver,
+                    'resolve',
+                    new ResolutionOptions(resolver.resolve)
+                )
             }
         }
 

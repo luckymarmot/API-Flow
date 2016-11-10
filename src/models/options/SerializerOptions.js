@@ -11,6 +11,18 @@ export default class SerializerOptions extends Immutable.Record({
 
     static normalize(_serializer) {
         let serializer = _serializer
+
+        let _set = (obj, k, v) => {
+            obj[k] = v
+            return obj
+        }
+
+        if (serializer && typeof serializer.set === 'function') {
+            _set = (obj, k, v) => {
+                return obj.set(k, v)
+            }
+        }
+
         if (typeof serializer === 'string') {
             serializer = {
                 name: serializer.toLowerCase()
@@ -22,11 +34,11 @@ export default class SerializerOptions extends Immutable.Record({
             }
         }
         else if (!serializer.name || typeof serializer.name !== 'string') {
-            serializer.name = 'raml'
+            serializer = _set(serializer, 'name', 'raml')
         }
 
         if (serializer.name !== 'custom') {
-            serializer.instance = null
+            serializer = _set(serializer, 'instance', null)
         }
 
         return serializer
