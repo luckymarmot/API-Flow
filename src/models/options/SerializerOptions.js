@@ -1,7 +1,7 @@
 import Immutable from 'immutable'
 
 export default class SerializerOptions extends Immutable.Record({
-    name: 'raml',
+    name: 'swagger',
     instance: null
 }) {
     constructor(opts) {
@@ -30,11 +30,11 @@ export default class SerializerOptions extends Immutable.Record({
         }
         else if (!serializer || typeof serializer !== 'object') {
             serializer = {
-                name: 'raml'
+                name: 'swagger'
             }
         }
         else if (!serializer.name || typeof serializer.name !== 'string') {
-            serializer = _set(serializer, 'name', 'raml')
+            serializer = _set(serializer, 'name', 'swagger')
         }
 
         if (serializer.name !== 'custom') {

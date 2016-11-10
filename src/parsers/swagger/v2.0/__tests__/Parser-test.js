@@ -7,7 +7,7 @@ import {
 import Immutable from 'immutable'
 import fs from 'fs'
 
-import SwaggerParser from '../../Parser'
+import SwaggerParser from '../Parser'
 
 import {
     Body,

@@ -10,7 +10,7 @@ export class TestSerializerOptions extends UnitTest {
 
     testNormalizeWithNoOpts() {
         const expected = {
-            name: 'raml',
+            name: 'swagger',
             instance: null
         }
 
@@ -21,29 +21,29 @@ export class TestSerializerOptions extends UnitTest {
 
     testNormalizeWithStringOpts() {
         const expected = {
-            name: 'swagger',
+            name: 'raml',
             instance: null
         }
 
-        const result = SerializerOptions.normalize('swagger')
+        const result = SerializerOptions.normalize('raml')
 
         this.assertEqual(expected, result)
     }
 
     testNormalizeWithStringOptsNormalizesString() {
         const expected = {
-            name: 'swagger',
+            name: 'raml',
             instance: null
         }
 
-        const result = SerializerOptions.normalize('SwAGger')
+        const result = SerializerOptions.normalize('RAML')
 
         this.assertEqual(expected, result)
     }
 
     testNormalizeWithEmptyObjectOpts() {
         const expected = {
-            name: 'raml',
+            name: 'swagger',
             instance: null
         }
 
@@ -55,7 +55,7 @@ export class TestSerializerOptions extends UnitTest {
     testNormalizeWithInvalidKeysInObjectOpts() {
         const expected = {
             some: 'key',
-            name: 'raml',
+            name: 'swagger',
             instance: null
         }
 
@@ -68,7 +68,7 @@ export class TestSerializerOptions extends UnitTest {
 
     testConstructorWithInvalidKeysInObjectOpts() {
         const expected = new SerializerOptions({
-            name: 'raml',
+            name: 'swagger',
             instance: null
         })
 
@@ -81,12 +81,12 @@ export class TestSerializerOptions extends UnitTest {
 
     testNormalizeWithSimpleObjectOpts() {
         const expected = {
-            name: 'swagger',
+            name: 'raml',
             instance: null
         }
 
         const result = SerializerOptions.normalize({
-            name: 'swagger'
+            name: 'raml'
         })
 
         this.assertEqual(expected, result)
@@ -94,12 +94,12 @@ export class TestSerializerOptions extends UnitTest {
 
     testNormalizeDropsInstanceIfNameNotCustom() {
         const expected = {
-            name: 'swagger',
+            name: 'raml',
             instance: null
         }
 
         const result = SerializerOptions.normalize({
-            name: 'swagger',
+            name: 'raml',
             instance: 'my super instance'
         })
 

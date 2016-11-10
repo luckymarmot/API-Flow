@@ -58,11 +58,20 @@ export class TestNodeRunner extends UnitTest {
     @targets('run')
     _testRun() {}
 
-    @targets('detect')
-    _testRun() {}
+    @targets('getParsers')
+    _testGetparsers() {}
 
-    @targets('transform')
-    _testRun() {}
+    @targets('getSerializers')
+    _testGetSerializers() {}
+
+    @targets('load')
+    _testLoad() {}
+
+    @targets('getFormat')
+    _testGetFormat() {}
+
+    @targets('getName')
+    _testGetName() {}
 
     __init(argv = [ 'fake-source.json' ]) {
         const args = [ 'node', 'api-flow.js' ].concat(argv)
