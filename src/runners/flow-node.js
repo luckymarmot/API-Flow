@@ -261,14 +261,7 @@ export default class FlowCLI extends BaseFlow {
     }
 
     run(_input, _options, _callback) {
-        let callback = _callback
-        if (!callback) {
-            callback = (data) => {
-                /* eslint-disable no-console */
-                console.log(data)
-                /* eslint-enable no-console */
-            }
-        }
+        let callback = _callback || ((result) => { return result })
 
         const actionMap = {
             format: ::this.getFormat,
