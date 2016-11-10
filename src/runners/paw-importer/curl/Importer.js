@@ -27,7 +27,7 @@ export default class CurlImporter extends BaseImporter {
     }
 
     _canImportItem(context, item) {
-        return this.parser.detect(item.content)
+        return this.parser.detect(item.content)[0].score
     }
 
     /*
