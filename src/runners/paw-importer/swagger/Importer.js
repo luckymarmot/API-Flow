@@ -26,7 +26,7 @@ export default class SwaggerImporter extends BaseImporter {
     }
 
     _canImportItem(context, item) {
-        return this.parser.detect(item.content)
+        return this.parser.detect(item.content)[0].score
     }
 
     /*

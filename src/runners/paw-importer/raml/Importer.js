@@ -28,7 +28,7 @@ export default class RAMLImporter extends BaseImporter {
         Only root files starts with RAML version.
     */
     _startsWithRAMLVersion(item) {
-        return this.parser.detect(item.content)
+        return this.parser.detect(item.content)[0].score
     }
 
     /*

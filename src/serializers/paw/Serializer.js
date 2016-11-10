@@ -82,7 +82,11 @@ export default class PawSerializer {
         - string
     */
     createRequestContextFromString(context, string) {
-        return this.createRequestContexts(context, { content: string }, {})[0]
+        return this.createRequestContexts(
+            context,
+            [ { content: string } ],
+            {}
+        )[0]
     }
 
     importString(context, string) {
