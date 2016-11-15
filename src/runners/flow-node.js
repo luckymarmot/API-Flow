@@ -8,7 +8,7 @@ import Options from '../models/options/Options'
 import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
 import PostmanParser from '../parsers/postman/Parser'
-import CurlParser from '../parsers/curl/Parser'
+import CurlParser from '../parsers/cURL/Parser'
 import InternalParser from '../parsers/internal/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
