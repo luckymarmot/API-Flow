@@ -2,6 +2,7 @@ import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
 import PostmanParser from '../parsers/postman/Parser'
 import CurlParser from '../parsers/curl/Parser'
+import InternalParser from '../parsers/internal/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
@@ -20,7 +21,8 @@ export default class FlowWorker extends BaseFlow {
         swagger: SwaggerParser,
         raml: RAMLParser,
         postman: PostmanParser,
-        curl: CurlParser
+        curl: CurlParser,
+        __internal__: InternalParser
     }
 
     static serializers = {

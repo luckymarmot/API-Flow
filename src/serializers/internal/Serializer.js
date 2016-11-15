@@ -7,6 +7,10 @@ export default class InternalSerializer extends BaseSerializer {
     }
 
     serialize(context) {
-        return JSON.stringify(context.toJS())
+        return JSON.stringify(context.toJS(), null, 2)
+    }
+
+    validate() {
+        return null
     }
 }

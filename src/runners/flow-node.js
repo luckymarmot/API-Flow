@@ -9,6 +9,7 @@ import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
 import PostmanParser from '../parsers/postman/Parser'
 import CurlParser from '../parsers/curl/Parser'
+import InternalParser from '../parsers/internal/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
@@ -27,7 +28,8 @@ export default class FlowCLI extends BaseFlow {
         swagger: SwaggerParser,
         raml: RAMLParser,
         postman: PostmanParser,
-        curl: CurlParser
+        curl: CurlParser,
+        __internal__: InternalParser
     }
 
     static serializers = {
@@ -138,20 +140,22 @@ export default class FlowCLI extends BaseFlow {
             nargs: 1
         })
 
+        const parsers = Object.keys(this.getParsers())
         parser.addArgument([ '-f', '--from' ], {
             metavar: 'format',
             help:
                 'The format of the source file',
-            choices: [ 'swagger', 'raml', 'postman', 'curl' ],
+            choices: parsers,
             nargs: 1,
             action: 'store'
         })
 
+        const serializers = Object.keys(this.getSerializers())
         parser.addArgument([ '-t', '--to' ], {
             metavar: 'format',
             help:
                 'The format of the destination file',
-            choices: [ 'swagger', 'raml', 'postman', 'curl' ],
+            choices: serializers,
             defaultValue: [ 'swagger' ],
             nargs: 1,
             action: 'store'
