@@ -1,6 +1,17 @@
 import Reference from './Reference'
 
+import Model from '../ModelInfo'
+
 export default class LateResolutionReference extends Reference {
+    constructor(obj = {}) {
+        obj._model = new Model({
+            name: 'late-resolution.references.models',
+            version: '0.1.0'
+        })
+
+        super(obj)
+    }
+
     resolve() {
         return this
             .set('resolved', true)

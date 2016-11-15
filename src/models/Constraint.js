@@ -1,6 +1,12 @@
 import Immutable from 'immutable'
 
+import Model from './ModelInfo'
+
 export class Constraint extends Immutable.Record({
+    _model: new Model({
+        name: 'constraint.constraint.models',
+        version: '0.1.0'
+    }),
     name: null,
     value: null,
     expression: () => { return false }
@@ -9,7 +15,7 @@ export class Constraint extends Immutable.Record({
         return this.get('expression')(d)
     }
 
-    toJS() {
+    toJSONSchema() {
         let obj = {}
         let key = this.get('name')
         let value = this.get('value')
@@ -21,6 +27,10 @@ export class Constraint extends Immutable.Record({
 export class MultipleOfConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'multiple-of.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'multipleOf',
             value: value,
             expression: d => {
@@ -34,6 +44,10 @@ export class MultipleOfConstraint extends Constraint {
 export class MaximumConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'maximum.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'maximum',
             value: value,
             expression: d => {
@@ -47,6 +61,10 @@ export class MaximumConstraint extends Constraint {
 export class ExclusiveMaximumConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'exclusive-maximum.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'exclusiveMaximum',
             value: value,
             expression: d => {
@@ -56,7 +74,7 @@ export class ExclusiveMaximumConstraint extends Constraint {
         super(obj)
     }
 
-    toJS() {
+    toJSONSchema() {
         let obj = {}
         let key = this.get('name')
         let value = this.get('value')
@@ -69,6 +87,10 @@ export class ExclusiveMaximumConstraint extends Constraint {
 export class MinimumConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'minimum.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'minimum',
             value: value,
             expression: d => {
@@ -82,6 +104,10 @@ export class MinimumConstraint extends Constraint {
 export class ExclusiveMinimumConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'exclusive-minimum.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'exclusiveMinimum',
             value: value,
             expression: d => {
@@ -91,7 +117,7 @@ export class ExclusiveMinimumConstraint extends Constraint {
         super(obj)
     }
 
-    toJS() {
+    toJSONSchema() {
         let obj = {}
         let key = this.get('name')
         let value = this.get('value')
@@ -104,6 +130,10 @@ export class ExclusiveMinimumConstraint extends Constraint {
 export class MaximumLengthConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'maximum-length.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'maximumLength',
             value: value,
             expression: d => {
@@ -117,6 +147,10 @@ export class MaximumLengthConstraint extends Constraint {
 export class MinimumLengthConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'minimum-length.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'minimumLength',
             value: value,
             expression: d => {
@@ -130,6 +164,10 @@ export class MinimumLengthConstraint extends Constraint {
 export class PatternConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'pattern.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'pattern',
             value: value,
             expression: d => {
@@ -143,6 +181,10 @@ export class PatternConstraint extends Constraint {
 export class MaximumItemsConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'maximum-items.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'maximumItems',
             value: value,
             expression: d => {
@@ -159,6 +201,10 @@ export class MaximumItemsConstraint extends Constraint {
 export class MinimumItemsConstraint extends Constraint {
     constructor(value = 0) {
         let obj = {
+            _model: new Model({
+                name: 'minimum-items.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'minimumItems',
             value: value,
             expression: d => {
@@ -172,6 +218,10 @@ export class MinimumItemsConstraint extends Constraint {
 export class UniqueItemsConstraint extends Constraint {
     constructor(value = false) {
         let obj = {
+            _model: new Model({
+                name: 'unique-items.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'uniqueItems',
             value: value,
             expression: d => {
@@ -193,6 +243,10 @@ export class UniqueItemsConstraint extends Constraint {
 export class MaximumPropertiesConstraint extends Constraint {
     constructor(value) {
         let obj = {
+            _model: new Model({
+                name: 'maximum-properties.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'maximumProperties',
             value: value,
             expression: d => {
@@ -209,6 +263,10 @@ export class MaximumPropertiesConstraint extends Constraint {
 export class MinimumPropertiesConstraint extends Constraint {
     constructor(value = 0) {
         let obj = {
+            _model: new Model({
+                name: 'minimum-properties.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'minimumProperties',
             value: value,
             expression: d => {
@@ -222,6 +280,10 @@ export class MinimumPropertiesConstraint extends Constraint {
 export class EnumConstraint extends Constraint {
     constructor(value = []) {
         let obj = {
+            _model: new Model({
+                name: 'enum.constraint.models',
+                version: '0.1.0'
+            }),
             name: 'enum',
             value: value,
             expression: d => {

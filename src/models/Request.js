@@ -1,5 +1,7 @@
 import Immutable from 'immutable'
 
+import Model from './ModelInfo'
+
 import {
     ParameterContainer
 } from './Core'
@@ -8,6 +10,10 @@ import URL from './URL'
 
 
 export default class Request extends Immutable.Record({
+    _model: new Model({
+        name: 'request.models',
+        version: '0.1.0'
+    }),
     id: null,
     name: null,
     description: null,

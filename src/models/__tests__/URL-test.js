@@ -229,8 +229,8 @@ export class TestURL extends UnitTest {
         )
     }
 
-    @targets('toJS')
-    testToJS() {
+    @targets('toJSONSchema')
+    testToJSONSchema() {
         let url = new URL({
             host: 'www.example.com',
             protocol: [
@@ -239,7 +239,7 @@ export class TestURL extends UnitTest {
             ]
         })
 
-        let result = url.toJS()
+        let result = url.toJSONSchema()
 
         this.assertEqual(result.host, 'www.example.com')
         if (result.protocol.indexOf('s') >= 0) {
