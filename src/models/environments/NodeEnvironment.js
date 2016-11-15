@@ -2,10 +2,16 @@ import fs from 'fs'
 import path from 'path'
 import request from 'request'
 
+import Model from '../ModelInfo'
 import Environment from './Environment'
 import URL from '../URL'
 
 export class FileResolver {
+    static _model = new Model({
+        name: 'file-resolver.node.environments.models',
+        version: '0.1.0'
+    })
+
     constructor(item) {
         this.item = item
     }
@@ -31,6 +37,11 @@ export class FileResolver {
 }
 
 export class URLResolver {
+    static _model = new Model({
+        name: 'url-resolver.node.environments.models',
+        version: '0.1.0'
+    })
+
     constructor(item) {
         this.item = item
     }
@@ -59,6 +70,10 @@ export class URLResolver {
 export default class NodeEnvironment extends Environment {
     constructor() {
         super({
+            _model: new Model({
+                name: 'node.environments.models',
+                version: '0.1.0'
+            }),
             type: 'node'
         })
         return this

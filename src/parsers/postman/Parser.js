@@ -23,7 +23,9 @@ export default class PostmanParser {
         return namev2 || null
     }
 
-    constructor(version = 'v1') {
+    constructor(_version) {
+        let version = _version || 'v1'
+
         let versionMap = {
             1: PostmanParserV1,
             2: PostmanParserV2
@@ -31,9 +33,7 @@ export default class PostmanParser {
 
         let stripped = this._stripVersion(version)
 
-        if (versionMap[stripped]) {
-            return new versionMap[stripped]()
-        }
+        this._parser = new versionMap[stripped]()
     }
 
     detect() {
@@ -42,6 +42,10 @@ export default class PostmanParser {
 
     getAPIName() {
         return PostmanParser.getAPIName(...arguments)
+    }
+
+    parse(item) {
+        return this._parser.parse(item)
     }
 
     _stripVersion(version) {

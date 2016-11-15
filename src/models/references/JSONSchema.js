@@ -1,10 +1,21 @@
 import Immutable from 'immutable'
 import yaml from 'js-yaml'
 
+import Model from '../ModelInfo'
+
 import Reference from './Reference'
 import URL from '../URL'
 
 export default class JSONSchemaReference extends Reference {
+    constructor(obj = {}) {
+        obj._model = new Model({
+            name: 'json-schema.references.models',
+            version: '0.1.0'
+        })
+
+        super(obj)
+    }
+
     resolve(string) {
         let obj
         if (typeof string !== 'object') {

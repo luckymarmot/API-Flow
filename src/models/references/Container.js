@@ -1,8 +1,13 @@
 import Immutable from 'immutable'
 
+import Model from '../ModelInfo'
 import ReferenceCache from './Cache'
 
 export default class ReferenceContainer extends Immutable.Record({
+    _model: new Model({
+        name: 'reference-container.references.models',
+        version: '0.1.0'
+    }),
     id: null,
     name: null,
     cache: new Immutable.OrderedMap()

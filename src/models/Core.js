@@ -1,10 +1,15 @@
 import Immutable from 'immutable'
 import jsf from 'json-schema-faker'
 
+import Model from './ModelInfo'
 import { Info } from './Utils'
 import Reference from './references/Reference'
 
 export class Parameter extends Immutable.Record({
+    _model: new Model({
+        name: 'parameter.core.models',
+        version: '0.1.0'
+    }),
     key: null,
     value: null,
     type: null,
@@ -29,7 +34,7 @@ export class Parameter extends Immutable.Record({
         }
 
         let constraintSet = this.get('internals').reduce((set, constraint) => {
-            let obj = constraint.toJS()
+            let obj = constraint.toJSONSchema()
             Object.assign(set, obj)
             return set
         }, {
@@ -273,6 +278,10 @@ export class Parameter extends Immutable.Record({
 }
 
 export class ParameterContainer extends Immutable.Record({
+    _model: new Model({
+        name: 'parameter-container.core.models',
+        version: '0.1.0'
+    }),
     headers: Immutable.List(),
     queries: Immutable.List(),
     body: Immutable.List(),
@@ -346,6 +355,10 @@ export class ParameterContainer extends Immutable.Record({
 }
 
 export class Body extends Immutable.Record({
+    _model: new Model({
+        name: 'body.core.models',
+        version: '0.1.0'
+    }),
     constraints: Immutable.List(),
     type: null
 }) {
@@ -357,6 +370,10 @@ export class Body extends Immutable.Record({
 }
 
 export class Response extends Immutable.Record({
+    _model: new Model({
+        name: 'response.core.models',
+        version: '0.1.0'
+    }),
     code: null,
     description: null,
     examples: null,
@@ -366,6 +383,10 @@ export class Response extends Immutable.Record({
 
 
 export default class Context extends Immutable.Record({
+    _model: new Model({
+        name: 'context.core.models',
+        version: '0.1.0'
+    }),
     group: null,
     references: new Immutable.OrderedMap(),
     info: new Info()

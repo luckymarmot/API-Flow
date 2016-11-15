@@ -13,17 +13,22 @@ export default class SwaggerParser {
         return namev2
     }
 
-    constructor(version = 'v2.0') {
+    constructor(_version) {
+        const version = _version || 'v2.0'
         let versionMap = {
             'v2.0': SwaggerParserV2
         }
 
         if (versionMap[version]) {
-            return new versionMap[version]()
+            this._parser = new versionMap[version]()
         }
     }
 
     detect() {
         return SwaggerParser.detect()
+    }
+
+    parse(item) {
+        return this._parser.parse(item)
     }
 }

@@ -1,5 +1,7 @@
 import Immutable from 'immutable'
 
+import Model from './ModelInfo'
+
 import {
     Parameter
 } from './Core'
@@ -7,6 +9,10 @@ import {
 import Constraint from './Constraint'
 
 export default class URL extends Immutable.Record({
+    _model: new Model({
+        name: 'url.models',
+        version: '0.1.0'
+    }),
     protocol: null,
     username: null,
     password: null,
@@ -50,7 +56,7 @@ export default class URL extends Immutable.Record({
         let hash = m[9] || ''
 
         if (typeof baseURL !== 'undefined') {
-            let base = (new URL(baseURL)).toJS()
+            let base = (new URL(baseURL)).toJSONSchema()
             let flag = protocol === '' && host === '' && username === ''
 
             if (flag && pathname === '' && search === '') {
@@ -288,7 +294,7 @@ export default class URL extends Immutable.Record({
             host
     }
 
-    toJS() {
+    toJSONSchema() {
         let protocol = this.generateParam('protocol')
         let host = this.generateParam('host')
         let hostname = this.generateParam('hostname')

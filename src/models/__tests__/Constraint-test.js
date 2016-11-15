@@ -8,6 +8,7 @@ export class TestConstraint extends UnitTest {
         let mod = new Constraint.Constraint()
 
         let expected = [
+            '_model',
             'name',
             'value',
             'expression'
@@ -21,7 +22,7 @@ export class TestConstraint extends UnitTest {
         this.assertFalse(mod.evaluate())
     }
 
-    testConstraintToJSReturnsSimpleSchema() {
+    testConstraintToJSONSchemaReturnsSimpleSchema() {
         let mod = new Constraint.Constraint({
             name: 'test',
             value: 28
@@ -31,7 +32,7 @@ export class TestConstraint extends UnitTest {
             test: 28
         }
 
-        let result = mod.toJS()
+        let result = mod.toJSONSchema()
 
         this.assertEqual(expected, result)
     }
@@ -70,7 +71,7 @@ export class TestExclusiveMaximumConstraint extends UnitTest {
         this.assertFalse(max.evaluate(5))
     }
 
-    testExclusiveMaximumConstraintToJS() {
+    testExclusiveMaximumConstraintToJSONSchema() {
         let max = new Constraint.ExclusiveMaximum(4)
 
         let expected = {
@@ -78,7 +79,7 @@ export class TestExclusiveMaximumConstraint extends UnitTest {
             exclusiveMaximum: true
         }
 
-        let result = max.toJS()
+        let result = max.toJSONSchema()
 
         this.assertEqual(expected, result)
     }
@@ -105,7 +106,7 @@ export class TestExclusiveMinimumConstraint extends UnitTest {
         this.assertFalse(min.evaluate(3))
     }
 
-    testExclusiveMinimumConstraintToJS() {
+    testExclusiveMinimumConstraintToJSONSchema() {
         let min = new Constraint.ExclusiveMinimum(4)
 
         let expected = {
@@ -113,7 +114,7 @@ export class TestExclusiveMinimumConstraint extends UnitTest {
             exclusiveMinimum: true
         }
 
-        let result = min.toJS()
+        let result = min.toJSONSchema()
 
         this.assertEqual(expected, result)
     }

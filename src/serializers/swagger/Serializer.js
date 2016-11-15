@@ -127,7 +127,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         }
 
         for (let key of contact.keys()) {
-            if (contact.get(key)) {
+            if (contact.get(key) && key !== '_model') {
                 formatted[key] = contact.get(key)
             }
         }
@@ -143,7 +143,7 @@ export default class SwaggerSerializer extends BaseSerializer {
         }
 
         for (let key of license.keys()) {
-            if (license.get(key)) {
+            if (license.get(key) && key !== '_model') {
                 formatted[key] = license.get(key)
             }
         }

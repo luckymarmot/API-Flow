@@ -7,39 +7,100 @@ import Options from '../models/options/Options'
 
 import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
-import PostmanParserV1 from '../parsers/postman/v1/Parser'
-import PostmanParserV2 from '../parsers/postman/v2/Parser'
+import PostmanParser from '../parsers/postman/Parser'
 import CurlParser from '../parsers/cURL/Parser'
+import InternalParser from '../parsers/internal/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
 import PostmanSerializer from '../serializers/postman/Serializer'
 import CurlSerializer from '../serializers/cURL/Serializer'
+import InternalSerializer from '../serializers/internal/Serializer'
 
-import ContextResolver from '../resolvers/ContextResolver'
-import NodeEnvironment from '../models/environments/NodeEnvironment'
+import NodeEnvironment, {
+    URLResolver
+} from '../models/environments/NodeEnvironment'
 
-export default class FlowCLI {
-    constructor() {}
+import BaseFlow from './base-runner'
 
-    detect(content) {
-        let parserMap = {
-            swagger: SwaggerParser,
-            raml: RAMLParser,
-            'postman-1': PostmanParserV1,
-            'postman-2': PostmanParserV2,
-            curl: CurlParser
+export default class FlowCLI extends BaseFlow {
+    static parsers = {
+        swagger: SwaggerParser,
+        raml: RAMLParser,
+        postman: PostmanParser,
+        curl: CurlParser,
+        __internal__: InternalParser
+    }
+
+    static serializers = {
+        swagger: SwaggerSerializer,
+        raml: RAMLSerializer,
+        postman: PostmanSerializer,
+        curl: CurlSerializer,
+        __internal__: InternalSerializer
+    }
+
+    constructor() {
+        super(NodeEnvironment, URLResolver)
+    }
+
+    getParsers() {
+        return FlowCLI.parsers
+    }
+
+    getSerializers() {
+        return FlowCLI.serializers
+    }
+
+    load(input, opts) {
+        let url = null
+        let contentPromise
+        const base = opts.getIn([ 'resolver', 'base' ])
+
+        if (base === 'raw') {
+            contentPromise = new Promise((resolve) => {
+                return resolve(input)
+            })
+        }
+        else if (base === 'local') {
+            let _path = path.resolve('./', input)
+            contentPromise = new Promise((resolve, reject) => {
+                fs.readFile(_path, (err, data) => {
+                    if (err) {
+                        return reject(err)
+                    }
+
+                    resolve(data.toString())
+                })
+            })
+        }
+        else {
+            contentPromise = (new this.URLResolver()).resolve(input)
+            url = input
         }
 
-        let score = {}
+        return contentPromise.then(content => {
+            return {
+                url,
+                content
+            }
+        })
+    }
 
-        let parsers = Object.keys(parserMap)
-        for (let parser of parsers) {
-            let _parser = new parserMap[parser]()
-            score[parser] = _parser.detect(content)
-        }
+    getFormat(input, opts) {
+        return this.load(input, opts).then(({ content }) => {
+            return content
+        }).then((content) => {
+            return this.detectFormat(content)
+        })
+    }
 
-        return score
+    getName(input, opts) {
+        return this.load(input, opts).then(({ content }) => {
+            return content
+        }).then((content) => {
+            return this.detectName(content)
+        })
     }
 
     _createParser() {
@@ -54,10 +115,18 @@ export default class FlowCLI {
             help: 'The source file'
         })
 
-        parser.addArgument([ '-d', '--detect' ], {
+        parser.addArgument([ '-d', '--detect-format' ], {
             metavar: 'file',
             help:
                 'If this option is set, returns the format of the input file',
+            nargs: 0,
+            action: 'storeTrue'
+        })
+
+        parser.addArgument([ '-n', '--detect-name' ], {
+            metavar: 'file',
+            help:
+                'If this option is set, returns the name of the input file',
             nargs: 0,
             action: 'storeTrue'
         })
@@ -71,22 +140,23 @@ export default class FlowCLI {
             nargs: 1
         })
 
+        const parsers = Object.keys(this.getParsers())
         parser.addArgument([ '-f', '--from' ], {
             metavar: 'format',
             help:
                 'The format of the source file',
-            choices: [ 'swagger', 'raml', 'postman-1', 'postman-2' ],
-            defaultValue: [ 'swagger' ],
+            choices: parsers,
             nargs: 1,
             action: 'store'
         })
 
+        const serializers = Object.keys(this.getSerializers())
         parser.addArgument([ '-t', '--to' ], {
             metavar: 'format',
             help:
                 'The format of the destination file',
-            choices: [ 'swagger', 'raml', 'postman', 'curl' ],
-            defaultValue: [ 'raml' ],
+            choices: serializers,
+            defaultValue: [ 'swagger' ],
             nargs: 1,
             action: 'store'
         })
@@ -128,7 +198,7 @@ export default class FlowCLI {
     }
 
     processArguments(parser) {
-        let args = parser.parseArgs()
+        const args = parser.parseArgs()
 
         let config = new Options()
         if (args.config) {
@@ -181,204 +251,40 @@ export default class FlowCLI {
 
         this.options = config
         this.input = args.source
-        this.useDetect = args.detect || null
-    }
 
-    transform(_input, _options, _callback) {
-        let input = _input || this.input
-        let options = _options || this.options
-
-        if (!(options instanceof Options)) {
-            options = new Options(options)
+        let action = 'transform'
+        if (args.detect_format) {
+            action = 'format'
         }
 
-        let parserMap = {
-            swagger: SwaggerParser,
-            raml: RAMLParser,
-            'postman-1': PostmanParserV1,
-            'postman-2': PostmanParserV2,
-            curl: CurlParser
+        else if (args.detect_name) {
+            action = 'name'
         }
 
-        let serializerMap = {
-            swagger: SwaggerSerializer,
-            raml: RAMLSerializer,
-            postman: PostmanSerializer,
-            curl: CurlSerializer
-        }
-
-        let callback = _callback
-        if (!callback) {
-            callback = (data) => {
-                /* eslint-disable no-console */
-                console.log(data)
-                /* eslint-enable no-console */
-            }
-        }
-
-        let content
-        let item
-        if (options.getIn([ 'resolver', 'base' ]) === 'local') {
-            let _path = path.resolve('./', input)
-            content = fs.readFileSync(_path).toString()
-            item = {
-                file: {
-                    name: path.basename(_path),
-                    path: path.dirname(_path)
-                },
-                content: content
-            }
-        }
-        else {
-            content = input
-            item = {
-                file: {
-                    name: '',
-                    path: path.resolve('.')
-                },
-                content: content
-            }
-        }
-
-        let source
-        if (options.getIn([ 'parser', 'isDefault' ])) {
-            /* eslint-disable no-console */
-            console.error('no source format provided, using best fit...')
-            /* eslint-enable no-console */
-
-            let scores = this.detect(content)
-            let best = {
-                value: -1,
-                key: null
-            }
-
-            Object.keys(scores).forEach(key => {
-                if (scores[key] > best.value) {
-                    best = {
-                        value: scores[key],
-                        key: key
-                    }
-                }
-            })
-
-            source = best.key
-            /* eslint-disable no-console */
-            console.error('best fit is', source)
-            /* eslint-enable no-console */
-        }
-        else {
-            source = options.getIn([ 'parser', 'name' ])
-        }
-
-        let target = options.getIn([ 'serializer', 'name' ])
-
-        if (!parserMap[source]) {
-            throw new Error('unrecognized source format')
-        }
-
-        if (!serializerMap[target]) {
-            throw new Error('unrecognized target format')
-        }
-
-        let parser = new parserMap[source]()
-        let serializer = new serializerMap[target]()
-        let environment = new NodeEnvironment()
-        let resolver = new ContextResolver(environment)
-
-        let promise = parser.parse(item, options.get('parser'))
-
-        if (typeof promise.then !== 'function') {
-            let value = promise
-            promise = new Promise((resolve) => {
-                resolve(value)
-            })
-        }
-
-        /* eslint-disable no-console */
-        return promise.then(context => {
-            return resolver.resolveAll(
-                parser.item,
-                context,
-                options.get('resolver')
-            ).then(_context => {
-                try {
-                    let final = serializer
-                        .serialize(_context, options.get('serializer'))
-                    callback(final)
-                    return final
-                }
-                catch (e) {
-                    console.error('@serializer threw error',
-                        e,
-                        e.stack,
-                        JSON.stringify(e, null, '  ')
-                    )
-                    throw e
-                }
-            },
-            error => {
-                console.error('@resolver failed with error',
-                    error,
-                    error.stack,
-                    JSON.stringify(error, null, '  ')
-                )
-                throw error
-            }).catch(error => {
-                console.error('@resolver caught error',
-                    error,
-                    error.stack,
-                    JSON.stringify(error, null, '  ')
-                )
-                throw error
-            })
-        }, error => {
-            console.error('@parser failed with error',
-                error,
-                error.stack,
-                JSON.stringify(error)
-            )
-            throw error
-        }).catch(err => {
-            console.error('@parser caught error',
-                err,
-                err.stack,
-                JSON.stringify(err)
-            )
-            throw err
-        })
-        /* eslint-enable no-console */
+        this.action = action
     }
 
     run(_input, _options, _callback) {
-        if (this.useDetect) {
-            let input = _input || this.input
-            let options = _options || this.options
+        let callback = _callback || ((result) => { return result })
 
-            let callback
-            if (!callback) {
-                callback = (data) => {
-                    /* eslint-disable no-console */
-                    console.log(data)
-                    /* eslint-enable no-console */
-                }
-            }
-
-            let content
-
-            if (options.getIn([ 'resolver', 'base' ]) === 'local') {
-                let _path = path.resolve('./', input)
-                content = fs.readFileSync(_path).toString()
-            }
-            else {
-                content = input
-            }
-
-            let scores = this.detect(content)
-            callback(scores)
-            return scores
+        const actionMap = {
+            format: ::this.getFormat,
+            name: ::this.getName,
+            transform: ::this.transform
         }
-        else {
-            return this.transform(_input, _options, _callback)
+
+        let actor = actionMap[this.action]
+        if (!actor) {
+            return new Error('Unknown action: ', this.action)
         }
+
+        const input = _input || this.input
+        const options = _options || this.options
+
+        return actor(input, options).then(callback).catch(e => {
+            /* eslint-disable no-console */
+            console.error('error ..', e, e.stack)
+            /* eslint-enable no-console */
+        })
     }
 }

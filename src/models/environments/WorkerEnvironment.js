@@ -1,7 +1,13 @@
 import Environment from './Environment'
 import URL from '../URL'
+import Model from '../ModelInfo'
 
 export class URLResolver {
+    static _model = new Model({
+        name: 'url-resolver.worker.environments.models',
+        version: '0.1.0'
+    })
+
     constructor(item) {
         this.item = item
     }
@@ -47,6 +53,10 @@ export class URLResolver {
 export default class WorkerEnvironment extends Environment {
     constructor() {
         super({
+            _model: new Model({
+                name: 'worker.environments.models',
+                version: '0.1.0'
+            }),
             type: 'worker'
         })
         return this

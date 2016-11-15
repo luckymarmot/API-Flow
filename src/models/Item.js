@@ -1,7 +1,14 @@
 import Immutable from 'immutable'
 import path from 'path'
 
+import Model from './ModelInfo'
+
+
 export default class Item extends Immutable.Record({
+    _model: new Model({
+        name: 'item.models',
+        version: '0.1.0'
+    }),
     url: null,
     filename: null,
     filepath: null,

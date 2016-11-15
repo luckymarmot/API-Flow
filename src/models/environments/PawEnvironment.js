@@ -1,6 +1,11 @@
 import Environment from './Environment'
+import Model from '../ModelInfo'
 
 export class FileResolver {
+    static _model = new Model({
+        name: 'file-resolver.paw.environments.models',
+        version: '0.1.0'
+    })
     constructor(item) {
         this.item = item
     }
@@ -13,6 +18,10 @@ export class FileResolver {
 }
 
 export class URLResolver {
+    static _model = new Model({
+        name: 'url-resolver.paw.environments.models',
+        version: '0.1.0'
+    })
     constructor(item) {
         this.item = item
     }
@@ -28,6 +37,10 @@ export class URLResolver {
 export default class PawEnvironment extends Environment {
     constructor(context) {
         super({
+            _model: new Model({
+                name: 'paw.environments.models',
+                version: '0.1.0'
+            }),
             type: 'paw'
         })
         this.context = context

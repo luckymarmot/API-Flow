@@ -1,7 +1,14 @@
 import Immutable from 'immutable'
 import Request from './Request'
 
+import Model from './ModelInfo'
+
+
 export default class Group extends Immutable.Record({
+    _model: new Model({
+        name: 'group.models',
+        version: '0.1.0'
+    }),
     id: null,
     name: null,
     children: Immutable.OrderedMap()

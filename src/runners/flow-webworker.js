@@ -2,180 +2,47 @@ import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
 import PostmanParser from '../parsers/postman/Parser'
 import CurlParser from '../parsers/curl/Parser'
+import InternalParser from '../parsers/internal/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
 import PostmanSerializer from '../serializers/postman/Serializer'
 import CurlSerializer from '../serializers/cURL/Serializer'
+import InternalSerializer from '../serializers/internal/Serializer'
 
-import ContextResolver from '../resolvers/ContextResolver'
+import BaseFlow from './base-runner'
+
 import BrowserEnvironment, {
     URLResolver
 } from '../models/environments/BrowserEnvironment'
 
-import Options from '../models/options/Options'
+export default class FlowWorker extends BaseFlow {
+    static parsers = {
+        swagger: SwaggerParser,
+        raml: RAMLParser,
+        postman: PostmanParser,
+        curl: CurlParser,
+        __internal__: InternalParser
+    }
 
-export default class FlowWorker {
+    static serializers = {
+        swagger: SwaggerSerializer,
+        raml: RAMLSerializer,
+        postman: PostmanSerializer,
+        curl: CurlSerializer,
+        __internal__: InternalSerializer
+    }
+
     constructor() {
-        this.transformQueue = []
-        this.detectQueue = []
+        super(BrowserEnvironment, URLResolver)
     }
 
-    detectFormat(content) {
-        let parserMap = {
-            swagger: SwaggerParser,
-            raml: RAMLParser,
-            postman: PostmanParser,
-            curl: CurlParser
-        }
-
-        let scores = []
-
-        let parsers = Object.keys(parserMap)
-        for (let parser of parsers) {
-            scores = scores.concat(parserMap[parser].detect(content))
-        }
-
-        return new Promise((resolve) => {
-            resolve(scores)
-        })
+    getParsers() {
+        return FlowWorker.parsers
     }
 
-    detectName(content) {
-        let parserMap = {
-            swagger: SwaggerParser,
-            raml: RAMLParser,
-            postman: PostmanParser,
-            curl: CurlParser
-        }
-
-        let name = null
-        let parsers = Object.keys(parserMap)
-        for (let parser of parsers) {
-            let proposed = parserMap[parser].getAPIName(content)
-            if (!name) {
-                name = proposed
-            }
-            else if (proposed && proposed.length > name.length) {
-                name = proposed
-            }
-        }
-
-        return new Promise((resolve) => {
-            resolve(name)
-        })
-    }
-
-    transform(input, _opts) {
-        const parserMap = {
-            swagger: SwaggerParser,
-            raml: RAMLParser,
-            postman: PostmanParser,
-            curl: CurlParser
-        }
-
-        const serializerMap = {
-            swagger: SwaggerSerializer,
-            raml: RAMLSerializer,
-            postman: PostmanSerializer,
-            curl: CurlSerializer
-        }
-
-        const opts = new Options(_opts)
-
-        const sourceFormat = opts.getIn([ 'parser', 'name' ])
-        const sourceVersion = opts.getIn([ 'parser', 'version' ])
-        const target = opts.getIn([ 'serializer', 'name' ])
-        const base = opts.getIn([ 'resolver', 'base' ])
-
-        if (!parserMap[sourceFormat]) {
-            return new Promise((_, reject) => {
-                reject(new Error('unrecognized source format'))
-            })
-        }
-
-        if (!serializerMap[target]) {
-            return new Promise((_, reject) => {
-                reject(new Error('unrecognized target format'))
-            })
-        }
-
-        let url = null
-        let contentPromise
-        if (base === 'raw') {
-            contentPromise = new Promise((resolve) => {
-                return resolve(input)
-            })
-        }
-        else {
-            contentPromise = (new URLResolver()).resolve(input)
-            url = input
-        }
-
-        const parser = new parserMap[sourceFormat](sourceVersion)
-        const serializer = new serializerMap[target]()
-        const environment = new BrowserEnvironment()
-        const resolver = new ContextResolver(environment)
-
-        return contentPromise.then((content) => {
-            let item = {
-                url: url,
-                content: content
-            }
-
-            let promise
-            try {
-                promise = parser.parse(item, opts.get('parser'))
-            }
-            catch (e) {
-                return new Promise((resolve, reject) => {
-                    reject(e)
-                })
-            }
-
-            if (typeof promise.then !== 'function') {
-                let value = promise
-                promise = new Promise((resolve) => {
-                    resolve(value)
-                })
-            }
-
-            return promise.then(context => {
-                return resolver.resolveAll(
-                    parser.item,
-                    context,
-                    opts.get('resolver')
-                ).then(_context => {
-                    try {
-                        let final = serializer
-                            .serialize(
-                                _context,
-                                opts.get('serializer')
-                            )
-                        let error = serializer.validate(final)
-                        if (error) {
-                            throw error
-                        }
-                        else {
-                            return final
-                        }
-                    }
-                    catch (e) {
-                        throw e
-                    }
-                }).catch(error => {
-                    throw error
-                })
-            }, error => {
-                throw error
-            }).catch(err => {
-                throw err
-            })
-        }, error => {
-            throw error
-        }).catch(err => {
-            throw err
-        })
+    getSerializers() {
+        return FlowWorker.serializers
     }
 
     validateArguments(args) {

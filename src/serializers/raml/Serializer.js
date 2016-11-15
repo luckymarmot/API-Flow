@@ -469,7 +469,7 @@ export default class RAMLSerializer extends BaseSerializer {
 
         let settings = {}
         for (let key of keys) {
-            if (auth.get(key)) {
+            if (auth.get(key) && key !== '_model') {
                 settings[key] = auth.get(key)
             }
         }

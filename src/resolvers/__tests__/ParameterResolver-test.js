@@ -1146,7 +1146,7 @@ export class TestParameterResolver extends UnitTest {
 
         resolver._updateURL(new URL('https://echo.luckymarmot.com/path'), null)
 
-        this.assertEqual(resolver.spy._updateParameter.count, 9)
+        this.assertEqual(resolver.spy._updateParameter.count, 10)
     }
 
     @targets('_updateURL')
@@ -1160,6 +1160,7 @@ export class TestParameterResolver extends UnitTest {
         const url = new URL('https://echo.luckymarmot.com/path')
 
         const expected = new URL()
+            .set('_model', 12)
             .set('protocol', 12)
             .set('username', 12)
             .set('password', 12)
@@ -1219,7 +1220,7 @@ export class TestParameterResolver extends UnitTest {
 
         resolver._updateParameters(container, null)
 
-        this.assertEqual(resolver.spy._updateParameter.count, 7)
+        this.assertEqual(resolver.spy._updateParameter.count, 9)
     }
 
     @targets('_updateParameters')
@@ -1366,7 +1367,7 @@ export class TestParameterResolver extends UnitTest {
 
         resolver._updateAuths(auths, null)
 
-        this.assertEqual(resolver.spy._getValueFromKey.count, 5)
+        this.assertEqual(resolver.spy._getValueFromKey.count, 7)
     }
 
     @targets('_updateAuths')
@@ -1393,10 +1394,11 @@ export class TestParameterResolver extends UnitTest {
 
         const expected = new Immutable.List([
             new Auth.Basic({
-                username: 12,
-                raw: 12
+                _model: 12,
+                password: 12
             }),
             new Auth.Digest({
+                _model: 12,
                 password: 12
             })
         ])

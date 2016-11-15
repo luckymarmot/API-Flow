@@ -502,10 +502,8 @@ export default class SwaggerParser {
 
     _extractReferences(item, collection) {
         let ref = new JSONSchemaReference()
-        let refs = ref
-            .resolve(JSON.stringify(collection))
-            .get('dependencies')
-
+        ref = ref.resolve(JSON.stringify(collection))
+        let refs = ref.get('dependencies')
         return refs
     }
 
