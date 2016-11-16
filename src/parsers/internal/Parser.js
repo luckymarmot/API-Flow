@@ -111,7 +111,7 @@ export default class InternalParser {
                 ::this._extractMaximumPropertiesConstraint,
             'minimum-properties.constraint.models':
                 ::this._extractMinimumPropertiesConstraint,
-            'emum.constraint.models': ::this._extractEnumConstraint,
+            'enum.constraint.models': ::this._extractEnumConstraint,
             'reference-container.references.models':
                 ::this._extractReferenceContainer,
             'reference-cache.references.models':
@@ -299,7 +299,8 @@ export default class InternalParser {
 
         if (obj.internals) {
             obj.internals = new Immutable.List(obj.internals.map(internal => {
-                return this._extract(internal)
+                const _internal = this._extract(internal)
+                return _internal
             }))
         }
 
