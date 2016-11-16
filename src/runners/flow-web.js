@@ -1,7 +1,8 @@
 import SwaggerParser from '../parsers/swagger/Parser'
 import RAMLParser from '../parsers/raml/Parser'
 import PostmanParser from '../parsers/postman/Parser'
-import CurlParser from '../parsers/curl/Parser'
+import CurlParser from '../parsers/cURL/Parser'
+import InternalParser from '../parsers/internal/Parser'
 
 import SwaggerSerializer from '../serializers/swagger/Serializer'
 import RAMLSerializer from '../serializers/raml/Serializer'
@@ -15,12 +16,13 @@ import BrowserEnvironment, {
 
 import BaseFlow from './base-runner'
 
-export default class FlowBrowser extends BaseFlow {
+export class FlowBrowser extends BaseFlow {
     static parsers = {
         swagger: SwaggerParser,
         raml: RAMLParser,
         postman: PostmanParser,
-        curl: CurlParser
+        curl: CurlParser,
+        __internal__: InternalParser
     }
 
     static serializers = {

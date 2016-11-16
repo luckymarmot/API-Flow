@@ -133,7 +133,15 @@ export default class BaseFlow {
         })
     }
 
-    parse(item, opts) {
+    parse(item, _opts) {
+        let opts = null
+        if (_opts && typeof _opts.set === 'function') {
+            opts = _opts
+        }
+        else {
+            opts = new Options(_opts)
+        }
+
         const sourceFormat = opts.getIn([ 'parser', 'name' ])
         const sourceVersion = opts.getIn([ 'parser', 'version' ])
         const parsers = this.getParsers()
@@ -201,7 +209,7 @@ export default class BaseFlow {
 
     transform(input, _opts) {
         let opts = null
-        if (typeof _opts.set === 'function') {
+        if (_opts && typeof _opts.set === 'function') {
             opts = _opts
         }
         else {

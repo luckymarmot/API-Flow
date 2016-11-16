@@ -193,14 +193,13 @@ export default class PostmanSerializer extends BaseSerializer {
     _formatHeaders(parameters, auths) {
         let headers = parameters.get('headers')
 
-        let formatted = ''
-        headers.forEach(header => {
+        let toJoin = headers.map(header => {
             let generated = header.generate()
-            formatted += header.get('key') + ': ' + generated + '\n'
+            return header.get('key') + ': ' + generated
         })
 
-        let authHeader = this._formatAuthHeader(auths)
-        formatted += authHeader
+        toJoin = toJoin.concat(this._formatAuthHeader(auths))
+        const formatted = toJoin.join('\n')
 
         return formatted
     }
@@ -222,16 +221,18 @@ export default class PostmanSerializer extends BaseSerializer {
                 return this._formatAWSSig4AuthHeader(auth)
             }
         }
+
+        return []
     }
 
     _formatBasicAuthHeader(auth) {
         let authBlock = auth.get('username') + ':' + auth.get('password')
         let encoded = Base64.encode(authBlock)
-        return 'Authorization: Basic ' + encoded + '\n'
+        return [ 'Authorization: Basic ' + encoded ]
     }
 
     _formatDigestAuthHeader() {
-        return 'Authorization: Digest\n'
+        return [ 'Authorization: Digest' ]
     }
 
     _formatOAuth1AuthHeader(auth) {
@@ -245,11 +246,11 @@ export default class PostmanSerializer extends BaseSerializer {
             return key + '="' + oauth1Map[key] + '"'
         }).join(', ')
 
-        return 'Authorization: OAuth ' + params
+        return [ 'Authorization: OAuth ' + params ]
     }
 
     _formatAWSSig4AuthHeader() {
-        return 'Authorization: AWS4-HMAC-SHA256\n'
+        return [ 'Authorization: AWS4-HMAC-SHA256' ]
     }
 
     _formatBody(parameters, bodies) {
@@ -280,11 +281,17 @@ export default class PostmanSerializer extends BaseSerializer {
                 if (_body.get('value') instanceof JSONSchemaReference) {
                     let ref = _body.get('value')
                     if (this._isInlineRef(ref)) {
-                        data += JSON.stringify(
-                            _body.getJSONSchema(false),
-                            null,
-                            '  '
-                        )
+                        let schema = _body.getJSONSchema(false)
+                        if (schema.type === 'string' && schema.default) {
+                            data += _body.generate()
+                        }
+                        else {
+                            data += JSON.stringify(
+                                _body.getJSONSchema(false),
+                                null,
+                                '  '
+                            )
+                        }
                     }
                     else {
                         let rawName = ref.get('relative') ||
