@@ -1261,7 +1261,9 @@ export default class SwaggerFixtures {
                     }
                 ],
                 output: new Request({
-                    auths: new Immutable.List([ new Auth.Basic({ authName: 'basicAuth' }) ])
+                    auths: new Immutable.List([
+                        new Auth.Basic({ authName: 'basicAuth' })
+                    ])
                 })
             },
             {
