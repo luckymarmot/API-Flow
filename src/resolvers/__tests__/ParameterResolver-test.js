@@ -1367,7 +1367,7 @@ export class TestParameterResolver extends UnitTest {
 
         resolver._updateAuths(auths, null)
 
-        this.assertEqual(resolver.spy._getValueFromKey.count, 7)
+        this.assertEqual(resolver.spy._getValueFromKey.count, 9)
     }
 
     @targets('_updateAuths')
@@ -1395,10 +1395,11 @@ export class TestParameterResolver extends UnitTest {
         const expected = new Immutable.List([
             new Auth.Basic({
                 _model: 12,
-                password: 12
+                username: 12,
+                raw: 12
             }),
             new Auth.Digest({
-                _model: 12,
+                authName: 12,
                 password: 12
             })
         ])
