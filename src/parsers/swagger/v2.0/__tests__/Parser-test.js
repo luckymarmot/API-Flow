@@ -978,11 +978,12 @@ export class TestSwaggerParser extends UnitTest {
         })
 
         const expected = new Auth.ApiKey({
+            authName: 'api_key',
             in: 'header',
             name: 'api-key'
         })
 
-        const result = parser._setApiKeyAuth(input)
+        const result = parser._setApiKeyAuth('api_key', input)
 
         this.assertEqual(expected, result)
     }
@@ -999,13 +1000,14 @@ export class TestSwaggerParser extends UnitTest {
         })
 
         const expected = new Auth.OAuth2({
+            authName: 'petstore_auth',
             flow: 'implicit',
             authorizationUrl: 'fakeurl.com/auth',
             tokenUrl: 'fakeurl.com/token',
             scopes: new Immutable.List([ 'read:any', 'write:own' ])
         })
 
-        const result = parser._setOAuth2Auth(input)
+        const result = parser._setOAuth2Auth('petstore_auth', input)
 
         this.assertEqual(expected, result)
     }

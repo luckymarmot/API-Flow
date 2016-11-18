@@ -299,8 +299,9 @@ export default class SwaggerParser {
                         'scopes', new Immutable.List(security[key])
                     )
 
-                    if (typeMap[definition.get('type')]) {
-                        let auth = typeMap[definition.get('type')](definition)
+                    const type = definition.get('type')
+                    if (typeMap[type]) {
+                        let auth = typeMap[type](key, definition)
                         auths.push(auth)
                     }
                 }
@@ -311,7 +312,7 @@ export default class SwaggerParser {
         return _request.set('auths', auths)
     }
 
-    _setBasicAuth(definition) {
+    _setBasicAuth(authName = null, definition) {
         let username = null
         let password = null
 
@@ -320,21 +321,20 @@ export default class SwaggerParser {
             password = definition['x-password'] || null
         }
 
-        return new Auth.Basic({
-            username: username,
-            password: password
-        })
+        return new Auth.Basic({ authName, username, password })
     }
 
-    _setApiKeyAuth(definition) {
+    _setApiKeyAuth(authName = null, definition) {
         return new Auth.ApiKey({
+            authName,
             in: definition.get('in'),
             name: definition.get('name')
         })
     }
 
-    _setOAuth2Auth(definition) {
+    _setOAuth2Auth(authName = null, definition) {
         return new Auth.OAuth2({
+            authName,
             flow: definition.get('flow', null),
             authorizationUrl: definition.get('authorizationUrl', null),
             tokenUrl: definition.get('tokenUrl', null),

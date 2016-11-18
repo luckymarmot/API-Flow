@@ -718,7 +718,8 @@ export default class RAMLParser {
 
             for (let scheme of raml.securitySchemes || []) {
                 if (Object.keys(scheme)[0] === securedName) {
-                    let security = scheme[Object.keys(scheme)[0]]
+                    const authName = Object.keys(scheme)[0]
+                    let security = scheme[authName]
 
                     let securityMap = {
                         'OAuth 2.0': this._extractOAuth2Auth,
@@ -729,7 +730,9 @@ export default class RAMLParser {
 
                     let rule = securityMap[security.type]
                     if (rule) {
-                        auths = auths.push(rule(raml, security, params))
+                        auths = auths.push(
+                          rule(raml, authName, security, params)
+                        )
                     }
                 }
             }
@@ -737,7 +740,7 @@ export default class RAMLParser {
         return auths
     }
 
-    _extractOAuth2Auth(raml, security, params) {
+    _extractOAuth2Auth(raml, authName = null, security, params) {
         let flowMap = {
             code: 'accessCode',
             token: 'implicit',
@@ -746,6 +749,7 @@ export default class RAMLParser {
         }
         let _params = params || {}
         let auth = new Auth.OAuth2({
+            authName,
             flow:
                 flowMap[(_params.authorizationGrants || [])[0]] ||
                 flowMap[security.settings.authorizationGrants[0]] ||
@@ -768,9 +772,10 @@ export default class RAMLParser {
         return auth
     }
 
-    _extractOAuth1Auth(raml, security, params) {
+    _extractOAuth1Auth(raml, authName = null, security, params) {
         let _params = params || {}
         let auth = new Auth.OAuth1({
+            authName,
             authorizationUri:
                 _params.authorizationUri ||
                 security.settings.authorizationUri ||
@@ -788,13 +793,13 @@ export default class RAMLParser {
         return auth
     }
 
-    _extractBasicAuth() {
-        let auth = new Auth.Basic()
+    _extractBasicAuth(raml, authName = null) {
+        let auth = new Auth.Basic({ authName })
         return auth
     }
 
-    _extractDigestAuth() {
-        let auth = new Auth.Digest()
+    _extractDigestAuth(raml, authName = null) {
+        let auth = new Auth.Digest({ authName })
         return auth
     }
 

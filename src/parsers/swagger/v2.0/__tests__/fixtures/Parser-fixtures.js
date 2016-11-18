@@ -1261,7 +1261,9 @@ export default class SwaggerFixtures {
                     }
                 ],
                 output: new Request({
-                    auths: new Immutable.List([ new Auth.Basic() ])
+                    auths: new Immutable.List([
+                        new Auth.Basic({ authName: 'basicAuth' })
+                    ])
                 })
             },
             {
@@ -1288,6 +1290,7 @@ export default class SwaggerFixtures {
                 output: new Request({
                     auths: new Immutable.List([
                         new Auth.ApiKey({
+                            authName: 'api_key',
                             name: 'api_key',
                             in: 'header'
                         })
@@ -1325,6 +1328,7 @@ export default class SwaggerFixtures {
                 output: new Request({
                     auths: new Immutable.List([
                         new Auth.OAuth2({
+                            authName: 'petstore_auth',
                             flow: 'implicit',
                             authorizationUrl: 'http://s.com/oauth',
                             scopes: new Immutable.List(
@@ -1364,8 +1368,9 @@ export default class SwaggerFixtures {
                 ],
                 output: new Request({
                     auths: new Immutable.List([
-                        new Auth.Basic(),
+                        new Auth.Basic({ authName: 'basicAuth' }),
                         new Auth.ApiKey({
+                            authName: 'api_key',
                             name: 'api_key',
                             in: 'header'
                         })

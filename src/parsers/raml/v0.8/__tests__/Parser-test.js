@@ -1172,6 +1172,7 @@ export class TestRAMLParser extends UnitTest {
             parser.spy._extractOAuth2Auth.calls[0],
             [
                 raml,
+                'oauth_2_0',
                 scheme,
                 {
                     scopes: [
@@ -1334,13 +1335,16 @@ export class TestRAMLParser extends UnitTest {
         }
 
         const expected = new Auth.OAuth2({
+            authName: 'oauth_2_0',
             flow: 'accessCode',
             authorizationUrl: 'https://www.box.com/api/oauth2/authorize',
             tokenUrl: 'https://www.box.com/api/oauth2/token',
             scopes: new Immutable.List(params.scopes)
         })
 
-        const result = parser._extractOAuth2Auth(raml, scheme, params)
+        const result = parser._extractOAuth2Auth(
+          raml, 'oauth_2_0', scheme, params
+        )
 
         this.assertEqual(expected, result)
     }
@@ -1359,12 +1363,13 @@ export class TestRAMLParser extends UnitTest {
         }
 
         const expected = new Auth.OAuth1({
+            authName: 'oauth_1_0',
             authorizationUri: 'https://www.box.com/api/oauth1/authorize',
             requestTokenUri: 'https://www.box.com/api/oauth1/request',
             tokenCredentialsUri: 'https://www.box.com/api/oauth1/token'
         })
 
-        const result = parser._extractOAuth1Auth(raml, scheme)
+        const result = parser._extractOAuth1Auth(raml, 'oauth_1_0', scheme)
 
         this.assertEqual(expected, result)
     }
