@@ -37,31 +37,455 @@ import SwaggerFixtures from './fixtures/Parser-fixtures'
 @against(SwaggerParser)
 export class TestSwaggerParser extends UnitTest {
 
+    @targets('_formatSequenceParam')
+    testFormatSequenceParamWithSimpleParam() {
+        const parser = this.__init()
+
+        const simple = new Parameter({
+            key: 'host',
+            type: 'string',
+            internals: new Immutable.List([
+                new Constraint.Enum([
+                    'test.com'
+                ])
+            ])
+        })
+
+        const expected = 'test.com'
+        const result = parser._formatSequenceParam(simple)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_formatSequenceParam')
+    testFormatSequenceParamWithSequenceParam() {
+        const parser = this.__init()
+
+        const seq = new Parameter({
+            key: 'pathname',
+            type: 'string',
+            format: 'sequence',
+            value: new Immutable.List([
+                new Parameter({
+                    key: 'version',
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            'v1.2', 'v2.0'
+                        ])
+                    ])
+                }),
+                new Parameter({
+                    type: 'string',
+                    internals: new Immutable.List([
+                        new Constraint.Enum([
+                            '/path/to/req'
+                        ])
+                    ])
+                })
+            ])
+        })
+
+        const expected = '{version}/path/to/req'
+        const result = parser._formatSequenceParam(seq)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createTagGroupTree')
+    testCreateTagGroupTreeWithUndefinedGroupStillReturnsAGroup() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const tagLists = []
+
+        const expected = new Group({
+            name: 'root'
+        })
+
+        const result = parser._createTagGroupTree(group, tagLists)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createTagGroupTree')
+    testCreateTagGroupTreeWithSimpleTagList() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const tagLists = [
+            { uuid: '1', tags: new Immutable.List([ 'pets' ]) }
+        ]
+
+        const expected = new Group({
+            name: 'root',
+            children: new Immutable.OrderedMap({
+                pets: new Group({
+                    name: 'pets',
+                    children: new Immutable.OrderedMap({
+                        1: '1'
+                    })
+                })
+            })
+        })
+
+        const result = parser._createTagGroupTree(group, tagLists)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createTagGroupTree')
+    testCreateTagGroupTreeWithRichTagListUsesFirstTag() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const tagLists = [
+            { uuid: '1', tags: new Immutable.List([ 'pets', 'store' ]) }
+        ]
+
+        const expected = new Group({
+            name: 'root',
+            children: new Immutable.OrderedMap({
+                pets: new Group({
+                    name: 'pets',
+                    children: new Immutable.OrderedMap({
+                        1: '1'
+                    })
+                })
+            })
+        })
+
+        const result = parser._createTagGroupTree(group, tagLists)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createTagGroupTree')
+    testCreateTagGroupTreeWithNoTagList() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const tagLists = [
+            { uuid: '1', tags: new Immutable.List() }
+        ]
+
+        const expected = new Group({
+            name: 'root',
+            children: new Immutable.OrderedMap({
+                Uncategorized: new Group({
+                    name: 'Uncategorized',
+                    children: new Immutable.OrderedMap({
+                        1: '1'
+                    })
+                })
+            })
+        })
+
+        const result = parser._createTagGroupTree(group, tagLists)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createTagGroupTree')
+    testCreateTagGroupTreeWithMultipleTagLists() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const tagLists = [
+            { uuid: '1', tags: new Immutable.List([ 'pets', 'store' ]) },
+            { uuid: '2', tags: new Immutable.List([ 'store' ]) },
+            { uuid: '3', tags: new Immutable.List([ 'pets' ]) },
+            { uuid: '4', tags: new Immutable.List() },
+            { uuid: '5', tags: new Immutable.List() }
+        ]
+
+        const expected = new Group({
+            name: 'root',
+            children: new Immutable.OrderedMap({
+                pets: new Group({
+                    name: 'pets',
+                    children: new Immutable.OrderedMap({
+                        1: '1',
+                        3: '3'
+                    })
+                }),
+                store: new Group({
+                    name: 'store',
+                    children: new Immutable.OrderedMap({
+                        2: '2'
+                    })
+                }),
+                Uncategorized: new Group({
+                    name: 'Uncategorized',
+                    children: new Immutable.OrderedMap({
+                        4: '4',
+                        5: '5'
+                    })
+                })
+            })
+        })
+
+        const result = parser._createTagGroupTree(group, tagLists)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createPathGroupTree')
+    testCreatePathGroupTreeWithUndefinedGroupStillReturnsAGroup() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const paths = []
+
+        const expected = new Group({
+            name: 'root'
+        })
+
+        const result = parser._createPathGroupTree(group, paths)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createPathGroupTree')
+    testCreatePathGroupTreeWithSimplePathList() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const paths = [
+            { uuid: '1', path: '/test', method: 'get' }
+        ]
+
+        const expected = new Group({
+            name: 'root',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        get: '1'
+                    })
+                })
+            })
+        })
+
+        const result = parser._createPathGroupTree(group, paths)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createPathGroupTree')
+    testCreatePathGroupTreeWithSharedPathList() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const paths = [
+            { uuid: '1', path: '/test', method: 'get' },
+            { uuid: '2', path: '/test', method: 'post' }
+        ]
+
+        const expected = new Group({
+            name: 'root',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        get: '1',
+                        post: '2'
+                    })
+                })
+            })
+        })
+
+        const result = parser._createPathGroupTree(group, paths)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createPathGroupTree')
+    testCreatePathGroupTreeWithLongPathList() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const paths = [
+            { uuid: '1', path: '/test/deep', method: 'get' }
+        ]
+
+        const expected = new Group({
+            name: 'root',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        '/deep': new Group({
+                            name: '/deep',
+                            children: new Immutable.OrderedMap({
+                                get: '1'
+                            })
+                        })
+                    })
+                })
+            })
+        })
+
+        const result = parser._createPathGroupTree(group, paths)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createPathGroupTree')
+    testCreatePathGroupTreeWithComplexPathList() {
+        const parser = this.__init()
+
+        const group = { not: 'a Group' }
+        const paths = [
+            { uuid: '1', path: '/test/deep', method: 'get' },
+            { uuid: '2', path: '/test/deep', method: 'post' },
+            { uuid: '3', path: '/test/get', method: 'put' },
+            { uuid: '4', path: '/test', method: 'get' }
+        ]
+
+        const expected = new Group({
+            name: 'root',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        '/deep': new Group({
+                            name: '/deep',
+                            children: new Immutable.OrderedMap({
+                                get: '1',
+                                post: '2'
+                            })
+                        }),
+                        '/get': new Group({
+                            name: '/get',
+                            children: new Immutable.OrderedMap({
+                                put: '3'
+                            })
+                        }),
+                        get: '4'
+                    })
+                })
+            })
+        })
+
+        const result = parser._createPathGroupTree(group, paths)
+
+        this.assertEqual(expected, result)
+    }
+
+    @targets('_createGroupTree')
+    testCreateGroupTreeCallsCreateTagGroupTreeIfTags() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        parser.spyOn('_createTagGroupTree', () => 12)
+
+        const group = new Group({
+            name: 'root'
+        })
+
+        const requestMap = {
+            1: new Request({
+                tags: new Immutable.List([ 'pets' ])
+            }),
+            2: new Request({
+                tags: new Immutable.List([ 'store' ])
+            })
+        }
+
+        const expected = 12
+        const result = parser._createGroupTree(group, requestMap)
+
+        this.assertEqual(parser.spy._createTagGroupTree.count, 1)
+        this.assertEqual(result, expected)
+    }
+
+    @targets('_createGroupTree')
+    testCreateGroupTreeCallsFormatSequenceParamForEachURLIfNotEnoughTags() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        parser.spyOn('_formatSequenceParam', () => 42)
+        parser.spyOn('_createPathGroupTree', () => 12)
+        parser.spyOn('_createTagGroupTree', () => 90)
+
+        const group = new Group({
+            name: 'root'
+        })
+
+        const requestMap = {
+            1: new Request({
+                tags: new Immutable.List([ 'pets' ])
+            }),
+            2: new Request(),
+            3: new Request()
+        }
+
+        const expected = 12
+        const result = parser._createGroupTree(group, requestMap)
+
+        this.assertEqual(parser.spy._formatSequenceParam.count, 3)
+        this.assertEqual(result, expected)
+    }
+
+    @targets('_createGroupTree')
+    testCreateGroupTreeCallsCreatePathGroupTreeIfNotEnoughTags() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        parser.spyOn('_formatSequenceParam', () => 42)
+        parser.spyOn('_createPathGroupTree', () => 12)
+        parser.spyOn('_createTagGroupTree', () => 90)
+
+        const group = new Group({
+            name: 'root'
+        })
+
+        const requestMap = {
+            1: new Request({
+                tags: new Immutable.List([ 'pets' ])
+            }),
+            2: new Request(),
+            3: new Request()
+        }
+
+        const expected = 12
+        const result = parser._createGroupTree(group, requestMap)
+
+        this.assertEqual(parser.spy._createTagGroupTree.count, 0)
+        this.assertEqual(parser.spy._createPathGroupTree.count, 1)
+        this.assertEqual(result, expected)
+    }
+
     @targets('_createGroupTree')
     testSimpleGroupTree() {
         const parser = new SwaggerParser()
 
-        const request = new Request()
-        const pathsLinkedReqs = {
-            '/test': {
-                get: request
-            }
+        const request = new Request({
+            method: 'get',
+            url: new URL({
+                pathname: '/test'
+            })
+        })
+
+        const requestMap = {
+            123: request
         }
 
-        let inputGroup = new Group({
+        const inputGroup = new Group({
             name: 'testRoot'
         })
 
-        let expected = new Group({
-            name: 'testRoot'
+        const expected = new Group({
+            name: 'testRoot',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        get: '123'
+                    })
+                })
+            })
         })
-        let pathGroup = new Group({
-            name: '/test'
-        })
-        pathGroup = pathGroup.setIn([ 'children', 'get' ], request)
-        expected = expected.setIn([ 'children', '/test' ], pathGroup)
 
-        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
+        const result = parser._createGroupTree(inputGroup, requestMap)
         this.assertEqual(result, expected)
     }
 
@@ -69,236 +493,277 @@ export class TestSwaggerParser extends UnitTest {
     testMultipleMethodsGroupTree() {
         const parser = new SwaggerParser()
 
-        const getReq = new Request()
-        const postReq = new Request()
+        const getReq = new Request({
+            method: 'get',
+            url: new URL({
+                pathname: '/test'
+            })
+        })
 
-        const pathsLinkedReqs = {
-            '/test': {
-                get: getReq,
-                post: postReq
-            }
+        const postReq = new Request({
+            method: 'post',
+            url: new URL({
+                pathname: '/test'
+            })
+        })
+
+        const requestMap = {
+            123: getReq,
+            321: postReq
         }
 
-        let inputGroup = new Group({
+        const inputGroup = new Group({
             name: 'testRoot'
         })
 
-        let expected = new Group({
-            name: 'testRoot'
+        const expected = new Group({
+            name: 'testRoot',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        get: '123',
+                        post: '321'
+                    })
+                })
+            })
         })
-        let pathGroup = new Group({
-            name: '/test'
-        })
-        pathGroup = pathGroup
-            .setIn([ 'children', 'get' ], getReq)
-            .setIn([ 'children', 'post' ], postReq)
-        expected = expected
-            .setIn([ 'children', '/test' ], pathGroup)
 
-        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
-        this.assertTrue(Immutable.is(result, expected))
+        const result = parser._createGroupTree(inputGroup, requestMap)
+        this.assertEqual(result, expected)
     }
 
     @targets('_createGroupTree')
     testMultiplePathsGroupTree() {
         const parser = new SwaggerParser()
 
-        const firstReq = new Request()
-        const secndReq = new Request()
+        const getReq = new Request({
+            method: 'get',
+            url: new URL({
+                pathname: '/test'
+            })
+        })
 
-        const pathsLinkedReqs = {
-            '/test': {
-                get: firstReq
-            },
-            '/anotherTest': {
-                post: secndReq
-            }
+        const postReq = new Request({
+            method: 'post',
+            url: new URL({
+                pathname: '/another'
+            })
+        })
+
+        const requestMap = {
+            123: getReq,
+            321: postReq
         }
 
-        let inputGroup = new Group({
+        const inputGroup = new Group({
             name: 'testRoot'
         })
 
-        let expected = new Group({
-            name: 'testRoot'
+        const expected = new Group({
+            name: 'testRoot',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        get: '123'
+                    })
+                }),
+                '/another': new Group({
+                    name: '/another',
+                    children: new Immutable.OrderedMap({
+                        post: '321'
+                    })
+                })
+            })
         })
-        let pathGroup = new Group({
-            name: '/test'
-        })
-        pathGroup = pathGroup.setIn([ 'children', 'get' ], firstReq)
-        expected = expected.setIn([ 'children', '/test' ], pathGroup)
-        pathGroup = new Group({
-            name: '/anotherTest'
-        })
-        pathGroup = pathGroup.setIn([ 'children', 'post' ], secndReq)
-        expected = expected.setIn([ 'children', '/anotherTest' ], pathGroup)
 
-        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
-        this.assertTrue(Immutable.is(result, expected))
+        const result = parser._createGroupTree(inputGroup, requestMap)
+        this.assertEqual(result, expected)
     }
 
     @targets('_createGroupTree')
     testLongPathGroupTree() {
         const parser = new SwaggerParser()
 
-        const req = new Request()
+        const request = new Request({
+            method: 'get',
+            url: new URL({
+                pathname: '/path/to/test'
+            })
+        })
 
-        const pathsLinkedReqs = {
-            '/path/to/test': {
-                get: req
-            }
+        const requestMap = {
+            123: request
         }
 
-        let inputGroup = new Group({
+        const inputGroup = new Group({
             name: 'testRoot'
         })
 
-        let expected = new Group({
-            name: 'testRoot'
+        const expected = new Group({
+            name: 'testRoot',
+            children: new Immutable.OrderedMap({
+                '/path': new Group({
+                    name: '/path',
+                    children: new Immutable.OrderedMap({
+                        '/to': new Group({
+                            name: '/to',
+                            children: new Immutable.OrderedMap({
+                                '/test': new Group({
+                                    name: '/test',
+                                    children: new Immutable.OrderedMap({
+                                        get: '123'
+                                    })
+                                })
+                            })
+                        })
+                    })
+                })
+            })
         })
-        let pathGroup = new Group({
-            name: '/test'
-        })
-        pathGroup = pathGroup
-            .setIn([ 'children', 'get' ], req)
-        let parentGroup = new Group({
-            name: '/to'
-        })
-        pathGroup = parentGroup
-            .setIn([ 'children', '/test' ], pathGroup)
-        parentGroup = new Group({
-            name: '/path'
-        })
-        parentGroup = parentGroup
-            .setIn([ 'children', '/to' ], pathGroup)
-        expected = expected.setIn([ 'children', '/path' ], parentGroup)
 
-        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
-        this.assertTrue(Immutable.is(result, expected))
+        const result = parser._createGroupTree(inputGroup, requestMap)
+        this.assertEqual(result, expected)
     }
 
     @targets('_createGroupTree')
     testRequestAndGroupOnSameDepthGroupTree() {
         const parser = new SwaggerParser()
 
-        const firstReq = new Request()
-        const secndReq = new Request()
+        const getReq = new Request({
+            method: 'get',
+            url: new URL({
+                pathname: '/test'
+            })
+        })
 
-        const pathsLinkedReqs = {
-            '/test': {
-                get: firstReq
-            },
-            '/test/nested': {
-                post: secndReq
-            }
+        const postReq = new Request({
+            method: 'post',
+            url: new URL({
+                pathname: '/test/nested'
+            })
+        })
+
+        const requestMap = {
+            123: getReq,
+            321: postReq
         }
 
-        let inputGroup = new Group({
+        const inputGroup = new Group({
             name: 'testRoot'
         })
 
-        let expected = new Group({
-            name: 'testRoot'
+        const expected = new Group({
+            name: 'testRoot',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        get: '123',
+                        '/nested': new Group({
+                            name: '/nested',
+                            children: new Immutable.OrderedMap({
+                                post: '321'
+                            })
+                        })
+                    })
+                })
+            })
         })
-        let pathGroup = new Group({
-            name: '/test'
-        })
-        let subGroup = new Group({
-            name: '/nested'
-        })
-        subGroup = subGroup
-            .setIn([ 'children', 'post' ], secndReq)
-        pathGroup = pathGroup
-            .setIn([ 'children', 'get' ], firstReq)
-            .setIn([ 'children', '/nested' ], subGroup)
 
-        expected = expected.setIn([ 'children', '/test' ], pathGroup)
-
-        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
-
-        this.assertTrue(Immutable.is(result, expected))
+        const result = parser._createGroupTree(inputGroup, requestMap)
+        this.assertEqual(result, expected)
     }
 
     @targets('_createGroupTree')
     testPathCanContainMethodKeywords() {
         const parser = new SwaggerParser()
 
-        const req = new Request()
+        const request = new Request({
+            method: 'get',
+            url: new URL({
+                pathname: '/get/test'
+            })
+        })
 
-        const pathsLinkedReqs = {
-            '/get/post/test': {
-                get: req
-            }
+        const requestMap = {
+            123: request
         }
 
-        let inputGroup = new Group({
+        const inputGroup = new Group({
             name: 'testRoot'
         })
 
-        let expected = new Group({
-            name: 'testRoot'
+        const expected = new Group({
+            name: 'testRoot',
+            children: new Immutable.OrderedMap({
+                '/get': new Group({
+                    name: '/get',
+                    children: new Immutable.OrderedMap({
+                        '/test': new Group({
+                            name: '/test',
+                            children: new Immutable.OrderedMap({
+                                get: '123'
+                            })
+                        })
+                    })
+                })
+            })
         })
-        let pathGroup = new Group({
-            name: '/test'
-        })
-        pathGroup = pathGroup
-            .setIn([ 'children', 'get' ], req)
-        let parentGroup = new Group({
-            name: '/post'
-        })
-        pathGroup = parentGroup
-            .setIn([ 'children', '/test' ], pathGroup)
-        parentGroup = new Group({
-            name: '/get'
-        })
-        parentGroup = parentGroup
-            .setIn([ 'children', '/post' ], pathGroup)
-        expected = expected.setIn([ 'children', '/get' ], parentGroup)
 
-        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
-        this.assertTrue(Immutable.is(result, expected))
+        const result = parser._createGroupTree(inputGroup, requestMap)
+        this.assertEqual(result, expected)
     }
 
     @targets('_createGroupTree')
     testMethodKeywordsDoNotCauseConflict() {
         const parser = new SwaggerParser()
 
-        const firstReq = new Request()
-        const secndReq = new Request()
 
-        const pathsLinkedReqs = {
-            '/test': {
-                get: firstReq
-            },
-            '/test/get': {
-                post: secndReq
-            }
+        const getReq = new Request({
+            method: 'get',
+            url: new URL({
+                pathname: '/test'
+            })
+        })
+
+        const postReq = new Request({
+            method: 'post',
+            url: new URL({
+                pathname: '/test/get'
+            })
+        })
+
+        const requestMap = {
+            123: getReq,
+            321: postReq
         }
 
-        let inputGroup = new Group({
+        const inputGroup = new Group({
             name: 'testRoot'
         })
 
-        let expected = new Group({
-            name: 'testRoot'
+        const expected = new Group({
+            name: 'testRoot',
+            children: new Immutable.OrderedMap({
+                '/test': new Group({
+                    name: '/test',
+                    children: new Immutable.OrderedMap({
+                        get: '123',
+                        '/get': new Group({
+                            name: '/get',
+                            children: new Immutable.OrderedMap({
+                                post: '321'
+                            })
+                        })
+                    })
+                })
+            })
         })
-        let pathGroup = new Group({
-            name: '/test'
-        })
-        let subGroup = new Group({
-            name: '/get'
-        })
-        subGroup = subGroup
-            .setIn([ 'children', 'post' ], secndReq)
-        pathGroup = pathGroup
-            .setIn([ 'children', 'get' ], firstReq)
-            .setIn([ 'children', '/get' ], subGroup)
 
-        expected = expected.setIn([ 'children', '/test' ], pathGroup)
-
-        const result = parser._createGroupTree(inputGroup, pathsLinkedReqs)
-
-        this.assertTrue(Immutable.is(result, expected))
+        const result = parser._createGroupTree(inputGroup, requestMap)
+        this.assertEqual(result, expected)
     }
 
     @targets('_loadSwaggerCollection')
@@ -386,9 +851,11 @@ export class TestSwaggerParser extends UnitTest {
         }
     }
 
-    @targets('_applyFuncOverPathArchitecture')
-    testApplyFuncOverPathArchitectureIsCalledForEachPathMethodPair() {
-        const parser = new SwaggerParser()
+    @targets('_extractRequests')
+    test_extractRequestsCallsCreateRequestForEachPathMethodPair() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        parser.spyOn('_createRequest', () => true)
 
         const collection = {
             paths: {
@@ -409,18 +876,18 @@ export class TestSwaggerParser extends UnitTest {
         }
 
         const expected = 3
-        let count = 0
 
-        parser._applyFuncOverPathArchitecture(
-            collection,
-            () => { count += 1 }
-        )
-        this.assertTrue(expected === count)
+        parser._extractRequests(collection)
+        this.assertEqual(parser.spy._createRequest.count, expected)
     }
 
-    @targets('_applyFuncOverPathArchitecture')
-    testApplyFuncOverPathArchitectureProvidesCorrectArgsToFunction() {
-        const parser = new SwaggerParser()
+    @targets('_extractRequests')
+    testExtractRequestsCallsCreateRequestWithCorrectArgs() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        parser.spyOn('_createRequest', (coll, path, method, content) => {
+            this.assertEqual(coll.paths[path][method], content)
+        })
 
         const collection = {
             paths: {
@@ -440,17 +907,20 @@ export class TestSwaggerParser extends UnitTest {
             }
         }
 
-        parser._applyFuncOverPathArchitecture(
-            collection,
-            (coll, path, method, content) => {
-                this.assertEqual(coll.paths[path][method], content)
-            }
-        )
+        parser._extractRequests(collection)
     }
 
-    @targets('_applyFuncOverPathArchitecture')
-    testApplyFuncOverPathArchitectureAppliesFuncToEachPath() {
-        const parser = new SwaggerParser()
+    @targets('_extractRequests')
+    testExtractRequestsStoresRequestInMapUsingUUID() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        let count = 0
+        parser.spyOn('_uuid', () => {
+            count += 1
+            return count
+        })
+
+        parser.spyOn('_createRequest', () => 12 * count)
 
         const collection = {
             paths: {
@@ -471,35 +941,18 @@ export class TestSwaggerParser extends UnitTest {
         }
 
         const expected = {
-            '/test': {
-                get: {
-                    value: 24
-                },
-                post: {
-                    value: 42
-                }
-            },
-            '/test/nested': {
-                get: {
-                    value: 90
-                }
-            }
+            1: 0,
+            2: 12,
+            3: 24
         }
 
-        const result = parser._applyFuncOverPathArchitecture(
-            collection,
-            (coll, path, method, content) => {
-                return {
-                    value: content.value * 2
-                }
-            }
-        )
+        const result = parser._extractRequests(collection)
 
         this.assertEqual(expected, result)
     }
 
-    @targets('_applyFuncOverPathArchitecture')
-    testApplyFuncOverPathArchitectureDealsWithParametersMethod() {
+    @targets('_extractRequests')
+    testExtractRequestsDealsWithParametersMethod() {
         const parser = new ClassMock(new SwaggerParser(), '')
 
         parser.spyOn('_getParameters', () => {
@@ -509,6 +962,24 @@ export class TestSwaggerParser extends UnitTest {
                     in: 'query'
                 }
             ]
+        })
+
+        parser.spyOn('_createRequest', (coll, path, method, content) => {
+            let _result = {
+                value: content.value * 2
+            }
+
+            if (content.parameters) {
+                _result.parameters = content.parameters
+            }
+
+            return _result
+        })
+
+        let count = 0
+        parser.spyOn('_uuid', () => {
+            count += 1
+            return count
         })
 
         const collection = {
@@ -535,55 +1006,56 @@ export class TestSwaggerParser extends UnitTest {
         }
 
         const expected = {
-            '/test': {
-                get: {
-                    value: 24,
-                    parameters: [
-                        {
-                            name: 'test',
-                            in: 'query'
-                        }
-                    ]
-                },
-                post: {
-                    value: 42,
-                    parameters: [
-                        {
-                            name: 'test',
-                            in: 'query'
-                        }
-                    ]
-                }
+            1: {
+                value: 24,
+                parameters: [
+                    {
+                        name: 'test',
+                        in: 'query'
+                    }
+                ]
             },
-            '/test/nested': {
-                get: {
-                    value: 90
-                }
+            2: {
+                value: 42,
+                parameters: [
+                    {
+                        name: 'test',
+                        in: 'query'
+                    }
+                ]
+            },
+            3: {
+                value: 90
             }
         }
 
-        const result = parser._applyFuncOverPathArchitecture(
-            collection,
-            (coll, path, method, content) => {
-                let _result = {
-                    value: content.value * 2
-                }
-
-                if (content.parameters) {
-                    _result.parameters = content.parameters
-                }
-
-                return _result
-            }
-        )
+        const result = parser._extractRequests(collection)
 
         this.assertEqual(expected, result)
         this.assertEqual(parser.spy._getParameters.count, 1)
     }
 
-    @targets('_applyFuncOverPathArchitecture')
-    testApplyFuncOverPathArchitectureUpdatesMethodParams() {
-        const parser = new SwaggerParser()
+    @targets('_extractRequests')
+    testExtractRequestsUpdatesMethodParams() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        parser.spyOn('_createRequest', (coll, path, method, content) => {
+            let _result = {
+                value: content.value * 2
+            }
+
+            if (content.parameters) {
+                _result.parameters = content.parameters
+            }
+
+            return _result
+        })
+
+        let count = 0
+        parser.spyOn('_uuid', () => {
+            count += 1
+            return count
+        })
 
         const collection = {
             paths: {
@@ -610,46 +1082,49 @@ export class TestSwaggerParser extends UnitTest {
         }
 
         const expected = {
-            '/test': {
-                get: {
-                    value: 24
-                },
-                post: {
-                    value: 42
-                }
+            1: {
+                value: 24
             },
-            '/test/nested': {
-                get: {
-                    value: 90,
-                    parameters: [
-                        {
-                            name: 'alt',
-                            in: 'query'
-                        }
-                    ]
-                }
+            2: {
+                value: 42
+            },
+            3: {
+                value: 90,
+                parameters: [
+                    {
+                        name: 'alt',
+                        in: 'query'
+                    }
+                ]
             }
         }
 
-        const result = parser._applyFuncOverPathArchitecture(
-            collection,
-            (coll, path, method, content) => {
-                let _result = {
-                    value: content.value * 2
-                }
-                if (content.parameters) {
-                    _result.parameters = content.parameters
-                }
-                return _result
-            }
-        )
+        const result = parser._extractRequests(collection)
 
         this.assertEqual(expected, result)
     }
 
-    @targets('_applyFuncOverPathArchitecture')
-    testApplyFuncOverPathArchitectureUpdatesMethodParamsWithOverride() {
-        const parser = new SwaggerParser()
+    @targets('_extractRequests')
+    testExtractParamsUpdatesMethodParamsWithOverride() {
+        const parser = new ClassMock(new SwaggerParser(), '')
+
+        parser.spyOn('_createRequest', (coll, path, method, content) => {
+            let _result = {
+                value: content.value * 2
+            }
+
+            if (content.parameters) {
+                _result.parameters = content.parameters
+            }
+
+            return _result
+        })
+
+        let count = 0
+        parser.spyOn('_uuid', () => {
+            count += 1
+            return count
+        })
 
         const collection = {
             paths: {
@@ -686,44 +1161,41 @@ export class TestSwaggerParser extends UnitTest {
         }
 
         const expected = {
-            '/test': {
-                get: {
-                    value: 24
-                },
-                post: {
-                    value: 42
-                }
+            1: {
+                value: 24
             },
-            '/test/nested': {
-                get: {
-                    value: 90,
-                    parameters: [
-                        {
-                            name: 'alt',
-                            in: 'query'
-                        }, {
-                            name: 'fields',
-                            in: 'path'
-                        }
-                    ]
-                }
+            2: {
+                value: 42
+            },
+            3: {
+                value: 90,
+                parameters: [
+                    {
+                        name: 'alt',
+                        in: 'query'
+                    }, {
+                        name: 'fields',
+                        in: 'path'
+                    }
+                ]
             }
         }
 
-        const result = parser._applyFuncOverPathArchitecture(
-            collection,
-            (coll, path, method, content) => {
-                let _result = {
-                    value: content.value * 2
-                }
-                if (content.parameters) {
-                    _result.parameters = content.parameters
-                }
-                return _result
-            }
-        )
+        const result = parser._extractRequests(collection)
 
         this.assertEqual(expected, result)
+    }
+
+    @targets('_uuid')
+    testUUIDisv4() {
+        const parser = new SwaggerParser()
+
+        /* eslint-disable max-len */
+        const expectedPattern = /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+        /* eslint-enable max-len */
+
+        const result = parser._uuid()
+        this.assertTrue(!!result.match(expectedPattern))
     }
 
     @targets('_setTagsAndId')
