@@ -387,6 +387,7 @@ export default class Context extends Immutable.Record({
         name: 'context.core.models',
         version: '0.1.0'
     }),
+    requests: new Immutable.OrderedMap(),
     group: null,
     references: new Immutable.OrderedMap(),
     info: new Info()
