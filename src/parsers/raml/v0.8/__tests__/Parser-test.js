@@ -1354,6 +1354,9 @@ export class TestRAMLParser extends UnitTest {
 
         const expected = new Auth.OAuth2({
             authName: 'oauth_2_0',
+            description: 'The Box API uses OAuth 2 for authentication. ' +
+                'An authorization header containing\na valid access_token ' +
+                'must be included in every request.\n',
             flow: 'accessCode',
             authorizationUrl: 'https://www.box.com/api/oauth2/authorize',
             tokenUrl: 'https://www.box.com/api/oauth2/token',

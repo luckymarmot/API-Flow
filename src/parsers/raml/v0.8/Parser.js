@@ -767,6 +767,7 @@ export default class RAMLParser {
         let _params = params || {}
         let auth = new Auth.OAuth2({
             authName,
+            description: security.description || null,
             flow:
                 flowMap[(_params.authorizationGrants || [])[0]] ||
                 flowMap[security.settings.authorizationGrants[0]] ||
@@ -793,6 +794,7 @@ export default class RAMLParser {
         let _params = params || {}
         let auth = new Auth.OAuth1({
             authName,
+            description: security.description || null,
             authorizationUri:
                 _params.authorizationUri ||
                 security.settings.authorizationUri ||
@@ -810,13 +812,19 @@ export default class RAMLParser {
         return auth
     }
 
-    _extractBasicAuth(raml, authName = null) {
-        let auth = new Auth.Basic({ authName })
+    _extractBasicAuth(raml, authName = null, security = {}) {
+        let auth = new Auth.Basic({
+            authName,
+            description: security.description || null
+        })
         return auth
     }
 
-    _extractDigestAuth(raml, authName = null) {
-        let auth = new Auth.Digest({ authName })
+    _extractDigestAuth(raml, authName = null, security = {}) {
+        let auth = new Auth.Digest({
+            authName,
+            description: security.description || null
+        })
         return auth
     }
 
