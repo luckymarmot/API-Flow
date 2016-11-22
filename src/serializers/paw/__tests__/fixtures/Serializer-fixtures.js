@@ -8,6 +8,7 @@ export default class BaseImporterFixtures {
             {
                 name: 'SimpleTest',
                 inputs: [
+                    new Immutable.OrderedMap(),
                     new Group(),
                     null,
                     (currentName, parent) => {
@@ -19,14 +20,18 @@ export default class BaseImporterFixtures {
             {
                 name: 'SingleDepthGroupTest',
                 inputs: [
+                    new Immutable.OrderedMap({
+                        1: new Request({
+                            name: 1
+                        }),
+                        2: new Request({
+                            name: 2
+                        })
+                    }),
                     new Group({
                         children: new Immutable.OrderedMap({
-                            '/test': new Request({
-                                name: 1
-                            }),
-                            '/path': new Request({
-                                name: 2
-                            })
+                            '/test': '1',
+                            '/path': '2'
                         })
                     }),
                     (arg) => {
@@ -41,16 +46,20 @@ export default class BaseImporterFixtures {
             {
                 name: 'MultipleDepthGroupTest',
                 inputs: [
+                    new Immutable.OrderedMap({
+                        1: new Request({
+                            name: 1
+                        }),
+                        2: new Request({
+                            name: 2
+                        })
+                    }),
                     new Group({
                         children: new Immutable.OrderedMap({
-                            '/test': new Request({
-                                name: 1
-                            }),
+                            '/test': '1',
                             subTree: new Group({
                                 children: new Immutable.OrderedMap({
-                                    '/path': new Request({
-                                        name: 2
-                                    })
+                                    '/path': '2'
                                 })
                             })
                         })
