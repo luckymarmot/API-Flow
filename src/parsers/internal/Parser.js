@@ -160,6 +160,7 @@ export default class InternalParser {
 
     _extractContext(obj) {
         let references = {}
+        let requests = {}
 
         if (obj.references) {
             let refs = Object.keys(obj.references || {})
@@ -168,7 +169,15 @@ export default class InternalParser {
             }
         }
 
+        if (obj.requests) {
+            let reqs = Object.keys(obj.requests || {})
+            for (let req of reqs) {
+                requests[req] = this._extract(obj.requests[req])
+            }
+        }
+
         const context = new Context({
+            requests: new Immutable.OrderedMap(requests),
             group: this._extract(obj.group),
             references: new Immutable.OrderedMap(references),
             info: this._extract(obj.info)
