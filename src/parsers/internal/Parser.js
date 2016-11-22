@@ -155,6 +155,27 @@ export default class InternalParser {
             return classMap[obj._model.name](obj)
         }
 
+        const _obj = this._traverse(obj)
+        return _obj
+    }
+
+    _traverse(_obj) {
+        let obj = _obj
+        if (!obj) {
+            return obj
+        }
+
+        if (typeof obj === 'object') {
+            const keys = Object.keys(obj || {})
+            for (let key of keys) {
+                obj[key] = this._extract(obj[key])
+            }
+        }
+
+        if (Array.isArray(obj)) {
+            obj = obj.map(item => this._extract(item))
+        }
+
         return obj
     }
 
@@ -468,12 +489,14 @@ export default class InternalParser {
     _extractReferenceCache(_obj) {
         let obj = _obj
 
-        const resolved = {}
         if (obj.resolved) {
+            const resolved = {}
             let keys = Object.keys(obj.resolved)
             for (let key of keys) {
                 resolved[key] = this._extract(obj.resolved[key])
             }
+
+            obj.resolved = new Immutable.OrderedMap(resolved)
         }
 
         if (obj.cached) {
@@ -486,8 +509,12 @@ export default class InternalParser {
     _extractReference(_obj) {
         let obj = _obj
         if (obj.dependencies) {
-            obj.dependencies = new Immutable.List(obj.dependencies)
+            obj.dependencies = new Immutable.List(
+                obj.dependencies.map(dep => this._extract(dep))
+            )
         }
+
+        obj.value = this._extract(obj.value)
 
         return new Reference(obj)
     }
@@ -495,24 +522,38 @@ export default class InternalParser {
     _extractExoticReference(_obj) {
         let obj = _obj
         if (obj.dependencies) {
-            obj.dependencies = new Immutable.List(obj.dependencies)
+            obj.dependencies = new Immutable.List(
+                obj.dependencies.map(dep => this._extract(dep))
+            )
         }
+
+        obj.value = this._extract(obj.value)
+
         return new ExoticReference(obj)
     }
 
     _extractJSONSchemaReference(_obj) {
         let obj = _obj
         if (obj.dependencies) {
-            obj.dependencies = new Immutable.List(obj.dependencies)
+            obj.dependencies = new Immutable.List(
+                obj.dependencies.map(dep => this._extract(dep))
+            )
         }
+
+        obj.value = this._extract(obj.value)
+
         return new JSONSchemaReference(obj)
     }
 
     _extractLateResolutionReference(_obj) {
         let obj = _obj
         if (obj.dependencies) {
-            obj.dependencies = new Immutable.List(obj.dependencies)
+            obj.dependencies = new Immutable.List(
+                obj.dependencies.map(dep => this._extract(dep))
+            )
         }
+
+        obj.value = this._extract(obj.value)
 
         return new LateResolutionReference(obj)
     }

@@ -843,6 +843,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                             subTree[fragment]
                         subTree = subTree[fragment]
                     }
+
                     let ref = container.resolve(key).get('value')
 
                     if (typeof ref === 'undefined' || ref === null) {
