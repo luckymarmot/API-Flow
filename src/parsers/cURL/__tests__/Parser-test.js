@@ -4239,17 +4239,30 @@ export class TestCurlParser extends UnitTest {
         let context = parser.parse({
             content: input
         })
-        let requests = context.getIn([ 'group', 'children' ])
+
+        let groupMap = context.getIn([ 'group', 'children' ])
+        let requestMap = context.get('requests')
 
         // remove bodyString from request if we don't want to compare it here
 
+        const expectedGroupMap = expected.reduce(
+            (acc, val, index) => acc.set(index, index),
+            new Immutable.OrderedMap()
+        )
+
+        const expectedRequestMap = expected.reduce(
+            (acc, val, index) => acc.set(index, val),
+            new Immutable.OrderedMap()
+        )
+
         /* eslint-disable  no-console */
         if (verbose) {
-            console.log(requests)
-            console.log(expected)
+            console.log(requestMap)
+            console.log(expectedRequestMap)
         }
         /* eslint-enable  no-console */
 
-        this.assertJSONEqual(requests, expected)
+        this.assertJSONEqual(groupMap, expectedGroupMap)
+        this.assertJSONEqual(requestMap, expectedRequestMap)
     }
 }
