@@ -39,11 +39,12 @@ export default class PawParser {
 
     generate(ctx, reqs, opts) {
         this.dvManager = new DynamicValueManager(ctx)
-        let group = this._parseGroup(ctx, reqs, opts)
+        let { group, requests } = this._parseGroup(ctx, reqs, opts)
         let references = this._parseDomains(ctx, reqs, opts)
         let info = this._parseInfo(ctx, reqs, opts)
 
         let context = new Context({
+            requests: new Immutable.OrderedMap(requests),
             group: group,
             references: references,
             info: info
@@ -54,12 +55,18 @@ export default class PawParser {
 
     _parseGroup(ctx, reqs, opts) {
         if (!reqs) {
-            return null
+            return {
+                group: null,
+                requests: {}
+            }
         }
 
         let groupMap = {}
+        let requestMap = {}
         reqs.forEach(req => {
             let request = this._parseRequest(ctx, req, opts)
+            requestMap[req.id] = request
+
             let gid = (req.parent || {}).id || null
             if (!groupMap[gid]) {
                 let name = (req.parent || {}).name || null
@@ -70,7 +77,7 @@ export default class PawParser {
             }
 
             groupMap[gid] = groupMap[gid]
-                .setIn([ 'children', req.id ], request)
+                .setIn([ 'children', req.id ], req.id)
         })
 
         let keys = Object.keys(groupMap)
@@ -103,7 +110,7 @@ export default class PawParser {
 
         let id = keys[0]
 
-        return groupMap[id] || null
+        return { group: groupMap[id] || null, requests: requestMap }
     }
 
     _parseRequest(ctx, req) {
