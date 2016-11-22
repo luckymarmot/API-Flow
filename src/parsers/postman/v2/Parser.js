@@ -95,13 +95,14 @@ export default class PostmanParser {
     // @tested
     _createContext(collection) {
         let [ info, root ] = this._extractInfo(collection)
-        let group = this._extractGroup(collection, root)
+        let { group, requests } = this._extractGroup(collection, root)
         let references = new Immutable.OrderedMap({
             postman: (new ReferenceContainer()).create(this.references)
         })
 
         let context = new Context({
             references: references,
+            requests: new Immutable.OrderedMap(requests),
             group: group,
             info: info
         })
@@ -161,54 +162,80 @@ export default class PostmanParser {
 
 
     _extractGroup(collection, root) {
-        let group = new Group({
+        let _group = new Group({
             id: root.id,
             name: root.name
         })
+
+        let _requests = {}
 
         let children = collection.item
 
         let _children = new Immutable.OrderedMap()
         _children = _children.withMutations((_map) => {
             for (let child of children) {
-                let _group = this._extractGroupFromItem(child)
+                let { group, requests } = this._extractGroupFromItem(child)
                 _map.set(
-                    _group.get('id') || _group.get('name') || null,
-                    _group
+                    group.get('id') || group.get('name') || null,
+                    group
                 )
+
+                Object.assign(_requests, requests)
             }
         })
 
-        return group.set('children', _children)
+        return {
+            group: _group.set('children', _children),
+            requests: _requests
+        }
     }
 
     _extractGroupFromItem(item) {
         if (item.request) {
-            return this._extractRequest(item)
+            const request = this._extractRequest(item)
+            const requests = {}
+
+            requests[request.get('id')] = request
+
+            return {
+                group: null,
+                requests
+            }
         }
 
-        let group = new Group({
+        let _group = new Group({
             name: item.id || item.name || null
         })
+        let _requests = {}
 
         if (item.item) {
             let children = new Immutable.OrderedMap()
             children = children.withMutations((_map) => {
                 for (let child of item.item) {
-                    let content = this._extractGroupFromItem(child)
-                    if (content !== null) {
+                    let { group, requests } = this._extractGroupFromItem(child)
+                    let reqId = Object.keys(requests)[0]
+
+                    if (group !== null) {
                         _map.set(
                             child.id || child.name || null,
-                            content
+                            group
                         )
                     }
+                    else {
+                        _map.set(
+                            child.id || child.name || null,
+                            reqId
+                        )
+                    }
+
+                    Object.assign(_requests, requests)
                 }
             })
 
-            group = group.set('children', children)
+            _group = _group.set('children', children)
         }
 
-        return group
+        return { group: _group, requests: _requests }
     }
 
     _extractRequest(item) {

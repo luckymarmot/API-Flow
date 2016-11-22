@@ -155,9 +155,13 @@ export default class PostmanParser {
             let env = this._importEnvironment(_env)
             envs = envs.set(env.get('id'), env)
         })
+
+        let _requests = {}
         let baseGroup = collections.reduce(
             (rootGroup, collection) => {
-                let group = this._importCollection(collection)
+                let { group, requests } = this._importCollection(collection)
+                Object.assign(_requests, requests)
+
                 return rootGroup.setIn(
                     [ 'children', group.get('id') ], group
                 )
@@ -235,9 +239,11 @@ export default class PostmanParser {
             requestsById[req.id] = request
         }
 
-        return this._createGroupFromCollection(
+        const group = this._createGroupFromCollection(
             collection, requestsById
         )
+
+        return { group, requests: requestsById }
     }
 
     // @tested
@@ -739,7 +745,7 @@ export default class PostmanParser {
                     [
                         'children', req.get('id')
                     ],
-                    req
+                    req.get('id')
                 )
             }
         }
@@ -775,7 +781,7 @@ export default class PostmanParser {
                 for (let id of collection.order) {
                     let req = requests[id]
                     rootGroup = rootGroup
-                        .setIn([ 'children', req.get('id') ], req)
+                        .setIn([ 'children', req.get('id') ], req.get('id'))
                 }
             }
         }
@@ -784,7 +790,7 @@ export default class PostmanParser {
                 if (requests.hasOwnProperty(id)) {
                     let req = requests[id]
                     rootGroup = rootGroup
-                        .setIn([ 'children', req.get('id') ], req)
+                        .setIn([ 'children', req.get('id') ], req.get('id'))
                 }
             }
         }

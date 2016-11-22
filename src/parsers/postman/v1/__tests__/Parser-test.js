@@ -126,7 +126,7 @@ export class TestPostmanParser extends UnitTest {
         const colls = [ { get: () => {} }, { get: () => {} } ]
 
         mp.spyOn('_importCollection', (obj) => {
-            return obj
+            return { group: obj, requests: obj }
         })
 
         parser._createContext.apply(
@@ -159,7 +159,7 @@ export class TestPostmanParser extends UnitTest {
         })
 
         mp.spyOn('_importCollection', (obj) => {
-            return obj
+            return { group: obj, requests: obj }
         })
 
         const result = parser._createContext.apply(
@@ -270,21 +270,30 @@ export class TestPostmanParser extends UnitTest {
 
         const coll = {
             requests: [
-                {}
+                {
+                    id: 42
+                }
             ]
         }
 
-        mp.spyOn('_createRequest', () => {})
+        mp.spyOn('_createRequest', () => null)
         mp.spyOn('_createGroupFromCollection', () => {
             return 12
         })
+
+        const expected = {
+            group: 12,
+            requests: {
+                42: null
+            }
+        }
 
         const result = parser._importCollection.apply(
             mp,
             [ coll ]
         )
 
-        this.assertEqual(result, 12)
+        this.assertEqual(result, expected)
 
         this.assertEqual(
             mp.spy._createRequest.count, 1
@@ -1905,14 +1914,8 @@ export class TestPostmanParser extends UnitTest {
         const expected = new Group({
             name: 'hello',
             children: new Immutable.OrderedMap({
-                0: new Request({
-                    id: 0,
-                    method: 'get'
-                }),
-                1: new Request({
-                    id: 1,
-                    method: 'post'
-                })
+                0: 0,
+                1: 1
             })
         })
 
@@ -1945,10 +1948,7 @@ export class TestPostmanParser extends UnitTest {
         const expected = new Group({
             name: 'hello',
             children: new Immutable.OrderedMap({
-                0: new Request({
-                    id: 0,
-                    method: 'get'
-                })
+                0: 0
             })
         })
 
@@ -1981,10 +1981,7 @@ export class TestPostmanParser extends UnitTest {
         const expected = new Group({
             name: 'hello',
             children: new Immutable.OrderedMap({
-                0: new Request({
-                    id: 0,
-                    method: 'get'
-                })
+                0: 0
             })
         })
 
@@ -2017,14 +2014,8 @@ export class TestPostmanParser extends UnitTest {
             id: 0,
             name: 'collection name',
             children: new Immutable.OrderedMap({
-                0: new Request({
-                    id: 0,
-                    method: 'get'
-                }),
-                1: new Request({
-                    id: 1,
-                    method: 'post'
-                })
+                0: 0,
+                1: 1
             })
         })
 
@@ -2058,14 +2049,8 @@ export class TestPostmanParser extends UnitTest {
             id: 0,
             name: 'collection name',
             children: new Immutable.OrderedMap({
-                1: new Request({
-                    id: 1,
-                    method: 'post'
-                }),
-                0: new Request({
-                    id: 0,
-                    method: 'get'
-                })
+                1: 1,
+                0: 0
             })
         })
 
@@ -2114,20 +2099,14 @@ export class TestPostmanParser extends UnitTest {
                     id: 12,
                     name: 'folder #12',
                     children: new Immutable.OrderedMap({
-                        0: new Request({
-                            id: 0,
-                            method: 'get'
-                        })
+                        0: 0
                     })
                 }),
                 42: new Group({
                     id: 42,
                     name: 'folder #42',
                     children: new Immutable.OrderedMap({
-                        1: new Request({
-                            id: 1,
-                            method: 'post'
-                        })
+                        1: 1
                     })
                 })
             })
