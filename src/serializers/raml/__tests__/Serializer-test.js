@@ -13,7 +13,6 @@ import {
     Info, Contact, License
 } from '../../../models/Utils'
 
-import Group from '../../../models/Group'
 import Auth from '../../../models/Auth'
 import Constraint from '../../../models/Constraint'
 import URL from '../../../models/URL'
@@ -108,7 +107,7 @@ export class TestRAMLSerializer extends UnitTest {
         })
 
         let input = new Context({
-            group: new Group()
+            requests: new Immutable.OrderedMap({ a: 12 })
         })
 
         let expected = {

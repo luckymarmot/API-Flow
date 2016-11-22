@@ -41,14 +41,13 @@ export default class RAMLSerializer extends BaseSerializer {
         let structure = {}
         let basicInfo = this._formatBasicInfo(context)
 
-        let group = context.get('group')
+        const requests = context.get('requests').valueSeq()
         let urlInfo = {}
         let securitySchemes = {}
         let paths = {}
         let schemas = this._formatSchemas(context.get('references'))
 
-        if (group) {
-            let requests = group.getRequests()
+        if (requests.size) {
             urlInfo = ::this._formatURLInfo(requests)
             securitySchemes = ::this._formatSecuritySchemes(requests)
             paths = ::this._formatPaths(requests)
