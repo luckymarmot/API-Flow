@@ -21,7 +21,7 @@ export default class SwaggerSerializer extends BaseSerializer {
 
         let info = this._formatInfo(context)
 
-        let requests = context.getRequests()
+        let requests = context.get('requests').valueSeq()
         let [ host, schemes ] = this._formatHost(requests)
         this.host = host
         let [ paths, securityDefs ] = this._formatPaths(
