@@ -1262,7 +1262,10 @@ export default class SwaggerFixtures {
                 ],
                 output: new Request({
                     auths: new Immutable.List([
-                        new Auth.Basic({ authName: 'basicAuth' })
+                        new Auth.Basic({
+                            authName: 'basicAuth',
+                            description: 'HTTP Basic Authentication'
+                        })
                     ])
                 })
             },
@@ -1368,7 +1371,10 @@ export default class SwaggerFixtures {
                 ],
                 output: new Request({
                     auths: new Immutable.List([
-                        new Auth.Basic({ authName: 'basicAuth' }),
+                        new Auth.Basic({
+                            authName: 'basicAuth',
+                            description: 'HTTP Basic Authentication'
+                        }),
                         new Auth.ApiKey({
                             authName: 'api_key',
                             name: 'api_key',

@@ -313,18 +313,21 @@ export default class SwaggerParser {
     _setBasicAuth(authName = null, definition) {
         let username = null
         let password = null
+        let description = null
 
         if (definition) {
-            username = definition['x-username'] || null
-            password = definition['x-password'] || null
+            username = definition.get('x-username') || null
+            password = definition.get('x-password') || null
+            description = definition.get('description') || null
         }
 
-        return new Auth.Basic({ authName, username, password })
+        return new Auth.Basic({ authName, username, password, description })
     }
 
     _setApiKeyAuth(authName = null, definition) {
         return new Auth.ApiKey({
             authName,
+            description: definition.get('description') || null,
             in: definition.get('in'),
             name: definition.get('name')
         })
@@ -333,6 +336,7 @@ export default class SwaggerParser {
     _setOAuth2Auth(authName = null, definition) {
         return new Auth.OAuth2({
             authName,
+            description: definition.get('description') || null,
             flow: definition.get('flow', null),
             authorizationUrl: definition.get('authorizationUrl', null),
             tokenUrl: definition.get('tokenUrl', null),
