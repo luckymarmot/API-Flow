@@ -892,13 +892,18 @@ export class TestRAMLSerializer extends UnitTest {
     testFormatDigest() {
         let s = this.__init()
 
+        const input = new Auth.Digest({
+            description: 'some desc'
+        })
+
         let expected = {
             digest: {
+                description: 'some desc',
                 type: 'Digest Authentication'
             }
         }
 
-        let result = s._formatDigest()
+        let result = s._formatDigest(input)
 
         this.assertEqual(expected, result)
     }
@@ -907,13 +912,18 @@ export class TestRAMLSerializer extends UnitTest {
     testFormatBasic() {
         let s = this.__init()
 
+        const input = new Auth.Digest({
+            description: 'some desc'
+        })
+
         let expected = {
             basic: {
+                description: 'some desc',
                 type: 'Basic Authentication'
             }
         }
 
-        let result = s._formatBasic()
+        let result = s._formatBasic(input)
 
         this.assertEqual(expected, result)
     }
