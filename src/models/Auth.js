@@ -7,6 +7,7 @@ export class BasicAuth extends Immutable.Record({
         name: 'basic.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     username: null,
     password: null,
@@ -18,6 +19,7 @@ export class DigestAuth extends Immutable.Record({
         name: 'digest.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     username: null,
     password: null
@@ -28,6 +30,7 @@ export class NTLMAuth extends Immutable.Record({
         name: 'ntlm.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     username: null,
     password: null
@@ -38,6 +41,7 @@ export class NegotiateAuth extends Immutable.Record({
         name: 'negotiate.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     username: null,
     password: null
@@ -48,6 +52,7 @@ export class ApiKeyAuth extends Immutable.Record({
         name: 'api-key.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     name: null,
     in: null,
@@ -59,6 +64,7 @@ export class OAuth1Auth extends Immutable.Record({
         name: 'oauth-1.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     callback: null,
     consumerSecret: null,
@@ -81,6 +87,7 @@ export class OAuth2Auth extends Immutable.Record({
         name: 'oauth-2.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     flow: null,
     authorizationUrl: null,
@@ -93,6 +100,7 @@ export class AWSSig4Auth extends Immutable.Record({
         name: 'aws-sig-4.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     key: null,
     secret: null,
@@ -105,6 +113,7 @@ export class HawkAuth extends Immutable.Record({
         name: 'hawk.auth.models',
         version: '0.1.0'
     }),
+    description: null,
     authName: null,
     id: null,
     key: null,

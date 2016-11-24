@@ -13,7 +13,6 @@ import {
     Info, Contact, License
 } from '../../../models/Utils'
 
-import Group from '../../../models/Group'
 import Auth from '../../../models/Auth'
 import Constraint from '../../../models/Constraint'
 import URL from '../../../models/URL'
@@ -108,7 +107,7 @@ export class TestRAMLSerializer extends UnitTest {
         })
 
         let input = new Context({
-            group: new Group()
+            requests: new Immutable.OrderedMap({ a: 12 })
         })
 
         let expected = {
@@ -893,13 +892,18 @@ export class TestRAMLSerializer extends UnitTest {
     testFormatDigest() {
         let s = this.__init()
 
+        const input = new Auth.Digest({
+            description: 'some desc'
+        })
+
         let expected = {
             digest: {
+                description: 'some desc',
                 type: 'Digest Authentication'
             }
         }
 
-        let result = s._formatDigest()
+        let result = s._formatDigest(input)
 
         this.assertEqual(expected, result)
     }
@@ -908,13 +912,18 @@ export class TestRAMLSerializer extends UnitTest {
     testFormatBasic() {
         let s = this.__init()
 
+        const input = new Auth.Digest({
+            description: 'some desc'
+        })
+
         let expected = {
             basic: {
+                description: 'some desc',
                 type: 'Basic Authentication'
             }
         }
 
-        let result = s._formatBasic()
+        let result = s._formatBasic(input)
 
         this.assertEqual(expected, result)
     }

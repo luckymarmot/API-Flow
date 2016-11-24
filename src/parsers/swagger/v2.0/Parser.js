@@ -119,17 +119,15 @@ export default class SwaggerParser {
 
             let rootGroup = new Group()
             rootGroup = rootGroup.set('name', swaggerCollection.info.title)
-            let pathLinkedRequests = this._applyFuncOverPathArchitecture(
-                swaggerCollection,
-                ::this._createRequest
-            )
+            let requests = this._extractRequests(swaggerCollection)
 
-            rootGroup = this._createGroupTree(rootGroup, pathLinkedRequests)
+            rootGroup = this._createGroupTree(rootGroup, requests)
 
             let info = this._extractContextInfo(swaggerCollection.info)
 
             let reqContext = new Context()
             reqContext = reqContext
+                .set('requests', new Immutable.OrderedMap(requests))
                 .set('group', rootGroup)
                 .setIn([ 'references', 'schemas' ], refs)
                 .set('info', info)
@@ -315,18 +313,21 @@ export default class SwaggerParser {
     _setBasicAuth(authName = null, definition) {
         let username = null
         let password = null
+        let description = null
 
         if (definition) {
-            username = definition['x-username'] || null
-            password = definition['x-password'] || null
+            username = definition.get('x-username') || null
+            password = definition.get('x-password') || null
+            description = definition.get('description') || null
         }
 
-        return new Auth.Basic({ authName, username, password })
+        return new Auth.Basic({ authName, username, password, description })
     }
 
     _setApiKeyAuth(authName = null, definition) {
         return new Auth.ApiKey({
             authName,
+            description: definition.get('description') || null,
             in: definition.get('in'),
             name: definition.get('name')
         })
@@ -335,6 +336,7 @@ export default class SwaggerParser {
     _setOAuth2Auth(authName = null, definition) {
         return new Auth.OAuth2({
             authName,
+            description: definition.get('description') || null,
             flow: definition.get('flow', null),
             authorizationUrl: definition.get('authorizationUrl', null),
             tokenUrl: definition.get('tokenUrl', null),
@@ -392,9 +394,20 @@ export default class SwaggerParser {
         return params
     }
 
+    _uuid() {
+        let d = new Date().getTime()
+        let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+            .replace(/[xy]/g, c => {
+                let r = (d + Math.random() * 16) % 16 | 0
+                d = Math.floor(d / 16)
+                return (c === 'x' ? r : r & 0x3 | 0x8).toString(16)
+            })
+        return uuid
+    }
+
     // @tested
-    _applyFuncOverPathArchitecture(collection, func) {
-        let architecture = {}
+    _extractRequests(collection) {
+        let requests = {}
 
         let filterOtherFieldsOutFunc = (bool) => {
             return (val) => {
@@ -410,56 +423,59 @@ export default class SwaggerParser {
             }
         }
 
-        for (let path in collection.paths) {
-            if (collection.paths.hasOwnProperty(path)) {
-                architecture[path] = architecture[path] || {}
-                let methods = collection.paths[path]
-                let _methods = Object.keys(methods)
-                if (methods.parameters) {
-                    let _params = this._getParameters(
-                        collection,
-                        methods.parameters
-                    )
-
-                    let paramKey = _methods.indexOf('parameters')
-                    // remove paramKey
-                    _methods.splice(paramKey, 1)
-
-                    for (let method of _methods) {
-                        let params = this._updateParametersInMethod(
-                            methods[method],
-                            _params
-                        )
-                        methods[method].parameters = params
-                    }
-                }
-
-                let validMethods = _methods.filter(
-                    filterOtherFieldsOutFunc(true)
+        let pathMap = collection.paths
+        const paths = Object.keys(pathMap)
+        for (let path of paths) {
+            let methodMap = pathMap[path]
+            let methods = Object.keys(methodMap)
+            if (methodMap.parameters) {
+                let _params = this._getParameters(
+                    collection,
+                    methodMap.parameters
                 )
 
-                let description = _methods.filter(
-                    filterOtherFieldsOutFunc(false)
-                ).reduce(createOtherFieldDescFunc(methods), '')
+                let paramKey = methods.indexOf('parameters')
+                // remove paramKey
+                methods.splice(paramKey, 1)
 
-                if (description) {
-                    description = 'The following fields were provided at the ' +
-                        'path level:' + description
-                }
-
-                for (let method of validMethods) {
-                    architecture[path][method] = func(
-                        collection,
-                        path,
-                        method,
-                        methods[method],
-                        description
+                for (let method of methods) {
+                    let params = this._updateParametersInMethod(
+                        methodMap[method],
+                        _params
                     )
+                    methodMap[method].parameters = params
                 }
+            }
+
+            let validMethods = methods.filter(
+                filterOtherFieldsOutFunc(true)
+            )
+
+            let description = methods.filter(
+                filterOtherFieldsOutFunc(false)
+            ).reduce(createOtherFieldDescFunc(methods), '')
+
+            if (description) {
+                description = 'The following fields were provided at the ' +
+                    'path level:' + description
+            }
+
+            for (let method of validMethods) {
+                let request = this._createRequest(
+                    collection,
+                    path,
+                    method,
+                    methodMap[method],
+                    description
+                )
+
+                let uuid = this._uuid()
+
+                requests[uuid] = request
             }
         }
 
-        return architecture
+        return requests
     }
 
     _getParameters(collection, params) {
@@ -909,11 +925,69 @@ export default class SwaggerParser {
         return new Immutable.List(bodies)
     }
 
-    // @tested
-    _createGroupTree(group, paths) {
+    _formatSequenceParam(_param) {
+        if (_param.get('format') !== 'sequence') {
+            let schema = _param.getJSONSchema(false, true)
+            if (!schema.enum && typeof schema.default !== 'undefined') {
+                schema.enum = [ schema.default ]
+            }
+            let generated = _param.generate(false, schema)
+            return generated
+        }
+
+        let schema = _param.getJSONSchema()
+
+        if (!schema['x-sequence']) {
+            return _param.generate()
+        }
+
+        for (let sub of schema['x-sequence']) {
+            if (sub['x-title']) {
+                sub.enum = [ '{' + sub['x-title'] + '}' ]
+            }
+        }
+
+        let generated = _param.generate(false, schema)
+        return generated
+    }
+
+
+    _createTagGroupTree(group, tagLists) {
         let _group = group
-        for (let path in paths) {
-            if (paths.hasOwnProperty(path)) {
+        if (!group || !(group instanceof Group)) {
+            _group = new Group({
+                name: 'root'
+            })
+        }
+        const tagGroups = tagLists.reduce((tagGroup, { tags, uuid }) => {
+            const firstTag = tags.get(0) || 'Uncategorized'
+            tagGroup[firstTag] = tagGroup[firstTag] || new Group({
+                name: firstTag
+            })
+
+            tagGroup[firstTag] = tagGroup[firstTag]
+                .setIn([ 'children', uuid ], uuid)
+            return tagGroup
+        }, {})
+
+        return _group.set('children', new Immutable.OrderedMap(tagGroups))
+    }
+
+    _createPathGroupTree(group, paths) {
+        let _group = group
+        if (!group || !(group instanceof Group)) {
+            _group = new Group({
+                name: 'root'
+            })
+        }
+        const pathMap = paths.reduce((_pathMap, { uuid, path, method }) => {
+            _pathMap[path] = _pathMap[path] || {}
+            _pathMap[path][method] = uuid
+            return _pathMap
+        }, {})
+
+        for (let path in pathMap) {
+            if (pathMap.hasOwnProperty(path)) {
                 let nodes = path.split('/')
 
                 if (path.indexOf('/') === 0) {
@@ -934,11 +1008,11 @@ export default class SwaggerParser {
                 }
 
                 keyPath.push('children')
-                for (let method in paths[path]) {
-                    if (paths[path].hasOwnProperty(method)) {
+                for (let method in pathMap[path]) {
+                    if (pathMap[path].hasOwnProperty(method)) {
                         _group = _group.setIn(
                             keyPath.concat(method),
-                            paths[path][method]
+                            pathMap[path][method]
                         )
                     }
                 }
@@ -946,6 +1020,38 @@ export default class SwaggerParser {
         }
 
         return _group
+    }
+
+    // @tested
+    _createGroupTree(group, requestMap) {
+        const uuids = Object.keys(requestMap)
+
+        const tagLists = uuids
+            .map(uuid => {
+                const tags = requestMap[uuid].get('tags')
+                return { uuid, tags }
+            })
+
+        const countRequestWithTags = tagLists
+            .filter(({ tags }) => tags.size > 0)
+            .length
+
+        if (countRequestWithTags < uuids.length * 0.5) {
+            const paths = uuids.map(uuid => {
+                const path = this._formatSequenceParam(
+                    requestMap[uuid].getIn([ 'url', 'pathname' ])
+                )
+
+                const method = requestMap[uuid].get('method')
+
+                return { uuid, path, method }
+            })
+
+            return this._createPathGroupTree(group, paths)
+        }
+        else {
+            return this._createTagGroupTree(group, tagLists)
+        }
     }
 
     _extractSequenceParam(_sequence, _key, parameters) {

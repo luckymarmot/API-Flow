@@ -41,14 +41,13 @@ export default class RAMLSerializer extends BaseSerializer {
         let structure = {}
         let basicInfo = this._formatBasicInfo(context)
 
-        let group = context.get('group')
+        const requests = context.get('requests').valueSeq()
         let urlInfo = {}
         let securitySchemes = {}
         let paths = {}
         let schemas = this._formatSchemas(context.get('references'))
 
-        if (group) {
-            let requests = group.getRequests()
+        if (requests.size) {
             urlInfo = ::this._formatURLInfo(requests)
             securitySchemes = ::this._formatSecuritySchemes(requests)
             paths = ::this._formatPaths(requests)
@@ -451,11 +450,16 @@ export default class RAMLSerializer extends BaseSerializer {
             authorizationGrants: [ authorizationGrants ]
         }
 
+        if (auth.get('description')) {
+            formatted.description = auth.get('description')
+        }
+
         formatted.settings = settings
 
-        let result = {
-            oauth_2_0: formatted
-        }
+        let name = auth.get('authName') || 'oauth_2_0'
+
+        let result = {}
+        result[name] = formatted
 
         return result
     }
@@ -478,27 +482,50 @@ export default class RAMLSerializer extends BaseSerializer {
             formatted.settings = settings
         }
 
-        let result = {
-            oauth_1_0: formatted
+        if (auth.get('description')) {
+            formatted.description = auth.get('description')
         }
+
+        let name = auth.get('name') || 'oauth_1_0'
+
+        let result = {}
+        result[name] = formatted
 
         return result
     }
 
-    _formatDigest() {
-        return {
-            digest: {
-                type: 'Digest Authentication'
-            }
+    _formatDigest(auth) {
+        let formatted = {
+            type: 'Digest Authentication'
         }
+
+        if (auth.get('description')) {
+            formatted.description = auth.get('description')
+        }
+
+        let name = auth.get('name') || 'digest'
+
+        let result = {}
+        result[name] = formatted
+
+        return result
     }
 
-    _formatBasic() {
-        return {
-            basic: {
-                type: 'Basic Authentication'
-            }
+    _formatBasic(auth) {
+        let formatted = {
+            type: 'Basic Authentication'
         }
+
+        if (auth.get('description')) {
+            formatted.description = auth.get('description')
+        }
+
+        let name = auth.get('name') || 'basic'
+
+        let result = {}
+        result[name] = formatted
+
+        return result
     }
 
     _formatPaths(requests) {

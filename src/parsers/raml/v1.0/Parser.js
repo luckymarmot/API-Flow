@@ -1,5 +1,5 @@
 import Immutable from 'immutable'
-import RAML from 'raml-parser'
+import RAML from 'raml-1-parser'
 import __path from 'path'
 
 import Context, {
@@ -24,11 +24,12 @@ import JSONSchemaReference from '../../../models/references/JSONSchema'
 import Constraint from '../../../models/Constraint'
 import Auth from '../../../models/Auth'
 
-import ShimmingFileReader from '../FileReader'
+import ShimmingFileResolver from '../resolvers/FileResolver'
+import ShimmingHttpResolver from '../resolvers/HttpResolver'
 
 export default class RAMLParser {
     static format = 'raml'
-    static version = 'v0.8'
+    static version = 'v1.0'
 
     static detect(content) {
         let detection = {
@@ -38,7 +39,7 @@ export default class RAMLParser {
         }
 
         let firstLine = content.split('\n', 1)[0]
-        let match = firstLine.match(/#%RAML (0\.8|1\.0)/)
+        let match = firstLine.match(/#%RAML 1\.0/)
         if (match) {
             detection.score = 1
             return [ detection ]
@@ -56,7 +57,8 @@ export default class RAMLParser {
     }
 
     constructor(items) {
-        this.reader = new ShimmingFileReader(items)
+        this.fsResolver = new ShimmingFileResolver(items)
+        this.httpResolver = new ShimmingHttpResolver(items)
         this.context = new Context()
         this.item = new Item()
     }
@@ -76,7 +78,8 @@ export default class RAMLParser {
         let location = this.item.getPath()
 
         return RAML.load(string, location, {
-            reader: this.reader
+            fsResolver: this.fsResolver,
+            httpResolver: this.httpResolver
         }).then(raml => {
             if (raml) {
                 let context = this._createContext(raml)
@@ -93,32 +96,34 @@ export default class RAMLParser {
     }
 
     _createContext(_raml) {
-        const references = ::this._findReferences(_raml)
-        const raml = ::this._replaceReferences(_raml)
+        let context = new Context()
 
-        const { group, requests } = this._createGroupTree(
+        let references = ::this._findReferences(_raml)
+        let raml = ::this._replaceReferences(_raml)
+
+        let group = this._createGroupTree(
             raml,
             raml,
             raml.title || null
         )
 
-        let referenceMap = new Immutable.OrderedMap()
+        if (group) {
+            context = context.set('group', group)
+        }
+
         if (references) {
             let container = new ReferenceContainer()
             container = container.create(references)
             if (container.get('cache').size > 0) {
-                referenceMap = referenceMap.set(raml.title, container)
+                context = context.setIn([ 'references', raml.title ], container)
             }
         }
 
-        const info = this._extractInfos(_raml)
+        let info = this._extractInfos(_raml)
 
-        const context = new Context({
-            requests: new Immutable.OrderedMap(requests),
-            group: group,
-            references: referenceMap,
-            info: info ? info : new Info()
-        })
+        if (info) {
+            context = context.set('info', info)
+        }
 
         return context
     }
@@ -254,61 +259,42 @@ export default class RAMLParser {
         return obj
     }
 
-    _uuid() {
-        let d = new Date().getTime()
-        let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-            .replace(/[xy]/g, c => {
-                let r = (d + Math.random() * 16) % 16 | 0
-                d = Math.floor(d / 16)
-                return (c === 'x' ? r : r & 0x3 | 0x8).toString(16)
-            })
-        return uuid
-    }
-
     _createGroupTree(baseTree, tree, baseName, url = '') {
         let _url = url
         // ignore the first group name
         _url += tree.relativeUri || ''
 
-        let _group
-        let _requests = {}
+        let group
         if (tree.resources || tree.methods) {
-            _group = new Group({
+            group = new Group({
                 name: tree.displayName || tree.relativeUri || baseName
             })
         }
 
         for (let path of tree.resources || []) {
-            let { group, requests } =
-                this._createGroupTree(baseTree, path, '', _url)
-            if (group) {
-                _group = _group.setIn(
+            let child = this._createGroupTree(baseTree, path, '', _url)
+            if (child) {
+                group = group.setIn(
                     [ 'children', path.relativeUri ],
-                    group
+                    child
                 )
-            }
-
-            if (requests) {
-                Object.assign(_requests, requests)
             }
         }
 
         (tree.methods || []).forEach(
             data => {
-                let request =
+                group = group.setIn(
+                    [ 'children', data.method ],
                     this._createRequest(baseTree, data, _url, data.method)
-
-                let uuid = this._uuid()
-                _requests[uuid] = request
-                _group = _group.setIn([ 'children', data.method ], uuid)
+                )
             }
         )
 
-        if (_group && _group.get('children').size > 0) {
-            return { group: _group, requests: _requests }
+        if (group && group.get('children').size > 0) {
+            return group
         }
 
-        return { group: null, requests: {} }
+        return null
     }
 
     _createRequest(raml, req, url, method) {
@@ -735,8 +721,7 @@ export default class RAMLParser {
 
             for (let scheme of raml.securitySchemes || []) {
                 if (Object.keys(scheme)[0] === securedName) {
-                    const authName = Object.keys(scheme)[0]
-                    let security = scheme[authName]
+                    let security = scheme[Object.keys(scheme)[0]]
 
                     let securityMap = {
                         'OAuth 2.0': this._extractOAuth2Auth,
@@ -747,9 +732,7 @@ export default class RAMLParser {
 
                     let rule = securityMap[security.type]
                     if (rule) {
-                        auths = auths.push(
-                          rule(raml, authName, security, params)
-                        )
+                        auths = auths.push(rule(raml, security, params))
                     }
                 }
             }
@@ -757,7 +740,7 @@ export default class RAMLParser {
         return auths
     }
 
-    _extractOAuth2Auth(raml, authName = null, security, params) {
+    _extractOAuth2Auth(raml, security, params) {
         let flowMap = {
             code: 'accessCode',
             token: 'implicit',
@@ -766,8 +749,6 @@ export default class RAMLParser {
         }
         let _params = params || {}
         let auth = new Auth.OAuth2({
-            authName,
-            description: security.description || null,
             flow:
                 flowMap[(_params.authorizationGrants || [])[0]] ||
                 flowMap[security.settings.authorizationGrants[0]] ||
@@ -790,11 +771,9 @@ export default class RAMLParser {
         return auth
     }
 
-    _extractOAuth1Auth(raml, authName = null, security, params) {
+    _extractOAuth1Auth(raml, security, params) {
         let _params = params || {}
         let auth = new Auth.OAuth1({
-            authName,
-            description: security.description || null,
             authorizationUri:
                 _params.authorizationUri ||
                 security.settings.authorizationUri ||
@@ -812,19 +791,13 @@ export default class RAMLParser {
         return auth
     }
 
-    _extractBasicAuth(raml, authName = null, security = {}) {
-        let auth = new Auth.Basic({
-            authName,
-            description: security.description || null
-        })
+    _extractBasicAuth() {
+        let auth = new Auth.Basic()
         return auth
     }
 
-    _extractDigestAuth(raml, authName = null, security = {}) {
-        let auth = new Auth.Digest({
-            authName,
-            description: security.description || null
-        })
+    _extractDigestAuth() {
+        let auth = new Auth.Digest()
         return auth
     }
 

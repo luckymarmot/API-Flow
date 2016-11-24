@@ -21,7 +21,7 @@ export default class CurlSerializer extends BaseSerializer {
 
     _formatContent(context) {
         let [ startInfo, endInfo ] = this._formatInfo(context)
-        let group = this._formatGroup(context.get('group'))
+        let group = this._formatGroup(context.get('requests').valueSeq())
         let references = this._formatReferences(context.get('references'))
 
         let formatted = [
@@ -109,12 +109,10 @@ export default class CurlSerializer extends BaseSerializer {
         return formatted.join('\n')
     }
 
-    _formatGroup(group) {
-        if (!group) {
+    _formatGroup(requests) {
+        if (!requests || !requests.size) {
             return ''
         }
-
-        let requests = group.getRequests()
 
         let formatted = []
         requests.forEach(request => {

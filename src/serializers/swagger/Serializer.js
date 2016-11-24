@@ -21,7 +21,7 @@ export default class SwaggerSerializer extends BaseSerializer {
 
         let info = this._formatInfo(context)
 
-        let requests = context.getRequests()
+        let requests = context.get('requests').valueSeq()
         let [ host, schemes ] = this._formatHost(requests)
         this.host = host
         let [ paths, securityDefs ] = this._formatPaths(
@@ -750,31 +750,56 @@ export default class SwaggerSerializer extends BaseSerializer {
     }
 
     _formatBasicAuth(context, auth) {
-        let definition = {
-            basic_auth: {
-                type: 'basic',
-                'x-username': auth.get('username'),
-                'x-password': auth.get('password')
-            }
+        const name = auth.get('authName') || 'basic_auth'
+        const securityDefinition = {
+            type: 'basic'
         }
 
-        return [ definition, { basic_auth: [] } ]
+        if (auth.get('username')) {
+            securityDefinition['x-username'] = auth.get('username')
+        }
+
+        if (auth.get('password')) {
+            securityDefinition['x-password'] = auth.get('password')
+        }
+
+        if (auth.get('description')) {
+            securityDefinition.description = auth.get('description')
+        }
+
+        const definition = {}
+        definition[name] = securityDefinition
+
+        const secured = {}
+        secured[name] = []
+
+        return [ definition, secured ]
     }
 
     _formatApiKeyAuth(context, auth) {
-        let definition = {
-            api_key_auth: {
-                type: 'apiKey',
-                name: auth.get('name'),
-                in: auth.get('in')
-            }
+        const name = auth.get('authName') || 'api_key_auth'
+        const securityDefinition = {
+            type: 'apiKey',
+            name: auth.get('name'),
+            in: auth.get('in')
         }
 
-        return [ definition, { api_key_auth: [] } ]
+        if (auth.get('description')) {
+            securityDefinition.description = auth.get('description')
+        }
+
+        const definition = {}
+        definition[name] = securityDefinition
+
+        const secured = {}
+        secured[name] = []
+
+        return [ definition, secured ]
     }
 
     _formatOAuth2Auth(context, auth) {
         let scopes = auth.get('scopes')
+        const name = auth.get('authName') || 'oauth_2_auth'
 
         let _definition = {
             type: 'oauth2'
@@ -792,26 +817,28 @@ export default class SwaggerSerializer extends BaseSerializer {
             _definition.flow = auth.get('flow')
         }
 
-        let definition = {
-            oauth_2_auth: _definition
+        if (auth.get('description')) {
+            _definition.description = auth.get('description')
         }
+
+        const definition = {}
+        definition[name] = _definition
 
         let scopeDescriptions = {}
         let security
         if (scopes) {
             scopes = Array.isArray(scopes) ? scopes : scopes.toJS()
-            security = {
-                oauth_2_auth: scopes
-            }
+            security = {}
+            security[name] = scopes
 
             scopes.forEach(scope => {
                 scopeDescriptions[scope] = ''
             })
 
-            definition.oauth_2_auth.scopes = scopeDescriptions
+            definition[name].scopes = scopeDescriptions
         }
         else {
-            security = 'oauth_2_auth'
+            security = name
         }
 
         return [ definition, security ]
@@ -843,6 +870,7 @@ export default class SwaggerSerializer extends BaseSerializer {
                             subTree[fragment]
                         subTree = subTree[fragment]
                     }
+
                     let ref = container.resolve(key).get('value')
 
                     if (typeof ref === 'undefined' || ref === null) {

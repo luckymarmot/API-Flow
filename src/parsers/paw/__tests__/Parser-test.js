@@ -45,7 +45,7 @@ export class TestPawParser extends UnitTest {
         const paw = this.__init()
 
         paw.spyOn('_parseGroup', () => {
-            return null
+            return { group: null, requests: null }
         })
 
         paw.spyOn('_parseDomains', () => {
@@ -66,7 +66,7 @@ export class TestPawParser extends UnitTest {
         const paw = this.__init()
 
         paw.spyOn('_parseGroup', () => {
-            return null
+            return { group: null, requests: null }
         })
 
         paw.spyOn('_parseDomains', () => {
@@ -87,7 +87,7 @@ export class TestPawParser extends UnitTest {
         const paw = this.__init()
 
         paw.spyOn('_parseGroup', () => {
-            return null
+            return { group: null, requests: null }
         })
 
         paw.spyOn('_parseDomains', () => {
@@ -108,7 +108,7 @@ export class TestPawParser extends UnitTest {
         const paw = this.__init()
 
         paw.spyOn('_parseGroup', () => {
-            return 12
+            return { group: 12, requests: { a: 90 } }
         })
 
         paw.spyOn('_parseDomains', () => {
@@ -120,6 +120,7 @@ export class TestPawParser extends UnitTest {
         })
 
         const expected = new Context({
+            requests: new Immutable.OrderedMap({ a: 90 }),
             group: 12,
             references: 42,
             info: 90
@@ -134,7 +135,7 @@ export class TestPawParser extends UnitTest {
     testParseGroupReturnsNullIfNoRequests() {
         const [ paw, ctx ] = this.__init(2)
 
-        const expected = null
+        const expected = { group: null, requests: {} }
         const result = paw._parseGroup(ctx, [])
 
         this.assertEqual(expected, result)
@@ -196,26 +197,34 @@ export class TestPawParser extends UnitTest {
             }
         ]
 
-        const expected = new Group({
-            children: new Immutable.OrderedMap({
-                4567: 12,
-                42: new Group({
-                    id: '42',
-                    name: 'group#1',
-                    children: new Immutable.OrderedMap({
-                        1234: 12,
-                        2345: 12
-                    })
-                }),
-                90: new Group({
-                    id: '90',
-                    name: 'group#2',
-                    children: new Immutable.OrderedMap({
-                        3456: 12
+        const expected = {
+            group: new Group({
+                children: new Immutable.OrderedMap({
+                    4567: '4567',
+                    42: new Group({
+                        id: '42',
+                        name: 'group#1',
+                        children: new Immutable.OrderedMap({
+                            1234: '1234',
+                            2345: '2345'
+                        })
+                    }),
+                    90: new Group({
+                        id: '90',
+                        name: 'group#2',
+                        children: new Immutable.OrderedMap({
+                            3456: '3456'
+                        })
                     })
                 })
-            })
-        })
+            }),
+            requests: {
+                1234: 12,
+                2345: 12,
+                3456: 12,
+                4567: 12
+            }
+        }
 
         const result = paw._parseGroup(ctx, input)
 
@@ -274,26 +283,34 @@ export class TestPawParser extends UnitTest {
             }
         ]
 
-        const expected = new Group({
-            children: new Immutable.OrderedMap({
-                4567: 12,
-                90: new Group({
-                    id: '90',
-                    name: 'group#2',
-                    children: new Immutable.OrderedMap({
-                        3456: 12,
-                        42: new Group({
-                            id: '42',
-                            name: 'group#1',
-                            children: new Immutable.OrderedMap({
-                                1234: 12,
-                                2345: 12
+        const expected = {
+            group: new Group({
+                children: new Immutable.OrderedMap({
+                    4567: '4567',
+                    90: new Group({
+                        id: '90',
+                        name: 'group#2',
+                        children: new Immutable.OrderedMap({
+                            3456: '3456',
+                            42: new Group({
+                                id: '42',
+                                name: 'group#1',
+                                children: new Immutable.OrderedMap({
+                                    1234: '1234',
+                                    2345: '2345'
+                                })
                             })
                         })
                     })
                 })
-            })
-        })
+            }),
+            requests: {
+                1234: 12,
+                2345: 12,
+                3456: 12,
+                4567: 12
+            }
+        }
 
         const result = paw._parseGroup(ctx, input)
 

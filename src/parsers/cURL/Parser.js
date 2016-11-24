@@ -119,13 +119,21 @@ export default class CurlParser {
         // parse
         this.idx = 0
 
-        this.context = this.context.set(
-            'group',
-            new Group({
-                name: 'cURL Imports',
-                children: this._parseAll()
-            })
+        let requests = this._parseAll()
+        let group = new Group({
+            name: 'cURL Imports',
+            children: requests.reduce(
+                (acc, val, index) => acc.set(index, index),
+                new Immutable.OrderedMap()
+            )
+        })
+        const requestMap = requests.reduce(
+            (acc, val, index) => acc.set(index, val),
+            new Immutable.OrderedMap()
         )
+        this.context = this.context
+            .set('group', group)
+            .set('requests', requestMap)
 
         return this.context
     }

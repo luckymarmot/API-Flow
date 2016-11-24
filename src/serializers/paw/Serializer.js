@@ -2,8 +2,6 @@ import Context, {
     Parameter
 } from '../../models/Core'
 
-import Request from '../../models/Request'
-
 import LateResolutionReference from '../../models/references/LateResolution'
 import JSONSchemaReference from '../../models/references/JSONSchema'
 import Reference from '../../models/references/Reference'
@@ -251,7 +249,7 @@ export default class PawSerializer {
     }
 
     _importPawRequests(requestContext, item, options) {
-        const requests = requestContext.getRequests()
+        const requests = requestContext.get('requests')
         const group = requestContext.get('group')
         const references = requestContext.get('references')
 
@@ -303,7 +301,9 @@ export default class PawSerializer {
             return pawGroup
         }
 
+
         this._applyFuncOverGroupTree(
+            requests,
             group,
             (request, requestParent) => {
                 ::this._importPawRequest(
@@ -576,16 +576,20 @@ export default class PawSerializer {
         return pawRequest
     }
 
-    _applyFuncOverGroupTree(group, leafFunc, nodeFunc, pawGroup) {
+    _applyFuncOverGroupTree(requests, group, leafFunc, nodeFunc, pawGroup) {
         let calls = []
         let currentPawGroup = nodeFunc(group.get('name') || '', pawGroup)
         group.get('children').forEach((child) => {
-            if (child instanceof Request) {
-                calls.push(leafFunc(child, currentPawGroup))
+            if (typeof child === 'string' || typeof child === 'number') {
+                const request = requests.get(child)
+                if (request) {
+                    calls.push(leafFunc(request, currentPawGroup))
+                }
             }
             else {
                 calls = calls.concat(
                     this._applyFuncOverGroupTree(
+                        requests,
                         child,
                         leafFunc,
                         nodeFunc,

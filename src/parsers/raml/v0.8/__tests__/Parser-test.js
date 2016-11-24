@@ -404,7 +404,7 @@ export class TestRAMLParser extends UnitTest {
         let mockedParser = new ClassMock(parser, '')
 
         mockedParser.spyOn('_createGroupTree', () => {
-            return 12
+            return { group: 12, requests: { a: 42 } }
         })
 
         mockedParser.spyOn('_extractInfos', () => {
@@ -412,6 +412,7 @@ export class TestRAMLParser extends UnitTest {
         })
 
         const expected = new Context({
+            requests: new Immutable.OrderedMap({ a: 42 }),
             group: 12,
             info: 90
         })
@@ -422,6 +423,18 @@ export class TestRAMLParser extends UnitTest {
         )
 
         this.assertEqual(result, expected)
+    }
+
+    @targets('_uuid')
+    testUUIDisv4() {
+        const parser = new RAMLParser()
+
+        /* eslint-disable max-len */
+        const expectedPattern = /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+        /* eslint-enable max-len */
+
+        const result = parser._uuid()
+        this.assertTrue(!!result.match(expectedPattern))
     }
 
     @targets('_createGroupTree')
@@ -440,12 +453,17 @@ export class TestRAMLParser extends UnitTest {
             return 12
         })
 
-        let result = parser._createGroupTree.apply(
+        const expected = {
+            group: null,
+            requests: {}
+        }
+
+        const result = parser._createGroupTree.apply(
             mockedParser,
             [ raml, raml, raml.title ]
         )
 
-        this.assertNull(result)
+        this.assertEqual(result, expected)
     }
 
     @targets('_createGroupTree')
@@ -1336,6 +1354,9 @@ export class TestRAMLParser extends UnitTest {
 
         const expected = new Auth.OAuth2({
             authName: 'oauth_2_0',
+            description: 'The Box API uses OAuth 2 for authentication. ' +
+                'An authorization header containing\na valid access_token ' +
+                'must be included in every request.\n',
             flow: 'accessCode',
             authorizationUrl: 'https://www.box.com/api/oauth2/authorize',
             tokenUrl: 'https://www.box.com/api/oauth2/token',

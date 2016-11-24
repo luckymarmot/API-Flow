@@ -107,7 +107,7 @@ export default class PostmanSerializer extends BaseSerializer {
 
     _formatRequests(context, collectionId) {
         let reqs = []
-        let requests = context.getRequests()
+        let requests = context.get('requests').valueSeq()
 
         requests.forEach(request => {
             let formatted = this._formatRequest(request, collectionId)
