@@ -1,7 +1,6 @@
 import DynamicValueConverter from './DynamicValueConverter'
 
 import JSONSchemaReference from '../../../models/references/JSONSchema'
-import ExoticReference from '../../../models/references/Exotic'
 
 export default class EnvironmentVariable extends DynamicValueConverter {
     convert(dv, ctx) {
@@ -38,10 +37,13 @@ export default class EnvironmentVariable extends DynamicValueConverter {
         }
 
         let uri = this._convertNameToFragment(name)
-        return new ExoticReference({
+        return new JSONSchemaReference({
             uri: uri,
             relative: uri,
-            value: value,
+            value: {
+                type: 'string',
+                default: value
+            },
             resolved: true
         })
     }
