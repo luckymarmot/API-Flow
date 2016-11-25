@@ -9,7 +9,9 @@ import {
 
 import DVManager from '../DVManager'
 import JSONSchemaReference from '../../../../models/references/JSONSchema'
-import { DigestAuth, HawkAuth, AWSSig4Auth, OAuth2Auth } from '../../../../models/Auth'
+import {
+    DigestAuth, HawkAuth, AWSSig4Auth, OAuth2Auth
+} from '../../../../models/Auth'
 
 import {
     ClassMock,
