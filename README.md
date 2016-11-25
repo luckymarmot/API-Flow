@@ -28,10 +28,11 @@ npm install api-flow
 ## Building the different libraries
 ### node, web, and webworker
 
-run the following command to build the API-Flow for the different environments that you need
+run the following command to build API-Flow for the different environments that you need
 
 ```sh
-make runners TARGET="node web webworker" // use TARGET="node" if you only want the node library
+# use TARGET="node" if you only want the node library
+make runners TARGET="node web webworker"
 ```
 
 ### Paw
@@ -39,7 +40,8 @@ make runners TARGET="node web webworker" // use TARGET="node" if you only want t
 You can use the following command to add the different extensions to Paw
 
 ```sh
-make transfer TARGET="curl swagger raml postman" // use TARGET="swagger" if you only want the swagger bindings
+# use TARGET="swagger" if you only want the swagger bindings
+make transfer TARGET="curl swagger raml postman"
 ```
 
 ## Using the npm module
