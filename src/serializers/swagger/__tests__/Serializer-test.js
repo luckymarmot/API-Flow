@@ -24,7 +24,7 @@ import {
 
 
 import Constraint from '../../../models/Constraint'
-import Auth from '../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../models/Auth'
 import URL from '../../../models/URL'
 import Request from '../../../models/Request'
 
@@ -1277,7 +1277,14 @@ export class TestSwaggerSerializer extends UnitTest {
             authorizationUrl: 'test.com/auth',
             tokenUrl: 'test.com/token',
             flow: 'implicit',
-            scopes: new Immutable.List([ 'write:self', 'read:any' ])
+            scopes: new Immutable.List([
+                new OAuth2Scope({
+                    value: 'write:self'
+                }),
+                new OAuth2Scope({
+                    value: 'read:any'
+                })
+            ])
         })
 
         const expected = [
