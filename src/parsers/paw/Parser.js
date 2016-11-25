@@ -465,10 +465,16 @@ export default class PawParser {
             }
         }
 
+        let value = null
+        if (typeof schema.default !== 'undefined') {
+            value = schema.default
+        }
+
         let param = new Parameter({
             key: _key,
             name: name,
             type: type,
+            value: value,
             internals: new Immutable.List(internals),
             externals: externals
         })

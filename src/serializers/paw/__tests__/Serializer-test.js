@@ -1118,6 +1118,9 @@ export class TestPawSerializer extends UnitTest {
 
         const importer = new BaseImporter()
         const mockedImporter = new ClassMock(importer, '')
+
+        mockedImporter.spyOn('_unsupportedAuthHandler', () => {})
+
         const requestMock = new PawRequestMock(null, '')
         const auths = new Immutable.List([
             new UnknownAuth()
@@ -1900,6 +1903,14 @@ export class TestPawSerializer extends UnitTest {
         const contextMock = new PawContextMock()
         const reqContext = new Context()
 
+        importer.spyOn('_parserErrorHandler', (e) => {
+            throw e
+        })
+
+        importer.spyOn('_parserFailureHandler', (e) => {
+            throw e
+        })
+
         importer.spyOn('createRequestContexts', () => {
             return [
                 {
@@ -1932,11 +1943,18 @@ export class TestPawSerializer extends UnitTest {
     }
 
     @targets('import')
-    testImportWithRejectedContext(done) {
+    testImportWithRejectedContextCallsParserErrorHandler(done) {
         const importer = new ClassMock(new BaseImporter(), '')
         const contextMock = new PawContextMock()
-
         let dummyError = new Error('dummy error')
+
+        importer.spyOn('_parserErrorHandler', (e) => {
+            throw e
+        })
+
+        importer.spyOn('_parserFailureHandler', (e) => {
+            throw e
+        })
 
         importer.spyOn('createRequestContexts', () => {
             return new Promise((_, reject) => {
@@ -1961,6 +1979,14 @@ export class TestPawSerializer extends UnitTest {
         const contextMock = new PawContextMock()
 
         let dummyError = new Error('dummy error')
+
+        importer.spyOn('_parserErrorHandler', (e) => {
+            throw e
+        })
+
+        importer.spyOn('_parserFailureHandler', (e) => {
+            throw e
+        })
 
         importer.spyOn('createRequestContexts', () => {
             return new Promise(() => {
@@ -2474,6 +2500,196 @@ export class TestPawSerializer extends UnitTest {
         let result = importer._unescapeURIFragment(input)
 
         this.assertEqual(expected, result)
+    }
+
+    @targets('_parserErrorHandler')
+    testParserErrorHandler() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        /* eslint-disable no-console */
+        const oldConsoleError = console.error
+
+        let called = false
+        let threw = false
+        console.error = () => {
+            called = true
+        }
+
+        try {
+            importer._parserErrorHandler(new Error('Hey there'))
+        }
+        catch (e) {
+            threw = true
+        }
+
+        this.assertTrue(called)
+        this.assertTrue(threw)
+        console.error = oldConsoleError
+        /* eslint-enable no-console */
+    }
+
+    @targets('_parserFailureHandler')
+    testParserFailureHandler() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        /* eslint-disable no-console */
+        const oldConsoleError = console.error
+
+        let called = false
+        let threw = false
+        console.error = () => {
+            called = true
+        }
+
+        try {
+            importer._parserFailureHandler(new Error('Hey there'))
+        }
+        catch (e) {
+            threw = true
+        }
+
+        this.assertTrue(called)
+        this.assertTrue(threw)
+        console.error = oldConsoleError
+        /* eslint-enable no-console */
+    }
+
+    @targets('_serializerFailureHandler')
+    testSerializerFailureHandler() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        /* eslint-disable no-console */
+        const oldConsoleError = console.error
+
+        let called = false
+        let threw = false
+        console.error = () => {
+            called = true
+        }
+
+        try {
+            importer._serializerFailureHandler(new Error('Hey there'))
+        }
+        catch (e) {
+            threw = true
+        }
+
+        this.assertTrue(called)
+        this.assertTrue(threw)
+        console.error = oldConsoleError
+        /* eslint-enable no-console */
+    }
+
+    @targets('_resolverErrorHandler')
+    testResolverErrorHandler() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        /* eslint-disable no-console */
+        const oldConsoleError = console.error
+
+        let called = false
+        let threw = false
+        console.error = () => {
+            called = true
+        }
+
+        try {
+            importer._resolverErrorHandler(new Error('Hey there'))
+        }
+        catch (e) {
+            threw = true
+        }
+
+        this.assertTrue(called)
+        this.assertTrue(threw)
+        console.error = oldConsoleError
+        /* eslint-enable no-console */
+    }
+
+    @targets('_resolverFailureHandler')
+    testResolverFailureHandler() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        /* eslint-disable no-console */
+        const oldConsoleError = console.error
+
+        let called = false
+        let threw = false
+        console.error = () => {
+            called = true
+        }
+
+        try {
+            importer._resolverFailureHandler(new Error('Hey there'))
+        }
+        catch (e) {
+            threw = true
+        }
+
+        this.assertTrue(called)
+        this.assertTrue(threw)
+        console.error = oldConsoleError
+        /* eslint-enable no-console */
+    }
+
+    @targets('_unsupportedAuthHandler')
+    testUnsupportdAuthHandler() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        /* eslint-disable no-console */
+        const oldConsoleError = console.error
+
+        const expected = 'Auth type testAuth is not supported in Paw'
+
+        let result = null
+        let threw = false
+        console.error = (message) => {
+            result = message
+        }
+
+        try {
+            importer._unsupportedAuthHandler({
+                constructor: {
+                    name: 'testAuth'
+                }
+            })
+        }
+        catch (e) {
+            threw = true
+        }
+
+        this.assertFalse(threw)
+        this.assertEqual(result, expected)
+        console.error = oldConsoleError
+        /* eslint-enable no-console */
+    }
+
+    @targets('_invalidJSONHandler')
+    testInvalidJSONHandler() {
+        const importer = new ClassMock(new BaseImporter(), '')
+
+        /* eslint-disable no-console */
+        const oldConsoleError = console.error
+
+        const expected = 'body was set to JSON, but we couldn\'t parse it'
+
+        let result = null
+        let threw = false
+        console.error = (message) => {
+            result = message
+        }
+
+        try {
+            importer._invalidJSONHandler()
+        }
+        catch (e) {
+            threw = true
+        }
+
+        this.assertFalse(threw)
+        this.assertEqual(result, expected)
+        console.error = oldConsoleError
+        /* eslint-enable no-console */
     }
 
     @targets('serialize')
