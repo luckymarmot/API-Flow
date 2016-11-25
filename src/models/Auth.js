@@ -82,6 +82,12 @@ export class OAuth1Auth extends Immutable.Record({
     authorizationUri: null
 }) { }
 
+export class OAuth2Scope extends Immutable.Record({
+    name: null,
+    description: null,
+    value: null
+}) { }
+
 export class OAuth2Auth extends Immutable.Record({
     _model: new Model({
         name: 'oauth-2.auth.models',
