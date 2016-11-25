@@ -25,13 +25,33 @@ just run
 npm install api-flow
 ```
 
+## Building the different libraries
+### node, web, and webworker
+
+run the following command to build API-Flow for the different environments that you need
+
+```sh
+# use TARGET="node" if you only want the node library
+make runners TARGET="node web webworker"
+```
+
+### Paw
+
+You can use the following command to add the different extensions to Paw
+
+```sh
+# use TARGET="swagger" if you only want the swagger bindings
+make transfer TARGET="curl swagger raml postman"
+```
+
 ## Using the npm module
 ### as a standard library
 
 ```js
-var Flow = require('api-flow').Flow;
+const Flow = require('api-flow').default; // if from npm
+const Flow = require('./dist/node/api-flow.js').default; // if from `make runners`
 
-var options = {
+const options = {
     parser: {
         name: 'raml'
     },
@@ -40,14 +60,10 @@ var options = {
     }
 }
 
-var callback = function(data) {
-    // display data
-}
+const converter = new Flow()
+const promise = converter.transform('my_super_raml.yml', options)
 
-var flow = new Flow()
-var promise = flow.run('my_super_raml.yml', options, callback)
-
-promise.then(function(data) {
+promise.then((data) => {
     // do some cool stuff with the data
 })
 ```
@@ -55,17 +71,17 @@ promise.then(function(data) {
 ### Using as a CLI
 
 ```sh
-node ./lib/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
+node ./bin/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
 ```
 
 ### User Interface
 
-API-Flow is the main component of [Console.REST](https://github.com/luckymarmot/console-rest). If you're an API user, you can easily use [https://console.rest/](https://console.rest/) to convert API description files. If you're an API provider, you can add a button to your API docs to let your users open and play with your API in client apps including Paw or Postman.
+API-Flow is one of the main components of [Console.REST](https://github.com/luckymarmot/console-rest). If you're an API user, you can easily use [https://console.rest/](https://console.rest/) to convert API description files. If you're an API provider, you can add a button to your API docs to let your users open and play with your API in client apps including Paw or Postman.
 
 ## Contributing
 
 PRs are welcomed!
-We require that organizations that want to extend API-Flow to support their format write both a parser and a serializer, and not simply a serializer.
+Our sole requirement is that organizations that want to extend API-Flow to support their format write both a parser and a serializer, and not simply a serializer.
 
 ## License
 
