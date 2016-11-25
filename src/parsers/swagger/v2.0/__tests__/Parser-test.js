@@ -20,7 +20,7 @@ import {
 
 import Group from '../../../../models/Group'
 import Constraint from '../../../../models/Constraint'
-import Auth from '../../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../../models/Auth'
 import Request from '../../../../models/Request'
 import URL from '../../../../models/URL'
 import Item from '../../../../models/Item'
@@ -1458,6 +1458,26 @@ export class TestSwaggerParser extends UnitTest {
         const result = parser._setApiKeyAuth('api_key', input)
 
         this.assertEqual(expected, result)
+    }
+
+    @targets('_setOAuth2Scopes')
+    testSetOAuth2Scopes() {
+        const parser = this.__init()
+
+        const scopes = [ 'read:any', 'write:own' ]
+
+        const expected = new Immutable.List([
+            new OAuth2Scope({
+                value: 'read:any'
+            }),
+            new OAuth2Scope({
+                value: 'write:own'
+            })
+        ])
+
+        const result = parser._setOAuth2Scopes(scopes)
+
+        this.assertEqual(result, expected)
     }
 
     @targets('_setOAuth2Auth')
