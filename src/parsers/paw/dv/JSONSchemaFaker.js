@@ -21,7 +21,7 @@ export default class JSONSchemaFaker extends DynamicValueConverter {
             })
 
             if (keys.length === 0) {
-                schema.enum = [ '' ]
+                schema.default = [ '' ]
             }
 
             schema.type = 'string'
