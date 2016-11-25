@@ -38,7 +38,7 @@ export default class DynamicValueManager {
         }
 
         if (identifierMap[identifier]) {
-            return identifierMap[identifier](dv, this.ctx)
+            return identifierMap[identifier].convert(dv, this.ctx)
         }
 
         return dv.getEvaluatedString()
