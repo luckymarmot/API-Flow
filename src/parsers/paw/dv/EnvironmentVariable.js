@@ -12,6 +12,7 @@ export default class EnvironmentVariable extends DynamicValueConverter {
 
         const uri = this._getUri(variable)
         const schema = this._getSchema(variable)
+        console.error('..........', schema)
         const reference = this._createJSONSchemaReference(uri, schema)
 
         return reference

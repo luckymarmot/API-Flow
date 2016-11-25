@@ -38,39 +38,39 @@ export default class DynamicValueManager {
         }
 
         if (identifierMap[identifier]) {
-            return identifierMap[identifier].convert(dv, this.ctx)
+            return identifierMap[identifier](dv, this.ctx)
         }
 
         return dv.getEvaluatedString()
     }
 
     _convertJSF(dv) {
-        let jsf = new JSONSchemaFaker(dv)
-        return jsf.dv
+        let jsf = new JSONSchemaFaker()
+        return jsf.convert(dv)
     }
 
     _convertDigestAuth(dv) {
-        let digest = new DigestAuth(dv)
-        return digest.dv
+        let digest = new DigestAuth()
+        return digest.convert(dv)
     }
 
     _convertEnvironmentVariable(dv, ctx) {
-        let ev = new EnvironmentVariable(dv, ctx)
-        return ev.dv
+        let ev = new EnvironmentVariable()
+        return ev.convert(dv, ctx)
     }
 
     _convertHawk(dv) {
-        let hawk = new Hawk(dv)
-        return hawk.dv
+        let hawk = new Hawk()
+        return hawk.convert(dv)
     }
 
     _convertAWSSig4(dv) {
-        let aws = new AWSSig4(dv)
-        return aws.dv
+        let aws = new AWSSig4()
+        return aws.convert(dv)
     }
 
     _convertOAuth2(dv) {
-        let oauth2 = new OAuth2(dv)
-        return oauth2.dv
+        let oauth2 = new OAuth2()
+        return oauth2.convert(dv)
     }
 }
