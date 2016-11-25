@@ -30,13 +30,23 @@ export default class EnvironmentVariable extends DynamicValueConverter {
 
         const currentValue = variable.getCurrentValue(true)
 
+        let component = {}
+        if (
+            currentValue &&
+            currentValue.length === 1 &&
+            typeof currentValue.getComponentAtIndex === 'function'
+        ) {
+            component = currentValue.getComponentAtIndex(0) || {}
+            console.log('component ---', component)
+        }
+
         let value = null
         if (
             currentValue &&
             currentValue.length === 1 &&
-            currentValue.getComponentAtIndex(0).type === jsfId
+            component.type === jsfId
         ) {
-            value = JSON.parse(currentValue.getComponentAtIndex(0).schema)
+            value = JSON.parse(component.schema)
         }
         else if (
             currentValue &&
