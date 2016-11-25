@@ -768,7 +768,6 @@ export default class RAMLParser {
     }
 
     _extractOAuth2Auth(raml, authName = null, security, params) {
-        console.error('---------', security, params)
         let flowMap = {
             code: 'accessCode',
             token: 'implicit',
