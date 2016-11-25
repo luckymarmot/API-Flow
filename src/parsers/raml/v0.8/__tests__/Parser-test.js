@@ -13,7 +13,7 @@ import {
 } from '../../../../mocks/PawMocks'
 
 import Constraint from '../../../../models/Constraint'
-import Auth from '../../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../../models/Auth'
 
 import Context, {
     Body,
@@ -1181,21 +1181,18 @@ export class TestRAMLParser extends UnitTest {
                 ]
             }
         }
+
         const expected = new Immutable.List([ 12 ])
         const result = parser._extractAuth(raml, req)
 
         this.assertEqual(expected, result)
         this.assertEqual(parser.spy._extractOAuth2Auth.count, 1)
         this.assertEqual(
-            parser.spy._extractOAuth2Auth.calls[0],
+            parser.spy._extractOAuth2Auth.calls[0].slice(2),
             [
-                raml,
-                'oauth_2_0',
                 scheme,
                 {
-                    scopes: [
-                        'ADMINISTRATOR'
-                    ]
+                    scopes: [ 'ADMINISTRATOR' ]
                 }
             ]
         )
@@ -1309,6 +1306,26 @@ export class TestRAMLParser extends UnitTest {
         )
     }
 
+    @targets('_extractOAuth2Scopes')
+    testExtractOAuth2Scopes() {
+        const [ parser ] = this.__init()
+
+        const scopes = [ 'code', 'token' ]
+
+        const expected = new Immutable.List([
+            new OAuth2Scope({
+                value: 'code'
+            }),
+            new OAuth2Scope({
+                value: 'token'
+            })
+        ])
+
+        const result = parser._extractOAuth2Scopes(scopes)
+
+        this.assertEqual(result, expected)
+    }
+
     @targets('_extractOAuth2Auth')
     testExtractOAuth2Auth() {
         const [ parser, raml ] = this.__init('large-raml')
@@ -1360,7 +1377,11 @@ export class TestRAMLParser extends UnitTest {
             flow: 'accessCode',
             authorizationUrl: 'https://www.box.com/api/oauth2/authorize',
             tokenUrl: 'https://www.box.com/api/oauth2/token',
-            scopes: new Immutable.List(params.scopes)
+            scopes: new Immutable.List([
+                new OAuth2Scope({
+                    value: 'ADMINISTRATOR'
+                })
+            ])
         })
 
         const result = parser._extractOAuth2Auth(
@@ -2428,7 +2449,13 @@ export class TestRAMLParser extends UnitTest {
     }
 
     __init(file) {
-        let raml = this.__loadRAMLObject(file)
+        let raml
+        if (!file) {
+            raml = null
+        }
+        else {
+            raml = this.__loadRAMLObject(file)
+        }
         let parser = new RAMLParser()
         let mockedParser = new ClassMock(parser, '')
 

@@ -22,7 +22,7 @@ import ExoticReference from '../../../models/references/Exotic'
 import JSONSchemaReference from '../../../models/references/JSONSchema'
 
 import Constraint from '../../../models/Constraint'
-import Auth from '../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../models/Auth'
 
 import ShimmingFileReader from '../FileReader'
 
@@ -757,7 +757,18 @@ export default class RAMLParser {
         return auths
     }
 
+    _extractOAuth2Scopes(scopes) {
+        const _scopes = scopes.map(scope => {
+            return new OAuth2Scope({
+                value: scope
+            })
+        })
+
+        return new Immutable.List(_scopes)
+    }
+
     _extractOAuth2Auth(raml, authName = null, security, params) {
+        console.error('---------', security, params)
         let flowMap = {
             code: 'accessCode',
             token: 'implicit',
@@ -780,11 +791,10 @@ export default class RAMLParser {
                 _params.accessTokenUri ||
                 security.settings.accessTokenUri ||
                 null,
-            scopes:
-                new Immutable.List(
-                    _params.scopes ||
-                    security.settings.scopes || []
-                )
+            scopes: this._extractOAuth2Scopes(
+                _params.scopes ||
+                security.settings.scopes || []
+            )
         })
 
         return auth
