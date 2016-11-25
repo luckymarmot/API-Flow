@@ -74,6 +74,84 @@ export default class PawSerializer {
         this.context = context || null
     }
 
+    _parserErrorHandler(e) {
+        /* eslint-disable no-console */
+        console.error(
+            '@parser failed with error',
+            e,
+            JSON.stringify(e),
+            e.stack
+        )
+        /* eslint-enable no-console */
+        throw e
+    }
+
+    _parserFailureHandler(e) {
+        /* eslint-disable no-console */
+        console.error(
+            '@parser caught error',
+            e,
+            JSON.stringify(e),
+            e.stack
+        )
+        /* eslint-enable no-console */
+        throw e
+    }
+
+    _serializerFailureHandler(e) {
+        /* eslint-disable no-console */
+        console.error(
+            '@serializer failed with error',
+            e,
+            JSON.stringify(e),
+            e.stack
+        )
+        throw e
+        /* eslint-enable no-console */
+    }
+
+    _resolverErrorHandler(error) {
+        /* eslint-disable no-console */
+        console.error(
+            '@resolver failed with error',
+            error,
+            JSON.stringify(error),
+            error.stack
+        )
+        throw error
+        /* eslint-enable no-console */
+    }
+
+    _resolverFailureHandler(error) {
+        /* eslint-disable no-console */
+        console.error(
+            '@resolver caught error',
+            error,
+            JSON.stringify(error),
+            error.stack
+        )
+        throw error
+        /* eslint-enable no-console */
+    }
+
+    _unsupportedAuthHandler(auth) {
+        /* eslint-disable no-console */
+        console.error(
+            'Auth type ' +
+            auth.constructor.name +
+            ' is not supported in Paw'
+        )
+        /* eslint-enable no-console */
+    }
+
+    _invalidJSONHandler() {
+        /* eslint-disable no-console */
+        console.error(
+            'body was set to JSON, but we couldn\'t parse it'
+        )
+        /* eslint-enable no-console */
+    }
+
     /*
       @params:
         - context
@@ -154,27 +232,7 @@ export default class PawSerializer {
             }, () => {
                 return false
             })
-        }, (e) => {
-            /* eslint-disable no-console */
-            console.error(
-                '@parser failed with error',
-                e,
-                JSON.stringify(e),
-                e.stack
-            )
-            /* eslint-enable no-console */
-            throw e
-        }).catch((e) => {
-            /* eslint-disable no-console */
-            console.error(
-                '@parser caught error',
-                e,
-                JSON.stringify(e),
-                e.stack
-            )
-            /* eslint-enable no-console */
-            throw e
-        })
+        }, ::this._parserErrorHandler).catch(::this._parserFailureHandler)
 
         return importPromise
     }
@@ -211,37 +269,9 @@ export default class PawSerializer {
                 return true
             }
             catch (e) {
-                /* eslint-disable no-console */
-                console.error(
-                    '@serializer failed with error',
-                    e,
-                    JSON.stringify(e),
-                    e.stack
-                )
-                throw e
-                /* eslint-enable no-console */
+                this._serializerFailureHandler(e)
             }
-        }, error => {
-            /* eslint-disable no-console */
-            console.error(
-                '@resolver failed with error',
-                error,
-                JSON.stringify(error),
-                error.stack
-            )
-            throw error
-            /* eslint-enable no-console */
-        }).catch(error => {
-            /* eslint-disable no-console */
-            console.error(
-                '@serializer caught error',
-                error,
-                JSON.stringify(error),
-                error.stack
-            )
-            throw error
-            /* eslint-enable no-console */
-        })
+        }, this._resolverErrorHandler).catch(this._resolverFailureHandler)
     }
 
     serialize(requestContext, opts = null, item, options) {
@@ -869,13 +899,7 @@ export default class PawSerializer {
                 }
             }
             else {
-                /* eslint-disable no-console */
-                console.error(
-                    'Auth type ' +
-                    auth.constructor.name +
-                    ' is not supported in Paw'
-                )
-                /* eslint-enable no-console */
+                this._unsupportedAuthHandler(auth)
             }
         }
         return pawReq
@@ -1001,11 +1025,7 @@ export default class PawSerializer {
                 pawReq.jsonBody = JSON.parse(component)
             }
             catch (e) {
-                /* eslint-disable no-console */
-                console.error(
-                    'body was set to JSON, but we couldn\'t parse it'
-                )
-                /* eslint-enable no-console */
+                this._invalidJSONHandler()
                 pawReq.body = content
             }
         }
