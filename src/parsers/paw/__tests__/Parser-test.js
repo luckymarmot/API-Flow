@@ -16,7 +16,7 @@ import Context, {
 
 import Group from '../../../models/Group'
 import Constraint from '../../../models/Constraint'
-import Auth from '../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../models/Auth'
 import Request from '../../../models/Request'
 import URL from '../../../models/URL'
 
@@ -1847,7 +1847,14 @@ export class TestPawParser extends UnitTest {
                 flow: 'implicit',
                 authorizationUrl: 'w;oeifhwe',
                 tokenUrl: 'h2oiufh23',
-                scopes: [ 'read:any', 'write:self' ]
+                scopes: new Immutable.List([
+                    new OAuth2Scope({
+                        value: 'read:any'
+                    }),
+                    new OAuth2Scope({
+                        value: 'write:self'
+                    })
+                ])
             })
         ])
 
