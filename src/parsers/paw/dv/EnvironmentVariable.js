@@ -37,7 +37,6 @@ export default class EnvironmentVariable extends DynamicValueConverter {
             typeof currentValue.getComponentAtIndex === 'function'
         ) {
             component = currentValue.getComponentAtIndex(0) || {}
-            console.log('component ---', component)
         }
 
         let value = null
