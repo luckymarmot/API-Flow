@@ -18,7 +18,7 @@ import URL from '../../../models/URL'
 import Group from '../../../models/Group'
 import Request from '../../../models/Request'
 
-import Auth from '../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../models/Auth'
 
 export default class PostmanParser {
     static format = 'postman'
@@ -615,6 +615,17 @@ export default class PostmanParser {
         })
     }
 
+    _extractOAuth2Scopes(_scope) {
+        let scopes = (_scope || '').split(/[\s,;]/)
+        scopes = scopes.map(scope => {
+            return new OAuth2Scope({
+                value: this._referenceEnvironmentVariable(scope)
+            })
+        })
+
+        return new Immutable.List(scopes)
+    }
+
     _extractOAuth2(auth) {
         return new Auth.OAuth1({
             authorizationUrl: this._referenceEnvironmentVariable(
@@ -623,9 +634,7 @@ export default class PostmanParser {
             accessTokenUrl: this._referenceEnvironmentVariable(
                 auth.tokenUrl
             ),
-            scopes: [ this._referenceEnvironmentVariable(
-                auth.scope
-            ) ]
+            scopes: this._extractOAuth2Scopes(auth.scope)
         })
     }
 
