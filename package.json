@@ -21,7 +21,7 @@
     "babel-runtime": "6.3.19",
     "immutable": "3.7.6",
     "js-yaml": "3.5.5",
-    "json-schema-faker": "^0.3.1",
+    "json-schema-faker": "^0.3.7",
     "raml-parser": "0.8.16",
     "request": "^2.72.0",
     "swagger-schema-official": "2.0.0-bab6bed",
