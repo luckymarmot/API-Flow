@@ -836,7 +836,7 @@ export default class RAMLParser {
         let responses = new Immutable.List()
 
         for (let code of Object.keys(req.responses || {})) {
-            let response = req.responses[code]
+            let response = req.responses[code] || {}
             let description = response.description || null
 
             let [ _container, _bodies ] = this._extractBodies(
