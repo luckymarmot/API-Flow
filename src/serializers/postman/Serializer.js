@@ -1,3 +1,4 @@
+import { List } from 'immutable'
 import BaseSerializer from '../BaseSerializer'
 
 import Group from '../../models/Group'
@@ -54,14 +55,17 @@ export default class PostmanSerializer extends BaseSerializer {
         let uuid = this._uuid()
         let name = this._formatCollectionName(context)
 
-        let requests = this._formatRequests(context, uuid)
-        let order = this._formatOrder(requests)
+        let { requests, requestIdsMap } = this._formatRequests(context, uuid)
+        let { folders, updatedRequests, orders } = this._formatFolders(
+            context, requests, requestIdsMap
+        )
 
         let collection = {
             id: uuid,
             name: name,
-            requests: requests,
-            order: order
+            folders,
+            requests: updatedRequests,
+            order: orders
         }
 
         return collection
@@ -105,16 +109,108 @@ export default class PostmanSerializer extends BaseSerializer {
         }
     }
 
+    _formatFolders(context, requests, requestIdsMap) {
+        const group = context.get('group')
+
+        if (!group) {
+            return []
+        }
+
+        const children = group.get('children')
+
+        if (!children) {
+            return []
+        }
+
+        const orders = []
+
+        const folders = children.valueSeq().map(groupOrId => {
+            if (
+                typeof groupOrId === 'string' ||
+                typeof groupOrId === 'number'
+            ) {
+                if (requestIdsMap[groupOrId]) {
+                    orders.push(requestIdsMap[groupOrId])
+                }
+                return null
+            }
+
+            let order = ::this._extractRequestIdsFromGroup(
+                groupOrId, requestIdsMap
+            ).toJS()
+
+            let uuid = this._uuid()
+
+            const folder = {
+                order,
+                name: groupOrId.get('name') || '',
+                id: uuid,
+                collection_name: group.get('name') || '',
+                collection_id: group.get('id') || '',
+                collection: group.get('id') || '',
+                owner: 0
+            }
+
+            requests
+                .filter(request => order.indexOf(request.id) >= 0)
+                .forEach(request => {
+                    request.folder = folder.id
+                })
+
+            if (!folder.order.length) {
+                return null
+            }
+
+            return folder
+        }).filter(folder => !!folder)
+
+        const updatedRequests = requests
+        return { folders, updatedRequests, orders }
+    }
+
+    _extractRequestIdsFromGroup(groupOrId, requestIdsMap) {
+        if (
+            typeof groupOrId === 'string' ||
+            typeof groupOrId === 'number') {
+            if (requestIdsMap[groupOrId]) {
+                return List([ requestIdsMap[groupOrId] ])
+            }
+            return List()
+        }
+
+        const requests = groupOrId
+            .get('children')
+            .valueSeq()
+            .map((_groupOdId) => {
+                return ::this._extractRequestIdsFromGroup(
+                    _groupOdId, requestIdsMap
+                )
+            })
+            .reduce(::this._flatten, List())
+
+        return requests
+    }
+
+    _flatten(final, list) {
+        return final.concat(list)
+    }
+
     _formatRequests(context, collectionId) {
         let reqs = []
         let requests = context.get('requests').valueSeq()
 
+        const requestIdsMap = {}
+
         requests.forEach(request => {
-            let formatted = this._formatRequest(request, collectionId)
+            let {
+                formatted,
+                mapping
+            } = this._formatRequest(request, collectionId)
             reqs.push(formatted)
+            Object.assign(requestIdsMap, mapping)
         })
 
-        return reqs
+        return { requests: reqs, requestIdsMap }
     }
 
     _formatRequest(request, collectionId) {
@@ -132,8 +228,9 @@ export default class PostmanSerializer extends BaseSerializer {
         let bodies = request.get('bodies')
         let [ dataMode, data ] = this._formatBody(parameters, bodies)
 
+        let uuid = this._uuid()
         let req = {
-            id: this._uuid(),
+            id: uuid,
             url: origin + path + queries,
             method: method,
             collectionId: collectionId,
@@ -144,7 +241,10 @@ export default class PostmanSerializer extends BaseSerializer {
             data: data
         }
 
-        return req
+        let mapping = {}
+        mapping[request.get('id')] = uuid
+
+        return { formatted: req, mapping }
     }
 
     _formatSequenceParam(_param) {
@@ -383,14 +483,6 @@ export default class PostmanSerializer extends BaseSerializer {
         })
 
         return contentType
-    }
-
-    _formatOrder(requests) {
-        let order = requests.map(req => {
-            return req.id
-        })
-
-        return order
     }
 
     _formatEnvironments() {
