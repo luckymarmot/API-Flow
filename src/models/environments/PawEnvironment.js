@@ -1,5 +1,6 @@
 import Environment from './Environment'
 import Model from '../ModelInfo'
+import { NetworkHTTPRequest } from '../../mocks/PawShims'
 
 export class FileResolver {
     static _model = new Model({
@@ -28,7 +29,27 @@ export class URLResolver {
 
     resolve(uri) {
         return new Promise((resolve, reject) => {
-            return reject(new Error('resolver not implemented for ' + uri))
+            if (uri === '') {
+                return resolve(this.item.content)
+            }
+            else {
+                let url = new URL(uri, this.item.get('url')).href()
+                let request = new NetworkHTTPRequest()
+                request.requestUrl = url
+                request.requestMethod = 'GET'
+                request.requestTimeout = 20 * 1000
+                const status = request.send()
+
+                if (status && request.responseStatusCode < 300) {
+                    resolve(request.responseBody)
+                }
+                else {
+                    const msg = 'Failed to fetch ' +
+                        uri + '. Got code: ' +
+                        request.responseStatusCode
+                    reject(new Error(msg))
+                }
+            }
         })
     }
 }
