@@ -26,6 +26,8 @@ export default class ContextResolver {
             for (let i = 0; i < environments.size; i += 1) {
                 references = references.set(environments.get(i), containers[i])
             }
+
+
             return parameterResolver.resolveAll(
                 context.set('references', references),
                 opts
@@ -54,12 +56,14 @@ export default class ContextResolver {
             }
         })
 
+
         return Promise.all(promises).then(updatedReferences => {
             for (let reference of updatedReferences) {
                 container = container.update(reference)
                 let dependencies = reference.get('dependencies')
                 container = container.create(dependencies)
             }
+
             return this.resolveContainer(item, container, opts)
         }, (err, refs) => {
             /* eslint-disable no-console */
@@ -73,69 +77,75 @@ export default class ContextResolver {
     }
 
     resolveReference(item, reference, opts) {
-        let dataUri = reference.getDataUri()
+        try {
+            let dataUri = reference.getDataUri()
 
-        let type = 'file'
-        let urlPattern = /^https?:\/\//i
-        if (urlPattern.test(dataUri || '')) {
-            type = 'url'
-        }
 
-        let resolve = true
-        let value = null
-        if (opts) {
-            let options = opts.getIn([
-                'resolve', 'custom', reference.get('relative')
-            ])
-            if (options) {
-                resolve = options.get('resolve')
-                value = options.get('value')
+            let type = 'file'
+            let urlPattern = /^https?:\/\//i
+            if (urlPattern.test(dataUri || '')) {
+                type = 'url'
+            }
 
-                if (resolve && value) {
-                    let _reference = reference
-                        .set('value', value)
-                        .set('resolved', true)
+            let resolve = true
+            let value = null
+            if (opts) {
+                let options = opts.getIn([
+                    'resolve', 'custom', reference.get('relative')
+                ])
+                if (options) {
+                    resolve = options.get('resolve')
+                    value = options.get('value')
 
-                    return new Promise((_resolve) => {
-                        return _resolve(_reference)
-                    })
+                    if (resolve && value) {
+                        let _reference = reference
+                            .set('value', value)
+                            .set('resolved', true)
+
+                        return new Promise((_resolve) => {
+                            return _resolve(_reference)
+                        })
+                    }
+                }
+
+                if (type === 'file' && !opts.getIn([ 'resolve', 'local' ])) {
+                    resolve = false
+                }
+
+                if (type === 'url' && !opts.getIn([ 'resolve', 'remote' ])) {
+                    resolve = false
                 }
             }
 
-            if (type === 'file' && !opts.getIn([ 'resolve', 'local' ])) {
-                resolve = false
+            if (!resolve && dataUri) {
+                return new Promise((_resolve) => {
+                    return _resolve(reference.set('resolved', true))
+                })
             }
 
-            if (type === 'url' && !opts.getIn([ 'resolve', 'remote' ])) {
-                resolve = false
+            if (dataUri === null || dataUri === '') {
+                return new Promise((_resolve) => {
+                    _resolve(item)
+                }).then(_item => {
+                    let resolved = reference.resolve(_item.content)
+                    return resolved
+                })
             }
+
+            let dataResolver
+            this.environment = this.environment.addResolver(item)
+            dataResolver = this.environment.getResolver(item, type)
+
+            return dataResolver
+                .resolve(dataUri)
+                .then(_item => {
+                    return reference.resolve(_item)
+                }, () => {
+                    return reference.resolve(null)
+                })
         }
-
-        if (!resolve && dataUri) {
-            return new Promise((_resolve) => {
-                return _resolve(reference.set('resolved', true))
-            })
+        catch (e) {
+            return new Promise(resolve => resolve(null))
         }
-
-        if (dataUri === null || dataUri === '') {
-            return new Promise((_resolve) => {
-                _resolve(item)
-            }).then(_item => {
-                let resolved = reference.resolve(_item.content)
-                return resolved
-            })
-        }
-
-        let dataResolver
-        this.environment = this.environment.addResolver(item)
-        dataResolver = this.environment.getResolver(item, type)
-
-        return dataResolver
-            .resolve(dataUri)
-            .then(_item => {
-                return reference.resolve(_item)
-            }, () => {
-                return reference.resolve(null)
-            })
     }
 }

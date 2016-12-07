@@ -13,6 +13,7 @@ import {
 import Item from '../../models/Item'
 import ContextResolver from '../../resolvers/ContextResolver'
 import PawEnvironment from '../../models/environments/PawEnvironment'
+import ResolverOptions from '../../models/options/ResolverOptions'
 
 import {
     DynamicValue,
@@ -211,6 +212,7 @@ export default class PawSerializer {
             })
         }
 
+
         let environment = new PawEnvironment()
         let resolver = new ContextResolver(environment)
 
@@ -226,6 +228,7 @@ export default class PawSerializer {
                     )
                 )
             }
+
 
             return Promise.all(promises).then(() => {
                 return true
@@ -252,9 +255,11 @@ export default class PawSerializer {
 
         let item = new Item(_item)
 
+
         return resolver.resolveAll(
             item,
-            reqContext
+            reqContext,
+            new ResolverOptions({ resolve: { local: false } })
         ).then(context => {
             try {
                 this._importPawRequests(
@@ -318,6 +323,7 @@ export default class PawSerializer {
             }
         }
 
+
         let manageRequestGroups = (current, parentGroup) => {
             if (
                 !parentGroup ||
@@ -330,7 +336,6 @@ export default class PawSerializer {
             parentGroup.appendChild(pawGroup)
             return pawGroup
         }
-
 
         this._applyFuncOverGroupTree(
             requests,
@@ -354,8 +359,10 @@ export default class PawSerializer {
         let variablesDict = {}
 
         let environments = references.keySeq()
+
         for (let env of environments) {
             let container = references.get(env)
+
             let pawEnv = this._getEnvironment(
                 environmentDomain,
                 container.get('name') || container.get('id') || env
