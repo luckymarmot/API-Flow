@@ -188,10 +188,10 @@ export class TestURLResolver extends UnitTest {
 
         let result = resolver.resolve('')
         result.then(() => {
-            this.assertFalse(true)
+            this.assertTrue(true)
             done()
         }, () => {
-            this.assertTrue(true)
+            this.assertFalse(true)
             done()
         }).catch(error => {
             done(new Error(error))

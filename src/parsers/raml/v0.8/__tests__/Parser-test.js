@@ -2427,6 +2427,24 @@ export class TestRAMLParser extends UnitTest {
         this.assertEqual(expected, result)
     }
 
+    @targets('setFileReader')
+    testSetFileReader() {
+        const parser = new ClassMock(new RAMLParser())
+
+        parser.reader = new ShimmingFileReader([ 1, 2, 3 ])
+        const items = [ 1, 2, 3, 4, 5 ]
+
+        class UrlResolver {}
+        const urlResolverClass = UrlResolver
+        parser.setFileReader(items, urlResolverClass)
+
+        const fileReader = parser.reader
+
+        this.assertTrue(fileReader instanceof ShimmingFileReader)
+        this.assertEqual(fileReader.items, items)
+        this.assertJSONEqual(fileReader.urlResolver, new UrlResolver())
+    }
+
     __init(file) {
         let raml = this.__loadRAMLObject(file)
         let parser = new RAMLParser()

@@ -69,6 +69,10 @@ export default class RAMLParser {
         return RAMLParser.getAPIName(...arguments)
     }
 
+    setFileReader(items, urlResolverClass) {
+        this.reader = new ShimmingFileReader(items, urlResolverClass)
+    }
+
     parse(_item) {
         this.item = new Item(_item)
         this.reader.setBaseItem(this.item)
@@ -832,7 +836,7 @@ export default class RAMLParser {
         let responses = new Immutable.List()
 
         for (let code of Object.keys(req.responses || {})) {
-            let response = req.responses[code]
+            let response = req.responses[code] || {}
             let description = response.description || null
 
             let [ _container, _bodies ] = this._extractBodies(

@@ -2,6 +2,7 @@ import { registerImporter } from '../../../mocks/PawShims'
 
 import BaseImporter from '../../../serializers/paw/Serializer'
 import RAMLParser from '../../../parsers/raml/Parser'
+import { URLResolver } from '../../../models/environments/PawEnvironment'
 
 @registerImporter // eslint-disable-line
 export default class RAMLImporter extends BaseImporter {
@@ -39,7 +40,7 @@ export default class RAMLImporter extends BaseImporter {
     */
     createRequestContexts(context, items) {
         const parser = this.parser
-
+        parser.setFileReader(items, URLResolver)
         let reqPromises = []
         for (let item of items) {
             if (this._startsWithRAMLVersion(item)) {
