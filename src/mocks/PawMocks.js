@@ -176,6 +176,25 @@ export class InputField extends Mock {
     }
 }
 
+export class NetworkHTTPRequest extends Mock {
+    constructor(prefix = '') {
+        let obj = {
+            requestUrl: null,
+            requestMethod: null,
+            requestTimeout: null,
+            requestBody: null,
+            responseStatusCode: null,
+            responseHeaders: null,
+            responseBody: null,
+            setRequestHeader: () => {},
+            getRequestHeader: () => {},
+            getResponseHeader: () => {},
+            send: () => {}
+        }
+        super(obj, prefix)
+    }
+}
+
 export const registerImporter = (_class) => {
     return _class
 }

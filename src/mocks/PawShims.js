@@ -3,7 +3,8 @@ if (
     typeof DynamicValue === 'undefined' ||
     typeof DynamicString === 'undefined' ||
     typeof registerCodeGenerator === 'undefined' ||
-    typeof InputField === 'undefined'
+    typeof InputField === 'undefined' ||
+    typeof NetworkHTTPRequest === 'undefined'
 ) {
     let mocks = require('./PawMocks.js')
     module.exports = {
@@ -11,7 +12,8 @@ if (
         DynamicValue: mocks.DynamicValue,
         DynamicString: mocks.DynamicString,
         registerCodeGenerator: mocks.registerCodeGenerator,
-        InputField: mocks.InputField
+        InputField: mocks.InputField,
+        NetworkHTTPRequest: mocks.NetworkHTTPRequest
     }
 }
 else {
@@ -21,7 +23,8 @@ else {
         DynamicValue: DynamicValue,
         DynamicString: DynamicString,
         registerCodeGenerator: registerCodeGenerator,
-        InputField: InputField
+        InputField: InputField,
+        NetworkHTTPRequest: NetworkHTTPRequest
     }
     /* eslint-enable no-undef */
 }
