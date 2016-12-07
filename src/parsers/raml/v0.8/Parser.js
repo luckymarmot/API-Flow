@@ -69,6 +69,10 @@ export default class RAMLParser {
         return RAMLParser.getAPIName(...arguments)
     }
 
+    setFileReader(items, urlResolverClass) {
+        this.reader = new ShimmingFileReader(items, urlResolverClass)
+    }
+
     parse(_item) {
         this.item = new Item(_item)
         this.reader.setBaseItem(this.item)
