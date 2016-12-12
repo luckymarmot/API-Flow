@@ -55,22 +55,6 @@ export class Parameter extends Record(ParameterSpec) {
         return methods.generate(this, useDefault, _constraintSet)
     }
 
-    _inferType(type: string): string {
-        return methods.inferType(type)
-    }
-
-    _replaceRefs(obj: any): any {
-        return methods.replaceRefs(obj)
-    }
-
-    _simplifyRefs(obj: any): any {
-        return methods.simplifyRefs(obj)
-    }
-
-    _unescapeURIFragment(uriFragment: string): string {
-        return methods.unescapeURIFragment(uriFragment)
-    }
-
     validate(value: ?any): boolean {
         return methods.validate(this, value)
     }
@@ -534,4 +518,5 @@ methods.isValid = (
     }, false)
 }
 
+export const __internals__ = methods
 export default Parameter
