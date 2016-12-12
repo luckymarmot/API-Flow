@@ -33,3 +33,36 @@ export class Info extends Immutable.Record({
     license: null,
     version: null
 }) { }
+
+export type SchemaType = {
+  type?: string,
+  minimum?: number,
+  maximum?: number,
+  exclusiveMinimum?: boolean,
+  exclusiveMaximum?: boolean,
+  multipleOf?: number,
+  maxLength?: number,
+  minLength?: number,
+  pattern?: string,
+  additionalItems?: (boolean | SchemaType),
+  maxItems?: number,
+  minItems?: number,
+  uniqueItems?: boolean,
+  maxProperties?: number,
+  minProperties?: number,
+  required?: Array<string>,
+  properties?: { [key: string]: SchemaType },
+  patternProperties?: { [key: string]: SchemaType },
+  additionalProperties?: (boolean | SchemaType),
+  dependencies?: { [key: string]: (SchemaType | Array<string>) },
+  enum?: Array<*>,
+  allOf?: Array<SchemaType>,
+  anyOf?: Array<SchemaType>,
+  oneOf?: Array<SchemaType>,
+  not?: SchemaType,
+  definitions?: { [key: string]: SchemaType },
+  title?: string,
+  description?: string,
+  default?: any,
+  format?: string
+};

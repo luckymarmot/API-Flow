@@ -1,11 +1,28 @@
-import Immutable from 'immutable'
+// @flow
+import { List, OrderedMap, Record } from 'immutable'
 import jsf from 'json-schema-faker'
 
 import Model from './ModelInfo'
 import { Info } from './Utils'
 import Reference from './references/Reference'
 
-export class Parameter extends Immutable.Record({
+import type { SchemaType } from './Utils'
+import type { Constraint } from './Constraint'
+
+export type ParameterType = {
+  _model: Model,
+  key: ?string,
+  value: ?any,
+  type: ?string,
+  format: ?string,
+  required: boolean,
+  description: ?string,
+  example: ?(List<*>),
+  internals: List<Constraint>,
+  externals: List<*>
+};
+
+const ParameterSpec: ParameterType = {
     _model: new Model({
         name: 'parameter.core.models',
         version: '0.1.0'
@@ -18,14 +35,19 @@ export class Parameter extends Immutable.Record({
     required: false,
     description: null,
     example: null,
-    internals: Immutable.List(),
-    externals: Immutable.List()
-}) {
-    getJSONSchema(useFaker = true, replaceRefs = true) {
-        let type = this.get('type')
-        let format = this.get('format')
+    internals: List(),
+    externals: List()
+}
 
-        let types = [
+export class Parameter extends Record(ParameterSpec) {
+    getJSONSchema(
+        useFaker: boolean = true,
+        replaceRefs: boolean = true
+    ): SchemaType {
+        let type: string = this.get('type') || ''
+        let format: string = this.get('format') || ''
+
+        let types: Array<string> = [
             'integer', 'number', 'array', 'string', 'object', 'boolean', 'null'
         ]
 
@@ -33,7 +55,10 @@ export class Parameter extends Immutable.Record({
             type = this._inferType(type)
         }
 
-        let constraintSet = this.get('internals').reduce((set, constraint) => {
+        let constraintSet: SchemaType = this.get('internals').reduce((
+            set: SchemaType,
+            constraint: Constraint
+        ): SchemaType => {
             let obj = constraint.toJSONSchema()
             Object.assign(set, obj)
             return set
@@ -45,7 +70,9 @@ export class Parameter extends Immutable.Record({
 
         if (format === 'sequence') {
             let sequence = this.get('value')
-            constraintSet['x-sequence'] = sequence.map(param => {
+            constraintSet['x-sequence'] = sequence.map((
+                param: Parameter
+            ): SchemaType => {
                 let schema = param.getJSONSchema(useFaker)
                 return schema
             })
@@ -130,7 +157,10 @@ export class Parameter extends Immutable.Record({
         return constraintSet
     }
 
-    generate(useDefault, _constraintSet) {
+    generate(
+        useDefault: boolean,
+        _constraintSet: SchemaType
+    ): ?any {
         if (useDefault && this.get('value') !== null) {
             return this.get('value')
         }
@@ -152,7 +182,7 @@ export class Parameter extends Immutable.Record({
             constraintSet['x-faker'] = 'company.bsNoun'
         }
 
-        jsf.format('sequence', function(gen, schema) {
+        jsf.format('sequence', (gen: any, schema: SchemaType): any => {
             let result = ''
             for (let item of schema['x-sequence']) {
                 if (
@@ -176,11 +206,7 @@ export class Parameter extends Immutable.Record({
         return generated
     }
 
-    _inferType(type) {
-        if (!type) {
-            return null
-        }
-
+    _inferType(type: string): string {
         if (type.match(/double/) || type.match(/float/)) {
             return 'number'
         }
@@ -192,7 +218,7 @@ export class Parameter extends Immutable.Record({
         return type
     }
 
-    _replaceRefs(obj) {
+    _replaceRefs(obj: any): any {
         if (typeof obj !== 'object' || obj === null) {
             return obj
         }
@@ -217,7 +243,7 @@ export class Parameter extends Immutable.Record({
         else {
             for (let key in obj) {
                 if (obj.hasOwnProperty(key)) {
-                    obj[key] = ::this._replaceRefs(obj[key])
+                    obj[key] = this._replaceRefs.call(this, obj[key])
                 }
             }
         }
@@ -225,7 +251,7 @@ export class Parameter extends Immutable.Record({
         return obj
     }
 
-    _simplifyRefs(obj) {
+    _simplifyRefs(obj: any): any {
         if (typeof obj !== 'object' || obj === null) {
             return obj
         }
@@ -243,7 +269,7 @@ export class Parameter extends Immutable.Record({
         else {
             for (let key in obj) {
                 if (obj.hasOwnProperty(key)) {
-                    obj[key] = ::this._simplifyRefs(obj[key])
+                    obj[key] = this._simplifyRefs.call(this, obj[key])
                 }
             }
         }
@@ -251,24 +277,30 @@ export class Parameter extends Immutable.Record({
         return obj
     }
 
-    _unescapeURIFragment(uriFragment) {
+    _unescapeURIFragment(uriFragment: string): string {
         return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
     }
 
-    validate(value) {
-        return this.get('internals').reduce((bool, cond) => {
+    validate(value: ?any): boolean {
+        return this.get('internals').reduce((
+        bool: boolean,
+        cond: Constraint
+        ): boolean => {
             return bool && cond.evaluate(value)
         }, true)
     }
 
-    isValid(param) {
+    isValid(param: Parameter): boolean {
         let list = this.get('externals')
         // No external constraint
         if (list.size === 0) {
             return true
         }
 
-        return list.reduce((bool, _param) => {
+        return list.reduce((
+            bool: boolean,
+            _param: Parameter
+        ): boolean => {
             // && has precedence on ||
             return bool ||
                 _param.get('key') === param.get('key') &&
@@ -277,23 +309,23 @@ export class Parameter extends Immutable.Record({
     }
 }
 
-export class ParameterContainer extends Immutable.Record({
+export class ParameterContainer extends Record({
     _model: new Model({
         name: 'parameter-container.core.models',
         version: '0.1.0'
     }),
-    headers: Immutable.List(),
-    queries: Immutable.List(),
-    body: Immutable.List(),
-    path: Immutable.List()
+    headers: List(),
+    queries: List(),
+    body: List(),
+    path: List()
 }) {
-    getHeadersSet() {
+    getHeadersSet(): OrderedMap<string, Parameter> {
         let headers = this.get('headers')
-        let _set = headers.reduce((set, param) => {
+        let _set = headers.reduce((set: Object, param: Parameter): Object => {
             set[param.get('key')] = param
             return set
         }, {})
-        return new Immutable.OrderedMap(_set)
+        return new OrderedMap(_set)
     }
 
     // TODO support uriEncoding
@@ -304,7 +336,10 @@ export class ParameterContainer extends Immutable.Record({
         }
 
         if (queries.size > 0) {
-            let _query = queries.reduce((query, param) => {
+            let _query = queries.reduce((
+                query: string,
+                param: Parameter
+            ): string => {
                 let fragment = param.get('key')
                 if (param.get('value') !== null) {
                     fragment += '=' + param.get('value')
@@ -320,7 +355,7 @@ export class ParameterContainer extends Immutable.Record({
         return
     }
 
-    filter(paramList) {
+    filter(paramList: List<Parameter>): ParameterContainer {
         if (!paramList) {
             return this
         }
@@ -330,21 +365,21 @@ export class ParameterContainer extends Immutable.Record({
         let body = this.get('body')
         let path = this.get('path')
 
-        paramList.forEach(param => {
-            headers = headers.filter(d => {
+        paramList.forEach((param: Parameter) => {
+            headers = headers.filter((d: Parameter): boolean => {
                 return d.isValid(param)
             })
-            queries = queries.filter(d => {
+            queries = queries.filter((d: Parameter): boolean => {
                 return d.isValid(param)
             })
-            body = body.filter(d => {
+            body = body.filter((d: Parameter): boolean => {
                 return d.isValid(param)
             })
-            path = path.filter(d => {
+            path = path.filter((d: Parameter): boolean => {
                 return d.isValid(param)
             })
         })
-        return this.withMutations(container => {
+        return this.withMutations((container: ParameterContainer) => {
             container
                 .set('headers', headers)
                 .set('queries', queries)
@@ -354,22 +389,22 @@ export class ParameterContainer extends Immutable.Record({
     }
 }
 
-export class Body extends Immutable.Record({
+export class Body extends Record({
     _model: new Model({
         name: 'body.core.models',
         version: '0.1.0'
     }),
-    constraints: Immutable.List(),
+    constraints: List(),
     type: null
 }) {
-    filter(paramContainer) {
+    filter(paramContainer: ParameterContainer): ?ParameterContainer {
         if (paramContainer instanceof ParameterContainer) {
             return paramContainer.filter(this.get('constraints'))
         }
     }
 }
 
-export class Response extends Immutable.Record({
+export class Response extends Record({
     _model: new Model({
         name: 'response.core.models',
         version: '0.1.0'
@@ -378,56 +413,17 @@ export class Response extends Immutable.Record({
     description: null,
     examples: null,
     parameters: new ParameterContainer(),
-    bodies: Immutable.List()
+    bodies: List()
 }) { }
 
 
-export default class Context extends Immutable.Record({
+export default class Context extends Record({
     _model: new Model({
         name: 'context.core.models',
         version: '0.1.0'
     }),
-    requests: new Immutable.OrderedMap(),
+    requests: new OrderedMap(),
     group: null,
-    references: new Immutable.OrderedMap(),
+    references: new OrderedMap(),
     info: new Info()
-}) {
-    getRequests() {
-        if (!this.get('group')) {
-            return new Immutable.List()
-        }
-        return this.get('group').getRequests()
-    }
-
-    mergeEnvironments(environments) {
-        let localEnvs = this.get('environments')
-
-        if (!localEnvs) {
-            return this.set('environments', environments)
-        }
-
-        let envs = environments
-        localEnvs.forEach((env) => {
-            let localEnv = env
-            let merged = false
-            environments.forEach((_env) => {
-                if (localEnv.get('id') === _env.get('id')) {
-                    localEnv = localEnv.mergeDeep(_env)
-                    merged = true
-                }
-            })
-
-            if (!merged) {
-                envs = envs.push(env)
-            }
-        })
-
-        return this.set('environments', envs)
-    }
-
-    mergeGroup(group) {
-        let localGroup = this.get('group')
-        localGroup = localGroup.mergeWithGroup(group)
-        return this.set('group', localGroup)
-    }
-}
+}) { }
