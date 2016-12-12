@@ -187,6 +187,7 @@ export default class PostmanParser {
         }
 
         let context = new Context({
+            requests: new Immutable.OrderedMap(_requests),
             references: envs,
             group: baseGroup
         })
