@@ -13,7 +13,7 @@ import ExoticReference from '../../../models/references/Exotic'
 import Request from '../../../models/Request'
 import Constraint from '../../../models/Constraint'
 import URL from '../../../models/URL'
-import Auth from '../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../models/Auth'
 
 import PawEnvironment from '../../../models/environments/PawEnvironment'
 import ContextResolver from '../../../resolvers/ContextResolver'
@@ -826,7 +826,14 @@ export class TestPawSerializer extends UnitTest {
             flow: 'implicit',
             authorizationUrl: 'fakeurl.com/oauth2',
             tokenUrl: 'fakeurl.com/oauth2/access-token',
-            scopes: [ 'user:write', 'user:read' ]
+            scopes: new Immutable.List([
+                new OAuth2Scope({
+                    value: 'user:write'
+                }),
+                new OAuth2Scope({
+                    value: 'user:read'
+                })
+            ])
         })
 
         let dv = importer._setOAuth2Auth(auth)

@@ -838,7 +838,9 @@ export default class PawSerializer {
                 accessTokenUrl: this._toDynamicString(
                     auth.get('tokenUrl') || '', true, 'auth'
                 ),
-                scope: (auth.get('scopes') || []).join(' ')
+                scope: (auth.get('scopes') || [])
+                    .map(scope => scope.get('value'))
+                    .join(' ')
             }
         )
     }

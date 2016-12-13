@@ -798,7 +798,7 @@ export default class SwaggerSerializer extends BaseSerializer {
     }
 
     _formatOAuth2Auth(context, auth) {
-        let scopes = auth.get('scopes')
+        let scopes = (auth.get('scopes') || []).map(scope => scope.get('value'))
         const name = auth.get('authName') || 'oauth_2_auth'
 
         let _definition = {
@@ -827,7 +827,6 @@ export default class SwaggerSerializer extends BaseSerializer {
         let scopeDescriptions = {}
         let security
         if (scopes) {
-            scopes = Array.isArray(scopes) ? scopes : scopes.toJS()
             security = {}
             security[name] = scopes
 

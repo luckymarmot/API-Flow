@@ -12,7 +12,7 @@ import URL from '../../models/URL'
 import Request from '../../models/Request'
 import Constraint from '../../models/Constraint'
 import Group from '../../models/Group'
-import Auth from '../../models/Auth'
+import Auth, { OAuth2Scope } from '../../models/Auth'
 import Reference from '../../models/references/Reference'
 import ReferenceContainer from '../../models/references/Container'
 import JSONSchemaReference from '../../models/references/JSONSchema'
@@ -1026,10 +1026,17 @@ export default class PawParser {
                 2: 'application',
                 3: 'password'
             }
-            let scopes = (oauth2.scope || '').split(' ')
+            let scopes = (oauth2.scope || '').split(/[\s,;]/)
 
             if (scopes.length === 1 && scopes[0] === '') {
                 scopes = null
+            }
+            else {
+                scopes = scopes.map(scope => {
+                    return new OAuth2Scope({
+                        value: scope
+                    })
+                })
             }
 
             let auth = new Auth.OAuth2({

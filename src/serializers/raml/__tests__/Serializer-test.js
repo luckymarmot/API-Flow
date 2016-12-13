@@ -13,7 +13,7 @@ import {
     Info, Contact, License
 } from '../../../models/Utils'
 
-import Auth from '../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../models/Auth'
 import Constraint from '../../../models/Constraint'
 import URL from '../../../models/URL'
 import Request from '../../../models/Request'
@@ -735,7 +735,14 @@ export class TestRAMLSerializer extends UnitTest {
                         flow: 'implicit',
                         authorizationUrl: 'api.com/oauth2/authorize',
                         tokenUrl: 'api.com/oauth2/token',
-                        scopes: Immutable.List([ 'read:any', 'write:own' ])
+                        scopes: Immutable.List([
+                            new OAuth2Scope({
+                                value: 'read:any'
+                            }),
+                            new OAuth2Scope({
+                                value: 'write:own'
+                            })
+                        ])
                     })
                 ])
             }),
@@ -804,7 +811,14 @@ export class TestRAMLSerializer extends UnitTest {
             flow: 'implicit',
             authorizationUrl: 'api.com/oauth2/authorize',
             tokenUrl: 'api.com/oauth2/token',
-            scopes: Immutable.List([ 'read:any', 'write:own' ])
+            scopes: Immutable.List([
+                new OAuth2Scope({
+                    value: 'read:any'
+                }),
+                new OAuth2Scope({
+                    value: 'write:own'
+                })
+            ])
         })
 
         let expected = {
@@ -1785,7 +1799,12 @@ export class TestRAMLSerializer extends UnitTest {
         const input = new Immutable.List([
             new Auth.OAuth2({
                 scopes: new Immutable.List([
-                    'read:any', 'write:self'
+                    new OAuth2Scope({
+                        value: 'read:any'
+                    }),
+                    new OAuth2Scope({
+                        value: 'write:self'
+                    })
                 ])
             })
         ])

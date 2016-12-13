@@ -18,7 +18,7 @@ import {
 
 import Group from '../../../models/Group'
 import Request from '../../../models/Request'
-import Auth from '../../../models/Auth'
+import Auth, { OAuth2Scope } from '../../../models/Auth'
 import URL from '../../../models/URL'
 import Item from '../../../models/Item'
 
@@ -331,6 +331,16 @@ export default class SwaggerParser {
             in: definition.get('in'),
             name: definition.get('name')
         })
+    }
+
+    _setOAuth2Scopes(scopes) {
+        const _scopes = (scopes || []).map(scope => {
+            return new OAuth2Scope({
+                value: scope
+            })
+        })
+
+        return _scopes
     }
 
     _setOAuth2Auth(authName = null, definition) {

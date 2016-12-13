@@ -876,7 +876,9 @@ export default class RAMLSerializer extends BaseSerializer {
                 if (scopes && scopes.size > 0) {
                     content = {}
                     content.oauth_2_0 = {
-                        scopes: scopes.toJS()
+                        scopes: (scopes || []).map(scope => {
+                            return scope.get('value')
+                        })
                     }
                 }
                 else {
