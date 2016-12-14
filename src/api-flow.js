@@ -40,10 +40,12 @@ import PostmanParserv1 from './parsers/postman/v1/Parser'
 import PostmanParserv2 from './parsers/postman/v1/Parser'
 import SwaggerParser from './parsers/swagger/Parser'
 import RAMLParser from './parsers/raml/Parser'
+import InsomniaParser from './parsers/insomnia/Parser'
 
 import SwaggerSerializer from './serializers/swagger/Serializer'
 import RAMLSerializer from './serializers/raml/Serializer'
 import PostmanSerializer from './serializers/postman/Serializer'
+import InsomniaSerializer from './serializers/insomnia/Serializer'
 
 import ContextResolver from './resolvers/ContextResolver'
 import NodeEnvironment from './models/environments/NodeEnvironment'
@@ -96,13 +98,15 @@ export const Parser = {
         v1: PostmanParserv1,
         v2: PostmanParserv2
     },
-    RAML: RAMLParser
+    RAML: RAMLParser,
+    Insomnia: InsomniaParser
 }
 
 export const Serializer = {
     Swagger: SwaggerSerializer,
     RAML: RAMLSerializer,
-    Postman: PostmanSerializer
+    Postman: PostmanSerializer,
+    Insomnia: InsomniaSerializer
 }
 
 if (require.main === module) {
