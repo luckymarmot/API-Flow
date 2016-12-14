@@ -9,6 +9,7 @@ import Constraint from '../../models/Constraint'
 
 import ReferenceContainer from '../../models/references/Container'
 import LateResolutionReference from '../../models/references/LateResolution'
+import ExoticReference from '../../models/references/Exotic'
 
 import {
     Info
@@ -131,16 +132,118 @@ export default class InsomniaParser {
             method: req.method || 'GET',
             url: this._extractUrl(req.url),
             auths: this._extractAuths(req.authentication),
-            bodies: this._extractBodies(req.headers),
-            parameters: this._extractParameters(req.body)
+            parameters: new ParameterContainer({
+                queries: this._extractQueries(req.parameters),
+                headers: this._extractHeaders(req.headers),
+                body: this._extractBody(req.body)
+            })
         })
 
         return request
     }
 
     _extractUrl(urlString) {
-        let url = new URL(urlString)
-        return url
+        if (!urlString.match(/:\/\//)) {
+            return new URL(`http://${urlString}`)
+        }
+        else {
+            return new URL(urlString)
+        }
+    }
+
+    _extractQueries(parameters) {
+        let queries = Immutable.List()
+        for (let param of parameters) {
+            queries.push(new Parameter({
+                key: param.name,
+                name: param.name,
+                value: param.value,
+                type: 'string'
+            }))
+        }
+
+        return queries
+    }
+
+    _extractBody(body) {
+        if (body.mimeType === 'multipart/form-data') {
+            let params = Immutable.List()
+            let enabledParams = body.params.filter(param => !param.disabled)
+            for (let param of enabledParams) {
+                if (param.fileName) {
+                    let ref = new ExoticReference({
+                        uri: param.fileName,
+                        relative: param.fileName
+                    })
+                    params.push(new Parameter({
+                        key: param.name,
+                        name: param.name,
+                        value: ref,
+                        type: 'reference'
+                    }))
+                }
+                else {
+                    params.push(new Parameter({
+                        key: param.name,
+                        name: param.name,
+                        value: param.value,
+                        type: 'string'
+                    }))
+                }
+            }
+
+            return params
+        }
+        else if (body.mimeType === 'application/x-www-form-urlencoded') {
+            let params = Immutable.List()
+            let enabledParams = body.params.filter(param => !param.disabled)
+            for (let param of enabledParams) {
+                params.push(new Parameter({
+                    key: param.name,
+                    name: param.name,
+                    value: param.value,
+                    type: 'string'
+                }))
+            }
+
+            return params
+        }
+        else if (body.fileName) {
+            let ref = new ExoticReference({
+                uri: body.fileName,
+                relative: body.fileName
+            })
+
+            return Immutable.List.of(
+                new Parameter({
+                    key: 'body',
+                    name: 'body',
+                    type: 'reference',
+                    value: ref
+                })
+            )
+        }
+        else if (body.text) {
+            return Immutable.List.of(
+                new Parameter({
+                    key: 'body',
+                    name: 'body',
+                    type: 'string',
+                    value: body.text
+                })
+            )
+        }
+        else {
+            return Immutable.List()
+        }
+    }
+
+    _extractHeaders(headers) {
+        return headers.map(header => new Parameter({
+            key: header.name,
+            value: header.value,
+            type: 'string'
+        }))
     }
 
     _extractAuths(authentication) {
@@ -156,16 +259,6 @@ export default class InsomniaParser {
         }
 
         return auths
-    }
-
-    _extractBodies() {
-        // TODO
-        return Immutable.List()
-    }
-
-    _extractParameters() {
-        // TODO
-        return new ParameterContainer()
     }
 
     _findResourcesOfType(root, type) {
