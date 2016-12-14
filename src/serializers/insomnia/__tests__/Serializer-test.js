@@ -201,15 +201,17 @@ export class TestInsomniaSerializer extends UnitTest {
 
         s.spyOn('_formatBasicAuthHeader', () => null)
         s.spyOn('_formatDigestAuthHeader', () => null)
+        s.spyOn('_formatOAuth1AuthHeader', () => null)
+        s.spyOn('_formatAWSSig4AuthHeader', () => null)
 
         s._formatAuthHeader(Immutable.List.of(new Auth.Basic()))
-        this.assertEqual(s.spy._formatBasicAuthHeader, 1)
-        s._formatAuthHeader(Immutable.List.of(new Auth.AWSSig4()))
-        this.assertEqual(s.spy._formatAWSSig4AuthHeader, 1)
+        this.assertEqual(s.spy._formatBasicAuthHeader.count, 1)
         s._formatAuthHeader(Immutable.List.of(new Auth.Digest()))
-        this.assertEqual(s.spy._formatDigestAuthHeader, 1)
+        this.assertEqual(s.spy._formatDigestAuthHeader.count, 1)
         s._formatAuthHeader(Immutable.List.of(new Auth.OAuth1()))
-        this.assertEqual(s.spy._formatOAuth1AuthHeader, 1)
+        this.assertEqual(s.spy._formatOAuth1AuthHeader.count, 1)
+        s._formatAuthHeader(Immutable.List.of(new Auth.AWSSig4()))
+        this.assertEqual(s.spy._formatAWSSig4AuthHeader.count, 1)
     }
 
     @targets('_formatBasicAuthHeader')
@@ -234,17 +236,58 @@ export class TestInsomniaSerializer extends UnitTest {
 
     @targets('_formatDigestAuthHeader')
     testFormatDigestAuthHeader() {
-        // TODO
+        let s = this.__init()
+
+        let auth = new Auth.Digest({
+            authName: '',
+            username: 'User',
+            password: 'Pass'
+        })
+
+        let expected = {
+            name: 'Authorization',
+            value: 'Digest',
+            disabled: false
+        }
+
+        let result = s._formatDigestAuthHeader(auth)
+
+        this.assertEqual(expected, result)
     }
 
     @targets('_formatOAuth1AuthHeader')
     testFormatOAuth1AuthHeader() {
-        // TODO
+        let s = this.__init()
+
+        let auth = new Auth.OAuth1({})
+
+        let expected = {
+            name: 'Authorization',
+            value: 'OAuth consumer_key=\"\", oauth_signature_method=\"\", ' +
+            'oauth_version=\"1.0\"',
+            disabled: false
+        }
+
+        let result = s._formatOAuth1AuthHeader(auth)
+
+        this.assertEqual(expected, result)
     }
 
     @targets('_formatAWSSig4AuthHeader')
     testFormatAWSSig4AuthHeader() {
-        // TODO
+        let s = this.__init()
+
+        let auth = new Auth.AWSSig4({})
+
+        let expected = {
+            name: 'Authorization',
+            value: 'AWS4-HMAC-SHA256',
+            disabled: false
+        }
+
+        let result = s._formatAWSSig4AuthHeader(auth)
+
+        this.assertEqual(expected, result)
     }
 
     @targets('_formatBody')

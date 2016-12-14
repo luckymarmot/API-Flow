@@ -176,7 +176,8 @@ export default class InsomniaSerializer extends BaseSerializer {
     _formatDigestAuthHeader() {
         return {
             name: 'Authorization',
-            value: 'Digest'
+            value: 'Digest',
+            disabled: false
         }
     }
 
@@ -188,14 +189,22 @@ export default class InsomniaSerializer extends BaseSerializer {
         }
 
         let params = Object.keys(oauth1Map).map(key => {
-            return { name: key, value: oauth1Map[key] }
-        })
+            return `${key}="${oauth1Map[key]}"`
+        }).join(', ')
 
-        return { name: 'Authorization', value: `OAuth ${params}` }
+        return {
+            name: 'Authorization',
+            value: `OAuth ${params}`,
+            disabled: false
+        }
     }
 
     _formatAWSSig4AuthHeader() {
-        return { name: 'Authorization', value: 'AWS4-HMAC-SHA256' }
+        return {
+            name: 'Authorization',
+            value: 'AWS4-HMAC-SHA256',
+            disabled: false
+        }
     }
 
     _formatBodyParameters(parameters, bodies) {
