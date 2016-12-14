@@ -130,11 +130,9 @@ export default class InsomniaParser {
             description: req.description || null,
             method: req.method || 'GET',
             url: this._extractUrl(req.url),
-
-            // TODO: The following
-            parameters: new ParameterContainer(),
-            bodies: Immutable.List(),
-            auths: Immutable.List()
+            auths: this._extractAuths(req.authentication),
+            bodies: this._extractBodies(req.headers),
+            parameters: this._extractParameters(req.body)
         })
 
         return request
@@ -143,6 +141,31 @@ export default class InsomniaParser {
     _extractUrl(urlString) {
         let url = new URL(urlString)
         return url
+    }
+
+    _extractAuths(authentication) {
+        let auths = Immutable.List()
+
+        if (authentication.username) {
+            auths.push(
+                new Auth.Basic({
+                    username: authentication.username,
+                    password: authentication.password
+                })
+            )
+        }
+
+        return auths
+    }
+
+    _extractBodies() {
+        // TODO
+        return Immutable.List()
+    }
+
+    _extractParameters() {
+        // TODO
+        return new ParameterContainer()
     }
 
     _findResourcesOfType(root, type) {

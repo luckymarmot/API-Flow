@@ -11,10 +11,6 @@ import {
 
 import { ClassMock } from '../../../mocks/PawMocks'
 
-import {
-    Info, Contact, License
-} from '../../../models/Utils'
-
 import Auth from '../../../models/Auth'
 import Constraint from '../../../models/Constraint'
 import URL from '../../../models/URL'
@@ -165,11 +161,6 @@ export class TestInsomniaSerializer extends UnitTest {
         this.assertEqual(expected, result)
     }
 
-    @targets('_formatSequenceParam')
-    testFormatSequenceParam() {
-        // TODO
-    }
-
     @targets('_formatHeaders')
     testFormatHeadersWithBasicAuth() {
         let s = this.__init()
@@ -193,6 +184,27 @@ export class TestInsomniaSerializer extends UnitTest {
 
         this.assertEqual(s.spy._formatHeader.count, 5)
         this.assertEqual(s.spy._formatAuthHeader.count, 1)
+    }
+
+    @targets('_formatHeader')
+    testFormatHeader() {
+        let s = this.__init()
+
+        let header = new Parameter({
+            key: 'Content-Type',
+            value: 'application/json',
+            type: 'string'
+        })
+
+        let expected = {
+            name: 'Content-Type',
+            value: 'application/json',
+            disabled: false
+        }
+
+        let result = s._formatHeader(header)
+
+        this.assertEqual(expected, result)
     }
 
     @targets('_formatAuthHeader')
@@ -290,13 +302,28 @@ export class TestInsomniaSerializer extends UnitTest {
         this.assertEqual(expected, result)
     }
 
-    @targets('_formatBody')
-    testFormatBody() {
+    @targets('_formatBodyParameters')
+    testFormatBodyParameters() {
         // TODO
     }
 
-    @targets('_formatBodyParam')
-    testFormatBodyParam() {
+    @targets('_formatBodyFormUrlEncoded')
+    testFormatBodyFormUrlEncoded() {
+        // TODO
+    }
+
+    @targets('_formatBodyFile')
+    testFormatBodyFile() {
+        // TODO
+    }
+
+    @targets('_formatBodyGeneric')
+    testFormatBodyGeneric() {
+        // TODO
+    }
+
+    @targets('_formatSequenceParam')
+    testFormatSequenceParam() {
         // TODO
     }
 
@@ -331,14 +358,19 @@ export class TestInsomniaSerializer extends UnitTest {
         this.assertEqual(expected, result)
     }
 
-    @targets('_nextId')
-    testNextId() {
-        // TODO
-    }
-
     @targets('_reset')
+    @targets('_nextId')
     testReset() {
-        // TODO
+        let s = this.__init()
+
+        s._reset()
+        this.assertEqual({}, s.idCounts)
+
+        s._nextId('request')
+        this.assertEqual({ request: 1 }, s.idCounts)
+
+        s._reset()
+        this.assertEqual({}, s.idCounts)
     }
 
     @targets('validate')
