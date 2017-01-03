@@ -3,3 +3,6 @@
 
 [options]
 suppress_comment= \\(.\\|\n\\)*\\$FlowFixMe
+
+[libs]
+types/

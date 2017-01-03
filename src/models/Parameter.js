@@ -1,521 +1,656 @@
-// @flow
 import { List, Record } from 'immutable'
 import jsf from 'json-schema-faker'
 
 import Model from './ModelInfo'
 import Reference from './references/Reference'
 
-import type { SchemaType } from './Utils'
-import type { Constraint } from './Constraint'
+/**
+ * Metadata about the Parameter Record.
+ * Used for internal serialization and deserialization
+ */
+const modelInstance = {
+  name: 'parameter.core.models',
+  version: '0.1.0'
+}
+const model = new Model(modelInstance)
 
-export type ParameterType = {
-  _model: Model,
-  key: ?string,
-  value: ?any,
-  type: ?string,
-  format: ?string,
-  required: boolean,
-  description: ?string,
-  example: ?(List<*>),
-  internals: List<Constraint>,
-  externals: List<*>
-};
-
-const ParameterSpec: ParameterType = {
-    _model: new Model({
-        name: 'parameter.core.models',
-        version: '0.1.0'
-    }),
-    key: null,
-    value: null,
-    type: null,
-    format: null,
-    name: null,
-    required: false,
-    description: null,
-    example: null,
-    internals: List(),
-    externals: List()
+/**
+ * Default Spec for the Parameter Record.
+ */
+const ParameterSpec = {
+  _model: model,
+  key: null,
+  default: null,
+  value: null,
+  type: null,
+  superType: null,
+  format: null,
+  name: null,
+  required: false,
+  description: null,
+  example: null,
+  constraints: List(),
+  applicableContexts: List()
 }
 
+/**
+ * Holds all the internal methods used in tandem with a Parameter
+ */
 const methods = {}
 
+/**
+ * The Parameter Record
+ */
 export class Parameter extends Record(ParameterSpec) {
-    getJSONSchema(
-        useFaker: boolean = true,
-        replaceRefs: boolean = true
-    ): SchemaType {
-        return methods.getJSONSchema(this, useFaker, replaceRefs)
-    }
+  getJSONSchema(useFaker = true, replaceRefs = true) {
+    return methods.getJSONSchema(this, useFaker, replaceRefs)
+  }
 
-    generate(
-        useDefault: boolean,
-        _constraintSet: SchemaType
-    ): ?any {
-        return methods.generate(this, useDefault, _constraintSet)
-    }
+  generate(useDefault, _constraintSet) {
+    return methods.generate(this, useDefault, _constraintSet)
+  }
 
-    validate(value: ?any): boolean {
-        return methods.validate(this, value)
-    }
+  validate(value) {
+    return methods.validate(this, value)
+  }
 
-    isValid(param: Parameter): boolean {
-        return methods.isValid(this, param)
-    }
+  isValid(param) {
+    return methods.isValid(this, param)
+  }
 }
 
-methods.addConstraintsToSchema = (
-    param: Parameter,
-    schema: SchemaType
-): SchemaType => {
-    const constraints: List<Constraint> = param.get('internals')
-
-    return constraints.reduce((
-        set: SchemaType,
-        constraint: Constraint
-    ): SchemaType => {
-        let obj = constraint.toJSONSchema()
-        Object.assign(set, obj)
-        return set
-    }, schema)
+/**
+ * merges a constraint schema with a schema
+ * @param {schema} set: the schema to update
+ * @param {schema} constraint: the constraint schema to merge
+ * @returns {schema} the updated schema
+ */
+methods.mergeConstraintInSchema = (set, constraint) => {
+  let obj = constraint.toJSONSchema()
+  Object.assign(set, obj)
+  return set
 }
 
-methods.inferType = (type: string): string => {
-    if (type.match(/double/) || type.match(/float/)) {
-        return 'number'
-    }
-
-    if (type.match(/date/)) {
-        return 'string'
-    }
-
-    return type || 'string'
+/**
+ * adds constraints from a Parameter to a schema
+ * @param {Parameter} param: the parameter to get the constraints from
+ * @param {schema} schema: the schema to update
+ * @returns {schema} the updated schema
+ */
+methods.addConstraintsToSchema = (param, schema) => {
+  const constraints = param.get('constraints')
+  const _schema = constraints.reduce(methods.mergeConstraintInSchema, schema)
+  return _schema
 }
 
-methods.addTypeFromParameterToSchema = (
-    param: Parameter,
-    schema: SchemaType
-): SchemaType => {
-    const types: Array<string> = [
-        'integer', 'number', 'array', 'string', 'object', 'boolean', 'null'
-    ]
+/**
+ * normalizes the type from a Parameter
+ * @param {string | any} type: the type to normalize
+ * @returns {string} the infered type
+ */
+methods.inferType = (type) => {
+  if (!type || typeof type !== 'string') {
+    return 'string'
+  }
 
-    let type: string = param.get('type') || ''
+  if (type.match(/double/i) || type.match(/float/i)) {
+    return 'number'
+  }
 
-    if (types.indexOf(type) === -1) {
-        type = methods.inferType(type)
-    }
+  if (type.match(/date/i)) {
+    return 'string'
+  }
 
-    schema.type = type
+  return type || 'string'
+}
+
+/**
+ * adds type from a Parameter to a schema
+ * @param {Parameter} param: the parameter to get the type from
+ * @param {schema} schema: the schema to update
+ * @returns {schema} the updated schema
+ */
+methods.addTypeFromParameterToSchema = (param, schema) => {
+  const types = [
+    'integer', 'number', 'array', 'string', 'object', 'boolean', 'null'
+  ]
+
+  let type = param.get('type') || ''
+
+  if (types.indexOf(type) === -1) {
+    type = methods.inferType(type)
+  }
+
+  schema.type = type
+  return schema
+}
+
+/**
+ * adds title from a Parameter to a schema
+ * @param {Parameter} param: the parameter to get the title from
+ * @param {schema} schema: the schema to update
+ * @returns {schema} the updated schema
+ */
+methods.addTitleFromParameterToSchema = (param, schema) => {
+  const key = param.get('key')
+  if (key) {
+    schema['x-title'] = key
+  }
+
+  return schema
+}
+
+/**
+ * adds the default value from a Parameter to a schema
+ * @param {Parameter} param: the parameter to get the default value from
+ * @param {schema} schema: the schema to update
+ * @returns {schema} the updated schema
+ */
+methods.addDefaultFromParameterToSchema = (param, schema) => {
+  const _default = param.get('default')
+  if (_default !== null && typeof _default !== 'undefined') {
+    schema.default = param.get('default')
+  }
+
+  return schema
+}
+
+/**
+ * transforms a simple Parameter into a schema
+ * @param {Parameter} simple: the parameter to transform
+ * @returns {schema} the corresponding schema
+ */
+methods.getJSONSchemaFromSimpleParameter = (simple) => {
+  let schema = {}
+  schema = methods.addConstraintsToSchema(simple, schema)
+  schema = methods.addTypeFromParameterToSchema(simple, schema)
+  schema = methods.addTitleFromParameterToSchema(simple, schema)
+  schema = methods.addDefaultFromParameterToSchema(simple, schema)
+
+  return schema
+}
+
+/**
+ * extracts the sequence from a SequenceParameter into a schema
+ * @param {Parameter} sequenceParam: the parameter to get the sequence from
+ * @param {schema} schema: the schema to update
+ * @param {boolean} useFaker: whether we should use Faker or not
+ * @returns {schema} the updated schema
+ */
+methods.addSequenceToSchema = (sequenceParam, schema, useFaker = true) => {
+  const sequence = sequenceParam.get('value')
+  if (!sequence) {
     return schema
+  }
+
+  schema['x-sequence'] = sequence.map((
+        param
+    ) => {
+    return methods.getJSONSchema(param, useFaker)
+  }).toJS()
+
+  schema.format = 'sequence'
+
+  return schema
 }
 
-methods.addTitleFromParameterToSchema = (
-    param: Parameter,
-    schema: SchemaType
-): SchemaType => {
-    if (param.get('key')) {
-        schema['x-title'] = param.get('key')
-    }
+/**
+ * transforms a SequenceParameter into a schema
+ * @param {Parameter} sequenceParam: the parameter to transform
+ * @param {boolean} useFaker: whether we should use Faker or not
+ * @returns {schema} the corresponding schema
+ */
+methods.getJSONSchemaFromSequenceParameter = (sequenceParam, useFaker = true) => {
+  let schema = {}
+  schema = methods.addConstraintsToSchema(sequenceParam, schema)
+  schema = methods.addTypeFromParameterToSchema(sequenceParam, schema)
+  schema = methods.addTitleFromParameterToSchema(sequenceParam, schema)
+  schema = methods.addSequenceToSchema(sequenceParam, schema, useFaker)
+  return schema
+}
 
+/**
+ * extracts the items field from an ArrayParameter into a schema
+ * @param {Parameter} param: the parameter to transform
+ * @param {schema} schema: the schema to update
+ * @param {boolean} useFaker: whether we should use Faker or not
+ * @returns {schema} the updated schema
+ */
+methods.addItemstoSchema = (param, schema, useFaker = true) => {
+  let items = param.get('value')
+  if (items instanceof Parameter) {
+    schema.items = methods.getJSONSchema(items, useFaker)
+  }
+
+  return schema
+}
+
+/**
+ * transforms an ArrayParameter into a schema
+ * @param {Parameter} arrayParam: the parameter to transform
+ * @param {boolean} useFaker: whether we should use Faker or not
+ * @returns {schema} the corresponding schema
+ */
+methods.getJSONSchemaFromArrayParameter = (arrayParam, useFaker = true) => {
+  let schema = {}
+  schema = methods.addConstraintsToSchema(arrayParam, schema)
+  schema = methods.addTypeFromParameterToSchema(arrayParam, schema)
+  schema = methods.addTitleFromParameterToSchema(arrayParam, schema)
+  schema = methods.addItemstoSchema(arrayParam, schema, useFaker)
+
+  return schema
+}
+
+/**
+ * applies the reference field from a ReferenceParameter to a schema
+ * @param {Parameter} param: the parameter to get the reference from
+ * @param {schema} schema: the schema to update
+ * @returns {schema} the updated schema
+ */
+methods.addReferenceToSchema = (param, schema) => {
+  let ref = param.get('value')
+  if (!(ref instanceof Reference)) {
     return schema
-}
+  }
 
-methods.addDefaultFromParameterToSchema = (
-    param: Parameter,
-    schema: SchemaType
-): SchemaType => {
-    if (param.get('default') || param.get('value')) {
-        schema.default = param.get('default') || param.get('value')
-    }
-
+  if (typeof ref.get('value') === 'string') {
+    schema.type = 'string'
+    schema.default = ref.get('value')
     return schema
-}
+  }
 
-methods.getJSONSchemaFromSimpleParameter = (
-    simple: Parameter,
-): SchemaType => {
-    let schema: SchemaType = {}
-    schema = methods.addConstraintsToSchema(simple, schema)
-    schema = methods.addTypeFromParameterToSchema(simple, schema)
-    schema = methods.addTitleFromParameterToSchema(simple, schema)
-    schema = methods.addDefaultFromParameterToSchema(simple, schema)
-
-    return schema
-}
-
-methods.addSequenceToSchema = (
-    sequenceParam: Parameter,
-    schema: SchemaType,
-    useFaker: boolean = true
-): SchemaType => {
-    const sequence = sequenceParam.get('value')
-    if (!sequence) {
-        return schema
-    }
-
-    schema['x-sequence'] = sequence.map((
-        param: Parameter
-    ): SchemaType => {
-        return methods.getJSONSchema(param, useFaker)
-    })
-    return schema
-}
-
-methods.getJSONSchemaFromSequenceParameter = (
-    sequenceParam: Parameter,
-    useFaker: boolean = true
-): SchemaType => {
-    let schema = {}
-    schema = methods.addConstraintsToSchema(sequenceParam, schema)
-    schema = methods.addTypeFromParameterToSchema(sequenceParam, schema)
-    schema = methods.addTitleFromParameterToSchema(sequenceParam, schema)
-    schema = methods.addSequenceToSchema(sequenceParam, schema, useFaker)
-
-    return schema
-}
-
-methods.addItemstoSchema = (
-    param: Parameter,
-    schema: SchemaType,
-    useFaker: boolean = true
-): SchemaType => {
-    let items = param.get('value')
-    if (items instanceof Parameter) {
-        schema.items = methods.getJSONSchema(items, useFaker)
-    }
-
-    return schema
-}
-
-methods.getJSONSchemaFromArrayParameter = (
-    arrayParam: Parameter,
-    useFaker: boolean = true
-): SchemaType => {
-    let schema = {}
-    schema = methods.addConstraintsToSchema(arrayParam, schema)
-    schema = methods.addTypeFromParameterToSchema(arrayParam, schema)
-    schema = methods.addTitleFromParameterToSchema(arrayParam, schema)
-    schema = methods.addItemstoSchema(arrayParam, schema, useFaker)
-
-    return schema
-}
-
-methods.addReferenceToSchema = (
-  param: Parameter,
-  schema: SchemaType
-): SchemaType => {
-    let ref = param.get('value')
-    if (!(ref instanceof Reference)) {
-        return schema
-    }
-
-    if (typeof ref.get('value') === 'string') {
-        schema.type = 'string'
-        schema.default = ref.get('value')
-        return schema
-    }
-
-    if (
+  if (
       ref.get('value') &&
       typeof ref.get('value') === 'object'
     ) {
-        Object.assign(schema, ref.get('value'))
-        return schema
-    }
-
-    schema.$ref = ref.get('relative') || ref.get('uri')
+    Object.assign(schema, ref.get('value'))
     return schema
+  }
+
+  schema.$ref = ref.get('relative') || ref.get('uri')
+  return schema
 }
 
-methods.getJSONSchemaFromReferenceParameter = (
-    refParam: Parameter
-): SchemaType => {
-    let schema = {}
+/**
+ * transforms a ReferenceParameter into a schema
+ * @param {Parameter} refParam: the parameter to transform
+ * @returns {schema} the corresponding schema
+ */
+methods.getJSONSchemaFromReferenceParameter = (refParam) => {
+  let schema = {}
 
-    schema = methods.addConstraintsToSchema(refParam, schema)
-    schema = methods.addTitleFromParameterToSchema(refParam, schema)
-    schema = methods.addReferenceToSchema(refParam, schema)
+  schema = methods.addConstraintsToSchema(refParam, schema)
+  schema = methods.addTitleFromParameterToSchema(refParam, schema)
+  schema = methods.addReferenceToSchema(refParam, schema)
 
-    return schema
+  return schema
 }
 
-methods.updateSchemaWithFaker = (
-    param: Parameter,
-    schema: SchemaType
-): SchemaType => {
-    const fakerFormatMap = {
-        email: {
-            faker: 'internet.email'
-        },
+/**
+ * adds Faker fields if applicable based on format of Parameter
+ * @param {Parameter} param: the parameter to get the reference from
+ * @param {schema} schema: the schema to update
+ * @returns {schema} the updated schema
+ */
+methods.updateSchemaWithFaker = (param, schema) => {
+  const fakerFormatMap = {
+    email: {
+      faker: 'internet.email'
+    },
       // base64 endoded
-        byte: {
-            pattern: '^(?:[A-Za-z0-9+/]{4})*' +
+    byte: {
+      pattern: '^(?:[A-Za-z0-9+/]{4})*' +
                    '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'
-        },
+    },
       // not really binary but who cares
-        binary: {
-            pattern: '^.*$'
-        },
-        'date-time': {
-            faker: 'date.recent'
-        },
-        password: {
-            pattern: '^.*$'
-        },
-        sequence: {
-            format: 'sequence'
-        }
+    binary: {
+      pattern: '^.*$'
+    },
+    'date-time': {
+      faker: 'date.recent'
+    },
+    password: {
+      pattern: '^.*$'
+    },
+    sequence: {
+      format: 'sequence'
     }
+  }
 
-    const format = param.get('type')
+  const format = param.get('format') || ''
 
-    if (fakerFormatMap[format]) {
-        let constraint = fakerFormatMap[format]
-        Object.assign(schema, constraint)
+  if (fakerFormatMap[format]) {
+    let constraint = fakerFormatMap[format]
+    const key = Object.keys(constraint)[0]
+    if (key && !schema[key]) {
+      Object.assign(schema, constraint)
     }
+  }
 
-    return schema
+  return schema
 }
 
-methods.unescapeURIFragment = (uriFragment: string): string => {
-    return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
+/**
+ * unescapes a URI fragment
+ * @param {string} uriFragment: the uri fragment to unescape
+ * @returns {string} the updated schema
+ */
+methods.unescapeURIFragment = (uriFragment) => {
+  return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
 }
 
-methods.replaceRefs = (obj: any): any => {
-    if (typeof obj !== 'object' || obj === null) {
-        return obj
-    }
-
-    if (obj.$ref) {
-        if (obj.$ref instanceof Reference) {
-            obj.$ref = obj.$ref.get('relative') || obj.$ref.get('uri')
-        }
-
-        obj.default = methods
-          .unescapeURIFragment(obj.$ref.split('/').slice(-1)[0])
-        obj.type = 'string'
-        delete obj.$ref
-    }
-
-    if (Array.isArray(obj)) {
-        for (let i = 0; i < obj.length; i += 1) {
-            let content = obj[i]
-            obj[i] = methods.replaceRefs(content)
-        }
-    }
-    else {
-        for (let key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                obj[key] = methods.replaceRefs(obj[key])
-            }
-        }
-    }
-
+/**
+ * replaces References in a pseudo-schema with default values to make it a simple schema
+ * @param {object} obj: the pseudo-schema to transform in a schema
+ * @returns {schema} the corresponding schema
+ */
+methods.replaceRefs = (obj) => {
+  if (typeof obj !== 'object' || obj === null) {
     return obj
-}
+  }
 
-methods.simplifyRefs = (obj: any): any => {
-    if (typeof obj !== 'object' || obj === null) {
-        return obj
-    }
-
+  if (obj.$ref) {
     if (obj.$ref instanceof Reference) {
-        obj.$ref = obj.$ref.get('relative') || obj.$ref.get('uri')
+      obj.$ref = obj.$ref.get('relative') || obj.$ref.get('uri')
     }
 
-    if (Array.isArray(obj)) {
-        for (let i = 0; i < obj.length; i += 1) {
-            let content = obj[i]
-            obj[i] = methods.simplifyRefs(content)
-        }
-    }
-    else {
-        for (let key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                obj[key] = methods.simplifyRefs(obj[key])
-            }
-        }
-    }
+    obj.default = methods
+          .unescapeURIFragment(obj.$ref.split('/').slice(-1)[0])
+    obj.type = 'string'
+    delete obj.$ref
+  }
 
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i += 1) {
+      let content = obj[i]
+      obj[i] = methods.replaceRefs(content)
+    }
+  }
+  else {
+    for (let key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        obj[key] = methods.replaceRefs(obj[key])
+      }
+    }
+  }
+
+  return obj
+}
+
+/**
+ * replaces References in a pseudo-schema with $refs to make it a valid schema
+ * @param {object} obj: the pseudo-schema to transform in a schema
+ * @returns {schema} the corresponding schema
+ */
+methods.simplifyRefs = (obj) => {
+  if (typeof obj !== 'object' || obj === null) {
     return obj
+  }
+
+  if (obj.$ref instanceof Reference) {
+    obj.$ref = obj.$ref.get('relative') || obj.$ref.get('uri')
+  }
+
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i += 1) {
+      let content = obj[i]
+      obj[i] = methods.simplifyRefs(content)
+    }
+  }
+  else {
+    for (let key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        obj[key] = methods.simplifyRefs(obj[key])
+      }
+    }
+  }
+
+  return obj
 }
 
+/**
+ * tests wether a Parameter is simple (standard type, no weird things)
+ * @param {Parameter} param: the parameter to test
+ * @returns {boolean} the corresponding schema
+ */
 methods.isSimpleParameter = (
-  param: Parameter
-): boolean => {
-    let type: string = param.get('type') || ''
-
-    let types: Array<string> = [
-        'integer', 'number', 'string', 'object', 'boolean', 'null'
-    ]
-
-    if (types.indexOf(type) === -1) {
-        return true
-    }
-
+  param
+) => {
+  if (param.get('superType')) {
     return false
+  }
+
+  let type = param.get('type') || ''
+
+  let types = [
+    'integer', 'number', 'string', 'object', 'boolean', 'null'
+  ]
+
+  if (types.indexOf(type) === -1) {
+    return false
+  }
+
+  return true
 }
 
+/**
+ * tests wether a Parameter is a SequenceParameter
+ * @param {Parameter} param: the parameter to test
+ * @returns {boolean} the corresponding schema
+ */
 methods.isSequenceParameter = (
-  param: Parameter
-): boolean => {
-    let format: string = param.get('format') || ''
+  param
+) => {
+  let superType = param.get('superType') || ''
 
-    return format === 'sequence'
+  return superType === 'sequence'
 }
 
+/**
+ * tests wether a Parameter is an ArrayParameter
+ * @param {Parameter} param: the parameter to test
+ * @returns {boolean} the corresponding schema
+ */
 methods.isArrayParameter = (
-  param: Parameter
-): boolean => {
-    let type: string = param.get('type') || ''
+  param
+) => {
+  let type = param.get('type') || ''
 
-    return type === 'array'
+  return type === 'array'
 }
 
+/**
+ * tests wether a Parameter is a ReferenceParameter
+ * @param {Parameter} param: the parameter to test
+ * @returns {boolean} the corresponding schema
+ */
 methods.isReferenceParameter = (
-  param: Parameter
-): boolean => {
-    let type: string = param.get('type') || ''
+  param
+) => {
+  let superType = param.get('superType') || ''
 
-    return type === 'reference'
+  return superType === 'reference'
 }
 
+/**
+ * transforms a Parameter into a JSON Schema
+ * @param {Parameter} parameter: the parameter to transform
+ * @param {boolean} useFaker: whether to use Faker or not
+ * @param {boolean} replaceRefs: whether to replace refs with simple strings or to replace them with
+ * $refs
+ * @returns {schema} the corresponding schema
+ */
 methods.getJSONSchema = (
-    parameter: Parameter,
-    useFaker: boolean = true,
-    replaceRefs: boolean = true
-): SchemaType => {
-    let schema = {}
+    parameter,
+    useFaker = true,
+    replaceRefs = true
+) => {
+  let schema = {}
 
-    const isSimple = methods.isSimpleParameter(parameter)
-    if (isSimple) {
-        schema = methods.getJSONSchemaFromSimpleParameter(parameter)
-    }
+  const isSimple = methods.isSimpleParameter(parameter)
+  if (isSimple) {
+    schema = methods.getJSONSchemaFromSimpleParameter(parameter)
+  }
 
-    const isSequence = methods.isSequenceParameter(parameter)
-    if (isSequence) {
-        schema = methods.getJSONSchemaFromSequenceParameter(parameter, useFaker)
-    }
+  const isSequence = methods.isSequenceParameter(parameter)
+  if (isSequence) {
+    schema = methods.getJSONSchemaFromSequenceParameter(parameter, useFaker)
+  }
 
-    const isArray = methods.isArrayParameter(parameter)
-    if (isArray) {
-        schema = methods.getJSONSchemaFromArrayParameter(parameter, useFaker)
-    }
+  const isArray = methods.isArrayParameter(parameter)
+  if (isArray) {
+    schema = methods.getJSONSchemaFromArrayParameter(parameter, useFaker)
+  }
 
-    const isReference = methods.isReferenceParameter(parameter)
-    if (isReference) {
-        schema = methods.getJSONSchemaFromReferenceParameter(parameter)
-    }
+  const isReference = methods.isReferenceParameter(parameter)
+  if (isReference) {
+    schema = methods.getJSONSchemaFromReferenceParameter(parameter)
+  }
 
-    if (useFaker) {
-        schema = methods.updateSchemaWithFaker(parameter, schema)
-    }
+  if (useFaker) {
+    schema = methods.updateSchemaWithFaker(parameter, schema)
+  }
 
-    if (replaceRefs) {
-        schema = methods.replaceRefs(schema)
-    }
-    else {
-        schema = methods.simplifyRefs(schema)
-    }
+  if (replaceRefs) {
+    schema = methods.replaceRefs(schema)
+  }
+  else {
+    schema = methods.simplifyRefs(schema)
+  }
 
-    return schema
+  return schema
 }
 
-methods.generateFromDefault = (parameter: Parameter): ?any => {
-    return parameter.get('value') !== null
+/**
+ * Gets the default value of a Parameter, if applicable
+ * @param {Parameter} parameter: the parameter to get the default value of
+ * @returns {any} the default value
+ */
+methods.generateFromDefault = (parameter) => {
+  const _default = parameter.get('default')
+  if (_default !== null && typeof _default !== 'undefined') {
+    return _default
+  }
+
+  return null
 }
 
+/**
+ * Adds Faker fields to improve generation, if applicable
+ * @param {schema} schema: the schema to improve the generation of
+ * @returns {schema} the improved schema
+ */
 methods.addFakerFunctionalities = (
-  schema: SchemaType
-): SchemaType => {
-    if (
+  schema
+) => {
+  if (
         schema.type === 'string' &&
         schema.format !== 'sequence' &&
         !schema.faker &&
         !schema['x-faker']
     ) {
-        schema['x-faker'] = 'company.bsNoun'
-    }
+    schema['x-faker'] = 'company.bsNoun'
+  }
 
-    jsf.format('sequence', (gen: any, _schema: SchemaType): any => {
-        let result = ''
-        for (let item of _schema['x-sequence']) {
-            if (
+  return schema
+}
+
+/**
+ * generates a value from a Parameter or a JSON Schema.
+ * @param {Parameter} parameter: the Parameter to get a JSON Schema from
+ * @param {boolean} useDefault: the schema to improve the generation of
+ * @param {schema} _schema: an optional schema to generate from. If this schema is provided, the
+ * Parameter is ignored.
+ * @returns {any} the generated value
+ */
+methods.generate = (
+    parameter,
+    useDefault,
+    _schema
+) => {
+  if (useDefault) {
+    const _default = methods.generateFromDefault(parameter)
+    if (_default !== null) {
+      return _default
+    }
+  }
+
+  let schema = JSON.parse(JSON.stringify(
+        _schema || methods.getJSONSchema(parameter)
+    ))
+
+  schema = methods.replaceRefs(schema)
+  schema = methods.addFakerFunctionalities(schema)
+
+  jsf.format('sequence', (gen, $schema) => {
+    let result = ''
+    for (let item of $schema['x-sequence']) {
+      if (useDefault && typeof item.default !== 'undefined' && item.default !== null) {
+        item.enum = [ item.default ]
+      }
+      else if (
                 item.type === 'string' &&
                 item.format !== 'sequence' &&
                 !item.faker &&
                 !item['x-faker']
             ) {
-                item['x-faker'] = 'company.bsNoun'
-            }
-            result += jsf(item)
-        }
-        return result
-    })
+        item['x-faker'] = 'company.bsNoun'
+      }
+      result += jsf(item)
+    }
+    return result
+  })
 
-    return schema
+
+  let generated = jsf(schema)
+  return generated
 }
 
-methods.generate = (
-    parameter: Parameter,
-    useDefault: boolean,
-    _schema: SchemaType
-): ?any => {
-    if (useDefault) {
-        const _default = methods.generateFromDefault(parameter)
-        if (_default) {
-            return _default
-        }
-    }
-
-    let schema = JSON.parse(JSON.stringify(
-        _schema || methods.getJSONSchema(parameter)
-    ))
-
-    schema = methods.replaceRefs(schema)
-    schema = methods.addFakerFunctionalities(schema)
-
-    if (schema.default) {
-        schema.enum = [ schema.default ]
-    }
-
-    let generated = jsf(schema)
-    return generated
-}
-
+/**
+ * validates a value against the constraints of a Parameter
+ * @param {Parameter} parameter: the Parameter to test the value against
+ * @param {any} value: the value to test
+ * @returns {boolean} whether the value respects all the constraints of the Parameter or not
+ */
 methods.validate = (
-    parameter: Parameter,
-    value: ?any
-): boolean => {
-    const constraints = parameter.get('internals')
-    return constraints.reduce((
-        bool: boolean,
-        cond: Constraint
-    ): boolean => {
-        return bool && cond.evaluate(value)
-    }, true)
+    parameter,
+    value
+) => {
+  const constraints = parameter.get('constraints')
+  return constraints.reduce((
+        bool,
+        cond
+    ) => {
+    return bool && cond.evaluate(value)
+  }, true)
 }
 
+/**
+ * tests whether there is an applicableContext in which the param is validated
+ * @param {Parameter} source: the Parameter to get the applicableContexts from
+ * @param {Parameter} param: the param to validate
+ * @returns {boolean} whether the param respects all the constraints of one of the
+ * applicableContexts or not
+ */
 methods.isValid = (
-    source: Parameter,
-    param: Parameter
-): boolean => {
-    let list = source.get('externals')
+    source,
+    param
+) => {
+  let list = source.get('applicableContexts')
     // No external constraint
-    if (list.size === 0) {
-        return true
-    }
+  if (list.size === 0) {
+    return true
+  }
 
-    return list.reduce((
-        bool: boolean,
-        _param: Parameter
-    ): boolean => {
-        // && has precedence on ||
-        return bool ||
+  return list.reduce((
+        bool,
+        _param
+    ) => {
+    // && has precedence on ||
+    return bool ||
             _param.get('key') === param.get('key') &&
             _param.validate(param.get('value'))
-    }, false)
+  }, false)
 }
 
 export const __internals__ = methods
