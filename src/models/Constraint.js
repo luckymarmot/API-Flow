@@ -2,15 +2,33 @@ import Immutable from 'immutable'
 
 import Model from './ModelInfo'
 
-export class Constraint extends Immutable.Record({
-  _model: new Model({
-    name: 'constraint.constraint.models',
-    version: '0.1.0'
-  }),
+/**
+ * Metadata about the Constraint Record.
+ * Used for internal serialization and deserialization
+ */
+const modelInstance = {
+  name: 'constraint.constraint.models',
+  version: '0.1.0'
+}
+const model = new Model(modelInstance)
+
+/**
+ * Default Spec for the BasicAuth Record.
+ * - `name` is the name of the Constraint
+ * - `value` is the context used by the `expression` field to validate an object
+ * - `expression` is used to test whether an object is valid or not
+ */
+const ConstraintSpec = {
+  _model: model,
   name: null,
   value: null,
   expression: () => { return false }
-}) {
+}
+
+/**
+ * The base Constraint class
+ */
+export class Constraint extends Immutable.Record(ConstraintSpec) {
   evaluate(d) {
     return this.get('expression')(d)
   }
@@ -24,6 +42,11 @@ export class Constraint extends Immutable.Record({
   }
 }
 
+/**
+ * A MultipleOf Constraint.
+ * evaluate returns true if and only if the object to test is a multiple of
+ * the value passed to the constructor
+ */
 export class MultipleOfConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -41,6 +64,11 @@ export class MultipleOfConstraint extends Constraint {
   }
 }
 
+/**
+ * A Maximum Constraint.
+ * evaluate returns true if and only if the object to test is smaller than
+ * the value passed to the constructor
+ */
 export class MaximumConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -58,6 +86,11 @@ export class MaximumConstraint extends Constraint {
   }
 }
 
+/**
+ * An ExclusiveMaximum Constraint.
+ * evaluate returns true if and only if the object to test is strictly smaller
+ * the value passed to the constructor
+ */
 export class ExclusiveMaximumConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -84,6 +117,11 @@ export class ExclusiveMaximumConstraint extends Constraint {
   }
 }
 
+/**
+ * A Minimum Constraint
+ * evaluate returns true if and only if the object to test is larger than
+ * the value passed to the constructor
+ */
 export class MinimumConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -101,6 +139,11 @@ export class MinimumConstraint extends Constraint {
   }
 }
 
+/**
+ * An ExclusiveMinimum Constraint.
+ * evaluate returns true if and only if the object to test is strictly larger than
+ * the value passed to the constructor
+ */
 export class ExclusiveMinimumConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -127,6 +170,11 @@ export class ExclusiveMinimumConstraint extends Constraint {
   }
 }
 
+/**
+ * A MaximumLength Constraint.
+ * evaluate returns true if and only if the object to test has a length smaller than
+ * the value passed to the constructor
+ */
 export class MaximumLengthConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -144,6 +192,11 @@ export class MaximumLengthConstraint extends Constraint {
   }
 }
 
+/**
+ * A MinimumLength Constraint.
+ * evaluate returns true if and only if the object to test has a length larger than
+ * the value passed to the constructor
+ */
 export class MinimumLengthConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -161,6 +214,11 @@ export class MinimumLengthConstraint extends Constraint {
   }
 }
 
+/**
+ * A Pattern Constraint.
+ * evaluate returns true if and only if the object to test matches
+ * the pattern passed to the constructor
+ */
 export class PatternConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -178,6 +236,11 @@ export class PatternConstraint extends Constraint {
   }
 }
 
+/**
+ * A MaximumItems Constraint.
+ * evaluate returns true if and only if the object to test has less items than
+ * the value passed to the constructor
+ */
 export class MaximumItemsConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -198,6 +261,11 @@ export class MaximumItemsConstraint extends Constraint {
   }
 }
 
+/**
+ * A MinimumItems Constraint.
+ * evaluate returns true if and only if the object to test has more items than
+ * the value passed to the constructor
+ */
 export class MinimumItemsConstraint extends Constraint {
   constructor(value = 0) {
     const obj = {
@@ -215,6 +283,11 @@ export class MinimumItemsConstraint extends Constraint {
   }
 }
 
+/**
+ * A UniqueItems Constraint.
+ * evaluate returns true if and only if the object to test contains only
+ * unique values
+ */
 export class UniqueItemsConstraint extends Constraint {
   constructor(value = false) {
     const obj = {
@@ -240,6 +313,11 @@ export class UniqueItemsConstraint extends Constraint {
   }
 }
 
+/**
+ * A MaximumProperties Constraint.
+ * evaluate returns true if and only if the object to test has less properties than
+ * the value passed to the constructor
+ */
 export class MaximumPropertiesConstraint extends Constraint {
   constructor(value) {
     const obj = {
@@ -260,6 +338,11 @@ export class MaximumPropertiesConstraint extends Constraint {
   }
 }
 
+/**
+ * A MinimumProperties Constraint.
+ * evaluate returns true if and only if the object to test has more properties than
+ * the value passed to the constructor
+ */
 export class MinimumPropertiesConstraint extends Constraint {
   constructor(value = 0) {
     const obj = {
@@ -277,6 +360,11 @@ export class MinimumPropertiesConstraint extends Constraint {
   }
 }
 
+/**
+ * An Enum Constraint.
+ * evaluate returns true if and only if the object to test is in
+ * the list of values passed to the constructor
+ */
 export class EnumConstraint extends Constraint {
   constructor(value = []) {
     const obj = {
