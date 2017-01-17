@@ -1,8 +1,8 @@
-/* eslint-disable max-nested-callbacks */
 import { Record, OrderedMap } from 'immutable'
 
 import Model from './ModelInfo'
-import { Info } from './Utils'
+import Info from './Info'
+import Store from './Store'
 
 /**
  * Metadata about the Api Record.
@@ -19,9 +19,9 @@ const model = new Model(modelInstance)
  */
 const ApiSpec = {
   _model: model,
-  requests: new OrderedMap(),
+  resources: new OrderedMap(),
   group: null,
-  references: new OrderedMap(),
+  store: new Store(),
   info: new Info()
 }
 

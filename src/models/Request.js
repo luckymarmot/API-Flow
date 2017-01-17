@@ -1,7 +1,6 @@
-import { List, Record } from 'immutable'
+import { List, Map, Record } from 'immutable'
 
 import Model from './ModelInfo'
-
 import ParameterContainer from './ParameterContainer'
 
 /**
@@ -20,17 +19,19 @@ const model = new Model(modelInstance)
 const RequestSpec = {
   _model: model,
   id: null,
+  endpoints: Map(),
   name: null,
   description: null,
-  urls: List(),
   method: null,
   parameters: new ParameterContainer(),
   contexts: List(),
   auths: List(),
-  responses: List(),
+  responses: Map(),
   timeout: null,
-  tags: List()
+  tags: List(),
+  interfaces: Map()
 }
 
-export class Request extends Record(RequestSpec) { }
+export const Request = Record(RequestSpec)
+
 export default Request

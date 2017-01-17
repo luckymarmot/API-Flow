@@ -1,4 +1,4 @@
-import { Record, List } from 'immutable'
+import { Record, Map, List } from 'immutable'
 
 import Model from './ModelInfo'
 import ParameterContainer from './ParameterContainer'
@@ -19,7 +19,8 @@ const model = new Model(modelInstance)
 const ContextSpec = {
   _model: model,
   constraints: List(),
-  type: null
+  type: null,
+  implements: Map()
 }
 
 /**

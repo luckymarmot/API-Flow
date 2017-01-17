@@ -17,14 +17,14 @@ describe('models/Request.js', () => {
         'id',
         'name',
         'description',
-        'urls',
         'method',
         'parameters',
         'contexts',
         'auths',
         'responses',
         'timeout',
-        'tags'
+        'tags',
+        'interfaces'
       ]
 
       for (const field of fields) {

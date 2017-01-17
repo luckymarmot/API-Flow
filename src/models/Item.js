@@ -3,6 +3,7 @@ import path from 'path'
 
 import Model from './ModelInfo'
 
+// TODO needs improvements
 
 export default class Item extends Immutable.Record({
   _model: new Model({

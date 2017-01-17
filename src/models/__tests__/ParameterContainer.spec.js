@@ -9,41 +9,25 @@ describe('models/ParameterContainer.js', () => {
   afterEach(() => restoreSpies())
   describe('{ ParameterContainer }', () => {
     describe('#fields', () => {
-      it('should have a `headers` field', () => {
-        const headers = 'test'
-        const data = { headers }
+      const fields = [
+        'headers',
+        'queries',
+        'body',
+        'path'
+      ]
 
-        const instance = new ParameterContainer(data)
+      for (const field of fields) {
+        it('should have a `' + field + '` field', () => {
+          const key = field
+          const value = 'test'
+          const data = {}
 
-        expect(instance.get('headers')).toEqual(headers)
-      })
+          data[key] = value
+          const instance = new ParameterContainer(data)
 
-      it('should have a `queries` field', () => {
-        const queries = 'test'
-        const data = { queries }
-
-        const instance = new ParameterContainer(data)
-
-        expect(instance.get('queries')).toEqual(queries)
-      })
-
-      it('should have a `body` field', () => {
-        const body = 'test'
-        const data = { body }
-
-        const instance = new ParameterContainer(data)
-
-        expect(instance.get('body')).toEqual(body)
-      })
-
-      it('should have a `path` field', () => {
-        const path = 'test'
-        const data = { path }
-
-        const instance = new ParameterContainer(data)
-
-        expect(instance.get('path')).toEqual(path)
-      })
+          expect(instance.get(key)).toEqual(value)
+        })
+      }
     })
 
     describe('-methods', () => {

@@ -1,5 +1,5 @@
 /* eslint-disable max-nested-callbacks */
-import { Record, List } from 'immutable'
+import { Record, Map, List } from 'immutable'
 
 import Model from './ModelInfo'
 import ParameterContainer from './ParameterContainer'
@@ -23,11 +23,13 @@ const ResponseSpec = {
   description: null,
   examples: null,
   parameters: new ParameterContainer(),
-  contexts: List()
+  contexts: List(),
+  interfaces: Map()
 }
 
 /**
  * The Response Record
  */
 export const Response = Record(ResponseSpec)
+
 export default Response

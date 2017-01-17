@@ -1,6 +1,9 @@
-import { List, OrderedMap, Record } from 'immutable'
+import { OrderedMap, Record } from 'immutable'
+
+import { currify } from '../utils/fp-utils'
 
 import Model from './ModelInfo'
+import Reference from './Reference'
 
 /**
  * Metadata about the ParameterContainer Record.
@@ -17,10 +20,10 @@ const model = new Model(modelInstance)
  */
 const ParameterContainerSpec = {
   _model: model,
-  headers: List(),
-  queries: List(),
-  body: List(),
-  path: List()
+  headers: OrderedMap(),
+  queries: OrderedMap(),
+  body: OrderedMap(),
+  path: OrderedMap()
 }
 
 /**
@@ -34,6 +37,10 @@ const methods = {}
 export class ParameterContainer extends Record(ParameterContainerSpec) {
   getHeadersSet() {
     return methods.getHeadersSet(this)
+  }
+
+  resolve(store) {
+    return methods.resolve(this, store)
   }
 
   filter(contextContraints) {
@@ -64,8 +71,8 @@ methods.headerSetReducer = (set, param) => {
  * @returns {OrderedMap} the set of headers
  */
 methods.getHeadersSet = (container) => {
-  let headers = container.get('headers')
-  let _set = headers.reduce(methods.headerSetReducer, {})
+  const headers = container.get('headers')
+  const _set = headers.reduce(methods.headerSetReducer, {})
   return new OrderedMap(_set)
 }
 
@@ -106,10 +113,43 @@ methods.filter = (container, contextContraints) => {
     return container
   }
 
-  let headers = methods.filterBlock(container.get('headers'), contextContraints)
-  let queries = methods.filterBlock(container.get('queries'), contextContraints)
-  let body = methods.filterBlock(container.get('body'), contextContraints)
-  let path = methods.filterBlock(container.get('path'), contextContraints)
+  const headers = methods.filterBlock(container.get('headers'), contextContraints)
+  const queries = methods.filterBlock(container.get('queries'), contextContraints)
+  const body = methods.filterBlock(container.get('body'), contextContraints)
+  const path = methods.filterBlock(container.get('path'), contextContraints)
+
+  return container.withMutations((_container) => {
+    _container
+      .set('headers', headers)
+      .set('queries', queries)
+      .set('body', body)
+      .set('path', path)
+  })
+}
+
+methods.resolveReference = (store, paramOrRef) => {
+  if (paramOrRef instanceof Reference) {
+    return store.getIn(paramOrRef.getLocation())
+  }
+
+  return paramOrRef
+}
+
+methods.removeUnresolvedRefs = (param) => !!param
+
+methods.resolveBlock = (store, block) => {
+  const transformRefs = currify(methods.resolveReference, store)
+  return block
+    .map(transformRefs)
+    .filter(methods.removeUnresolvedRefs)
+}
+
+methods.resolve = (container, store) => {
+  const resolveBlock = currify(methods.resolveBlock, store)
+  const headers = resolveBlock(container.get('headers'))
+  const queries = resolveBlock(container.get('queries'))
+  const body = resolveBlock(container.get('body'))
+  const path = resolveBlock(container.get('path'))
 
   return container.withMutations((_container) => {
     _container

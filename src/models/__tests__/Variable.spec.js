@@ -1,18 +1,15 @@
 /* eslint-disable max-nested-callbacks */
 import expect from 'expect'
 
-import Response from '../Response'
+import Variable from '../Variable'
 
-describe('models/Response.js', () => {
-  describe('{ Response }', () => {
+describe('models/Variable.js', () => {
+  describe('{ Variable }', () => {
     describe('#fields', () => {
       const fields = [
-        'code',
-        'description',
-        'examples',
-        'parameters',
-        'contexts',
-        'interfaces'
+        'name',
+        'values',
+        'defaultEnvironment'
       ]
 
       for (const field of fields) {
@@ -22,7 +19,7 @@ describe('models/Response.js', () => {
           const data = {}
 
           data[key] = value
-          const instance = new Response(data)
+          const instance = new Variable(data)
 
           expect(instance.get(key)).toEqual(value)
         })

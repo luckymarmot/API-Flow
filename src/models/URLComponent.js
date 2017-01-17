@@ -186,7 +186,7 @@ methods.addVarHandlesToVariablesInSequenceParameter = (param, delimiters) => {
       return section
     }
 
-    let variable = methods.addHandlesToVariable(section.get('key'), delimiters)
+    const variable = methods.addHandlesToVariable(section.get('key'), delimiters)
     return section.set('default', variable)
   })
 

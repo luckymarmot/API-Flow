@@ -1,4 +1,4 @@
-import { Record } from 'immutable'
+import { OrderedMap, Record } from 'immutable'
 
 import Model from '../ModelInfo'
 
@@ -21,7 +21,8 @@ const BasicAuthSpec = {
   authName: null,
   username: null,
   password: null,
-  raw: null
+  raw: null,
+  interfaces: OrderedMap()
 }
 
 /**

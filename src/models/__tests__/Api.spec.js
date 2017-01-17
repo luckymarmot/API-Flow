@@ -1,46 +1,30 @@
 /* eslint-disable max-nested-callbacks */
 import expect from 'expect'
 
-import Response from '../Api'
+import Api from '../Api'
 
 describe('models/Api.js', () => {
   describe('{ Api }', () => {
     describe('#fields', () => {
-      it('should have a `requests` field', () => {
-        const requests = 'test'
-        const data = { requests }
+      const fields = [
+        'resources',
+        'group',
+        'store',
+        'info'
+      ]
 
-        const instance = new Response(data)
+      for (const field of fields) {
+        it('should have a `' + field + '` field', () => {
+          const key = field
+          const value = 'test'
+          const data = {}
 
-        expect(instance.get('requests')).toEqual(requests)
-      })
+          data[key] = value
+          const instance = new Api(data)
 
-      it('should have a `group` field', () => {
-        const group = 'test'
-        const data = { group }
-
-        const instance = new Response(data)
-
-        expect(instance.get('group')).toEqual(group)
-      })
-
-      it('should have a `references` field', () => {
-        const references = 'test'
-        const data = { references }
-
-        const instance = new Response(data)
-
-        expect(instance.get('references')).toEqual(references)
-      })
-
-      it('should have a `info` field', () => {
-        const info = 'test'
-        const data = { info }
-
-        const instance = new Response(data)
-
-        expect(instance.get('info')).toEqual(info)
-      })
+          expect(instance.get(key)).toEqual(value)
+        })
+      }
     })
   })
 })

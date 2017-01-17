@@ -3,7 +3,7 @@ import { Record, List } from 'immutable'
 import expect, { spyOn, restoreSpies } from 'expect'
 
 import { Parameter, __internals__ } from '../Parameter'
-import Reference from '../references/Reference'
+import Reference from '../Reference'
 import Constraint from '../Constraint'
 
 describe('models/Parameter.js', () => {
@@ -16,95 +16,36 @@ describe('models/Parameter.js', () => {
     })
 
     describe('#fields', () => {
-      it('should have a `key` field', () => {
-        const key = 'test'
-        const data = { key }
+      const fields = [
+        'in',
+        'uuid',
+        'key',
+        'default',
+        'value',
+        'type',
+        'superType',
+        'format',
+        'name',
+        'required',
+        'description',
+        'examples',
+        'constraints',
+        'applicableContexts',
+        'interfaces'
+      ]
 
-        const instance = new Parameter(data)
+      for (const field of fields) {
+        it('should have a `' + field + '` field', () => {
+          const key = field
+          const value = 'test'
+          const data = {}
 
-        expect(instance.get('key')).toEqual(key)
-      })
+          data[key] = value
+          const instance = new Parameter(data)
 
-      it('should have a `default` field', () => {
-        const value = 'test'
-        const data = { default: value }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('default')).toEqual(value)
-      })
-
-      it('should have a `value` field', () => {
-        const value = 'test'
-        const data = { value }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('value')).toEqual(value)
-      })
-
-      it('should have a `format` field', () => {
-        const format = 'test'
-        const data = { format }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('format')).toEqual(format)
-      })
-
-      it('should have a `name` field', () => {
-        const name = 'test'
-        const data = { name }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('name')).toEqual(name)
-      })
-
-      it('should have a `required` field', () => {
-        const required = 'test'
-        const data = { required }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('required')).toEqual(required)
-      })
-
-      it('should have a `description` field', () => {
-        const description = 'test'
-        const data = { description }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('description')).toEqual(description)
-      })
-
-      it('should have an `example` field', () => {
-        const example = 'test'
-        const data = { example }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('example')).toEqual(example)
-      })
-
-      it('should have an `constraints` field', () => {
-        const constraints = 'test'
-        const data = { constraints }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('constraints')).toEqual(constraints)
-      })
-
-      it('should have an `applicableContexts` field', () => {
-        const applicableContexts = 'test'
-        const data = { applicableContexts }
-
-        const instance = new Parameter(data)
-
-        expect(instance.get('applicableContexts')).toEqual(applicableContexts)
-      })
+          expect(instance.get(key)).toEqual(value)
+        })
+      }
     })
 
     describe('-methods', () => {
@@ -875,48 +816,10 @@ describe('models/Parameter.js', () => {
       expect(actual).toEqual(expected)
     })
 
-    it('should update type and default of schema if reference value is a string', () => {
+    it('should add a $ref field', () => {
       const param = new Parameter({
         value: new Reference({
-          value: 'some string'
-        })
-      })
-      const schema = { type: 'number' }
-
-      const expected = {
-        type: 'string',
-        default: 'some string'
-      }
-      const actual = __internals__.addReferenceToSchema(param, schema)
-
-      expect(actual).toEqual(expected)
-    })
-
-    it('should merge schema and Reference if reference value is an object', () => {
-      const param = new Parameter({
-        value: new Reference({
-          value: {
-            type: 'string',
-            pattern: '^.{5}$'
-          }
-        })
-      })
-      const schema = { type: 'number', enum: [ 1, 2, 3 ] }
-
-      const expected = {
-        type: 'string',
-        pattern: '^.{5}$',
-        enum: [ 1, 2, 3 ]
-      }
-      const actual = __internals__.addReferenceToSchema(param, schema)
-
-      expect(actual).toEqual(expected)
-    })
-
-    it('should add a $ref field if reference has no value', () => {
-      const param = new Parameter({
-        value: new Reference({
-          uri: '#/definitions/UserId'
+          uuid: '#/definitions/UserId'
         })
       })
       const schema = { type: 'number', enum: [ 1, 2, 3 ] }
@@ -967,7 +870,7 @@ describe('models/Parameter.js', () => {
         key: 'userId',
         type: 'reference',
         value: new Reference({
-          uri: '#/definitions/UserId'
+          uuid: '#/definitions/UserId'
         }),
         constraints: List([
           new Constraint.Enum([ 1, 2, 3 ])
@@ -1127,11 +1030,11 @@ describe('models/Parameter.js', () => {
       expect(actual).toEqual(expected)
     })
 
-    it('should replace $ref by uri if $ref is a Reference record', () => {
+    it('should replace $ref by uuid if $ref is a Reference record', () => {
       const input = {
         type: 'integer',
         $ref: new Reference({
-          uri: '#/definitions/UserId'
+          uuid: '#/definitions/UserId'
         })
       }
 
@@ -1633,6 +1536,60 @@ describe('models/Parameter.js', () => {
       expect(ext1.validate).toNotHaveBeenCalled()
       expect(ext2.validate).toNotHaveBeenCalled()
       expect(actual).toEqual(expected)
+    })
+
+    it('should work', () => {
+      const withCorrectContentTypeHeader = new Parameter({
+        key: 'Content-Type',
+        default: 'application/json',
+        constraints: List([
+          new Constraint.Enum([
+            'application/json',
+            'application/xml'
+          ])
+        ])
+      })
+      const withCorrectAcceptHeader = new Parameter({
+        key: 'Accept',
+        default: 'image/svg+xml',
+        constraints: List([
+          new Constraint.Enum([
+            'image/png',
+            'image/svg+xml'
+          ])
+        ])
+      })
+
+      // valid with correct contentType *OR* accept header
+      const source = new Parameter({
+        applicableContexts: List([ withCorrectContentTypeHeader, withCorrectAcceptHeader ])
+      })
+
+      const invalidInputIncompatibleKey = new Parameter({
+        key: 'X-Previous-Response-Format',
+        default: 'image/svg+xml'
+      })
+
+      let actual
+
+      actual = __internals__.isValid(source, invalidInputIncompatibleKey)
+      expect(actual).toEqual(false)
+
+      const invalidInputInvalidValue = new Parameter({
+        key: 'Accept',
+        default: 'image/jpeg'
+      })
+
+      actual = __internals__.isValid(source, invalidInputInvalidValue)
+      expect(actual).toEqual(false)
+
+      const validInput = new Parameter({
+        key: 'Accept',
+        default: 'image/png'
+      })
+
+      actual = __internals__.isValid(source, validInput)
+      expect(actual).toEqual(true)
     })
   })
 })

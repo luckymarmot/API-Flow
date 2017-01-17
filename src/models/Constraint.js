@@ -382,6 +382,60 @@ export class EnumConstraint extends Constraint {
   }
 }
 
+/**
+ * A JSON Schema Constraint.
+ * evaluate returns true. (Unimplemented)
+ * TODO: implement evaluate
+ */
+export class JSONSchemaConstraint extends Constraint {
+  constructor(value = []) {
+    const obj = {
+      _model: new Model({
+        name: 'json.constraint.models',
+        version: '0.1.0'
+      }),
+      name: 'json',
+      value: value,
+      expression: () => {
+        return true
+      }
+    }
+    super(obj)
+  }
+
+  toJSONSchema() {
+    return this.get('value')
+  }
+}
+
+/**
+ * An XML Schema Constraint.
+ * evaluate returns true. (Unimplemented)
+ * TODO: implement evaluate
+ */
+export class XMLSchemaConstraint extends Constraint {
+  constructor(value = []) {
+    const obj = {
+      _model: new Model({
+        name: 'xml.constraint.models',
+        version: '0.1.0'
+      }),
+      name: 'xml',
+      value: value,
+      expression: () => {
+        return true
+      }
+    }
+    super(obj)
+  }
+
+  toJSONSchema() {
+    return {
+      'x-xml': this.get('value')
+    }
+  }
+}
+
 const _Constraint = {
   Constraint: Constraint,
   MultipleOf: MultipleOfConstraint,
@@ -397,7 +451,9 @@ const _Constraint = {
   UniqueItems: UniqueItemsConstraint,
   MaximumProperties: MaximumPropertiesConstraint,
   MinimumProperties: MinimumPropertiesConstraint,
-  Enum: EnumConstraint
+  Enum: EnumConstraint,
+  JSONSchema: JSONSchemaConstraint,
+  XMLSchema: XMLSchemaConstraint
 }
 
 export default _Constraint

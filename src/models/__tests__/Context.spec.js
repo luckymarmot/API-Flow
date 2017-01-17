@@ -9,23 +9,24 @@ describe('models/Context.js', () => {
   afterEach(() => restoreSpies())
   describe('{ Context }', () => {
     describe('#fields', () => {
-      it('should have a `constraints` field', () => {
-        const constraints = 'test'
-        const data = { constraints }
+      const fields = [
+        'constraints',
+        'type',
+        'implements'
+      ]
 
-        const instance = new Context(data)
+      for (const field of fields) {
+        it('should have a `' + field + '` field', () => {
+          const key = field
+          const value = 'test'
+          const data = {}
 
-        expect(instance.get('constraints')).toEqual(constraints)
-      })
+          data[key] = value
+          const instance = new Context(data)
 
-      it('should have a `type` field', () => {
-        const type = 'test'
-        const data = { type }
-
-        const instance = new Context(data)
-
-        expect(instance.get('type')).toEqual(type)
-      })
+          expect(instance.get(key)).toEqual(value)
+        })
+      }
     })
 
     describe('-methods', () => {

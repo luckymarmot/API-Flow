@@ -139,7 +139,7 @@ methods.convertURLObjectToURLComponents = (_urlObject, variableDelimiters = List
  */
 methods.convertURLComponentsToURLObject = (url, delimiters = List(), useDefault = true) => {
   const protocol = url.get('secure') ?
-    url.get('protocol').filter(proto => proto.match('s:?$')).get(0) :
+    url.get('protocol').filter(proto => proto.match(/[^w]s:?$/)).get(0) :
     url.getIn([ 'protocol', 0 ])
 
   const slashes = url.get('slashes')
@@ -201,7 +201,7 @@ methods.resolve = (from, to, delimiters, useDefault = true) => {
 methods.decodeUrlObject = (urlObject) => {
   const keys = Object.keys(urlObject)
 
-  for (let key of keys) {
+  for (const key of keys) {
     if (typeof urlObject[key] === 'string') {
       urlObject[key] = decodeURIComponent(urlObject[key])
     }
@@ -227,7 +227,7 @@ methods.splitHostInHostnameAndPort = (host) => {
  * @returns {Object} the host and pathname, if they exist
  */
 methods.splitPathnameInHostAndPathname = (_pathname) => {
-  let m = _pathname.match(/([^/]*)(\/.*)/)
+  const m = _pathname.match(/([^/]*)(\/.*)/)
 
   if (m) {
     const host = m[1] || null

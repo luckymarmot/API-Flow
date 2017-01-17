@@ -1,8 +1,8 @@
-import { List, Record } from 'immutable'
+import { List, Map, Record } from 'immutable'
 import jsf from 'json-schema-faker'
 
 import Model from './ModelInfo'
-import Reference from './references/Reference'
+import Reference from './Reference'
 
 /**
  * Metadata about the Parameter Record.
@@ -16,21 +16,51 @@ const model = new Model(modelInstance)
 
 /**
  * Default Spec for the Parameter Record.
+ * @property {string} in: the location of the parameter (header, query, body, ...). Mainly used for
+ * shared parameters, as the ParameterStore is location agnostic
+ * @property {string} uuid:  a string that uniquely identifies this parameter (not a true uuid)
+ * @property {string} key: the key of the Parameter as used in the header, query, body, etc.
+ * @property {string} name?: a humand readable name for the Parameter like `Access token`
+ * @property {string} description: a description of the purpose of the parameter
+ * @property {List<*>} examples: a List of values that are valid representations of the parameter
+ * @property {string} type: the JSON type of the Parameter
+ * @property {string} format: the format of the Parameter (highly coupled with type)
+ * @property {any} default: the default value of the Parameter
+ * @property {boolean} required: whether the Parameter is mandatory or not.
+ * @property {string} superType: some Parameters have complex representations, like sequences of
+ * string Parameters that combine together create what would be a DynamicString in Paw or a string
+ * with environment variables in Postman. the superType helps further define what the behavior of
+ * the parameter is, without supercharging other fields (like format or type) with semantics that
+ * are only relevant inside the model
+ * @property {any} value: an object that is relevant to the construction of the Parameter, depending
+ * on the superType. For instance, it could be a List<Parameter>, if the superType is "sequence".
+ * @property {List<Constraint>} constraints: a List of Constraint that the Parameter must respect.
+ * it is used to generate a JSON Schema out of the Parameter, and also to test if a value is valid
+ * with respect to the Parameter. For instance, 'application/json' is not a valid Value for a
+ * Parameter with the constraints: List([ new Contraint.Enum([ 'application/xml' ]) ])
+ * @property {List<Parameter>} applicableContexts: a List of Parameters that help define whether
+ * the Parameter can used in a given Context. @see methods.@isValid for more information
+ * @property {Map<*, Reference)>} interfaces: a List of Interfaces implemented by the Parameter.
+ * This is used to extract shared features at difference levels (like Resource, Request, Response,
+ * URL, and Parameter).
  */
 const ParameterSpec = {
   _model: model,
+  in: null,
+  uuid: null,
   key: null,
-  default: null,
-  value: null,
-  type: null,
-  superType: null,
-  format: null,
   name: null,
-  required: false,
   description: null,
-  example: null,
+  examples: List(),
+  type: null,
+  format: null,
+  default: null,
+  required: false,
+  superType: null,
+  value: null,
   constraints: List(),
-  applicableContexts: List()
+  applicableContexts: List(),
+  interfaces: Map()
 }
 
 /**
@@ -66,7 +96,7 @@ export class Parameter extends Record(ParameterSpec) {
  * @returns {schema} the updated schema
  */
 methods.mergeConstraintInSchema = (set, constraint) => {
-  let obj = constraint.toJSONSchema()
+  const obj = constraint.toJSONSchema()
   Object.assign(set, obj)
   return set
 }
@@ -217,7 +247,7 @@ methods.getJSONSchemaFromSequenceParameter = (sequenceParam, useFaker = true) =>
  * @returns {schema} the updated schema
  */
 methods.addItemstoSchema = (param, schema, useFaker = true) => {
-  let items = param.get('value')
+  const items = param.get('value')
   if (items instanceof Parameter) {
     schema.items = methods.getJSONSchema(items, useFaker)
   }
@@ -248,26 +278,13 @@ methods.getJSONSchemaFromArrayParameter = (arrayParam, useFaker = true) => {
  * @returns {schema} the updated schema
  */
 methods.addReferenceToSchema = (param, schema) => {
-  let ref = param.get('value')
+  const ref = param.get('value')
+
   if (!(ref instanceof Reference)) {
     return schema
   }
 
-  if (typeof ref.get('value') === 'string') {
-    schema.type = 'string'
-    schema.default = ref.get('value')
-    return schema
-  }
-
-  if (
-      ref.get('value') &&
-      typeof ref.get('value') === 'object'
-    ) {
-    Object.assign(schema, ref.get('value'))
-    return schema
-  }
-
-  schema.$ref = ref.get('relative') || ref.get('uri')
+  schema.$ref = ref.get('uuid')
   return schema
 }
 
@@ -320,7 +337,7 @@ methods.updateSchemaWithFaker = (param, schema) => {
   const format = param.get('format') || ''
 
   if (fakerFormatMap[format]) {
-    let constraint = fakerFormatMap[format]
+    const constraint = fakerFormatMap[format]
     const key = Object.keys(constraint)[0]
     if (key && !schema[key]) {
       Object.assign(schema, constraint)
@@ -362,12 +379,12 @@ methods.replaceRefs = (obj) => {
 
   if (Array.isArray(obj)) {
     for (let i = 0; i < obj.length; i += 1) {
-      let content = obj[i]
+      const content = obj[i]
       obj[i] = methods.replaceRefs(content)
     }
   }
   else {
-    for (let key in obj) {
+    for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         obj[key] = methods.replaceRefs(obj[key])
       }
@@ -388,17 +405,17 @@ methods.simplifyRefs = (obj) => {
   }
 
   if (obj.$ref instanceof Reference) {
-    obj.$ref = obj.$ref.get('relative') || obj.$ref.get('uri')
+    obj.$ref = obj.$ref.get('uuid')
   }
 
   if (Array.isArray(obj)) {
     for (let i = 0; i < obj.length; i += 1) {
-      let content = obj[i]
+      const content = obj[i]
       obj[i] = methods.simplifyRefs(content)
     }
   }
   else {
-    for (let key in obj) {
+    for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         obj[key] = methods.simplifyRefs(obj[key])
       }
@@ -420,9 +437,9 @@ methods.isSimpleParameter = (
     return false
   }
 
-  let type = param.get('type') || ''
+  const type = param.get('type') || ''
 
-  let types = [
+  const types = [
     'integer', 'number', 'string', 'object', 'boolean', 'null'
   ]
 
@@ -441,7 +458,7 @@ methods.isSimpleParameter = (
 methods.isSequenceParameter = (
   param
 ) => {
-  let superType = param.get('superType') || ''
+  const superType = param.get('superType') || ''
 
   return superType === 'sequence'
 }
@@ -454,7 +471,7 @@ methods.isSequenceParameter = (
 methods.isArrayParameter = (
   param
 ) => {
-  let type = param.get('type') || ''
+  const type = param.get('type') || ''
 
   return type === 'array'
 }
@@ -467,7 +484,7 @@ methods.isArrayParameter = (
 methods.isReferenceParameter = (
   param
 ) => {
-  let superType = param.get('superType') || ''
+  const superType = param.get('superType') || ''
 
   return superType === 'reference'
 }
@@ -558,7 +575,7 @@ methods.addFakerFunctionalities = (
 /**
  * generates a value from a Parameter or a JSON Schema.
  * @param {Parameter} parameter: the Parameter to get a JSON Schema from
- * @param {boolean} useDefault: the schema to improve the generation of
+ * @param {boolean} useDefault: whether to use the default value or not
  * @param {schema} _schema: an optional schema to generate from. If this schema is provided, the
  * Parameter is ignored.
  * @returns {any} the generated value
@@ -584,7 +601,7 @@ methods.generate = (
 
   jsf.format('sequence', (gen, $schema) => {
     let result = ''
-    for (let item of $schema['x-sequence']) {
+    for (const item of $schema['x-sequence']) {
       if (useDefault && typeof item.default !== 'undefined' && item.default !== null) {
         item.enum = [ item.default ]
       }
@@ -602,7 +619,7 @@ methods.generate = (
   })
 
 
-  let generated = jsf(schema)
+  const generated = jsf(schema)
   return generated
 }
 
@@ -636,7 +653,7 @@ methods.isValid = (
     source,
     param
 ) => {
-  let list = source.get('applicableContexts')
+  const list = source.get('applicableContexts')
     // No external constraint
   if (list.size === 0) {
     return true
@@ -647,9 +664,10 @@ methods.isValid = (
         _param
     ) => {
     // && has precedence on ||
+    // === (1 || (2a && 2b))
     return bool ||
             _param.get('key') === param.get('key') &&
-            _param.validate(param.get('value'))
+            _param.validate(param.get('default'))
   }, false)
 }
 

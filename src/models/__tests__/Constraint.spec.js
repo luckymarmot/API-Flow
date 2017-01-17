@@ -306,4 +306,52 @@ describe('models/Constraint.js', () => {
       expect(mod.evaluate('four')).toEqual(false)
     })
   })
+
+  describe('{ JSONSchemaConstraint }', () => {
+    it('should be a Constraint', () => {
+      const mod = new Constraint.JSONSchema({
+        type: 'integer',
+        minimum: 3,
+        maximum: 6
+      })
+
+      expect(mod).toBeA(Constraint.Constraint)
+    })
+
+    xit('should work', () => {
+      const mod = new Constraint.JSONSchema({
+        type: 'integer',
+        minimum: 3,
+        maximum: 6
+      })
+
+      expect(mod.evaluate(1)).toEqual(true)
+      expect(mod.evaluate(4)).toEqual(true)
+      expect(mod.evaluate(7)).toEqual(true)
+    })
+  })
+
+  describe('{ XMLSchemaConstraint }', () => {
+    it('should be a Constraint', () => {
+      const mod = new Constraint.XMLSchema(
+        `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+          <xs:element name="userId" type="xs:string"/>
+         </xs:schema>`
+      )
+
+      expect(mod).toBeA(Constraint.Constraint)
+    })
+
+    xit('should work', () => {
+      const mod = new Constraint.XMLSchema(
+        `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+          <xs:element name="userId" type="xs:string"/>
+         </xs:schema>`
+      )
+
+      expect(mod.evaluate('1')).toEqual(true)
+      expect(mod.evaluate(4)).toEqual(true)
+      expect(mod.evaluate(null)).toEqual(true)
+    })
+  })
 })
