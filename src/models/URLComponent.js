@@ -111,6 +111,12 @@ methods.convertComplexStringToSequenceParameter = (key, string, delimiters) => {
   const sections = methods.extractSectionsFromString(string, delimiters)
   const sequence = sections.map(methods.sectionMapper)
 
+  if (sequence.length === 1) {
+    return sequence[0]
+      .set('key', key)
+      .set('name', key)
+  }
+
   return new Parameter({
     key,
     name: key,

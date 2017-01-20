@@ -1,4 +1,4 @@
-import { List, Map, Record } from 'immutable'
+import { OrderedMap, Map, Record } from 'immutable'
 
 import Model from './ModelInfo'
 
@@ -19,7 +19,7 @@ const ResourceSpec = {
   _model: model,
   name: null,
   uuid: null,
-  endpoints: List(),
+  endpoints: OrderedMap(),
   path: null,
   methods: Map(),
   description: null,

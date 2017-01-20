@@ -10,7 +10,7 @@ __internals__.date = new Date(1).getTime()
 /* end of gen-utils normalization */
 
 import expect from 'expect'
-const diff = require('diff')
+// const diff = require('diff')
 
 import SwaggerParser from '../../../src/parsers/swagger/v2.0/Parser'
 import InternalSerializer from '../../../src/serializers/internal/Serializer'
@@ -24,6 +24,7 @@ describe('swagger v2 -> internal', () => {
     const parser = new SwaggerParser()
     const serializer = new InternalSerializer()
 
+    /* eslint-disable no-console */
     try {
       const api = parser.parse(item)
       const actual = serializer.serialize(api)
@@ -41,5 +42,6 @@ describe('swagger v2 -> internal', () => {
       console.error(e.stack)
       expect(true).toEqual(false)
     }
+    /* eslint-enable no-console */
   })
 })

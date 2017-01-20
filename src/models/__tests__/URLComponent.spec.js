@@ -199,7 +199,18 @@ describe('models/URLComponent.js', () => {
   })
 
   describe('@convertComplexStringToSequenceParameter', () => {
-    it('should return a SequenceParameter', () => {
+    it('should return a SequenceParameter if path has variable', () => {
+      const key = 'pathname'
+      const string = '/a/simple/{path}'
+      const delimiters = List([ '{', '}' ])
+
+      const actual = __internals__.convertComplexStringToSequenceParameter(key, string, delimiters)
+
+      expect(actual).toBeA(Parameter)
+      expect(actual.get('superType')).toEqual('sequence')
+    })
+
+    it('should return a standard parameter if path has no variable', () => {
       const key = 'pathname'
       const string = '/a/simple/path'
       const delimiters = List([ '{', '}' ])
@@ -207,7 +218,7 @@ describe('models/URLComponent.js', () => {
       const actual = __internals__.convertComplexStringToSequenceParameter(key, string, delimiters)
 
       expect(actual).toBeA(Parameter)
-      expect(actual.get('superType')).toEqual('sequence')
+      expect(actual.get('superType')).toEqual(null)
     })
 
     it('should call extractSectionsFromString', () => {
@@ -260,6 +271,24 @@ describe('models/URLComponent.js', () => {
           })
         ])
       })
+
+      const actual = __internals__.convertComplexStringToSequenceParameter(key, string, delimiters)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with no variables', () => {
+      const key = 'pathname'
+      const string = '/a/simple/path'
+      const delimiters = List([ '{', '}' ])
+
+      const expected = new Parameter({
+        key: 'pathname',
+        name: 'pathname',
+        type: 'string',
+        default: '/a/simple/path'
+      })
+
       const actual = __internals__.convertComplexStringToSequenceParameter(key, string, delimiters)
 
       expect(actual).toEqual(expected)
@@ -335,6 +364,8 @@ describe('models/URLComponent.js', () => {
 
       const expected = '%userId%'
       const actual = __internals__.addHandlesToVariable(variable, delimiters)
+
+      expect(actual).toEqual(expected)
     })
 
     it('should work with couple delimiters', () => {
@@ -343,6 +374,8 @@ describe('models/URLComponent.js', () => {
 
       const expected = '{userId}'
       const actual = __internals__.addHandlesToVariable(variable, delimiters)
+
+      expect(actual).toEqual(expected)
     })
   })
 

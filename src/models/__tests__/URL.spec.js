@@ -19,7 +19,7 @@ describe('models/URL.js', () => {
       it('should have a `protocol` field', () => {
         const key = 'protocol'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -30,7 +30,7 @@ describe('models/URL.js', () => {
       it('should have a `slashes` field', () => {
         const key = 'slashes'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -41,7 +41,7 @@ describe('models/URL.js', () => {
       it('should have a `auth` field', () => {
         const key = 'auth'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -52,7 +52,7 @@ describe('models/URL.js', () => {
       it('should have a `host` field', () => {
         const key = 'host'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -65,7 +65,7 @@ describe('models/URL.js', () => {
 
         const key = 'hostname'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -78,7 +78,7 @@ describe('models/URL.js', () => {
 
         const key = 'port'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -89,7 +89,7 @@ describe('models/URL.js', () => {
       it('should have a `path` field', () => {
         const key = 'path'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -102,7 +102,7 @@ describe('models/URL.js', () => {
 
         const key = 'pathname'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -113,7 +113,7 @@ describe('models/URL.js', () => {
       it('should have a `search` field', () => {
         const key = 'search'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -124,7 +124,7 @@ describe('models/URL.js', () => {
       it('should have a `query` field', () => {
         const key = 'query'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -135,7 +135,7 @@ describe('models/URL.js', () => {
       it('should have a `hash` field', () => {
         const key = 'hash'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -146,7 +146,7 @@ describe('models/URL.js', () => {
       it('should have a `href` field', () => {
         const key = 'href'
         const value = 'test'
-        let data = { url: {} }
+        const data = { url: {} }
         data.url[key] = value
 
         const instance = new URL(data)
@@ -157,7 +157,7 @@ describe('models/URL.js', () => {
       it('should have a `secure` field', () => {
         const key = 'secure'
         const value = 'test'
-        let data = {}
+        const data = {}
         data[key] = value
 
         const instance = new URL(data)
@@ -168,7 +168,7 @@ describe('models/URL.js', () => {
       it('should have a `variableDelimiters` field', () => {
         const key = 'variableDelimiters'
         const value = 'test'
-        let data = {}
+        const data = {}
         data[key] = value
 
         const instance = new URL(data)
@@ -179,7 +179,7 @@ describe('models/URL.js', () => {
       it('should have a `uuid` field', () => {
         const key = 'uuid'
         const value = 'test'
-        let data = {}
+        const data = {}
         data[key] = value
 
         const instance = new URL(data)
@@ -190,7 +190,7 @@ describe('models/URL.js', () => {
       it('should have a `description` field', () => {
         const key = 'description'
         const value = 'test'
-        let data = {}
+        const data = {}
         data[key] = value
 
         const instance = new URL(data)
@@ -278,6 +278,15 @@ describe('models/URL.js', () => {
         })
       })
     })
+
+    it('should work as expected with path urls', () => {
+      const instance = new URL({
+        url: '/some/path/{pathId}',
+        variableDelimiters: List([ '{', '}' ])
+      })
+
+      expect(instance.toURLObject(List([ '{{', '}}' ])).pathname).toEqual('/some/path/{{pathId}}')
+    })
   })
 
   describe('@convertURLObjectToURLComponents', () => {
@@ -334,7 +343,7 @@ describe('models/URL.js', () => {
     it('should work', () => {
       const delimiters = List([ '{', '}' ])
       const url = new URL({
-        url: 'https://{sub}.paw.{ext}/users/{userId}',
+        url: 'https://{sub}.paw.{ext}:{port}/users/{userId}',
         variableDelimiters: delimiters
       })
       const newDelimiters = List([ '{', '}' ])
@@ -343,8 +352,9 @@ describe('models/URL.js', () => {
       const expected = {
         protocol: 'https:',
         slashes: true,
+        host: '{sub}.paw.{ext}:{port}',
         hostname: '{sub}.paw.{ext}',
-        port: null,
+        port: '{port}',
         pathname: '/users/{userId}'
       }
 

@@ -22,7 +22,63 @@
           "overlay": null
         }
       },
-      "path": "/pets",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/pets",
+        "path": "/pets",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/pets",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/pets",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "post": {
           "_model": {
@@ -69,6 +125,7 @@
                   "version": "0.1.0"
                 },
                 "in": "headers",
+                "usedIn": "request",
                 "uuid": "d9e28355-ee16-4030-9a4a-988e7555de9b",
                 "key": "Content-Type",
                 "name": "Content Type Header",
@@ -99,13 +156,14 @@
             },
             "queries": {},
             "body": {
-              "#/parameters/4a1e11a6-b14c-4435-ae80-b20d97e73726": {
+              "4a1e11a6-b14c-4435-ae80-b20d97e73726": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/4a1e11a6-b14c-4435-ae80-b20d97e73726",
+                "usedIn": "request",
+                "uuid": "4a1e11a6-b14c-4435-ae80-b20d97e73726",
                 "key": null,
                 "name": "body",
                 "description": "Pet object that needs to be added to the store",
@@ -184,6 +242,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "40e3bcfa-18d7-438b-89f3-16a7c8acc5c3",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -268,6 +327,7 @@
                   "version": "0.1.0"
                 },
                 "in": "headers",
+                "usedIn": "request",
                 "uuid": "01f86912-ddee-4c8a-ad15-a5b9ac2e43e4",
                 "key": "Content-Type",
                 "name": "Content Type Header",
@@ -298,13 +358,14 @@
             },
             "queries": {},
             "body": {
-              "#/parameters/18261022-e071-4ee3-91b5-0b4b14679e84": {
+              "18261022-e071-4ee3-91b5-0b4b14679e84": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/18261022-e071-4ee3-91b5-0b4b14679e84",
+                "usedIn": "request",
+                "uuid": "18261022-e071-4ee3-91b5-0b4b14679e84",
                 "key": null,
                 "name": "body",
                 "description": "Pet object that needs to be added to the store",
@@ -495,7 +556,63 @@
           "overlay": null
         }
       },
-      "path": "/pets/findByStatus",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/pets/findByStatus",
+        "path": "/pets/findByStatus",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/pets/findByStatus",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/pets/findByStatus",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "get": {
           "_model": {
@@ -524,13 +641,14 @@
             },
             "headers": {},
             "queries": {
-              "#/parameters/cc8cf3ae-106b-4e5b-b143-56cd5ec6db25": {
+              "cc8cf3ae-106b-4e5b-b143-56cd5ec6db25": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
-                "uuid": "#/parameters/cc8cf3ae-106b-4e5b-b143-56cd5ec6db25",
+                "usedIn": "request",
+                "uuid": "cc8cf3ae-106b-4e5b-b143-56cd5ec6db25",
                 "key": "status",
                 "name": "status",
                 "description": "Status values that need to be considered for filter",
@@ -546,7 +664,8 @@
                     "version": "0.1.0"
                   },
                   "in": null,
-                  "uuid": "#/parameters/null",
+                  "usedIn": "request",
+                  "uuid": null,
                   "key": null,
                   "name": null,
                   "description": null,
@@ -620,6 +739,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "3e4c40e6-33fc-497d-a597-ea5c1d81ce7c",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -656,6 +776,7 @@
                       "version": "0.1.0"
                     },
                     "in": null,
+                    "usedIn": "response",
                     "uuid": "241e015e-b802-4734-b8b3-637e0da5a790",
                     "key": null,
                     "name": null,
@@ -711,6 +832,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "3e4c40e6-33fc-497d-a597-ea5c1d81ce7c",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -785,7 +907,63 @@
           "overlay": null
         }
       },
-      "path": "/pets/findByTags",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/pets/findByTags",
+        "path": "/pets/findByTags",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/pets/findByTags",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/pets/findByTags",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "get": {
           "_model": {
@@ -814,13 +992,14 @@
             },
             "headers": {},
             "queries": {
-              "#/parameters/59fa6bb3-8566-4322-9a82-e865355b2f87": {
+              "59fa6bb3-8566-4322-9a82-e865355b2f87": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
-                "uuid": "#/parameters/59fa6bb3-8566-4322-9a82-e865355b2f87",
+                "usedIn": "request",
+                "uuid": "59fa6bb3-8566-4322-9a82-e865355b2f87",
                 "key": "tags",
                 "name": "tags",
                 "description": "Tags to filter by",
@@ -836,7 +1015,8 @@
                     "version": "0.1.0"
                   },
                   "in": null,
-                  "uuid": "#/parameters/null",
+                  "usedIn": "request",
+                  "uuid": null,
                   "key": null,
                   "name": null,
                   "description": null,
@@ -910,6 +1090,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "9b6cc0eb-5874-4621-903d-65717afa5cdc",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -946,6 +1127,7 @@
                       "version": "0.1.0"
                     },
                     "in": null,
+                    "usedIn": "response",
                     "uuid": "2649e317-39d8-4be5-a546-b3eda72acd18",
                     "key": null,
                     "name": null,
@@ -1001,6 +1183,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "9b6cc0eb-5874-4621-903d-65717afa5cdc",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -1075,7 +1258,130 @@
           "overlay": null
         }
       },
-      "path": "/pets/{petId}",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/pets/{petId}",
+        "path": "/pets/{petId}",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/pets/{petId}",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": null,
+            "required": false,
+            "superType": "sequence",
+            "value": [
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "/pets/",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "petId",
+                "name": "petId",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "petId",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            ],
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "get": {
           "_model": {
@@ -1106,13 +1412,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "#/parameters/0b6d99d4-ea63-4cf0-813b-4e806a2d5c69": {
+              "0b6d99d4-ea63-4cf0-813b-4e806a2d5c69": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
-                "uuid": "#/parameters/0b6d99d4-ea63-4cf0-813b-4e806a2d5c69",
+                "usedIn": "request",
+                "uuid": "0b6d99d4-ea63-4cf0-813b-4e806a2d5c69",
                 "key": "petId",
                 "name": "petId",
                 "description": "ID of pet that needs to be fetched",
@@ -1189,6 +1496,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "d415c21a-49ec-4455-a12a-e5c9181adc6f",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -1225,6 +1533,7 @@
                       "version": "0.1.0"
                     },
                     "in": null,
+                    "usedIn": "response",
                     "uuid": "69d27ea7-0239-48c6-a2ff-3e70961d4794",
                     "key": null,
                     "name": null,
@@ -1277,6 +1586,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "d415c21a-49ec-4455-a12a-e5c9181adc6f",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -1332,6 +1642,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "d415c21a-49ec-4455-a12a-e5c9181adc6f",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -1416,6 +1727,7 @@
                   "version": "0.1.0"
                 },
                 "in": "headers",
+                "usedIn": "request",
                 "uuid": "6f453849-617e-4dbf-b617-0d6b0dcc8c09",
                 "key": "Content-Type",
                 "name": "Content Type Header",
@@ -1445,13 +1757,14 @@
             },
             "queries": {},
             "body": {
-              "#/parameters/1c1ca8d4-2b2f-4088-b382-3a618eeab770": {
+              "1c1ca8d4-2b2f-4088-b382-3a618eeab770": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/1c1ca8d4-2b2f-4088-b382-3a618eeab770",
+                "usedIn": "request",
+                "uuid": "1c1ca8d4-2b2f-4088-b382-3a618eeab770",
                 "key": "name",
                 "name": "name",
                 "description": "Updated name of the pet",
@@ -1463,16 +1776,52 @@
                 "superType": null,
                 "value": null,
                 "constraints": [],
-                "applicableContexts": [],
+                "applicableContexts": [
+                  {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "headers",
+                    "usedIn": "request",
+                    "uuid": null,
+                    "key": "Content-Type",
+                    "name": null,
+                    "description": null,
+                    "examples": [],
+                    "type": null,
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "enum.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "enum",
+                        "value": [
+                          "application/x-www-form-urlencoded",
+                          "multipart/form-data"
+                        ]
+                      }
+                    ],
+                    "applicableContexts": [],
+                    "interfaces": {}
+                  }
+                ],
                 "interfaces": {}
               },
-              "#/parameters/a88be0c6-f0b7-4d57-98d2-d0362a273df2": {
+              "a88be0c6-f0b7-4d57-98d2-d0362a273df2": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/a88be0c6-f0b7-4d57-98d2-d0362a273df2",
+                "usedIn": "request",
+                "uuid": "a88be0c6-f0b7-4d57-98d2-d0362a273df2",
                 "key": "status",
                 "name": "status",
                 "description": "Updated status of the pet",
@@ -1484,18 +1833,54 @@
                 "superType": null,
                 "value": null,
                 "constraints": [],
-                "applicableContexts": [],
+                "applicableContexts": [
+                  {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "headers",
+                    "usedIn": "request",
+                    "uuid": null,
+                    "key": "Content-Type",
+                    "name": null,
+                    "description": null,
+                    "examples": [],
+                    "type": null,
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "enum.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "enum",
+                        "value": [
+                          "application/x-www-form-urlencoded",
+                          "multipart/form-data"
+                        ]
+                      }
+                    ],
+                    "applicableContexts": [],
+                    "interfaces": {}
+                  }
+                ],
                 "interfaces": {}
               }
             },
             "path": {
-              "#/parameters/78870370-dd79-4cbf-a0fd-72df95232740": {
+              "78870370-dd79-4cbf-a0fd-72df95232740": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
-                "uuid": "#/parameters/78870370-dd79-4cbf-a0fd-72df95232740",
+                "usedIn": "request",
+                "uuid": "78870370-dd79-4cbf-a0fd-72df95232740",
                 "key": "petId",
                 "name": "petId",
                 "description": "ID of pet that needs to be updated",
@@ -1572,6 +1957,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "bc6b484b-e5d2-4f06-a5e8-e4c73dc17a46",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -1650,13 +2036,14 @@
               "version": "0.1.0"
             },
             "headers": {
-              "#/parameters/2e89be46-e292-42db-a71e-0e3340e40d55": {
+              "2e89be46-e292-42db-a71e-0e3340e40d55": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "headers",
-                "uuid": "#/parameters/2e89be46-e292-42db-a71e-0e3340e40d55",
+                "usedIn": "request",
+                "uuid": "2e89be46-e292-42db-a71e-0e3340e40d55",
                 "key": "api_key",
                 "name": "api_key",
                 "description": null,
@@ -1684,13 +2071,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "#/parameters/77578676-c2da-4ad6-b802-c060467102c9": {
+              "77578676-c2da-4ad6-b802-c060467102c9": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
-                "uuid": "#/parameters/77578676-c2da-4ad6-b802-c060467102c9",
+                "usedIn": "request",
+                "uuid": "77578676-c2da-4ad6-b802-c060467102c9",
                 "key": "petId",
                 "name": "petId",
                 "description": "Pet id to delete",
@@ -1758,6 +2146,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "bd1fe9b6-952e-40ae-b6fe-9b574d1873b2",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -1832,7 +2221,63 @@
           "overlay": null
         }
       },
-      "path": "/stores/order",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/stores/order",
+        "path": "/stores/order",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/stores/order",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/stores/order",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "post": {
           "_model": {
@@ -1872,13 +2317,14 @@
             },
             "queries": {},
             "body": {
-              "#/parameters/d961563d-c32d-4d45-bd34-fbac5dac0a1a": {
+              "d961563d-c32d-4d45-bd34-fbac5dac0a1a": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/d961563d-c32d-4d45-bd34-fbac5dac0a1a",
+                "usedIn": "request",
+                "uuid": "d961563d-c32d-4d45-bd34-fbac5dac0a1a",
                 "key": null,
                 "name": "body",
                 "description": "order placed for purchasing the pet",
@@ -1929,6 +2375,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "74b201fb-de12-4e66-93e3-fcc5a47e84aa",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -1965,6 +2412,7 @@
                       "version": "0.1.0"
                     },
                     "in": null,
+                    "usedIn": "response",
                     "uuid": "87938369-d934-4f98-8a17-2283aca55774",
                     "key": null,
                     "name": null,
@@ -2017,6 +2465,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "74b201fb-de12-4e66-93e3-fcc5a47e84aa",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -2091,7 +2540,130 @@
           "overlay": null
         }
       },
-      "path": "/stores/order/{orderId}",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/stores/order/{orderId}",
+        "path": "/stores/order/{orderId}",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/stores/order/{orderId}",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": null,
+            "required": false,
+            "superType": "sequence",
+            "value": [
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "/stores/order/",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "orderId",
+                "name": "orderId",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "orderId",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            ],
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "get": {
           "_model": {
@@ -2122,13 +2694,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "#/parameters/bfa59815-c23c-47f3-9c39-3ad18ec6cd18": {
+              "bfa59815-c23c-47f3-9c39-3ad18ec6cd18": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
-                "uuid": "#/parameters/bfa59815-c23c-47f3-9c39-3ad18ec6cd18",
+                "usedIn": "request",
+                "uuid": "bfa59815-c23c-47f3-9c39-3ad18ec6cd18",
                 "key": "orderId",
                 "name": "orderId",
                 "description": "ID of pet that needs to be fetched",
@@ -2168,6 +2741,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "cecd98fa-ba20-424e-925f-950b9aa9edc8",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -2204,6 +2778,7 @@
                       "version": "0.1.0"
                     },
                     "in": null,
+                    "usedIn": "response",
                     "uuid": "fafa4401-93b2-46a4-adbe-a6083741b568",
                     "key": null,
                     "name": null,
@@ -2256,6 +2831,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "cecd98fa-ba20-424e-925f-950b9aa9edc8",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -2311,6 +2887,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "cecd98fa-ba20-424e-925f-950b9aa9edc8",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -2402,13 +2979,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "#/parameters/708563a5-3768-4fd3-8f43-d10ac73e6014": {
+              "708563a5-3768-4fd3-8f43-d10ac73e6014": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
-                "uuid": "#/parameters/708563a5-3768-4fd3-8f43-d10ac73e6014",
+                "usedIn": "request",
+                "uuid": "708563a5-3768-4fd3-8f43-d10ac73e6014",
                 "key": "orderId",
                 "name": "orderId",
                 "description": "ID of the order that needs to be deleted",
@@ -2448,6 +3026,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "fbe075c1-fdc5-4101-9acf-7d7d141945e9",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -2503,6 +3082,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "fbe075c1-fdc5-4101-9acf-7d7d141945e9",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -2577,7 +3157,63 @@
           "overlay": null
         }
       },
-      "path": "/users",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/users",
+        "path": "/users",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/users",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/users",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "post": {
           "_model": {
@@ -2617,13 +3253,14 @@
             },
             "queries": {},
             "body": {
-              "#/parameters/2e5ac796-6b08-4a08-8858-c508b9abe5d7": {
+              "2e5ac796-6b08-4a08-8858-c508b9abe5d7": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/2e5ac796-6b08-4a08-8858-c508b9abe5d7",
+                "usedIn": "request",
+                "uuid": "2e5ac796-6b08-4a08-8858-c508b9abe5d7",
                 "key": null,
                 "name": "body",
                 "description": "Created user object",
@@ -2674,6 +3311,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "5f9fe303-2d0c-42b3-8052-bcb6db83caab",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -2748,7 +3386,63 @@
           "overlay": null
         }
       },
-      "path": "/users/createWithArray",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/users/createWithArray",
+        "path": "/users/createWithArray",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/users/createWithArray",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/users/createWithArray",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "post": {
           "_model": {
@@ -2788,13 +3482,14 @@
             },
             "queries": {},
             "body": {
-              "#/parameters/83a4c4cd-9288-43c6-8610-1ed3e53b33d1": {
+              "83a4c4cd-9288-43c6-8610-1ed3e53b33d1": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/83a4c4cd-9288-43c6-8610-1ed3e53b33d1",
+                "usedIn": "request",
+                "uuid": "83a4c4cd-9288-43c6-8610-1ed3e53b33d1",
                 "key": null,
                 "name": "body",
                 "description": "List of user object",
@@ -2848,6 +3543,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "9cebf28a-8eb5-45ef-be47-5531f1a70559",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -2922,7 +3618,63 @@
           "overlay": null
         }
       },
-      "path": "/users/createWithList",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/users/createWithList",
+        "path": "/users/createWithList",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/users/createWithList",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/users/createWithList",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "post": {
           "_model": {
@@ -2962,13 +3714,14 @@
             },
             "queries": {},
             "body": {
-              "#/parameters/a8d9236e-eb14-4aba-8e28-0c08badef265": {
+              "a8d9236e-eb14-4aba-8e28-0c08badef265": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/a8d9236e-eb14-4aba-8e28-0c08badef265",
+                "usedIn": "request",
+                "uuid": "a8d9236e-eb14-4aba-8e28-0c08badef265",
                 "key": null,
                 "name": "body",
                 "description": "List of user object",
@@ -3022,6 +3775,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "92f24b21-9bf4-43b0-9ff4-3156fa02c65a",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -3096,7 +3850,63 @@
           "overlay": null
         }
       },
-      "path": "/users/login",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/users/login",
+        "path": "/users/login",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/users/login",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/users/login",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "get": {
           "_model": {
@@ -3125,13 +3935,14 @@
             },
             "headers": {},
             "queries": {
-              "#/parameters/9ced5862-5800-4a77-a1be-e0f54683a3ee": {
+              "9ced5862-5800-4a77-a1be-e0f54683a3ee": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
-                "uuid": "#/parameters/9ced5862-5800-4a77-a1be-e0f54683a3ee",
+                "usedIn": "request",
+                "uuid": "9ced5862-5800-4a77-a1be-e0f54683a3ee",
                 "key": "username",
                 "name": "username",
                 "description": "The user name for login",
@@ -3146,13 +3957,14 @@
                 "applicableContexts": [],
                 "interfaces": {}
               },
-              "#/parameters/125f5b82-49e0-4e82-9a78-16cccd36d76b": {
+              "125f5b82-49e0-4e82-9a78-16cccd36d76b": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
-                "uuid": "#/parameters/125f5b82-49e0-4e82-9a78-16cccd36d76b",
+                "usedIn": "request",
+                "uuid": "125f5b82-49e0-4e82-9a78-16cccd36d76b",
                 "key": "password",
                 "name": "password",
                 "description": "The password for login in clear text",
@@ -3194,6 +4006,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "1f7cb417-632c-465e-b423-e592ee1eefca",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -3230,6 +4043,7 @@
                       "version": "0.1.0"
                     },
                     "in": null,
+                    "usedIn": "response",
                     "uuid": "70a0f89c-ea1a-4eeb-812b-24674fe45635",
                     "key": null,
                     "name": null,
@@ -3282,6 +4096,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "1f7cb417-632c-465e-b423-e592ee1eefca",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -3356,7 +4171,63 @@
           "overlay": null
         }
       },
-      "path": "/users/logout",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/users/logout",
+        "path": "/users/logout",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/users/logout",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/users/logout",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "get": {
           "_model": {
@@ -3411,6 +4282,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "cfa63ee6-dc96-4b77-9a48-ef900d82250e",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -3485,7 +4357,130 @@
           "overlay": null
         }
       },
-      "path": "/users/{username}",
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/users/{username}",
+        "path": "/users/{username}",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/users/{username}",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": null,
+            "required": false,
+            "superType": "sequence",
+            "value": [
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "/users/",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "username",
+                "name": "username",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "username",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            ],
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
+      },
       "methods": {
         "get": {
           "_model": {
@@ -3516,13 +4511,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "#/parameters/b2f15cd4-cfb4-4ea4-bc19-7bf3354bc424": {
+              "b2f15cd4-cfb4-4ea4-bc19-7bf3354bc424": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
-                "uuid": "#/parameters/b2f15cd4-cfb4-4ea4-bc19-7bf3354bc424",
+                "usedIn": "request",
+                "uuid": "b2f15cd4-cfb4-4ea4-bc19-7bf3354bc424",
                 "key": "username",
                 "name": "username",
                 "description": "The name that needs to be fetched. Use user1 for testing.",
@@ -3562,6 +4558,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -3598,6 +4595,7 @@
                       "version": "0.1.0"
                     },
                     "in": null,
+                    "usedIn": "response",
                     "uuid": "b414ab6d-560c-444a-8548-ffa5e5574fb1",
                     "key": null,
                     "name": null,
@@ -3650,6 +4648,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -3705,6 +4704,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -3795,13 +4795,14 @@
             },
             "queries": {},
             "body": {
-              "#/parameters/4d8c93ee-feac-4071-b994-f619ed22d4b9": {
+              "4d8c93ee-feac-4071-b994-f619ed22d4b9": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
-                "uuid": "#/parameters/4d8c93ee-feac-4071-b994-f619ed22d4b9",
+                "usedIn": "request",
+                "uuid": "4d8c93ee-feac-4071-b994-f619ed22d4b9",
                 "key": null,
                 "name": "body",
                 "description": "Updated user object",
@@ -3828,13 +4829,14 @@
               }
             },
             "path": {
-              "#/parameters/e34ce0a4-f713-403f-a301-df11e36e2c13": {
+              "e34ce0a4-f713-403f-a301-df11e36e2c13": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
-                "uuid": "#/parameters/e34ce0a4-f713-403f-a301-df11e36e2c13",
+                "usedIn": "request",
+                "uuid": "e34ce0a4-f713-403f-a301-df11e36e2c13",
                 "key": "username",
                 "name": "username",
                 "description": "name that need to be deleted",
@@ -3874,6 +4876,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "514a37e5-a540-45d6-a18d-569ef4ac2e20",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -3929,6 +4932,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "514a37e5-a540-45d6-a18d-569ef4ac2e20",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -4020,13 +5024,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "#/parameters/676d7784-261a-42e2-ab10-d6e3cfdca8c1": {
+              "676d7784-261a-42e2-ab10-d6e3cfdca8c1": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
-                "uuid": "#/parameters/676d7784-261a-42e2-ab10-d6e3cfdca8c1",
+                "usedIn": "request",
+                "uuid": "676d7784-261a-42e2-ab10-d6e3cfdca8c1",
                 "key": "username",
                 "name": "username",
                 "description": "The name that needs to be deleted",
@@ -4066,6 +5071,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "551357fc-0729-4458-bea7-a4693cf5248c",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -4121,6 +5127,7 @@
                       "version": "0.1.0"
                     },
                     "in": "headers",
+                    "usedIn": "response",
                     "uuid": "551357fc-0729-4458-bea7-a4693cf5248c",
                     "key": "Content-Type",
                     "name": "Content Type Header",
@@ -4207,7 +5214,164 @@
       "version": "0.1.0"
     },
     "variable": {},
-    "constraint": {},
+    "constraint": {
+      "User": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "username": {
+              "type": "string"
+            },
+            "firstName": {
+              "type": "string"
+            },
+            "pet": {
+              "$ref": "#/definitions/Pet"
+            },
+            "lastName": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "phone": {
+              "type": "string"
+            },
+            "userStatus": {
+              "type": "integer",
+              "format": "int32",
+              "description": "User Status"
+            }
+          }
+        }
+      },
+      "Category": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Pet": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "required": [
+            "name",
+            "photoUrls"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "category": {
+              "$ref": "#/definitions/Category"
+            },
+            "name": {
+              "type": "string",
+              "example": "doggie"
+            },
+            "owner": {
+              "$ref": "#/definitions/User"
+            },
+            "photoUrls": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Tag"
+              }
+            },
+            "status": {
+              "type": "string",
+              "description": "pet status in the store"
+            }
+          }
+        }
+      },
+      "Tag": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Order": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "petId": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "quantity": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "shipDate": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "status": {
+              "type": "string",
+              "description": "Order Status"
+            },
+            "complete": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
     "endpoint": {
       "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
         "_model": {
@@ -4236,6 +5400,7 @@
               "version": "0.1.0"
             },
             "in": null,
+            "usedIn": "request",
             "uuid": null,
             "key": "hostname",
             "name": "hostname",
@@ -4251,7 +5416,10 @@
             "applicableContexts": [],
             "interfaces": {}
           },
-          "variableDelimiters": []
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
         },
         "href": "http://petstore.swagger.wordnik.com/v2",
         "path": "/v2",
@@ -4268,6 +5436,7 @@
               "version": "0.1.0"
             },
             "in": null,
+            "usedIn": "request",
             "uuid": null,
             "key": "pathname",
             "name": "pathname",
@@ -4283,12 +5452,19 @@
             "applicableContexts": [],
             "interfaces": {}
           },
-          "variableDelimiters": []
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
         },
         "query": null,
         "search": null,
         "hash": null,
-        "secure": true
+        "secure": true,
+        "variableDelimiters": [
+          "{",
+          "}"
+        ]
       }
     },
     "parameter": {
@@ -4298,6 +5474,7 @@
           "version": "0.1.0"
         },
         "in": "headers",
+        "usedIn": "request",
         "uuid": "globalConsumes",
         "key": "Content-Type",
         "name": "Content Type Header",
@@ -4340,6 +5517,7 @@
           "version": "0.1.0"
         },
         "in": "headers",
+        "usedIn": "response",
         "uuid": "globalProduces",
         "key": "Content-Type",
         "name": "Content Type Header",
@@ -4385,7 +5563,7 @@
           "version": "0.1.0"
         },
         "description": null,
-        "authName": null,
+        "authName": "api_key",
         "name": "api_key",
         "in": "header",
         "key": null
@@ -4396,7 +5574,7 @@
           "version": "0.1.0"
         },
         "description": "the authentication method for the Petstore API",
-        "authName": null,
+        "authName": "petstore_auth",
         "flow": "implicit",
         "authorizationUrl": "http://petstore.swagger.wordnik.com/api/oauth/dialog",
         "tokenUrl": null,

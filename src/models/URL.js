@@ -129,6 +129,18 @@ methods.convertURLObjectToURLComponents = (_urlObject, variableDelimiters = List
   return components
 }
 
+methods.formatHostFromHostnameAndPort = (hostname, port) => {
+  if (hostname && port) {
+    return hostname + ':' + port
+  }
+
+  if (hostname) {
+    return hostname
+  }
+
+  return null
+}
+
 /**
  * converts a URL Record into a urlObject
  * @param {URL} url: the URL Record to convert
@@ -147,11 +159,12 @@ methods.convertURLComponentsToURLObject = (url, delimiters = List(), useDefault 
     url.get('hostname').generate(delimiters, useDefault) : null
   const port = url.get('port') ?
     url.get('port').generate(delimiters, useDefault) : null
+  const host = methods.formatHostFromHostnameAndPort(hostname, port)
   const pathname = url.get('pathname') ?
     url.get('pathname').generate(delimiters, useDefault) : null
 
   const urlObject = {
-    protocol, slashes, hostname, port, pathname
+    protocol, slashes, hostname, port, host, pathname
   }
 
   return urlObject
@@ -216,6 +229,10 @@ methods.decodeUrlObject = (urlObject) => {
  * @returns {Object} the hostname and port if they exist
  */
 methods.splitHostInHostnameAndPort = (host) => {
+  if (!host) {
+    return { hostname: null, port: null }
+  }
+
   const [ hostname, port ] = host.split(':')
   return { hostname: hostname || null, port: port || null }
 }
@@ -227,6 +244,10 @@ methods.splitHostInHostnameAndPort = (host) => {
  * @returns {Object} the host and pathname, if they exist
  */
 methods.splitPathnameInHostAndPathname = (_pathname) => {
+  if (!_pathname) {
+    return { host: null, pathname: null }
+  }
+
   const m = _pathname.match(/([^/]*)(\/.*)/)
 
   if (m) {

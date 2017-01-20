@@ -1,25 +1,25 @@
 export default class BaseSerializer {
-    constructor(stream) {
-        this.stream = stream
-    }
+  constructor({ stream } = {}) {
+    this.stream = stream
+  }
 
-    write(context, end = true) {
-        let serialized = this.serialize(context)
-        this.stream.write(serialized)
+  write(context, end = true) {
+    const serialized = this.serialize(context)
+    this.stream.write(serialized)
 
-        if (end) {
-            this.stream.end()
-        }
+    if (end) {
+      this.stream.end()
     }
+  }
 
     /*
         @params:
             - context: A Context Object as defined in API-Flow's Core models
     */
-    serialize() {
-        const msg =
+  serialize() {
+    const msg =
             'Method serialize must be implemented ' +
             'by extensions of BaseSerializer'
-        throw new Error(msg)
-    }
+    throw new Error(msg)
+  }
 }

@@ -925,6 +925,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         produceParameter: new Parameter({
           uuid: 123,
           in: 'headers',
+          usedIn: 'response',
           key: 'Content-Type',
           name: 'Content Type Header',
           description: 'describes the media type of the response',
@@ -979,6 +980,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       const expected = {
         produceParameter: new Parameter({
           uuid: 123,
+          usedIn: 'response',
           in: 'headers',
           key: 'Content-Type',
           name: 'Content Type Header',
@@ -1868,7 +1870,10 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       const path = '/some/path'
 
       const expected = new Resource({
-        path,
+        path: new URL({
+          url: path,
+          variableDelimiters: List([ '{', '}' ])
+        }),
         endpoints: 321,
         uuid: path,
         methods: Map({ a: 123 })
@@ -1925,7 +1930,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         abc: new URL({
           url: 'https://some.host.com/v2',
           uuid: 'abc',
-          secure: true
+          secure: true,
+          variableDelimiters: List([ '{', '}' ])
         })
       }
       const actual = __internals__.getSharedEndpoints(swagger)
@@ -1945,7 +1951,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         abc: new URL({
           url: 'https://some.host.com/',
           uuid: 'abc',
-          secure: true
+          secure: true,
+          variableDelimiters: List([ '{', '}' ])
         })
       }
       const actual = __internals__.getSharedEndpoints(swagger)
@@ -1964,7 +1971,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         abc: new URL({
           url: 'https://localhost/',
           uuid: 'abc',
-          secure: true
+          secure: true,
+          variableDelimiters: List([ '{', '}' ])
         })
       }
       const actual = __internals__.getSharedEndpoints(swagger)
@@ -1981,7 +1989,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         abc: new URL({
           url: 'http://localhost/',
           uuid: 'abc',
-          secure: false
+          secure: false,
+          variableDelimiters: List([ '{', '}' ])
         })
       }
       const actual = __internals__.getSharedEndpoints(swagger)
@@ -2036,6 +2045,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       const expected = {
         producesParams: {
           globalProduces: new Parameter({
+            usedIn: 'response',
             uuid: 'globalProduces',
             in: 'headers',
             key: 'Content-Type',
@@ -2257,12 +2267,12 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       }
 
       const expected = {
-        key: '#/parameters/UserId',
+        key: 'UserId',
         value: new Parameter({
           key: 'userId',
           name: 'userId',
           in: 'queries',
-          uuid: '#/parameters/UserId',
+          uuid: 'UserId',
           description: 'the user id',
           required: true,
           type: 'integer',
@@ -2302,19 +2312,18 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       }
 
       const expected = {
-        key: '#/parameters/UserIds',
+        key: 'UserIds',
         value: new Parameter({
           in: 'queries',
           key: 'userIds',
           name: 'userIds',
-          uuid: '#/parameters/UserIds',
+          uuid: 'UserIds',
           type: 'array',
           required: false,
           value: new Parameter({
             key: 'userId',
             name: 'userId',
             in: 'queries',
-            uuid: '#/parameters/null',
             description: 'the user id',
             required: true,
             type: 'integer',
@@ -2384,6 +2393,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     const expected = {
       key: 321,
       value: new Parameter({
+        usedIn: 'response',
         uuid: 321,
         constraints: List([
           new Constraint.JSONSchema(schema)
@@ -2536,14 +2546,17 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         description: 123
       }
 
+      const authName = 'basic_auth'
+
       const expected = new Auth.Basic({
         description: 123,
+        authName: 'basic_auth',
         interfaces: Map({
           someName: itf
         })
       })
 
-      const actual = __internals__.convertBasicAuth(itf, authInstance)
+      const actual = __internals__.convertBasicAuth(itf, authName, authInstance)
 
       expect(actual).toEqual(expected)
     })
@@ -2555,6 +2568,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         name: 'someName'
       })
 
+      const authName = 'apikey_auth'
+
       const authInstance = {
         description: 123,
         name: 'api_key'
@@ -2563,12 +2578,13 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       const expected = new Auth.ApiKey({
         description: 123,
         name: 'api_key',
+        authName: 'apikey_auth',
         interfaces: Map({
           someName: itf
         })
       })
 
-      const actual = __internals__.convertApiKeyAuth(itf, authInstance)
+      const actual = __internals__.convertApiKeyAuth(itf, authName, authInstance)
 
       expect(actual).toEqual(expected)
     })
@@ -2579,6 +2595,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       const itf = new Interface({
         name: 'someName'
       })
+
+      const authName = 'oauth2_auth'
 
       const authInstance = {
         description: 123,
@@ -2592,12 +2610,13 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         flow: 321,
         tokenUrl: 234,
         authorizationUrl: 432,
+        authName: 'oauth2_auth',
         interfaces: Map({
           someName: itf
         })
       })
 
-      const actual = __internals__.convertOAuth2Auth(itf, authInstance)
+      const actual = __internals__.convertOAuth2Auth(itf, authName, authInstance)
 
       expect(actual).toEqual(expected)
     })
@@ -2615,7 +2634,9 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       const expected = {
         key: 'petstore_auth',
-        value: new Auth.OAuth2()
+        value: new Auth.OAuth2({
+          authName: 'petstore_auth'
+        })
       }
 
       const actual = __internals__.convertAuthObjectIntoAuth(itfs, entry)

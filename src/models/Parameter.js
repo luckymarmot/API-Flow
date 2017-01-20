@@ -18,6 +18,8 @@ const model = new Model(modelInstance)
  * Default Spec for the Parameter Record.
  * @property {string} in: the location of the parameter (header, query, body, ...). Mainly used for
  * shared parameters, as the ParameterStore is location agnostic
+ * @property {string} usedIn: the type of object that holds the parameter (can be either request or
+ * response)
  * @property {string} uuid:  a string that uniquely identifies this parameter (not a true uuid)
  * @property {string} key: the key of the Parameter as used in the header, query, body, etc.
  * @property {string} name?: a humand readable name for the Parameter like `Access token`
@@ -47,6 +49,7 @@ const model = new Model(modelInstance)
 const ParameterSpec = {
   _model: model,
   in: null,
+  usedIn: 'request',
   uuid: null,
   key: null,
   name: null,
@@ -437,7 +440,8 @@ methods.isSimpleParameter = (
     return false
   }
 
-  const type = param.get('type') || ''
+  // if no type is provided assume simple
+  const type = param.get('type') || 'string'
 
   const types = [
     'integer', 'number', 'string', 'object', 'boolean', 'null'

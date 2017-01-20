@@ -1,5 +1,6 @@
 /**
  * TODO: Deal with external dependencies by having the resolution step before the parsing step
+ * TODO: improve Tag management (there's a Tag Object that contains a description)
  */
 
 import { parse, format } from 'url'
@@ -396,6 +397,7 @@ methods.getProducesParamFromOperation = (store, operation) => {
       produceParam = new Parameter({
         uuid: methods.genUuid(),
         in: 'headers',
+        usedIn: 'response',
         key: 'Content-Type',
         name: 'Content Type Header',
         description: 'describes the media type of the response',
@@ -873,15 +875,19 @@ methods.getRequestsForResource = (store, resourceObject) => {
  *
  * FIXME: we assume all external references are resolved.
  * TODO: support $ref for swagger path Items (i.e. this can be a $ref)
- * TODO: transform path into SequenceParameter
+ * TODO: transform path into SequenceParameter <- URL
  */
 methods.getResource = (store, paths, path) => {
   const resourceObject = paths[path]
   const operations = methods.getRequestsForResource(store, resourceObject)
   const endpoints = methods.createReferencesForEndpoints(store)
+  const $path = new URL({
+    url: path,
+    variableDelimiters: List([ '{', '}' ])
+  })
 
   const resourceInstance = {
-    path,
+    path: $path,
     endpoints,
     uuid: path,
     methods: Map(operations)
@@ -941,8 +947,9 @@ methods.getSharedEndpoints = ({
   const protocol = schemes[0]
   const url = format({ protocol, host, pathname: basePath })
   const uuid = methods.genUuid()
+  const variableDelimiters = List([ '{', '}' ])
 
-  let endpoint = new URL({ url, uuid, secure })
+  let endpoint = new URL({ url, uuid, secure, variableDelimiters })
   endpoint = endpoint.set('protocol', List(schemes.map(methods.addDotsToScheme)))
 
   const endpoints = {}
@@ -1028,6 +1035,7 @@ methods.getParamsFromProduces = (contentTypes = []) => {
   const param = new Parameter({
     uuid,
     in: 'headers',
+    usedIn: 'response',
     key: 'Content-Type',
     name: 'Content Type Header',
     description: 'describes the media type of the response',
@@ -1132,6 +1140,25 @@ methods.getConstraintsFromParam = (parameter) => {
   return List(constraints)
 }
 
+methods.getApplicableContextsFromLocation = (location) => {
+  if (location !== 'formData') {
+    return List()
+  }
+
+  return List([
+    new Parameter({
+      key: 'Content-Type',
+      in: 'headers',
+      constraints: List([
+        new Constraint.Enum([
+          'application/x-www-form-urlencoded',
+          'multipart/form-data'
+        ])
+      ])
+    })
+  ])
+}
+
 /**
  * converts a swagger parameter object into a Parameter Object
  * @param {Entry<string, SwaggerParameterObject>} parameterEntry: the entry to convert
@@ -1141,12 +1168,13 @@ methods.getConstraintsFromParam = (parameter) => {
  * TODO: Deal with format metadata
  */
 methods.convertParameterObjectIntoParameter = (parameterEntry) => {
-  const uuid = '#/parameters/' + parameterEntry.key
+  const uuid = parameterEntry.key
   const parameter = parameterEntry.value
 
   const { name, description, required, type } = parameter
   const constraints = methods.getConstraintsFromParam(parameter)
   const location = methods.mapParamLocationToParamContainerField(parameter.in)
+  const applicableContexts = methods.getApplicableContextsFromLocation(parameter.in)
 
   const paramInstance = {
     uuid,
@@ -1157,7 +1185,8 @@ methods.convertParameterObjectIntoParameter = (parameterEntry) => {
     description: description || null,
     required: required || false,
     type,
-    constraints
+    constraints,
+    applicableContexts
   }
 
   if (parameter.type === 'array' && parameter.items) {
@@ -1227,6 +1256,7 @@ methods.convertSchemaIntoParameterEntry = (schema) => {
     key: paramUuid,
     value: new Parameter({
       uuid: paramUuid,
+      usedIn: 'response',
       constraints: new List([
         new Constraint.JSONSchema(schema)
       ])
@@ -1234,6 +1264,13 @@ methods.convertSchemaIntoParameterEntry = (schema) => {
   }
 
   return paramEntry
+}
+
+methods.addUsedInResponseToParam = (param) => {
+  if (param instanceof Parameter) {
+    return param.set('usedIn', 'response')
+  }
+  return param
 }
 
 /**
@@ -1256,7 +1293,7 @@ methods.createResponseParameterContainer = ({ schema, headers }) => {
 
   if (headers) {
     const headerMap = methods.convertParameterObjectArrayIntoParameterMap(entries(headers))
-    containerInstance.headers = OrderedMap(headerMap)
+    containerInstance.headers = OrderedMap(headerMap).map(methods.addUsedInResponseToParam)
   }
   else {
     containerInstance.header = OrderedMap()
@@ -1334,11 +1371,12 @@ methods.addInterfaceToAuthInstance = (authInstance, $interface) => {
  * converts a Swagger Security Definition into a BasicAuth, including the potential interface it
  * implements.
  * @param {Interface?} interfaceUsingAuth: the Interface to apply, if it exists
+ * @param {string} key: the key of the entry. Used to save the auth name
  * @param {string} description?: the description of the authentication, if it exists.
  * @returns {BasicAuth} the corresponding BasicAuth
  */
-methods.convertBasicAuth = (interfaceUsingAuth, { description = null } = {}) => {
-  let authInstance = { description }
+methods.convertBasicAuth = (interfaceUsingAuth, key, { description = null } = {}) => {
+  let authInstance = { description, authName: key }
 
   if (interfaceUsingAuth) {
     authInstance = methods.addInterfaceToAuthInstance(authInstance, interfaceUsingAuth)
@@ -1351,12 +1389,13 @@ methods.convertBasicAuth = (interfaceUsingAuth, { description = null } = {}) => 
  * converts a Swagger Security Definition into a ApiKeyAuth, including the potential interface it
  * implements.
  * @param {Interface?} interfaceUsingAuth: the Interface to apply, if it exists
+ * @param {string} key: the key of the entry. Used to save the auth name
  * @param {SwaggerSecurityDefinition} auth: the auth to convert
  * @returns {ApiKeyAuth} the corresponding ApiKeyAuth
  */
-methods.convertApiKeyAuth = (interfaceUsingAuth, auth = {}) => {
+methods.convertApiKeyAuth = (interfaceUsingAuth, key, auth = {}) => {
   const { description = null, name = null } = auth
-  let authInstance = { description, name, in: auth.in || null }
+  let authInstance = { description, name, in: auth.in || null, authName: key }
 
   if (interfaceUsingAuth) {
     authInstance = methods.addInterfaceToAuthInstance(authInstance, interfaceUsingAuth)
@@ -1369,15 +1408,16 @@ methods.convertApiKeyAuth = (interfaceUsingAuth, auth = {}) => {
  * converts a Swagger Security Definition into an OAuth2Auth, including the potential interface it
  * implements.
  * @param {Interface?} interfaceUsingAuth: the Interface to apply, if it exists
+ * @param {string} key: the key of the entry. Used to save the auth name
  * @param {SwaggerSecurityDefinition} auth: the auth to convert
  * @returns {OAuth2Auth} the corresponding OAuth2Auth
  *
  * TODO: fix scopes
  */
-methods.convertOAuth2Auth = (interfaceUsingAuth, auth = {}) => {
+methods.convertOAuth2Auth = (interfaceUsingAuth, key, auth = {}) => {
   const { description = null, flow = null, authorizationUrl = null, tokenUrl = null } = auth
   const scopes = List(entries(auth.scopes || {}))
-  let authInstance = { description, flow, authorizationUrl, tokenUrl, scopes }
+  let authInstance = { description, flow, authorizationUrl, tokenUrl, scopes, authName: key }
 
   if (interfaceUsingAuth) {
     authInstance = methods.addInterfaceToAuthInstance(authInstance, interfaceUsingAuth)
@@ -1405,7 +1445,7 @@ methods.convertAuthObjectIntoAuth = (interfaces, { key, value }) => {
 
   if (authConverterMap[authType]) {
     const interfaceUsingAuth = interfaces[key]
-    const auth = authConverterMap[authType](interfaceUsingAuth, value)
+    const auth = authConverterMap[authType](interfaceUsingAuth, key, value)
 
     return { key, value: auth }
   }
@@ -1457,6 +1497,16 @@ methods.getSharedAuthInterfaces = ({ security = [] } = {}) => {
     .reduce(convertEntryListInMap, {})
 }
 
+methods.convertDefinitionIntoConstraint = ({ key, value }) => {
+  return { key, value: new Constraint.JSONSchema(value) }
+}
+
+methods.getSharedConstraints = ({ definitions = {} } = {}) => {
+  return entries(definitions)
+    .map(methods.convertDefinitionIntoConstraint)
+    .reduce(convertEntryListInMap, {})
+}
+
 /**
  * creates a store holding shared objects.
  * @param {SwaggerObject} swagger: the swagger file to extract the shared object from.
@@ -1464,6 +1514,7 @@ methods.getSharedAuthInterfaces = ({ security = [] } = {}) => {
  */
 methods.getSimpleStore = (swagger = {}) => {
   const sharedEndpoints = methods.getSharedEndpoints(swagger)
+  const sharedConstraints = methods.getSharedConstraints(swagger)
   const { sharedParameters, parameterInterfaces } = methods.getSharedParameters(swagger)
   const sharedResponses = methods.getSharedResponses(swagger)
   const authInterfaces = methods.getSharedAuthInterfaces(swagger)
@@ -1472,6 +1523,7 @@ methods.getSimpleStore = (swagger = {}) => {
   const interfaces = { ...parameterInterfaces, ...authInterfaces }
   return new Store({
     endpoint: new OrderedMap(sharedEndpoints),
+    constraint: new OrderedMap(sharedConstraints),
     parameter: new OrderedMap(sharedParameters),
     responses: new OrderedMap(sharedResponses),
     auth: new OrderedMap(sharedAuths),
