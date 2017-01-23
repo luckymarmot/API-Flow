@@ -879,6 +879,13 @@ methods.addTagsToOperation = (resourceOrRequest, operation) => {
   return operation
 }
 
+/**
+ * tests whether two array have the same objects, regardless of order or repetition.
+ * @param {Array<*>} first: the first array to compare
+ * @param {Array<*>} second: the second array to compare
+ * @returns {boolean} returns true if both arrays have the same set of objects, returns false
+ * otherwise
+ */
 methods.equalSet = (first, second) => {
   return Set(first).equals(Set(second))
 }
@@ -1077,12 +1084,23 @@ methods.getSchemesFromRequestEndpointOverlay = (request) => {
   return schemes
 }
 
+/**
+ * converts a reference to a Basic or an ApiKey record into a security requirement.
+ * @param {string} name: the name of the auth method
+ * @returns {SwaggerSecurityRequirementObject} the corresponding requirement object
+ */
 methods.getSecurityRequirementForBasicOrApiKeyAuth = (name) => {
   const security = {}
   security[name] = []
   return security
 }
 
+/**
+ * converts a reference to an OAuth2 record into a security requirement.
+ * @param {string} name: the name of the auth method
+ * @param {Reference} reference: the reference to converts
+ * @returns {SwaggerSecurityRequirementObject} the corresponding requirement object
+ */
 methods.getSecurityRequirementForOAuth2Auth = (name, reference) => {
   const overlay = reference.get('overlay')
   const security = {}
@@ -1094,6 +1112,14 @@ methods.getSecurityRequirementForOAuth2Auth = (name, reference) => {
   return security
 }
 
+/**
+ * converts a Reference to an Auth record into a security requirement object.
+ * @param {Store} store: the store from which to extract the referenced auth. It is used to infer
+ * the type of auth the reference is pointing to.
+ * @param {Reference} reference: the reference to convert.
+ * @returns {SwaggerSecurityRequirementObject?} the corresponding requirement object, should it
+ * exist.
+ */
 methods.getSecurityRequirementFromReference = (store, reference) => {
   const name = reference.get('uuid')
   const auth = store.getIn([ 'auth', name ])
