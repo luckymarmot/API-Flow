@@ -914,7 +914,7 @@ methods.getProducesEntry = (globalProduces, container) => {
   const headers = container.get('headers')
   const produces = methods.getContentTypeFromFilteredParams(headers, methods.isProducesHeader)
 
-  if (produces.length && produces !== globalProduces) {
+  if (produces.length && !methods.equalSet(produces, globalProduces)) {
     return produces
   }
 
@@ -977,16 +977,16 @@ methods.convertParameterMapToParameterObjectArray = (params) => {
  */
 methods.getParametersFromRequest = (request) => {
   const headers = methods.convertParameterMapToParameterObjectArray(
-    request.getIn([ 'container', 'headers' ])
+    request.getIn([ 'parameters', 'headers' ])
   )
   const queries = methods.convertParameterMapToParameterObjectArray(
-    request.getIn([ 'container', 'queries' ])
+    request.getIn([ 'parameters', 'queries' ])
   )
   const path = methods.convertParameterMapToParameterObjectArray(
-    request.getIn([ 'container', 'path' ])
+    request.getIn([ 'parameters', 'path' ])
   )
   const body = methods.convertParameterMapToParameterObjectArray(
-    request.getIn([ 'container', 'body' ])
+    request.getIn([ 'parameters', 'body' ])
   )
 
   const formData = body.filter((param) => param.in === 'formData')
@@ -1072,9 +1072,39 @@ methods.getSchemesFromRequestEndpointOverlay = (request) => {
     .valueSeq()
     .map(refOrUrl => refOrUrl.get('overlay'))
     .filter($overlay => !!$overlay)
-    .map(methods.getSchemesFromEndpoint)[0]
+    .map(methods.getSchemesFromEndpoint).get(0)
 
   return schemes
+}
+
+methods.getSecurityRequirementForBasicOrApiKeyAuth = (name) => {
+  const security = {}
+  security[name] = []
+  return security
+}
+
+methods.getSecurityRequirementForOAuth2Auth = (name, reference) => {
+  const overlay = reference.get('overlay')
+  const security = {}
+  let scopes = []
+  if (overlay) {
+    scopes = overlay.get('scopes').map(({ key }) => key).toJS()
+  }
+  security[name] = scopes
+  return security
+}
+
+methods.getSecurityRequirementFromReference = (store, reference) => {
+  const name = reference.get('uuid')
+  const auth = store.getIn([ 'auth', name ])
+  if (auth instanceof Auth.Basic || auth instanceof Auth.ApiKey) {
+    return methods.getSecurityRequirementForBasicOrApiKeyAuth(name)
+  }
+  else if (auth instanceof Auth.OAuth2) {
+    return methods.getSecurityRequirementForOAuth2Auth(name, reference)
+  }
+
+  return null
 }
 
 /**
@@ -1087,34 +1117,13 @@ methods.getSchemesFromRequestEndpointOverlay = (request) => {
 methods.getSecurityRequirementsFromRequest = (store, request) => {
   const auths = request.get('auths')
 
+  const convertReferenceIntoSecurityRequirements = currify(
+    methods.getSecurityRequirementFromReference, store
+  )
+
   const securityReqs = auths
     .filter(methods.isReference)
-    .map(ref => {
-      const name = ref.get('uuid')
-      const auth = store.getIn([ 'auth', name ])
-      if (
-        auth instanceof Auth.Basic ||
-        auth instanceof Auth.ApiKey
-      ) {
-        const security = {}
-        security[name] = []
-        return security
-      }
-      else if (
-        auth instanceof Auth.OAuth2
-      ) {
-        const overlay = ref.get('overlay')
-        const security = {}
-        let scopes = []
-        if (overlay) {
-          scopes = overlay.get('scopes').map(({ key }) => key).toJS()
-        }
-        security[name] = scopes
-        return security
-      }
-
-      return null
-    })
+    .map(convertReferenceIntoSecurityRequirements)
     .filter(value => !!value)
     .valueSeq()
     .toJS()
@@ -1156,7 +1165,7 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
   const $produces = methods.getProducesEntry(produces, resolvedContainer)
   const parameters = methods.getParametersFromRequest(request)
   const schemes = methods.getSchemesFromRequestEndpointOverlay(request)
-  const security = methods.getSecurityRequirementsFromRequest(request)
+  const security = methods.getSecurityRequirementsFromRequest(store, request)
 
   if (tags.length) {
     operation.tags = tags
@@ -1205,13 +1214,14 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
 methods.convertResourceToPathItemObject = (store, globalContentTypes, resource) => {
   const key = methods.getPathFromResource(resource)
 
-  const applyTags = currify(methods.addTagsFromResourceToOperation, resource)
   const convertRequest = currify(methods.convertRequestToOperationObject, store, globalContentTypes)
+  const applyTags = currify(methods.addTagsToOperation, resource)
 
   const value = resource.get('methods')
     .map(convertRequest)
     .map(applyTags)
-    .toJS()
+    .valueSeq()
+    .reduce(convertEntryListInMap, {})
 
   return { key, value }
 }
@@ -1298,8 +1308,6 @@ methods.getContentTypeFromFilteredParams = (paramMap, filterFunc) => {
     .filter(filterFunc)
     .map(methods.extractContentTypesFromParam)
     .reduce((flatList, list) => flatList.concat(list), [])
-    .toSeq()
-    .toJS()
 
   return contentTypes
 }

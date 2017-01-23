@@ -1186,7 +1186,670 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
     })
   })
 
+  /* eslint-disable no-undefined */
   describe('@getConsumesEntry', () => {
-    // TODO
+    it('should return undefined if no global or local consumes', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([])
+      const globalConsumes = undefined
+      const container = new ParameterContainer()
+
+      const actual = __internals__.getConsumesEntry(globalConsumes, container)
+
+      expect(actual).toNotExist()
+    })
+
+    it('should return undefined if local consumes equals global one', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([ 'a', 'b' ])
+      const globalConsumes = [ 'a', 'b' ]
+      const container = new ParameterContainer()
+
+      const actual = __internals__.getConsumesEntry(globalConsumes, container)
+
+      expect(actual).toNotExist()
+    })
+
+    it('should return local if different from global', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([ 'c', 'b' ])
+      const globalConsumes = [ 'a', 'b' ]
+      const container = new ParameterContainer()
+
+      const expected = [ 'c', 'b' ]
+      const actual = __internals__.getConsumesEntry(globalConsumes, container)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+  /* eslint-enable no-undefined */
+
+  /* eslint-disable no-undefined */
+  describe('@getProducesEntry', () => {
+    it('should return undefined if no global or local produces', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([])
+      const globalProduces = undefined
+      const container = new ParameterContainer()
+
+      const actual = __internals__.getProducesEntry(globalProduces, container)
+
+      expect(actual).toNotExist()
+    })
+
+    it('should return undefined if local produces equals global one', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([ 'a', 'b' ])
+      const globalProduces = [ 'a', 'b' ]
+      const container = new ParameterContainer()
+
+      const actual = __internals__.getProducesEntry(globalProduces, container)
+
+      expect(actual).toNotExist()
+    })
+
+    it('should return local if different from global', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([ 'c', 'b' ])
+      const globalProduces = [ 'a', 'b' ]
+      const container = new ParameterContainer()
+
+      const expected = [ 'c', 'b' ]
+      const actual = __internals__.getProducesEntry(globalProduces, container)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+  /* eslint-enable no-undefined */
+
+  describe('@convertReferenceToParameterObject', () => {
+    it('should work', () => {
+      const input = new Reference({
+        uuid: '1234'
+      })
+
+      const expected = {
+        value: {
+          $ref: '#/parameters/1234'
+        }
+      }
+      const actual = __internals__.convertReferenceToParameterObject(input)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertReferenceOrParameterToParameterObject', () => {
+    it('should call convertReferenceToParameterObject if input is reference', () => {
+      spyOn(__internals__, 'convertReferenceToParameterObject').andReturn(123)
+
+      const input = new Reference()
+      const expected = 123
+      const actual = __internals__.convertReferenceOrParameterToParameterObject(input)
+
+      expect(__internals__.convertReferenceToParameterObject).toHaveBeenCalledWith(input)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should call convertParameterToParameterObject if input is parameter', () => {
+      spyOn(__internals__, 'convertParameterToParameterObject').andReturn(321)
+
+      const input = new Parameter()
+      const key = 'abc'
+      const expected = 321
+      const actual = __internals__.convertReferenceOrParameterToParameterObject(input, key)
+
+      expect(__internals__.convertParameterToParameterObject).toHaveBeenCalledWith(input, key)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertParameterMapToParameterObjectArray', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'convertReferenceOrParameterToParameterObject').andReturn({ value: 123 })
+
+      const params = new OrderedMap({
+        a: 123,
+        b: 321,
+        c: 234
+      })
+
+      const expected = [ 123, 123, 123 ]
+      const actual = __internals__.convertParameterMapToParameterObjectArray(params)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getParametersFromRequest', () => {
+    it('should call convertParameterMapToParameterObjectArray for each container block', () =>{
+      const test = { default: 123, in: 'formData' }
+      spyOn(__internals__, 'convertParameterMapToParameterObjectArray').andReturn([ test ])
+
+      const request = new Request({
+        parameters: new ParameterContainer()
+      })
+
+      const expected = [ test, test, test, test ]
+      const actual = __internals__.getParametersFromRequest(request)
+
+      expect(__internals__.convertParameterMapToParameterObjectArray.calls.length).toEqual(4)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return only one body param', () => {
+      let calls = 0
+      const buffer = { c: 234 }
+      const test = [ { a: 123, in: 'body' }, { b: 321, in: 'body' } ]
+      spyOn(__internals__, 'convertParameterMapToParameterObjectArray').andCall(() => {
+        calls += 1
+        if (calls === 4) {
+          return test
+        }
+        return buffer
+      })
+
+      const request = new Request({
+        parameters: new ParameterContainer()
+      })
+
+      const expected = [ buffer, buffer, buffer, { a: 123, in: 'body' } ]
+      const actual = __internals__.getParametersFromRequest(request)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertReferenceToResponseObject', () => {
+    it('should work', () => {
+      const input = new Reference({ uuid: '1234' })
+      const key = 'abc'
+      const expected = {
+        key,
+        value: {
+          $ref: '#/responses/1234'
+        }
+      }
+      const actual = __internals__.convertReferenceToResponseObject(input, key)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertReferenceOrResponseRecordToResponseObject', () => {
+    it('should call convertReferenceToResponseObject if input is reference', () => {
+      spyOn(__internals__, 'convertReferenceToResponseObject').andReturn(123)
+      const input = new Reference()
+      const key = 'abc'
+      const expected = 123
+      const actual = __internals__.convertReferenceOrResponseRecordToResponseObject(input, key)
+      expect(__internals__.convertReferenceToResponseObject).toHaveBeenCalledWith(input, key)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should call convertResponseRecordToResponseObject if input is response', () => {
+      spyOn(__internals__, 'convertResponseRecordToResponseObject').andReturn(123)
+      const input = new Response()
+      const key = 'abc'
+      const expected = 123
+      const actual = __internals__.convertReferenceOrResponseRecordToResponseObject(input, key)
+      expect(__internals__.convertResponseRecordToResponseObject).toHaveBeenCalledWith(input, key)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getResponsesFromRequest', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'convertReferenceOrResponseRecordToResponseObject')
+        .andReturn({ key: 'abc', value: 123 })
+
+      const request = new Request({
+        responses: new OrderedMap({
+          a: 234,
+          b: 345
+        })
+      })
+
+      const expected = { abc: 123 }
+      const actual = __internals__.getResponsesFromRequest(request)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getSchemesFromRequestEndpointOverlay', () => {
+    it('should return undefined if request has no endpoints', () => {
+      const request = new Request()
+      const actual = __internals__.getSchemesFromRequestEndpointOverlay(request)
+      expect(actual).toNotExist()
+    })
+
+    it('should return undefined if request has multiple endpoints', () => {
+      const request = new Request({
+        endpoints: new OrderedMap({
+          a: 123,
+          b: 321
+        })
+      })
+
+      const actual = __internals__.getSchemesFromRequestEndpointOverlay(request)
+      expect(actual).toNotExist()
+    })
+
+    it('should return undefined if endpoint has no overlay', () => {
+      const request = new Request({
+        endpoints: new OrderedMap({
+          a: new Reference({ uuid: 'a' })
+        })
+      })
+
+      const actual = __internals__.getSchemesFromRequestEndpointOverlay(request)
+      expect(actual).toNotExist()
+    })
+
+    it('should work otherwise', () => {
+      const request = new Request({
+        endpoints: new OrderedMap({
+          a: new Reference({
+            uuid: 'a',
+            overlay: new URL({
+              url: 'https://someHost.com/'
+            }).set('protocol', List([ 'https:', 'http' ]))
+          })
+        })
+      })
+
+      const expected = [ 'https', 'http' ]
+      const actual = __internals__.getSchemesFromRequestEndpointOverlay(request)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getSecurityRequirementForBasicOrApiKeyAuth', () => {
+    it('should work', () => {
+      const name = 'basic_auth'
+      const expected = {
+        basic_auth: []
+      }
+      const actual = __internals__.getSecurityRequirementForBasicOrApiKeyAuth(name)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getSecurityRequirementForOAuth2Auth', () => {
+    it('should work', () => {
+      const name = 'petstore_auth'
+      const reference = new Reference({
+        overlay: new Auth.OAuth2({
+          scopes: List([ { key: 'write:self' } ])
+        })
+      })
+
+      const expected = {
+        petstore_auth: [ 'write:self' ]
+      }
+      const actual = __internals__.getSecurityRequirementForOAuth2Auth(name, reference)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getSecurityRequirementFromReference', () => {
+    it('should call getSecurityRequirementForBasicOrApiKeyAuth if referenced auth is basic', () => {
+      spyOn(__internals__, 'getSecurityRequirementForBasicOrApiKeyAuth').andReturn(123)
+
+      const store = new Store({
+        auth: new OrderedMap({
+          abc: new Auth.Basic()
+        })
+      })
+      const reference = new Reference({ uuid: 'abc' })
+
+      const expected = 123
+      const actual = __internals__.getSecurityRequirementFromReference(store, reference)
+
+      expect(__internals__.getSecurityRequirementForBasicOrApiKeyAuth).toHaveBeenCalled()
+      expect(actual).toEqual(expected)
+    })
+
+    it('should call getSecurityRequirementForBasicOrApiKeyAuth if refed auth is api-key', () => {
+      spyOn(__internals__, 'getSecurityRequirementForBasicOrApiKeyAuth').andReturn(123)
+
+      const store = new Store({
+        auth: new OrderedMap({
+          abc: new Auth.ApiKey()
+        })
+      })
+      const reference = new Reference({ uuid: 'abc' })
+
+      const expected = 123
+      const actual = __internals__.getSecurityRequirementFromReference(store, reference)
+
+      expect(__internals__.getSecurityRequirementForBasicOrApiKeyAuth).toHaveBeenCalled()
+      expect(actual).toEqual(expected)
+    })
+
+    it('should call getSecurityRequirementForOAuth2Auth if referenced auth is oauth2', () => {
+      spyOn(__internals__, 'getSecurityRequirementForOAuth2Auth').andReturn(123)
+
+      const store = new Store({
+        auth: new OrderedMap({
+          abc: new Auth.OAuth2()
+        })
+      })
+      const reference = new Reference({ uuid: 'abc' })
+
+      const expected = 123
+      const actual = __internals__.getSecurityRequirementFromReference(store, reference)
+
+      expect(__internals__.getSecurityRequirementForOAuth2Auth).toHaveBeenCalled()
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return null if auth not supported', () => {
+      const store = new Store({
+        auth: new OrderedMap({
+          abc: new Auth.Hawk()
+        })
+      })
+      const reference = new Reference({ uuid: 'abc' })
+
+      const expected = null
+      const actual = __internals__.getSecurityRequirementFromReference(store, reference)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getSecurityRequirementsFromRequest', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'getSecurityRequirementFromReference').andReturn(123)
+
+      const request = new Request({
+        auths: new List([
+          new Reference(),
+          new Reference(),
+          'ignored because not a Reference',
+          new Reference()
+        ])
+      })
+
+      const expected = [ 123, 123, 123 ]
+      const actual = __internals__.getSecurityRequirementsFromRequest(null, request)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertRequestToOperationObject', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'getTagStrings').andReturn([ 'pet', 'store' ])
+      spyOn(__internals__, 'getKeysFromRecord').andReturn({
+        summary: 'update a Pet',
+        description: 'updates a pet with some params',
+        operationId: 'updatePet'
+      })
+
+      spyOn(__internals__, 'getConsumesEntry').andReturn([ 'application/json' ])
+      spyOn(__internals__, 'getProducesEntry').andReturn([ 'application/xml' ])
+      spyOn(__internals__, 'getParametersFromRequest').andReturn([ {
+        in: 'query',
+        name: 'petId',
+        type: 'string'
+      } ])
+      spyOn(__internals__, 'getSchemesFromRequestEndpointOverlay').andReturn([ 'https' ])
+      spyOn(__internals__, 'getSecurityRequirementsFromRequest').andReturn([
+        {
+          petstore_auth: [ 'write:self' ]
+        }
+      ])
+      spyOn(__internals__, 'getResponsesFromRequest').andReturn({
+        '200': {
+          description: 'this method should return 200'
+        }
+      })
+
+      const store = new Store()
+      const globalInfo = {}
+      const request = new Request()
+      const key = '/some/path'
+
+      const expectedValue = {
+        tags: [ 'pet', 'store' ],
+        summary: 'update a Pet',
+        description: 'updates a pet with some params',
+        operationId: 'updatePet',
+        consumes: [ 'application/json' ],
+        produces: [ 'application/xml' ],
+        parameters: [
+          {
+            in: 'query',
+            name: 'petId',
+            type: 'string'
+          }
+        ],
+        schemes: [ 'https' ],
+        security: [
+          {
+            petstore_auth: [ 'write:self' ]
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'this method should return 200'
+          }
+        }
+      }
+
+      const expected = { key, value: expectedValue }
+      const actual = __internals__.convertRequestToOperationObject(store, globalInfo, request, key)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertResourceToPathItemObject', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'getPathFromResource').andReturn('/some/path')
+
+      const store = new Store()
+      const globalInfo = {}
+      const resource = new Resource({
+        methods: new OrderedMap({
+          get: new Request(),
+          post: new Request(),
+          put: new Request()
+        })
+      })
+
+      const expected = {
+        key: '/some/path',
+        value: {
+          get: {
+            responses: {
+              default: {
+                description: 'no response description was provided for this operation'
+              }
+            }
+          },
+          post: {
+            responses: {
+              default: {
+                description: 'no response description was provided for this operation'
+              }
+            }
+          },
+          put: {
+            responses: {
+              default: {
+                description: 'no response description was provided for this operation'
+              }
+            }
+          }
+        }
+      }
+      const actual = __internals__.convertResourceToPathItemObject(store, globalInfo, resource)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getPathObject', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'convertResourceToPathItemObject').andReturn({ key: 'abc', value: 123 })
+      const api = new Api({
+        resources: new OrderedMap({
+          a: new Resource()
+        })
+      })
+
+      const expected = {
+        abc: 123
+      }
+
+      const actual = __internals__.getPathObject(api)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('isConsumesHeader', () => {
+    it('should work', () => {
+      const inputs = [
+        new Parameter({
+          key: 'Whatever'
+        }),
+        new Parameter({
+          key: 'Content-Type',
+          usedIn: 'response'
+        }),
+        new Parameter({
+          key: 'Content-Type',
+          usedIn: 'request',
+          in: 'query'
+        }),
+        new Parameter({
+          key: 'Content-Type',
+          usedIn: 'request',
+          in: 'headers'
+        })
+      ]
+
+      const expected = [ false, false, false, true ]
+      const actual = inputs.map(__internals__.isConsumesHeader)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('isProducesHeader', () => {
+    it('should work', () => {
+      const inputs = [
+        new Parameter({
+          key: 'Whatever'
+        }),
+        new Parameter({
+          key: 'Content-Type',
+          usedIn: 'request'
+        }),
+        new Parameter({
+          key: 'Content-Type',
+          usedIn: 'response',
+          in: 'query'
+        }),
+        new Parameter({
+          key: 'Content-Type',
+          usedIn: 'response',
+          in: 'headers'
+        })
+      ]
+
+      const expected = [ false, false, false, true ]
+      const actual = inputs.map(__internals__.isProducesHeader)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractContentTypesFromParam', () => {
+    it('should work', () => {
+      const param = new Parameter({
+        constraints: List([
+          new Constraint.Enum([ 'application/json' ])
+        ])
+      })
+
+      const expected = [ 'application/json' ]
+      const actual = __internals__.extractContentTypesFromParam(param)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getGlobalConsumes', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([ 123 ])
+
+      const api = new Api()
+      const expected = [ 123 ]
+      const actual = __internals__.getGlobalConsumes(api)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getGlobalProduces', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([ 123 ])
+
+      const api = new Api()
+      const expected = [ 123 ]
+      const actual = __internals__.getGlobalProduces(api)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createSwaggerObject', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'getSwaggerFormatObject').andReturn(123)
+      spyOn(__internals__, 'getInfoObject').andReturn(321)
+      spyOn(__internals__, 'getEndpointRelatedObjects').andReturn({
+        schemes: 234,
+        host: 432,
+        basePath: 345
+      })
+      spyOn(__internals__, 'getGlobalConsumes').andReturn(543)
+      spyOn(__internals__, 'getGlobalProduces').andReturn(456)
+      spyOn(__internals__, 'getDefinitions').andReturn(654)
+      spyOn(__internals__, 'getSecurityDefinitions').andReturn(567)
+      spyOn(__internals__, 'getParameterDefinitions').andReturn(765)
+      spyOn(__internals__, 'getResponseDefinitions').andReturn(678)
+      spyOn(__internals__, 'getTagDefinitions').andReturn(876)
+      spyOn(__internals__, 'getPathObject').andReturn(789)
+
+      const api = new Api()
+      const expected = {
+        swagger: 123,
+        info: 321,
+        host: 432,
+        schemes: 234,
+        basePath: 345,
+        consumes: 543,
+        produces: 456,
+        paths: 789,
+        definitions: 654,
+        parameters: 765,
+        responses: 678,
+        securityDefinitions: 567,
+        tags: 876
+      }
+      const actual = __internals__.createSwaggerObject(api)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@serialize', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createSwaggerObject').andReturn({ a: 123 })
+      const api = new Api()
+
+      const expected = JSON.stringify({ a: 123 }, null, 2)
+      const actual = __internals__.serialize(api)
+
+      expect(actual).toEqual(expected)
+    })
   })
 })
