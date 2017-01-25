@@ -4,250 +4,250 @@ import Options from '../models/options/Options'
 
 export default class BaseFlow {
     /* Environment and URLResolver MUST be overriden */
-    constructor(Environment, URLResolver) {
-        this.Environment = Environment
-        this.URLResolver = URLResolver
+  constructor(Environment, URLResolver) {
+    this.Environment = Environment
+    this.URLResolver = URLResolver
+  }
+
+  detectFormat(content) {
+    const parserMap = this.getParsers()
+
+    let scores = []
+
+    const parsers = Object.keys(parserMap)
+    for (const parser of parsers) {
+      scores = scores.concat(parserMap[parser].detect(content))
     }
 
-    detectFormat(content) {
-        let parserMap = this.getParsers()
+    return new Promise((resolve) => {
+      resolve(scores)
+    })
+  }
 
-        let scores = []
+  detectName(content) {
+    const parserMap = this.getParsers()
 
-        let parsers = Object.keys(parserMap)
-        for (let parser of parsers) {
-            scores = scores.concat(parserMap[parser].detect(content))
-        }
-
-        return new Promise((resolve) => {
-            resolve(scores)
-        })
+    let name = null
+    const parsers = Object.keys(parserMap)
+    for (const parser of parsers) {
+      const proposed = parserMap[parser].getAPIName(content)
+      if (!name) {
+        name = proposed
+      }
+      else if (proposed && proposed.length > name.length) {
+        name = proposed
+      }
     }
 
-    detectName(content) {
-        let parserMap = this.getParsers()
+    return new Promise((resolve) => {
+      resolve(name)
+    })
+  }
 
-        let name = null
-        let parsers = Object.keys(parserMap)
-        for (let parser of parsers) {
-            let proposed = parserMap[parser].getAPIName(content)
-            if (!name) {
-                name = proposed
-            }
-            else if (proposed && proposed.length > name.length) {
-                name = proposed
-            }
-        }
+  load(input, opts) {
+    let url = null
+    let contentPromise
+    const base = opts.getIn([ 'resolver', 'base' ])
 
-        return new Promise((resolve) => {
-            resolve(name)
-        })
+    if (base === 'raw') {
+      contentPromise = new Promise((resolve) => {
+        return resolve(input)
+      })
+    }
+    else {
+      contentPromise = (new this.URLResolver()).resolve(input)
+      url = input
     }
 
-    load(input, opts) {
-        let url = null
-        let contentPromise
-        const base = opts.getIn([ 'resolver', 'base' ])
+    return contentPromise.then(content => {
+      return {
+        url,
+        content
+      }
+    })
+  }
 
-        if (base === 'raw') {
-            contentPromise = new Promise((resolve) => {
-                return resolve(input)
-            })
-        }
-        else {
-            contentPromise = (new this.URLResolver()).resolve(input)
-            url = input
-        }
+  getParsers() {
+    throw new Error('BaseFlow.getParsers must be overriden')
+  }
 
-        return contentPromise.then(content => {
-            return {
-                url,
-                content
-            }
-        })
+  _getBestFormat(scores) {
+    let best = {
+      format: null,
+      version: null,
+      score: -1
     }
 
-    getParsers() {
-        throw new Error('BaseFlow.getParsers must be overriden')
-    }
+    scores.forEach(scoreItem => {
+      if (scoreItem.score >= best.score) {
+        best = scoreItem
+      }
+    })
 
-    _getBestFormat(scores) {
-        let best = {
-            format: null,
-            version: null,
-            score: -1
-        }
+    return best
+  }
 
-        scores.forEach(scoreItem => {
-            if (scoreItem.score >= best.score) {
-                best = scoreItem
-            }
-        })
+  _guessFormatIfNotAvailable(item, opts) {
+    const isDefault = opts.getIn([ 'parser', 'isDefault' ])
 
-        return best
-    }
-
-    _guessFormatIfNotAvailable(item, opts) {
-        const isDefault = opts.getIn([ 'parser', 'isDefault' ])
-
-        if (isDefault) {
-            return this.detectFormat(item.content).then(scores => {
-                const formatObj = this._getBestFormat(scores)
-                let options = opts
+    if (isDefault) {
+      return this.detectFormat(item.content).then(scores => {
+        const formatObj = this._getBestFormat(scores)
+        const options = opts
                     .setIn([ 'parser', 'name' ], formatObj.format)
                     .setIn([ 'parser', 'version' ], formatObj.version)
 
-                return {
-                    item,
-                    options
-                }
-            })
+        return {
+          item,
+          options
         }
-
-        const sourceFormat = opts.getIn([ 'parser', 'name' ])
-        let sourceVersion = opts.getIn([ 'parser', 'version' ])
-
-        if (!sourceVersion) {
-            const parsers = this.getParsers()
-            const scores = parsers[sourceFormat].detect(item.content)
-            let best = {
-                version: 'v1',
-                score: -1
-            }
-
-            scores.forEach(scoreItem => {
-                if (scoreItem.score >= best.score) {
-                    best = scoreItem
-                }
-            })
-
-            sourceVersion = best.version
-        }
-
-        return new Promise((resolve) => {
-            const options = opts.setIn([ 'parser', 'version' ], sourceVersion)
-            resolve({
-                item,
-                options
-            })
-        })
+      })
     }
 
-    parse(item, _opts) {
-        let opts = null
-        if (_opts && typeof _opts.set === 'function') {
-            opts = _opts
-        }
-        else {
-            opts = new Options(_opts)
-        }
+    const sourceFormat = opts.getIn([ 'parser', 'name' ])
+    let sourceVersion = opts.getIn([ 'parser', 'version' ])
 
-        const sourceFormat = opts.getIn([ 'parser', 'name' ])
-        const sourceVersion = opts.getIn([ 'parser', 'version' ])
-        const parsers = this.getParsers()
+    if (!sourceVersion) {
+      const parsers = this.getParsers()
+      const scores = parsers[sourceFormat].detect(item.content)
+      let best = {
+        version: 'v1',
+        score: -1
+      }
 
-        const parser = new parsers[sourceFormat](sourceVersion)
-
-        let promise
-        try {
-            promise = parser.parse(item, opts.get('parser'))
+      scores.forEach(scoreItem => {
+        if (scoreItem.score >= best.score) {
+          best = scoreItem
         }
-        catch (e) {
-            return new Promise((resolve, reject) => {
-                reject(e)
-            })
-        }
+      })
 
-        if (typeof promise.then !== 'function') {
-            let value = promise
-            promise = new Promise((resolve) => {
-                resolve(value)
-            })
-        }
-
-        return promise
+      sourceVersion = best.version
     }
 
-    resolve(item, context, opts) {
-        const environment = new this.Environment()
-        const resolver = new ContextResolver(environment)
-        return resolver.resolveAll(
+    return new Promise((resolve) => {
+      const options = opts.setIn([ 'parser', 'version' ], sourceVersion)
+      resolve({
+        item,
+        options
+      })
+    })
+  }
+
+  parse(item, _opts) {
+    let opts = null
+    if (_opts && typeof _opts.set === 'function') {
+      opts = _opts
+    }
+    else {
+      opts = new Options(_opts)
+    }
+
+    const sourceFormat = opts.getIn([ 'parser', 'name' ])
+    const sourceVersion = opts.getIn([ 'parser', 'version' ])
+    const parsers = this.getParsers()
+
+    const parser = new parsers[sourceFormat](sourceVersion)
+
+    let promise
+    try {
+      promise = parser.parse(item, opts.get('parser'))
+    }
+    catch (e) {
+      return new Promise((resolve, reject) => {
+        reject(e)
+      })
+    }
+
+    if (typeof promise.then !== 'function') {
+      const value = promise
+      promise = new Promise((resolve) => {
+        resolve(value)
+      })
+    }
+
+    return promise
+  }
+
+  resolve(item, context, opts) {
+    const environment = new this.Environment()
+    const resolver = new ContextResolver(environment)
+    return resolver.resolveAll(
             item,
             context,
             opts.get('resolver')
         )
-    }
+  }
 
-    getSerializers() {
-        throw new Error('BaseFlow.getSerializers must be overriden')
-    }
+  getSerializers() {
+    throw new Error('BaseFlow.getSerializers must be overriden')
+  }
 
-    serialize(context, opts) {
-        const target = opts.getIn([ 'serializer', 'name' ])
+  serialize(context, opts) {
+    const target = opts.getIn([ 'serializer', 'name' ])
 
-        const serializers = this.getSerializers()
-        const serializer = new serializers[target]()
+    const serializers = this.getSerializers()
+    const serializer = new serializers[target]()
 
-        try {
-            let final = serializer
+    try {
+      const final = serializer
                 .serialize(
                     context,
                     opts.get('serializer')
                 )
-            let error = serializer.validate(final)
-            if (error) {
-                throw error
-            }
-            else {
-                return final
-            }
-        }
-        catch (e) {
-            throw e
-        }
+      const error = serializer.validate(final)
+      if (error) {
+        throw error
+      }
+      else {
+        return final
+      }
+    }
+    catch (e) {
+      throw e
+    }
+  }
+
+  transform(input, _opts) {
+    let opts = null
+    if (_opts && typeof _opts.set === 'function') {
+      opts = _opts
+    }
+    else {
+      opts = new Options(_opts)
     }
 
-    transform(input, _opts) {
-        let opts = null
-        if (_opts && typeof _opts.set === 'function') {
-            opts = _opts
+    const detectFunc = (($opts) => {
+      return item => {
+        return this._guessFormatIfNotAvailable(item, $opts)
+      }
+    })(opts)
+
+    const parseFunc = ({ item, options }) => {
+      return this.parse(item, options).then(context => {
+        return {
+          item, context
         }
-        else {
-            opts = new Options(_opts)
-        }
+      })
+    }
 
-        const detectFunc = (($opts) => {
-            return item => {
-                return this._guessFormatIfNotAvailable(item, $opts)
-            }
-        })(opts)
+    const resolveFunc = (($opts) => {
+      return ({ item, context }) => {
+        return this.resolve(item, context, $opts)
+      }
+    })(opts)
 
-        const parseFunc = ({ item, options }) => {
-            return this.parse(item, options).then(context => {
-                return {
-                    item, context
-                }
-            })
-        }
+    const serializeFunc = (($opts) => {
+      return context => {
+        return this.serialize(context, $opts)
+      }
+    })(opts)
 
-        const resolveFunc = (($opts) => {
-            return ({ item, context }) => {
-                return this.resolve(item, context, $opts)
-            }
-        })(opts)
+    const errorHandler = (err) => { throw err }
 
-        const serializeFunc = (($opts) => {
-            return context => {
-                return this.serialize(context, $opts)
-            }
-        })(opts)
-
-        const errorHandler = (err) => { throw err }
-
-        return this.load(input, opts)
+    return this.load(input, opts)
             .then(detectFunc, errorHandler)
             .then(parseFunc, errorHandler)
             .then(resolveFunc, errorHandler)
             .then(serializeFunc, errorHandler)
-    }
+  }
 }

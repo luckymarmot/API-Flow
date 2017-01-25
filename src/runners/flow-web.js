@@ -17,31 +17,31 @@ import BrowserEnvironment, {
 import BaseFlow from './base-runner'
 
 export class FlowBrowser extends BaseFlow {
-    static parsers = {
-        swagger: SwaggerParser,
-        raml: RAMLParser,
-        postman: PostmanParser,
-        curl: CurlParser,
-        __internal__: InternalParser
-    }
+  static parsers = {
+    swagger: SwaggerParser,
+    raml: RAMLParser,
+    postman: PostmanParser,
+    curl: CurlParser,
+    __internal__: InternalParser
+  }
 
-    static serializers = {
-        swagger: SwaggerSerializer,
-        raml: RAMLSerializer,
-        postman: PostmanSerializer,
-        curl: CurlSerializer,
-        __internal__: InternalSerializer
-    }
+  static serializers = {
+    swagger: SwaggerSerializer,
+    raml: RAMLSerializer,
+    postman: PostmanSerializer,
+    curl: CurlSerializer,
+    __internal__: InternalSerializer
+  }
 
-    constructor() {
-        super(BrowserEnvironment, URLResolver)
-    }
+  constructor() {
+    super(BrowserEnvironment, URLResolver)
+  }
 
-    getParsers() {
-        return FlowBrowser.parsers
-    }
+  getParsers() {
+    return FlowBrowser.parsers
+  }
 
-    getSerializers() {
-        return FlowBrowser.serializers
-    }
+  getSerializers() {
+    return FlowBrowser.serializers
+  }
 }
