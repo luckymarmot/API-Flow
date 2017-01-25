@@ -11,13 +11,14 @@ import Variable from '../../models/Variable'
 import Reference from '../../models/Reference'
 import Resource from '../../models/Resource'
 import Request from '../../models/Request'
+import ParameterContainer from '../../models/ParameterContainer'
+import Context from '../../models/Context'
+import Group from '../../models/Group'
 
 /*
 import Contact from '../../../models/Contact'
 import License from '../../../models/License'
 import Interface from '../../../models/Interface'
-import ParameterContainer from '../../../models/ParameterContainer'
-import Group from '../../../models/Group'
 import Response from '../../../models/Response'
 */
 
@@ -135,10 +136,16 @@ methods.createStore = () => {
     }),
     parameter: new OrderedMap({
       token: new Parameter({
+        key: 'Token',
         type: 'integer',
         constraints: List([
           new Constraint.Enum([ 'token_1', 'token_2' ])
         ])
+      }),
+      offset: new Parameter({
+        key: 'offset',
+        type: 'integer',
+        description: 'the offset from which to start searching'
       })
     }),
     auth: new OrderedMap({
@@ -182,6 +189,109 @@ methods.createResources = () => {
             server3: new URL({
               url: 'https://echo.paw.cloud/server3'
             })
+          }),
+          auths: List([
+            new Reference({
+              type: 'auth',
+              uuid: 'basic_auth'
+            })
+          ]),
+          parameters: new ParameterContainer({
+            headers: new OrderedMap({
+              '1234': new Parameter({
+                uuid: '1234',
+                key: 'Accept',
+                type: 'string',
+                default: 'application/json',
+                constraints: List([
+                  new Constraint.Enum([
+                    'application/json',
+                    'application/xml'
+                  ])
+                ])
+              }),
+              '4321': new Reference({
+                type: 'parameter',
+                uuid: 'token'
+              })
+            }),
+            queries: new OrderedMap({
+              '2345': new Parameter({
+                uuid: '2345',
+                key: 'limit',
+                type: 'integer',
+                description: 'the number of pets to return with this query. if this is set to 0, ' +
+                  'it returns all pets.',
+                default: 100,
+                constraints: List([
+                  new Constraint.Minimum(0)
+                ])
+              }),
+              '5432': new Reference({
+                type: 'parameter',
+                uuid: 'offset'
+              })
+            })
+          })
+        }),
+        post: new Request({
+          name: 'createPet',
+          description: 'adds a Pet',
+          method: 'post',
+          endpoints: new OrderedMap({
+            server1: new Reference({
+              type: 'endpoint',
+              uuid: 'server1'
+            })
+          }),
+          parameters: new ParameterContainer({
+            headers: new OrderedMap({
+              '1234': new Parameter({
+                uuid: '1234',
+                key: 'Accept',
+                type: 'string',
+                default: 'application/json',
+                constraints: List([
+                  new Constraint.Enum([
+                    'application/json',
+                    'application/xml'
+                  ])
+                ])
+              }),
+              '4321': new Reference({
+                type: 'parameter',
+                uuid: 'token'
+              }),
+              '567': new Parameter({
+                uuid: '1234',
+                key: 'Content-Type',
+                type: 'string',
+                default: 'application/json',
+                constraints: List([
+                  new Constraint.Enum([
+                    'application/json',
+                    'application/xml'
+                  ])
+                ])
+              })
+            }),
+            body: new OrderedMap({
+              '765': new Parameter({
+                uuid: '765',
+                key: null,
+                in: 'body',
+                constraints: List([
+                  new Constraint.JSONSchema({
+                    type: 'object',
+                    properties: {
+                      name: {
+                        type: 'string'
+                      }
+                    }
+                  })
+                ])
+              })
+            })
           })
         })
       })
@@ -201,17 +311,135 @@ methods.createResources = () => {
               type: 'endpoint',
               uuid: 'server2'
             })
-          })
+          }),
+          auths: List([
+            new Auth.Basic({
+              username: 'user',
+              password: 'pass'
+            })
+          ])
         }),
         post: new Request({
           name: 'updatePet',
           description: 'updates the pet with given petId',
           method: 'post',
-          endpoints: new OrderedMap({
+          endpoints: OrderedMap({
             server3: new URL({
               url: 'https://echo.paw.cloud/server3'
             })
-          })
+          }),
+          parameters: new ParameterContainer({
+            headers: OrderedMap({
+              '456': new Parameter({
+                uuid: '456',
+                key: 'Content-Type',
+                description: 'the MIME type of the body of this request',
+                default: 'application/x-www-form-urlencoded',
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    constraints: List([
+                      new Constraint.Enum([ 'application/x-www-form-urlencoded' ])
+                    ])
+                  })
+                ])
+              }),
+              '654': new Parameter({
+                uuid: '654',
+                key: 'Content-Type',
+                description: 'the MIME type of the body of this request',
+                default: 'multipart/form-data',
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    constraints: List([
+                      new Constraint.Enum([ 'multipart/form-data' ])
+                    ])
+                  })
+                ])
+              })
+            }),
+            body: OrderedMap({
+              '345': new Parameter({
+                uuid: '345',
+                key: 'ownerId',
+                in: 'body',
+                description: 'the id of the owner',
+                type: 'string',
+                constraints: List([ new Constraint.Pattern('^[0-9a-f]{15}$') ]),
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    constraints: List([
+                      new Constraint.Enum([
+                        'application/x-www-form-urlencoded',
+                        'multipart/form-data'
+                      ])
+                    ])
+                  })
+                ])
+              }),
+              '543': new Parameter({
+                uuid: '543',
+                key: 'name',
+                in: 'body',
+                description: 'the name of the pet',
+                type: 'string',
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    type: 'string',
+                    constraints: List([
+                      new Constraint.Enum([
+                        'application/x-www-form-urlencoded',
+                        'multipart/form-data'
+                      ])
+                    ])
+                  })
+                ])
+              })
+            })
+          }),
+          contexts: new List([
+            new Context({
+              constraints: List([
+                new Parameter({
+                  key: 'Content-Type',
+                  in: 'headers',
+                  type: 'string',
+                  default: 'application/x-www-form-urlencoded'
+                })
+              ])
+            }),
+            new Context({
+              constraints: List([
+                new Parameter({
+                  key: 'Content-Type',
+                  in: 'headers',
+                  type: 'string',
+                  default: 'multipart/form-data'
+                })
+              ])
+            })
+          ])
+        })
+      })
+    })
+  })
+}
+
+methods.createGroup = () => {
+  return new Group({
+    name: 'Root Group',
+    children: OrderedMap({
+      '/pets': '/pets',
+      nested: new Group({
+        name: 'Nested Group',
+        children: OrderedMap({
+          '/pets/{petId}': '/pets/{petId}'
         })
       })
     })
@@ -222,11 +450,13 @@ methods.parse = () => {
   const info = methods.createInfo()
   const store = methods.createStore()
   const resources = methods.createResources()
+  const group = methods.createGroup()
 
   return new Api({
     info,
     store,
-    resources
+    resources,
+    group
   })
 }
 

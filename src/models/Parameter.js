@@ -669,9 +669,10 @@ methods.isValid = (
     ) => {
     // && has precedence on ||
     // === (1 || (2a && 2b))
-    return bool ||
-            _param.get('key') === param.get('key') &&
-            _param.validate(param.get('default'))
+    return bool || (
+      _param.get('key') === param.get('key') &&
+      _param.validate(param.get('default'))
+    )
   }, false)
 }
 

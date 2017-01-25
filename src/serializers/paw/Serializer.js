@@ -4,6 +4,8 @@ import { DynamicValue, DynamicString, RecordParameter } from '../../mocks/PawShi
 import Store from '../../models/Store'
 import Auth from '../../models/Auth'
 import Reference from '../../models/Reference'
+import Parameter from '../../models/Parameter'
+import Group from '../../models/Group'
 
 import { currify } from '../../utils/fp-utils'
 
@@ -36,6 +38,21 @@ methods.wrapDV = (dv) => new DynamicString(dv)
 methods.createJSONDV = (json) => new DynamicValue('com.luckymarmot.JSONDynamicValue', {
   json: JSON.stringify(json)
 })
+
+methods.createUrlEncodedBodyDV = (keyValues) => {
+  return new DynamicValue(
+  'com.luckymarmot.BodyFormKeyValueDynamicValue', {
+    keyValues: keyValues
+  })
+}
+
+methods.createMultipartBodyDV = (keyValues) => {
+  return new DynamicValue(
+    'com.luckymarmot.BodyMultipartFormDataDynamicValue', {
+      keyValues: keyValues
+    }
+  )
+}
 
 /**
  * extracts the title from an Api Record.
@@ -253,7 +270,12 @@ methods.addEndpointsToDomain = (domain, environment, api) => {
  * @param {Environment} environment: the environment in which this parameter value is applicable.
  * @param {Parameter} parameter: the parameter to add to the domain
  * @param {string} key: the name of the endpoint
- * @returns {EnvironmentVariable} the newly created environment variable.
+ * @returns {
+ *   {
+ *     variable: EnvironmentVariable,
+ *     parameter: Parameter
+ *   }
+ * } an object containing the newly created environment variable, and its associated parameter.
  */
 methods.addParameterToDomain = (domain, environment, parameter, key) => {
   const variable = domain.createEnvironmentVariable(key)
@@ -262,7 +284,7 @@ methods.addParameterToDomain = (domain, environment, parameter, key) => {
   const ds = methods.wrapDV(dv)
   variable.setValue(ds, environment)
 
-  return variable
+  return { variable, parameter }
 }
 
 /**
@@ -288,6 +310,72 @@ methods.convertBasicAuthIntoDynamicValue = (auth) => {
   return new DynamicValue('com.luckymarmot.BasicAuthDynamicValue', {
     username: auth.get('username') || '',
     password: auth.get('password') || ''
+  })
+}
+
+/**
+ * converts a BasicAuth into its corresponding DynamicValue
+ * @param {Auth} auth: the basic auth to convert
+ * @returns {DynamicValue} the corresponding DynamicValue
+ */
+methods.convertBasicAuthIntoDynamicValue = (auth) => {
+  return new DynamicValue('com.luckymarmot.BasicAuthDynamicValue', {
+    username: auth.get('username') || '',
+    password: auth.get('password') || ''
+  })
+}
+
+/**
+ * converts a DigestAuth into its corresponding DynamicValue
+ * @param {Auth} auth: the basic auth to convert
+ * @returns {DynamicValue} the corresponding DynamicValue
+ */
+methods.convertDigestAuthIntoDynamicValue = (auth) => {
+  return new DynamicValue('com.luckymarmot.PawExtensions.DigestAuthDynamicValue', {
+    username: auth.get('username') || '',
+    password: auth.get('password') || ''
+  })
+}
+
+/**
+ * converts a OAuth1Auth into its corresponding DynamicValue
+ * @param {Auth} auth: the basic auth to convert
+ * @returns {DynamicValue} the corresponding DynamicValue
+ */
+methods.convertOAuth1AuthIntoDynamicValue = (auth) => {
+  return new DynamicValue('com.luckymarmot.OAuth1HeaderDynamicValue', {
+    callback: auth.get('callback') || '',
+    consumerSecret: auth.get('consumerSecret') || '',
+    tokenSecret: auth.get('tokenSecret') || '',
+    consumerKey: auth.get('consumerKey') || '',
+    algorithm: auth.get('algorithm') || '',
+    nonce: auth.get('nonce') || '',
+    additionalParameters: auth.get('additionalParameters') || '',
+    timestamp: auth.get('timestamp') || '',
+    token: auth.get('token') || ''
+  })
+}
+
+/**
+ * converts a OAuth2Auth into its corresponding DynamicValue
+ * @param {Auth} auth: the basic auth to convert
+ * @returns {DynamicValue} the corresponding DynamicValue
+ *
+ * NOTE: not 100% sure that authorizationCode is equivalent to 'accessCode'. Might be 'password'.
+ */
+methods.convertOAuth2AuthIntoDynamicValue = (auth) => {
+  const grantType = {
+    accessCode: 0,
+    implicit: 1,
+    application: 2,
+    password: 3
+  }
+
+  return new DynamicValue('com.luckymarmot.OAuth2DynamicValue', {
+    authorizationURL: auth.get('authorizationUrl') || '',
+    accessTokenURL: auth.get('tokenUrl') || '',
+    grantType: grantType[auth.get('flow')] || 0,
+    scopes: auth.get('scopes').map(({ key }) => key).join(', ')
   })
 }
 
@@ -396,8 +484,59 @@ methods.createEnvironments = (context, api) => {
   return store
 }
 
+methods.convertSequenceParameterIntoVariableDS = (pawRequest, param) => {
+  const sequence = param.get('value')
+  const parameters = sequence.map((sub, index) => {
+    if (index % 2 === 0) {
+      return sub.generate(true)
+    }
+
+    return methods.convertParameterIntoVariableDS(pawRequest, sub)
+  }).toJS()
+
+  return new DynamicString(...parameters)
+}
+
+// TODO use store to resolve references inside sequence params
+methods.convertParameterIntoVariableDS = (pawRequest, param) => {
+  if (param.get('superType') === 'sequence') {
+    return methods.convertSequenceParameterIntoVariableDS(pawRequest, param)
+  }
+
+  const schema = param.getJSONSchema(false)
+  const name = param.get('key') || ''
+  const defaultValue = param.get('default')
+  let value = ''
+  if (typeof defaultValue === 'string') {
+    value = defaultValue
+  }
+  else if (typeof defaultValue !== 'undefined' && defaultValue !== null) {
+    value = JSON.stringify(defaultValue)
+  }
+  const description = param.get('description') || ''
+
+  const variable = pawRequest.addVariable(name, value, description)
+  variable.schema = JSON.stringify(schema)
+
+  return variable.createDynamicString()
+}
+
+methods.convertPathnameIntoDynamicString = (pawRequest, pathname) => {
+  const param = pathname.get('parameter')
+  if (param.get('superType') === 'sequence') {
+    return methods.convertSequenceParameterIntoVariableDS(pawRequest, param)
+  }
+
+  return pathname.generate(List([ '{', '}' ]))
+}
+
 // TODO deal with case where there's an overlay for the url
-methods.convertEndpointsAndPathnameIntoDS = (pawRequest, store, endpoints, pathname) => {
+methods.convertEndpointsAndPathnameIntoDS = (pawRequest, store, endpoints, path) => {
+  const pathDs = methods.convertPathnameIntoDynamicString(
+    pawRequest,
+    path.get('pathname')
+  )
+
   const converted = endpoints.map((endpoint) => {
     if (endpoint instanceof Reference) {
       const variable = store.getIn([ 'endpoint', endpoint.get('uuid') ])
@@ -413,13 +552,202 @@ methods.convertEndpointsAndPathnameIntoDS = (pawRequest, store, endpoints, pathn
     .toJS()
 
   if (converted.length === 1) {
-    return new DynamicString(converted[0], pathname)
+    return new DynamicString(converted[0], pathDs)
   }
 
-  const dv = pawRequest.addVariable('endpoint', converted[0], 'the endpoint of this url')
-  dv.schema = JSON.stringify({ type: 'string', enum: converted })
+  const variable = pawRequest
+    .addVariable('endpoint', converted[0], 'the endpoint of this url')
+  variable.schema = JSON.stringify({ type: 'string', enum: converted })
 
-  return new DynamicString(dv, pathname)
+  const dv = variable.createDynamicValue()
+
+  return new DynamicString(dv, pathDs)
+}
+
+methods.convertParameterFromReference = (pawRequest, store, reference) => {
+  const { parameter, variable } = store.getIn([ 'parameter', reference.get('uuid') ]) || {}
+  if (!parameter) {
+    return ''
+  }
+
+  const name = parameter.get('key') || ''
+  const defaultValue = parameter.get('default')
+  let value = ''
+  if (typeof defaultValue === 'string') {
+    value = defaultValue
+  }
+  else if (typeof defaultValue !== 'undefined' && defaultValue !== null) {
+    value = JSON.stringify(defaultValue)
+  }
+  const description = parameter.get('description') || ''
+
+  const variableParam = pawRequest.addVariable(name, value, description)
+  // TODO replace this schema with variable.createDynamicString()
+  variableParam.schema = '{}'
+
+  return { key: name, value: variableParam.createDynamicString() }
+}
+
+methods.convertReferenceOrParameterToDsEntry = (pawRequest, store, parameterOrReference) => {
+  if (parameterOrReference instanceof Reference) {
+    return methods.convertParameterFromReference(pawRequest, store, parameterOrReference)
+  }
+
+  return {
+    key: parameterOrReference.get('key'),
+    value: methods.convertParameterIntoVariableDS(pawRequest, parameterOrReference)
+  }
+}
+
+methods.addHeaderToRequest = (pawRequest, { key, value }) => {
+  pawRequest.addHeader(key, value)
+  return pawRequest
+}
+
+methods.addHeadersToRequest = (pawRequest, store, container) => {
+  const convertHeaderParamOrRef = currify(
+    methods.convertReferenceOrParameterToDsEntry,
+    pawRequest, store
+  )
+  const headers = container.get('headers')
+  headers
+    .map(convertHeaderParamOrRef)
+    .reduce(methods.addHeaderToRequest, pawRequest)
+}
+
+methods.addUrlParamToRequest = (pawRequest, { key, value }) => {
+  pawRequest.addUrlParameter(key, value)
+  return pawRequest
+}
+
+methods.addUrlParamsToRequest = (pawRequest, store, container) => {
+  const convertHeaderParamOrRef = currify(
+    methods.convertReferenceOrParameterToDsEntry,
+    pawRequest, store
+  )
+  const urlParams = container.get('queries')
+  urlParams
+    .map(convertHeaderParamOrRef)
+    .reduce(methods.addUrlParamToRequest, pawRequest)
+}
+
+/**
+ * tests whether a Parameter is a body or a formData parameter, by checking if it is restrained to
+ * form-data or urlEncoded contexts.
+ * @param {Parameter} parameter: the parameter to test
+ * @return {boolean} true if it is a body param, false otherwise
+ */
+methods.isBodyParameter = (parameter) => {
+  if (parameter.get('in') !== 'body') {
+    return false
+  }
+
+  if (parameter.get('applicableContexts').size === 0) {
+    return true
+  }
+
+  const isFormData = parameter.isValid(
+    new Parameter({
+      key: 'Content-Type',
+      default: 'multipart/form-data'
+    })
+  )
+
+  const isUrlEncoded = parameter.isValid(
+    new Parameter({
+      key: 'Content-Type',
+      default: 'multipart/form-data'
+    })
+  )
+
+  return !isFormData && !isUrlEncoded
+}
+
+methods.addBodyToRequest = (pawRequest, store, container, context) => {
+  const bodyParams = container.get('body')
+
+  const rawBodyParams = bodyParams.filter(methods.isBodyParameter)
+  if (rawBodyParams.size > 0) {
+    const body = rawBodyParams.valueSeq().get(0)
+    pawRequest.body = body.generate(false)
+    return pawRequest
+  }
+
+  const convertBodyParamOrRef = currify(
+    methods.convertReferenceOrParameterToDsEntry,
+    pawRequest, store
+  )
+
+  const formDataParams = bodyParams
+    .filter((param) => !methods.isBodyParameter(param))
+    .valueSeq()
+
+  if (formDataParams.size > 0 && context) {
+    const isUrlEncoded = context
+      .get('constraints')
+      .filter((param) => param.get('default') === 'application/x-www-form-urlencoded').size > 0
+    const isFormData = context
+      .get('constraints')
+      .filter((param) => param.get('default') === 'multipart/form-data').size > 0
+
+    const keyValues = formDataParams
+      .map(convertBodyParamOrRef)
+      .reduce((kvList, { key, value }) => {
+        kvList.push(new RecordParameter(key, value, true))
+        return kvList
+      }, [])
+
+    let body = ''
+    if (isFormData) {
+      body = methods.createMultipartBodyDV(keyValues)
+    }
+
+    if (isUrlEncoded) {
+      body = methods.createUrlEncodedBodyDV(keyValues)
+    }
+
+    pawRequest.body = methods.wrapDV(body)
+  }
+}
+
+methods.getContainerFromRequest = (request) => {
+  const context = request.getIn([ 'contexts', 0 ])
+  const container = request.get('parameters')
+  if (context) {
+    return { container: context.filter(container), requestContext: context }
+  }
+
+  return { container }
+}
+
+methods.convertAuthFromReference = (pawRequest, store, reference) => {
+  const variable = store.getIn([ 'auth', reference.get('uuid') ])
+  return variable.createDynamicString()
+}
+
+methods.convertReferenceOrAuthToDsEntry = (pawRequest, store, authOrReference) => {
+  if (authOrReference instanceof Reference) {
+    return methods.convertAuthFromReference(pawRequest, store, authOrReference)
+  }
+
+  const dv = methods.convertAuthIntoDynamicValue(authOrReference)
+  return methods.wrapDV(dv)
+}
+
+// TODO create Variable DS that has enum with all auth possible
+methods.addAuthToRequest = (pawRequest, auth) => {
+  pawRequest.setHeader('Authorization', auth)
+}
+
+methods.addAuthsToRequest = (pawRequest, store, request) => {
+  const convertAuthParamOrRef = currify(
+    methods.convertReferenceOrAuthToDsEntry,
+    pawRequest, store
+  )
+  const auths = request.get('auths')
+  auths
+    .map(convertAuthParamOrRef)
+    .reduce(methods.addAuthToRequest, pawRequest)
 }
 
 methods.convertRequestIntoPawRequest = (context, store, path, request) => {
@@ -430,7 +758,15 @@ methods.convertRequestIntoPawRequest = (context, store, path, request) => {
   const description = request.get('description') || ''
 
   const pawRequest = context.createRequest(name, method, new DynamicString(), description)
-  const url = methods.convertEndpointsAndPathnameIntoDS(pawRequest, store, endpoints, pathname)
+
+  const url = methods.convertEndpointsAndPathnameIntoDS(pawRequest, store, endpoints, path)
+  const { container, requestContext } = methods.getContainerFromRequest(request)
+  methods.addHeadersToRequest(pawRequest, store, container)
+  methods.addUrlParamsToRequest(pawRequest, store, container)
+  methods.addBodyToRequest(pawRequest, store, container, requestContext)
+  methods.addAuthsToRequest(pawRequest, store, request)
+
+
   pawRequest.url = url
   return pawRequest
 }
@@ -438,8 +774,8 @@ methods.convertRequestIntoPawRequest = (context, store, path, request) => {
 // NOTE: not sure this is the best idea
 methods.convertResourceIntoGroup = (context, store, resource) => {
   const path = resource.get('path')
-
-  const group = context.createRequestGroup(resource.get('name') || 'resource-group')
+  const pathname = path.toURLObject(List([ '{', '}' ])).pathname
+  const group = context.createRequestGroup(resource.get('name') || pathname)
 
   const convertRequest = currify(
     methods.convertRequestIntoPawRequest,
@@ -461,9 +797,36 @@ methods.createRequests = (context, store, api) => {
   return resources
 }
 
+methods.createGroups = (context, resources, group, groupName) => {
+  if (!group) {
+    return null
+  }
+
+  if (group instanceof Group) {
+    const name = groupName || group.get('name')
+    const children = group.get('children')
+      .map((groupOrRef) => {
+        return methods.createGroups(context, resources, groupOrRef)
+      })
+      .filter(value => !!value)
+
+    if (children.size) {
+      const pawGroup = context.createRequestGroup(name)
+      children.forEach(child => pawGroup.appendChild(child))
+      return pawGroup
+    }
+
+    return null
+  }
+
+  const resourceGroup = resources.get(group)
+  return resourceGroup
+}
+
 methods.serialize = ({ context, items, options } = {}, api) => {
   const store = methods.createEnvironments(context, api)
   const resources = methods.createRequests(context, store, api)
+  methods.createGroups(context, resources, api.get('group'), methods.getTitleFromApi(api))
   return true
 }
 
