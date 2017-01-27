@@ -1,3 +1,7 @@
+/**
+ * NOTE: We assume that contextual references have an overlay that contains the applicable contexts.
+ */
+
 import { List } from 'immutable'
 import { DynamicValue, DynamicString, RecordParameter } from '../../mocks/PawShims'
 
@@ -18,8 +22,8 @@ export class PawSerializer {
 
   static inputs = __inputs__
 
-  serialize(api, options) {
-    return methods.serialize(api, options)
+  serialize(options, api) {
+    return methods.serialize(options, api)
   }
 }
 
@@ -62,6 +66,13 @@ methods.createMultipartBodyDV = (keyValues) => {
       keyValues: keyValues
     }
   )
+}
+
+methods.createMultiSelectorDv = (choices) => {
+  return new DynamicValue('me.elliotchance.MultiSelectorDynamicValue', {
+    choices,
+    separator: ','
+  })
 }
 
 /**
@@ -208,10 +219,8 @@ methods.createProtocolDV = (protocol) => {
     return methods.removeDotsFromProtocol(protocol.get(0))
   }
 
-  return new DynamicValue('me.elliotchance.MultiSelectorDynamicValue', {
-    choices: protocol.map(methods.convertProtocolIntoRecordParameter).toJS(),
-    separator: ','
-  })
+  const choices = protocol.map(methods.convertProtocolIntoRecordParameter).toJS()
+  return methods.createMultiSelectorDv(choices)
 }
 
 // TODO save parameters as document parameters when these finally exist in Paw
@@ -324,18 +333,6 @@ methods.convertBasicAuthIntoDynamicValue = (auth) => {
 }
 
 /**
- * converts a BasicAuth into its corresponding DynamicValue
- * @param {Auth} auth: the basic auth to convert
- * @returns {DynamicValue} the corresponding DynamicValue
- */
-methods.convertBasicAuthIntoDynamicValue = (auth) => {
-  return new DynamicValue('com.luckymarmot.BasicAuthDynamicValue', {
-    username: auth.get('username') || '',
-    password: auth.get('password') || ''
-  })
-}
-
-/**
  * converts a DigestAuth into its corresponding DynamicValue
  * @param {Auth} auth: the basic auth to convert
  * @returns {DynamicValue} the corresponding DynamicValue
@@ -400,6 +397,18 @@ methods.convertAuthIntoDynamicValue = (auth) => {
     return methods.convertBasicAuthIntoDynamicValue(auth)
   }
 
+  if (auth instanceof Auth.Digest) {
+    return methods.convertDigestAuthIntoDynamicValue(auth)
+  }
+
+  if (auth instanceof Auth.OAuth1) {
+    return methods.convertOAuth1AuthIntoDynamicValue(auth)
+  }
+
+  if (auth instanceof Auth.OAuth2) {
+    return methods.convertOAuth2AuthIntoDynamicValue(auth)
+  }
+
   return ''
 }
 
@@ -436,13 +445,12 @@ methods.addAuthsToDomain = (domain, environment, api) => {
 
 /**
  * adds all shared records (except for Variables) in a standard domain.
- * @param {Context} context: the paw context to import the api into.
  * @param {EnvironmentDomain} domain: the domain in which to store the shared objects.
  * @param {Api} api: the api to get the shared objects from.
  * @returns {Store<*, TypedStore<*, EnvironmentVariable>>} a store containing the corresponding
  * environment variables for each shared object of the api.
  */
-methods.addVariablesToStandardDomain = (context, domain, api) => {
+methods.addVariablesToStandardDomain = (domain, api) => {
   const environment = domain.createEnvironment('Default')
 
   const constraint = methods.addConstraintsToDomain(domain, environment, api)
@@ -468,7 +476,7 @@ methods.getVariableEnvironmentDomainSize = (api) => api.getIn([ 'store', 'variab
 methods.needsVariableEnvironmentDomain = (api) => {
   const size = methods.getVariableEnvironmentDomainSize(api)
 
-  return size
+  return size > 0
 }
 
 /**
@@ -503,13 +511,12 @@ methods.convertVariableIntoEnvironmentVariable = (domain, variable, key) => {
 
 /**
  * adds all shared Variables of an Api into a dedicated domain.
- * @param {Context} context: the context in which to import the api.
  * @param {EnvironmentDomain} domain: the domain in which to store the variables.
  * @param {Api} api: the api to get the variables from.
  * @returns {Store<*, TypedStore<*, EnvironmentVariable>>} the corresponding store which maps
  * references to environment variables.
  */
-methods.addVariablesToVariableDomain = (context, domain, api) => {
+methods.addVariablesToVariableDomain = (domain, api) => {
   const convertVariable = currify(methods.convertVariableIntoEnvironmentVariable, domain)
   const vars = api.getIn([ 'store', 'variable' ]).map(convertVariable)
 
@@ -529,12 +536,12 @@ methods.createEnvironments = (context, api) => {
   let store = new Store()
   if (methods.needsStandardEnvironmentDomain(api)) {
     const domain = methods.createStandardEnvironmentDomain(context, api)
-    store = methods.addVariablesToStandardDomain(context, domain, api)
+    store = methods.addVariablesToStandardDomain(domain, api)
   }
 
   if (methods.needsVariableEnvironmentDomain(api)) {
     const domain = methods.createVariableEnvironmentDomain(context, api)
-    const variableStore = methods.addVariablesToVariableDomain(context, domain, api)
+    const variableStore = methods.addVariablesToVariableDomain(domain, api)
     store = store.set('variable', variableStore.get('variable'))
   }
 
@@ -573,16 +580,7 @@ methods.convertParameterIntoVariableDS = (pawRequest, param) => {
   }
 
   const schema = param.getJSONSchema(false)
-  const name = param.get('key') || ''
-  const defaultValue = param.get('default')
-  let value = ''
-  if (typeof defaultValue === 'string') {
-    value = defaultValue
-  }
-  else if (typeof defaultValue !== 'undefined' && defaultValue !== null) {
-    value = JSON.stringify(defaultValue)
-  }
-  const description = param.get('description') || ''
+  const { name, value, description } = methods.getVariableArgumentsFromParameter(param)
 
   const variable = pawRequest.addVariable(name, value, description)
   variable.schema = JSON.stringify(schema)
@@ -855,6 +853,7 @@ methods.isBodyParameter = (parameter) => {
   return !isFormData && !isUrlEncoded
 }
 
+// TODO improve that with a JSF DV
 /**
  * sets the body of request as raw
  * @param {PawRequest} pawRequest: the paw request whose body should be set.
@@ -908,7 +907,7 @@ methods.addEntryToRecordParameterArray = (kvList, { key, value }) => {
  * @param {Parameter|Reference} params: the parameters to add to the body
  * @returns {PawRequest} the update paw request
  */
-methods.setFormDataBody = (pawRequest, store, params) => {
+methods.setFormDataBody = (pawRequest, store, params, context) => {
   const convertBodyParamOrRef = currify(
     methods.convertReferenceOrParameterToDsEntry,
     pawRequest, store
@@ -931,7 +930,7 @@ methods.setFormDataBody = (pawRequest, store, params) => {
   }
 
   pawRequest.body = methods.wrapDV(body)
-  return
+  return pawRequest
 }
 
 /**
@@ -955,7 +954,7 @@ methods.addBodyToRequest = (pawRequest, store, container, context) => {
     .valueSeq()
 
   if (formDataParams.size > 0 && context) {
-    return methods.setFormDataBody(pawRequest, store, formDataParams)
+    return methods.setFormDataBody(pawRequest, store, formDataParams, context)
   }
 }
 
@@ -1043,7 +1042,7 @@ methods.addAuthsToRequest = (pawRequest, store, request) => {
 methods.convertRequestIntoPawRequest = (context, store, path, request) => {
   const pathname = path.toURLObject(List([ '{', '}' ])).pathname
   const name = request.get('name') || pathname
-  const method = request.get('method').toUpperCase()
+  const method = (request.get('method') || 'get').toUpperCase()
   const endpoints = request.get('endpoints')
   const description = request.get('description') || ''
 
