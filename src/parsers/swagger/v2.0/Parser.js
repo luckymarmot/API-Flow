@@ -54,6 +54,14 @@ export class SwaggerParser {
     return methods.getAPIName(content)
   }
 
+  isParsable({ content }) {
+    return methods.detect(content)
+  }
+
+  resolve() {
+    return methods.resolve(...arguments)
+  }
+
   detect() {
     return methods.detect(...arguments)
   }
@@ -65,6 +73,12 @@ export class SwaggerParser {
   parse() {
     return methods.parse(...arguments)
   }
+}
+
+// TODO: implement resolve correctly so that it resolves externals dependencies
+methods.resolve = (items, item) => {
+  items.push(item)
+  return items
 }
 
 /**
