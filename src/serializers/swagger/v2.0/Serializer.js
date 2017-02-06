@@ -1252,6 +1252,17 @@ methods.convertResourceToPathItemObject = (store, globalContentTypes, resource) 
   return { key, value }
 }
 
+methods.mergeResourceObjects = (resourceMap, { key, value }) => {
+  if (resourceMap[key]) {
+    Object.assign(resourceMap[key], value)
+  }
+  else {
+    resourceMap[key] = value
+  }
+
+  return resourceMap
+}
+
 /**
  * extracts all the Resources of an Api to convert them into a Path Object.
  * @param {Api} api: the api to extract the resources to convert from.
@@ -1262,6 +1273,12 @@ methods.convertResourceToPathItemObject = (store, globalContentTypes, resource) 
  *   }
  * } globalContentTypes: an object holding the globally defined consumes and produces fields.
  * @returns {SwaggerPathObject} the corresponding path object.
+ *
+ * NOTE: If multiple resources share the same path, the reducer will try to add as many operation
+ * objects as possible to the final resource object, instead of replacing the resource object
+ * with the new one. This is useful for non-resource dependent architecture, like Postman or Paw,
+ * as this means that we can easily create resourceMaps that have multiple GETs for the same
+ * endpoints.
  */
 methods.getPathObject = (api, globalContentTypes) => {
   const store = api.get('store')
@@ -1273,7 +1290,7 @@ methods.getPathObject = (api, globalContentTypes) => {
 
   const paths = api.get('resources')
     .map(convertResource)
-    .reduce(convertEntryListInMap, {})
+    .reduce(methods.mergeResourceObjects, {})
 
   return paths
 }
