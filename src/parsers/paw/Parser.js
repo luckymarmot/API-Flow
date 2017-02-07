@@ -532,6 +532,19 @@ methods.extractBaseVariableAndPathComponentsFromRequest = (
   return { request, baseVariable, pathComponents }
 }
 
+/**
+ * A reducer to set the host variable with the first Variable that has been produced from a request
+ * @param {Object} acc: the accumulator for the reducer
+ * @param {Variable?} acc.hostVariable: the Variable that represents the host
+ * @param {Array<ResourceEntry>} acc.requestEntries: the list of requests and their associated path
+ * components that belong to this host
+ * @param {object} entry: the entry to use to update the accumulator
+ * @param {PawRequest} entry.request: the request to convert
+ * @param {Variable?} entry.baseVariable: the host variable that was extracted from the request
+ * @param {Array<Entry<string, (string|DynamicValue)>>} entry.pathComponents: the components that
+ * make up the path of the request
+ * @returns {object} acc: the updated accumulator
+ */
 methods.findBaseVariableForRequestEntries = (
   { hostVariable, requestEntries },
   { request, baseVariable, pathComponents }
@@ -545,6 +558,14 @@ methods.findBaseVariableForRequestEntries = (
   return { hostVariable, requestEntries }
 }
 
+/**
+ * converts a component entry into a string, or a parameter if the component is a request variable.
+ * @param {PawRequest} request: the request to extract the request variable from.
+ * @param {Object} entry: the component entry
+ * @param {string} entry.key: the evaluated string of the component, used as a key
+ * @param {string|DynamicString} entry.value: the component itself
+ * @returns {string|Parameter} the corresponding string or parameter
+ */
 methods.convertComponentEntryIntoStringOrParam = (request, { key, value }) => {
   if (typeof value === 'string') {
     return value
@@ -559,6 +580,16 @@ methods.convertComponentEntryIntoStringOrParam = (request, { key, value }) => {
   return param
 }
 
+/**
+ * a reducer to merge sequencial strings together.
+ * For instance, if in an array, you have
+ *   [ "abc", "def", "ghi", param, "qwe", "asd" ]
+ * the corresponding merge produced by using this function as a reducer will be
+ *   [ "abcdefghi", param, "qweasd" ]
+ * @param {Array<string|Parameter>} aggregated: the merged array
+ * @param {string|Parameter} stringOrParam: the string or parameter to add to the merged array
+ * @returns {Array<string|Parameter>} the updated array
+ */
 methods.mergeSequencialStrings = (aggregated, stringOrParam) => {
   const previous = aggregated[aggregated.length - 1]
 
@@ -571,7 +602,12 @@ methods.mergeSequencialStrings = (aggregated, stringOrParam) => {
   return aggregated
 }
 
-methods.convertStringOrParameterIntoParameter = stringOrParam => {
+/**
+ * converts a string into a parameter, or returns it as is, if it's already a parameter
+ * @param {string|Parameter} stringOrParam: the string or parameter to convert
+ * @returns {Parameter} the corresponding parameter
+ */
+methods.convertStringOrParameterIntoParameter = (stringOrParam) => {
   if (typeof stringOrParam === 'string') {
     return new Parameter({
       type: 'string',
@@ -582,6 +618,10 @@ methods.convertStringOrParameterIntoParameter = stringOrParam => {
   return stringOrParam
 }
 
+/**
+ * creates a default Path endpoint used in a resource.
+ * @returns {URL} the default path endpoint
+ */
 methods.createDefaultPathEndpoint = () => {
   const pathnameComponent = new URLComponent({
     componentName: 'pathname',
@@ -595,6 +635,14 @@ methods.createDefaultPathEndpoint = () => {
   return new URL().set('pathname', pathnameComponent)
 }
 
+/**
+ * inserts an Empty Parameter at the beginning of a sequence if it begins with a url variable
+ * instead of a standard string parameter. This is necessary, as our definition of a sequence
+ * parameter specifies that it should start with a non parameter value (for ease of reading
+ * afterwards)
+ * @param {Array<Parameter>} sequence: the sequence to fix if needed
+ * @returns {Array<Parameter>} the fixed sequence
+ */
 methods.insertEmptyParameterIfNeeded = (sequence) => {
   if (sequence[0].get('key') !== null) {
     sequence.splice(0, 0, new Parameter({ type: 'string', default: '' }))
@@ -603,6 +651,11 @@ methods.insertEmptyParameterIfNeeded = (sequence) => {
   return sequence
 }
 
+/**
+ * creates a Path Endpoint for a resource from a sequence of parameters.
+ * @param {Array<Parameter>} sequence: the sequence to use in the sequence Parameter of the endpoint
+ * @returns {URL} the corresponding path endpoint
+ */
 methods.createPathEndpoint = (sequence) => {
   const pathnameComponent = new URLComponent({
     componentName: 'pathname',
@@ -619,6 +672,13 @@ methods.createPathEndpoint = (sequence) => {
   return path
 }
 
+/**
+ * converts a sequence of path components into a path endpoint to use in a resource.
+ * @param {PawRequest} request: the request to use for request variable resolution
+ * @param {Array<Entry<string, (string|DynamicValue)>>} components: a list of components that
+ * represent the path of the resource
+ * @returns {URL} the corresponding endpoint
+ */
 methods.convertPathComponentsIntoPathEndpoint = (request, components) => {
   const convertComponentEntryIntoStringOrParam = currify(
     methods.convertComponentEntryIntoStringOrParam, request
@@ -637,17 +697,41 @@ methods.convertPathComponentsIntoPathEndpoint = (request, components) => {
   return methods.createPathEndpoint(normalizedSequence)
 }
 
-methods.extractResourceFromPawRequest = (reference, { request, pathComponents }) => {
+/**
+ * converts a paw request into an endpoint that holds a single request (which is the conversion of
+ * the paw request)
+ * @param {PawContext} context: the context in which to resolve environment variables
+ * @param {Reference} reference: the reference to the endpoint being used
+ * @param {Object} resourceEntry: the entry to use to create the resource
+ * @param {PawRequest} resourceEntry.request: the request to convert
+ * @param {Array<Entry<string, (string|Parameter)>>} resourceEntry.pathComponents: the array of
+ * components that represent the path of the request
+ * @returns {Entry<string, Resource>} the newly created Resource
+ */
+methods.extractResourceFromPawRequest = (context, reference, { request, pathComponents }) => {
   const path = methods.convertPathComponentsIntoPathEndpoint(request, pathComponents)
   const endpoints = { [reference.get('uuid')]: reference }
 
-  return new Resource({
-    endpoints: OrderedMap(endpoints),
-    path: path,
-    methods: methods.extractRequestMapFromPawRequest(request, endpoints)
-  })
+  return {
+    key: request.id,
+    value: new Resource({
+      endpoints: OrderedMap(endpoints),
+      path: path,
+      methods: methods.extractRequestMapFromPawRequest(context, request, endpoints)
+    })
+  }
 }
 
+/**
+ * converts an array of host entry into a host Variable and an array of request entry
+ * @param {string} defaultHost: the host string that we need to improve on
+ * @param {Array<{ key: string, value: PawRequest, urlObject: object }>} hostEntries: the requests
+ * associated with this host
+ * @returns {object} hostObject: the containing object that holds the host variable and the requests
+ * @returns {Variable?} hostObject.hostVariable: the variable representing this host, if it exists.
+ * @returns {Array<ResourceEntry>} hostObject.requestEntries: the list of requests and their
+ * associated path components that belong to this host
+ */
 methods.convertHostEntriesIntoHostVariableAndRequestEntries = (defaultHost, hostEntries) => {
   const defaultUrl = 'http://' + defaultHost
   const defaultSecureUrl = 'https://' + defaultHost
@@ -668,6 +752,16 @@ methods.convertHostEntriesIntoHostVariableAndRequestEntries = (defaultHost, host
     .reduce(methods.findBaseVariableForRequestEntries, { hostVariable: null, requestEntries: [] })
 }
 
+/**
+ * creates a default host endpoint. The hostEntries are used to extract the possible protocols for
+ * this endpoint
+ * @param {string} defaultHost: the host string
+ * @param {Array<{ key: string, value: PawRequest, urlObject: object }>} hostEntries: the requests
+ * associated with this host
+ * @returns {Entry} entry: the endpoint as an entry
+ * @returns {string} entry.key: the host string. this will be used as a unique identifier
+ * @returns {URL} entry.value: the endpoint
+ */
 methods.createDefaultHostEndpoint = (defaultHost, hostEntries) => {
   const defaultUrl = 'http://' + defaultHost
 
@@ -675,25 +769,50 @@ methods.createDefaultHostEndpoint = (defaultHost, hostEntries) => {
     url: defaultUrl
   })
 
-  const protocols = Set(hostEntries.map(({ urlObject }) => urlObject.protocols)).toList()
+  const protocols = Set(hostEntries.map(({ urlObject }) => urlObject.protocol)).toList()
 
   endpointValue = endpointValue.set('protocol', protocols)
   return { key: defaultHost, value: endpointValue }
 }
 
-methods.getResourcesFromRequestEntries = (defaultHost, hostVariable, requestEntries) => {
+/**
+ * creates an Array of Resources from an array of requests
+ * @param {PawContext} context: the context in which to resolve environment variables
+ * @param {string} defaultHost: the host that is shared by all the request entries
+ * @param {Variable?} hostVariable: the variable that represents the host, if it exists
+ * @param {Array<{ key: string, value: PawRequest, urlObject: object }>} requestEntries: the list of
+ * requests associated with this host
+ * @returns {Array<Entry<Resources>>} the corresponding list of resources
+ */
+methods.getResourcesFromRequestEntries = (context, defaultHost, hostVariable, requestEntries) => {
   const reference = new Reference({
     type: hostVariable ? 'variable' : 'endpoint',
     uuid: defaultHost
   })
 
   const extractResourceFromPawRequest = currify(
-    methods.extractResourceFromPawRequest, reference
+    methods.extractResourceFromPawRequest, context, reference
   )
 
   return requestEntries.map(extractResourceFromPawRequest)
 }
 
+/**
+ * converts a host object into a resources, and a variable or an endpoint
+ * @param {PawContext} context: the context in which to resolve environment variables
+ * @param {Entry} entry: the entry describing a host
+ * @param {string} entry.key: the host string
+ * @param {Array<Entry<string, *>>} entry.value: the array of objects describing requests associated
+ * with this host
+ * @returns {Object} container: the container holding the resources, and the variable or the
+ * endpoint
+ * @returns {Array<Entry<string, Resource>>} container.resources: the array holding all the
+ * resources associated with this host
+ * @return {Variable?} container.variable: the Variable record describing this host, if it exists
+ * @return {Endpoint?} container.endpoint: the Endpoint record describing this host.
+ *
+ * NOTE: container.variable and container.endpoint are mutually exclusive
+ */
 methods.convertHostIntoResources = (context, { key: defaultHost, value: hostEntries }) => {
   const {
     hostVariable,
@@ -703,25 +822,50 @@ methods.convertHostIntoResources = (context, { key: defaultHost, value: hostEntr
   const variable = hostVariable ? { key: defaultHost, value: hostVariable } : null
   const endpoint = hostVariable ? null : methods.createDefaultHostEndpoint(defaultHost, hostEntries)
   const resources = methods.getResourcesFromRequestEntries(
-    defaultHost, hostVariable, requestEntries
+    context, defaultHost, hostVariable, requestEntries
   )
 
   return { resources, variable, endpoint }
 }
 
+/**
+ * returns a request variable from its uuid
+ * @param {PawRequest} request: the request to get the variable from
+ * @param {string} uuid: the uuid of the variable to resolved
+ * @returns {PawRequestVariable?} the corresponding request variable, if it exists
+ */
 methods.getVariableFromUuid = (request, uuid) => {
-  return request.variables.filter(variable => variable.id === uuid)[0] || null
+  return request.getVariableById(uuid) || null
 }
 
+/**
+ * tests whether a DynamicString component is a request variable
+ * @param {string|DynamicValue} component: the component to test
+ * @returns {boolean} true if it is a request variable, false otherwise
+ */
 methods.isRequestVariableDynamicValue = (component) => {
   return typeof component === 'object' &&
     component.type === 'com.luckymarmot.RequestVariableDynamicValue'
 }
 
+/**
+ * tests whether the DynamicString holds a single DynamicString that is a request variable
+ * @param {DynamicString} ds: the dynamic string to test
+ * @returns {boolean} true if it only holds a request variable, false otherwise
+ */
 methods.isRequestVariableDS = (ds) => {
   return ds.length === 1 && methods.isRequestVariableDynamicValue(ds.components[0])
 }
 
+/**
+ * converts a request variable into a Parameter
+ * @param {PawRequest} request: the request to use to resolve variable parameters
+ * @param {string} location: location of the parameter (e.g. 'headers', 'queries')
+ * @param {List<Parameter>} contexts: the contexts in which this Parameter is applicable
+ * @param {DynamicString} paramDS: the dynamic string to convert
+ * @param {string} paramName: the name of the parameter
+ * @returns {Parameter} the corresponding parameter
+ */
 methods.convertRequestVariableDSIntoParameter = (
   request, location, contexts, paramDS, paramName
 ) => {
@@ -745,6 +889,14 @@ methods.convertRequestVariableDSIntoParameter = (
   return { key: paramName, value: param }
 }
 
+/**
+ * Converts a standard dynamic string (i.e. not a request variable) into a Parameter
+ * @param {string} location: the location of the parameter (e.g. 'headers', 'queries')
+ * @param {List<Parameter>} contexts: the contexts in which the parameter is applicable
+ * @param {DynamicString} paramDS: the dynamic string to converts
+ * @param {string} paramName: the name of the parameter
+ * @returns {Parameter} the corresponding parameter
+ */
 methods.convertStandardDSIntoParameter = (location, contexts, paramDS, paramName) => {
   const value = paramDS.getEvaluatedString()
   const param = new Parameter({
@@ -759,6 +911,15 @@ methods.convertStandardDSIntoParameter = (location, contexts, paramDS, paramName
   return { key: paramName, value: param }
 }
 
+/**
+ * converts a DynamicString associated with a parameter into a Parameter record
+ * @param {PawRequest} request: the request to use to resolve variable parameters
+ * @param {string} location: location of the parameter (e.g. 'headers', 'queries')
+ * @param {List<Parameter>} contexts: the contexts in which this Parameter is applicable
+ * @param {DynamicString} paramDS: the dynamic string to convert
+ * @param {string} paramName: the name of the parameter
+ * @returns {Parameter} the corresponding parameter
+ */
 methods.convertParameterDynamicStringIntoParameter = (
   request, location, contexts, paramDS, paramName
 ) => {
@@ -771,16 +932,31 @@ methods.convertParameterDynamicStringIntoParameter = (
   return methods.convertStandardDSIntoParameter(location, contexts, paramDS, paramName)
 }
 
+/**
+ * tests whether the request has a url encoded body or not
+ * @param {PawRequest} request: the request to test
+ * @returns {boolean} true if its body is urlEncoded, false otherwise
+ */
 methods.isRequestBodyUrlEncoded = (request) => {
   return !!request.getHeaderByName('Content-Type')
     .match(/application\/x-www-form-urlencoded/)
 }
 
+/**
+ * tests whether the request has a multipart body or not
+ * @param {PawRequest} request: the request to test
+ * @returns {boolean} true if its body is multipart, false otherwise
+ */
 methods.isRequestBodyMultipart = (request) => {
   return !!request.getHeaderByName('Content-Type')
     .match(/multipart\/form-data/)
 }
 
+/**
+ * converts a content type into a list of Parameter, to use as applicable contexts in a Parameter.
+ * @param {string} contentType: the content type of the request
+ * @returns {Array<Parameter>} the corresponding applicable contexts
+ */
 methods.getContentTypeContexts = (contentType) => {
   return List([
     new Parameter({
@@ -795,6 +971,11 @@ methods.getContentTypeContexts = (contentType) => {
   ])
 }
 
+/**
+ * creates a default array parameter.
+ * @param {List<Parameter>} contexts: the list of contexts in which the parameter is applicable
+ * @returns {Parameter} a default Parameter of type Array
+ */
 methods.createDefaultArrayParameter = (contexts) => {
   const param = new Parameter({
     key: name,
@@ -811,6 +992,14 @@ methods.createDefaultArrayParameter = (contexts) => {
   return { key: name, value: param }
 }
 
+/**
+ * extracts the Parameters from a UrlEncoded or Multipart body
+ * @param {Object<string, DynamicString|Array<DynamicString>>} dsMap: an object containing all
+ * DynamicString by name of parameter
+ * @param {Array<Parameter>} contexts: the contexts in which the parameters are applicable
+ * @param {PawRequest} request: the request from which to get the body parameters
+ * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap of body Parameters
+ */
 methods.createUrlEncodedOrMultipartBodyParameters = (dsMap, contexts, request) => {
   const bodyParams = OrderedMap(dsMap)
     .map((value, name) => {
@@ -827,6 +1016,11 @@ methods.createUrlEncodedOrMultipartBodyParameters = (dsMap, contexts, request) =
   return OrderedMap(bodyParams)
 }
 
+/**
+ * extracts the Parameters from a UrlEncoded body
+ * @param {PawRequest} request: the request from which to get the body parameters
+ * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap of body Parameters
+ */
 methods.createUrlEncodedBodyParameters = (request) => {
   const dsMap = request.getUrlEncodedBody(true)
   const contexts = methods.getContentTypeContexts('application/x-www-form-urlencoded')
@@ -834,6 +1028,11 @@ methods.createUrlEncodedBodyParameters = (request) => {
   return methods.createUrlEncodedOrMultipartBodyParameters(dsMap, contexts, request)
 }
 
+/**
+ * extracts the Parameters from a Multipart body
+ * @param {PawRequest} request: the request from which to get the body parameters
+ * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap of body Parameters
+ */
 methods.createMultipartBodyParameters = (request) => {
   const dsMap = request.getMultipartBody(true)
   const contexts = methods.getContentTypeContexts('multipart/form-data')
@@ -841,6 +1040,11 @@ methods.createMultipartBodyParameters = (request) => {
   return methods.createUrlEncodedOrMultipartBodyParameters(dsMap, contexts, request)
 }
 
+/**
+ * extracts the single body Parameter from a request if the request is not url-encoded or multipart
+ * @param {PawRequest} request: the request from which to get the body
+ * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap of body parameters
+ */
 methods.createStandardBodyParameters = (request) => {
   const bodyDS = request.getBody(true)
 
@@ -852,6 +1056,11 @@ methods.createStandardBodyParameters = (request) => {
   return OrderedMap(body)
 }
 
+/**
+ * extracts all body Parameters from a request
+ * @param {PawRequest} request: the request from which to get the body parameters
+ * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap of body parameters
+ */
 methods.getBodyParameters = (request) => {
   if (methods.isRequestBodyUrlEncoded(request)) {
     return methods.createUrlEncodedBodyParameters(request)
@@ -864,6 +1073,11 @@ methods.getBodyParameters = (request) => {
   return methods.createStandardBodyParameters(request)
 }
 
+/**
+ * extracts all header parameters from a request
+ * @param {PawRequest} request: the request from which to get the headers
+ * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap of header parameters
+ */
 methods.getHeadersMapFromRequest = (request) => {
   const extractHeaders = currify(
     methods.convertParameterDynamicStringIntoParameter, request, 'headers', List()
@@ -875,6 +1089,11 @@ methods.getHeadersMapFromRequest = (request) => {
     .reduce(convertEntryListInMap, {})
 }
 
+/**
+ * extracts all query parameters from a request
+ * @param {PawRequest} request: the request from which to get the query params
+ * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap of query parameters
+ */
 methods.getQueriesMapFromRequest = (request) => {
   const extractUrlParams = currify(
     methods.convertParameterDynamicStringIntoParameter, request, 'queries', List()
@@ -885,6 +1104,11 @@ methods.getQueriesMapFromRequest = (request) => {
     .reduce(convertEntryListInMap, {})
 }
 
+/**
+ * extracts all parameters from a request into a ParameterContainer
+ * @param {PawRequest} request: the request from which to get the parameters
+ * @returns {ParameterContainer} the corresponding ParameterContainer
+ */
 methods.extractParameterContainerFromRequest = (request) => {
   const headers = methods.getHeadersMapFromRequest(request)
   const queries = methods.getQueriesMapFromRequest(request)
@@ -895,6 +1119,11 @@ methods.extractParameterContainerFromRequest = (request) => {
   })
 }
 
+/**
+ * extracts an authName from an OAuth2 DynamicValue.
+ * @param {DynamicValue} authDV: the oauth2 DynamicValue
+ * @returns {string} the authName
+ */
 methods.getAuthNameFromOAuth2DV = (authDV) => {
   const identifiers = [ 'oauth_2' ]
   const authURL = authDV.authorizationURL
@@ -923,6 +1152,13 @@ methods.getAuthNameFromOAuth2DV = (authDV) => {
   return identifiers.join('_')
 }
 
+/**
+ * extracts an authName from a DynamicValue.
+ * @param {PawContext} context: the context from which to resolve environment variables
+ * @param {PawRequest} request: the request from which to resolve request variables
+ * @param {DynamicValue} authDV: the DynamicValue to get the name of
+ * @returns {string?} the authName, if the authDV is supported by API-Flow.
+ */
 methods.getAuthNameFromAuthDV = (context, request, authDV) => {
   if (methods.isEnvironmentVariable(authDV)) {
     const name = context.getEnvironmentVariableById(authDV.environmentVariable).name
@@ -941,6 +1177,12 @@ methods.getAuthNameFromAuthDV = (context, request, authDV) => {
   return null
 }
 
+/**
+ * extracts an authName from the evaluation of a DynamicString
+ * @param {DynamicString} authDS: the DynamicString to get the evaluated string of, for the purpose
+ * of name extractVersion
+ * @returns {string?} the name of the authentication DynamicString, if it is supported by API-Flow.
+ */
 methods.getAuthNameFromAuthString = (authDS) => {
   const scheme = authDS.getEvaluatedString().split(' ')[0]
   const nameMap = {
@@ -959,6 +1201,13 @@ methods.getAuthNameFromAuthString = (authDS) => {
   return null
 }
 
+/**
+ * extracts an authName from an authentication DynamicString.
+ * @param {PawContext} context: the context in which to resolve the environment variable
+ * @param {PawRequest} request: the request in which to resolve the request variable
+ * @param {DynamicString} authDS: the authentication DynamicString to get the name of
+ * @returns {string?} the extracted authName, if the authentication method is supported by API-Flow
+ */
 methods.getAuthNameFromAuth = (context, request, authDS) => {
   const authDV = authDS.getOnlyDynamicValue()
 
@@ -972,13 +1221,19 @@ methods.getAuthNameFromAuth = (context, request, authDS) => {
   return methods.getAuthNameFromAuthString(authDS)
 }
 
-methods.extractAuthReferencesFromRequest = (request) => {
+/**
+ * extracts Auth References from a Request
+ * @param {PawContext} context: the context in which to resolve environment variables
+ * @param {PawRequest} request: the request from which to get the authentication header
+ * @returns {List<References>} the corresponding list of References
+ */
+methods.extractAuthReferencesFromRequest = (context, request) => {
   const auth = request.getHeaderByName('Authorization')
   if (!auth) {
     return List()
   }
 
-  const authName = methods.getAuthNameFromAuth(auth)
+  const authName = methods.getAuthNameFromAuth(context, request, auth)
 
   return List([
     new Reference({
@@ -988,11 +1243,18 @@ methods.extractAuthReferencesFromRequest = (request) => {
   ])
 }
 
-methods.extractRequestMapFromPawRequest = (pawReq, endpoints) => {
+/**
+ * converts a paw request into a Request record and stores it in an OrderedMap.
+ * @param {PawContext} context: the context in which to resolve the environment variables
+ * @param {PawRequest} pawReq: the request to convert
+ * @param {OrderedMap<string, Reference>} endpoints: a map of references to endpoints
+ * @returns {OrderedMap<string, Request>} the converted Request saved in an OrderedMap
+ */
+methods.extractRequestMapFromPawRequest = (context, pawReq, endpoints) => {
   const $methods = {}
   const method = pawReq.getMethod()
   const parameters = methods.extractParameterContainerFromRequest(pawReq)
-  const auths = methods.extractAuthReferencesFromRequest(pawReq)
+  const auths = methods.extractAuthReferencesFromRequest(context, pawReq)
 
   const request = new Request({
     id: pawReq.id,
@@ -1007,6 +1269,21 @@ methods.extractRequestMapFromPawRequest = (pawReq, endpoints) => {
   $methods[method] = request
 }
 
+/**
+ * a reducer to group resources, variables, and endpoints together
+ * @param {object} acc: the accumulator of the reducer
+ * @param {Array<Entry<string, Resources>>} acc.resources: an aggregation of resources over multiple
+ * endpoints/hosts
+ * @param {Array<Entry<string, Variable>>} acc.variables: an aggregation of variables over multiple
+ * endpoints/hosts
+ * @param {Array<Entry<string, URL>>} acc.endpoints: an aggregation of endpoints over multiple hosts
+ * @param {object} entry: the entry to add to the reducer
+ * @param {Array<Entry<string, Resources>>} entry.resources: all the resources associated with a
+ * host
+ * @param {Variable?} entry.variable: the variable associated with the host, if it exists
+ * @param {URL?} entry.endpoint: the endpoint associated with the host, if it exists
+ * @returns {object} acc, the updated accumulator
+ */
 methods.groupResourcesVariablesAndEndpoints = (
   { resources, variables, endpoints },
   { resources: hostResources, variable, endpoint }
@@ -1026,6 +1303,50 @@ methods.groupResourcesVariablesAndEndpoints = (
   }
 }
 
+/**
+ * extracts an Auth record from an OAuth2 DynamicValue
+ * @param {PawContext} context: the context in which to resolve environment variables
+ * @param {PawRequest} request: the request in which to resolve request variables
+ * @param {DynamicString} authDS: the authentication DynamicString
+ * @param {DynamicValue} authDV: the authentication DynamicValue
+ * @return {Entry<string, Auth>} the corresponding Auth record
+ */
+methods.extractAuthFromOAuth2DV = (context, request, authDS, authDV) => {
+  const authInstance = {}
+
+  const authName = methods.getAuthNameFromAuth(context, request, authDS)
+  authInstance.authName = authName
+
+  const authURL = authDV.authorizationURL
+  if (authURL) {
+    authInstance.authorizationUrl = authURL.getEvaluatedString()
+  }
+
+  const tokenURL = authDV.tokenURL
+  if (tokenURL) {
+    authInstance.tokenUrl = tokenURL.getEvaluatedString()
+  }
+
+  const grantMap = {
+    '0': 'accessCode',
+    '1': 'implicit',
+    '2': 'password',
+    '3': 'application'
+  }
+
+  authInstance.flow = grantMap[authDV.grantType] || 'implicit'
+
+  return { key: authName, value: new Auth.OAuth2(authInstance) }
+}
+
+/**
+ * extract an Auth from DynamicValue
+ * @param {PawContext} context: the context in which to resolve environment variables
+ * @param {PawRequest} request: the request in which to resolve request variables
+ * @param {DynamicString} authDS: the authentication DynamicString
+ * @param {DynamicValue} authDV: the authentication DynamicValue
+ * @return {Entry<string, Auth>} the corresponding Auth record
+ */
 methods.extractAuthFromDV = (context, request, authDS, authDV) => {
   if (methods.isEnvironmentVariable(authDV)) {
     const value = context.getEnvironmentVariableById(authDV.environmentVariable).getCurrentValue()
@@ -1038,36 +1359,17 @@ methods.extractAuthFromDV = (context, request, authDS, authDV) => {
   }
 
   if (authDV.type === 'com.luckymarmot.OAuth2DynamicValue') {
-    const authInstance = {}
-
-    const authName = methods.getAuthNameFromAuth(context, request, authDS)
-    authInstance.authName = authName
-
-    const authURL = authDV.authorizationURL
-    if (authURL) {
-      authInstance.authorizationUrl = authURL.getEvaluatedString()
-    }
-
-    const tokenURL = authDV.tokenURL
-    if (tokenURL) {
-      authInstance.tokenUrl = tokenURL.getEvaluatedString()
-    }
-
-    const grantMap = {
-      '0': 'accessCode',
-      '1': 'implicit',
-      '2': 'password',
-      '3': 'application'
-    }
-
-    authInstance.flow = grantMap[authDV.grantType] || 'implicit'
-
-    return { key: authName, value: new Auth.OAuth2(authInstance) }
+    return methods.extractAuthFromOAuth2DV(context, request, authDS, authDV)
   }
 
   return methods.extractAuthFromAuthString(authDS)
 }
 
+/**
+ * extracts an Auth from the evaluated string of an authentication DynamicString
+ * @param {DynamicString} authDS: the authentication DynamicString to get the evaluated string of
+ * @returns {Entry<string, Auth>} the corresponding Auth record
+ */
 methods.extractAuthFromAuthString = (authDS) => {
   const scheme = authDS.getEvaluatedString().split(' ')[0]
   const nameMap = {
@@ -1089,6 +1391,15 @@ methods.extractAuthFromAuthString = (authDS) => {
   return { key: null, value: null }
 }
 
+/**
+ * extract auths from a request or dynamic string
+ * @param {PawContext} context: the context to use to resolve environment variables
+ * @param {PawRequest} request: the request to use to resolve request variables, or to get the
+ * authentication DynamicString
+ * @param {DynamicString} _authDS: an optional authentication DynamicString to resolve instead of
+ * the authentication DynamicString
+ * @returns {Entry<string?, Auth?>} the corresponding auth DynamicValue
+ */
 methods.extractAuthsFromRequest = (context, request, _authDS) => {
   // potential infinite loop
   const authDS = _authDS || request.getHeaderByName('Authorization', true)
@@ -1101,10 +1412,20 @@ methods.extractAuthsFromRequest = (context, request, _authDS) => {
   return methods.extractAuthFromAuthString(authDS)
 }
 
+/**
+ * extracts Resources and a Store of shared objects from an array of requests
+ * @param {PawContext} context: the context to use to resolve environment variables
+ * @param {Array<PawRequest>} reqs: the array of request from which to extract resources and shared
+ * objects
+ * @returns {object} result
+ * @returns {OrderedMap<string, Resource>} result.resources: the extracted resources
+ * @returns {Store} result.store: the store containing shared objects from resources
+ */
 methods.extractResourcesAndStore = (context, reqs) => {
   const hosts = methods.extractCommonHostsFromRequests(reqs)
+  const convertHostIntoResources = currify(methods.convertHostIntoResources, context)
   const { resources, variables, endpoints } = hosts
-    .map(methods.convertHostIntoResources)
+    .map(convertHostIntoResources)
     .reduce(
       methods.groupResourcesVariablesAndEndpoints,
       { resources: [], variables: [], endpoints: [] }
@@ -1131,6 +1452,13 @@ methods.extractResourcesAndStore = (context, reqs) => {
 
 // NOTE: we're cheating in this method, as we're not using the standard Item interface, but rather
 // passing the requests and context as options to the parser.
+/**
+ * imports a list of requests, as well as metadata into an Api
+ * @param {object} parserOptions: the parser options
+ * @param {PawContext} parserOptions.context: the paw context
+ * @param {PawRequest} parserOptions.reqs: the array of requests to import
+ * @returns {Api} the corresponding Api
+ */
 methods.parse = ({ context, reqs }) => {
   const info = methods.extractInfo(context)
   const group = methods.extractGroup(reqs)
