@@ -14,6 +14,7 @@ import Constraint from '../../models/Constraint'
 import ParameterContainer from '../../models/ParameterContainer'
 import Auth from '../../models/Auth'
 import Store from '../../models/Store'
+import URL from '../../models/URL'
 
 import { currify, convertEntryListInMap } from '../../utils/fp-utils'
 
@@ -42,9 +43,10 @@ methods.addGenerationMessage = (context) => {
   if (context.document.cloudProject && context.document.cloudProject.currentBranch) {
     const branchName = context.document.cloudProject.currentBranch
     const commitSha = context.document.cloudProject.commitSha
+    const commitMsg = commitSha ? ' on commit ' + commitSha : ''
 
     const msg = 'This document was generated from the branch ' + branchName +
-      ' on commit ' + commitSha + '.'
+      commitMsg + '.'
 
     return msg
   }
@@ -59,8 +61,12 @@ methods.addGenerationMessage = (context) => {
  */
 methods.addContributionMessage = (context) => {
   if (context.document.isCloudProject) {
-    const cloudProject = context.document.cloudProject
-    const cloudTeam = context.document.cloudTeam
+    const cloudProject = context.document.cloudProject || {}
+    const cloudTeam = context.document.cloudTeam || {}
+
+    if (typeof cloudProject.id === 'undefined' || typeof cloudTeam.id === 'undefined') {
+      return null
+    }
 
     const msg = 'If you are a contributor to this project, you may access it here: ' +
       'https://paw.cloud/account/teams/' + cloudTeam.id + '/projects/' + cloudProject.id
@@ -77,17 +83,10 @@ methods.addContributionMessage = (context) => {
  * @returns {string?} the string describing the state of the project, if it is a cloud project.
  */
 methods.extractDescription = (context) => {
-  const description = []
-
-  const generationMsg = methods.addGenerationMessage(context)
-  if (generationMsg) {
-    description.push(generationMsg)
-  }
-
-  const contributionMsg = methods.addContributionMessage(context)
-  if (contributionMsg) {
-    description.push(contributionMsg)
-  }
+  const description = [
+    methods.addGenerationMessage(context),
+    methods.addContributionMessage(context)
+  ].filter(value => !!value)
 
   return description.join('\n\n') || null
 }
@@ -131,7 +130,7 @@ methods.extractVersion = (context) => {
  */
 methods.extractTitle = (context) => {
   const title = context.document.name
-  return title
+  return title || null
 }
 
 /**
@@ -163,7 +162,7 @@ methods.getPathForRequestOrGroup = (path, reqOrGroup) => {
     return path
   }
 
-  const newPath = [ reqOrGroup ].concat(path)
+  const newPath = [ reqOrGroup, ...path ]
   return methods.getPathForRequestOrGroup(newPath, reqOrGroup.parent)
 }
 
@@ -183,8 +182,8 @@ methods.getPathForRequest = (request) => {
  */
 methods.convertPawGroupIntoGroup = (pawGroup) => {
   return new Group({
-    name: pawGroup.name,
-    id: pawGroup.id
+    name: pawGroup.name || null,
+    id: pawGroup.id || null
   })
 }
 
@@ -196,7 +195,7 @@ methods.convertPawGroupIntoGroup = (pawGroup) => {
  * @param {string} id: the id of the PawRequest or PawRequestGroup.
  * @returns {Array<string>} the updated path.
  */
-methods.convertPawPathIntoGroupPath = (path, { id }) => path.concat([ 'children', id ])
+methods.convertPawPathIntoGroupPath = (path, { id }) => [ ...path, 'children', id ]
 
 /**
  * creates a nested group at the expected location in an accumulator, if it does not already exist.
@@ -247,7 +246,7 @@ methods.storeRequest = (rootGroup, path) => {
  * @returns {Group} the corresponding Group hierarchy
  */
 methods.extractGroup = (reqs) => {
-  reqs
+  return reqs
     .map(methods.getPathForRequest)
     .reduce(methods.storeRequest, new Group())
 }
@@ -275,7 +274,7 @@ methods.findLongestCommonPath = (lcPathname, pathname) => {
     index += 1
   }
 
-  return lcPathname
+  return lcPathname.slice(0, index)
 }
 
 /**
@@ -312,6 +311,19 @@ methods.addHostEntryToHostMap = (hostMap, { key, value }) => {
 }
 
 /**
+ * converts a longest common pathname array into a longest common pathname string
+ * @param {Array<string>} lcPathname: the array to convert into a string
+ * @returns {string} the corresponding string
+ */
+methods.getLongestCommonPathnameAsString = (lcPathname) => {
+  if (lcPathname.length === 1) {
+    return '/' + lcPathname[0]
+  }
+
+  return lcPathname.join('/')
+}
+
+/**
  * converts a hostMapEntry into a regular Entry
  * @param {object} hostMapEntry: the entry to convert
  * @param {Array<*>} hostMapEntry.entries: the entries corresponding to this specific host.
@@ -321,8 +333,9 @@ methods.addHostEntryToHostMap = (hostMap, { key, value }) => {
  * @returns {Entry<string, *>} the corresponding Entry
  */
 methods.updateHostKeyWithLongestCommonPathname = ({ entries, lcPathname }, key) => {
+  const lcString = methods.getLongestCommonPathnameAsString(lcPathname)
   return {
-    key: key + lcPathname.join('/'),
+    key: key + lcString,
     value: entries
   }
 }
@@ -364,6 +377,17 @@ methods.convertDynamicStringComponentIntoEntry = (component) => {
  */
 methods.isPartOfBaseUrl = (defaultUrl, defaultSecureUrl, urlPart) => {
   return defaultUrl.indexOf(urlPart) >= 0 || defaultSecureUrl.indexOf(urlPart) >= 0
+}
+
+// NOTE: we assume that the urlPart is after the protocol
+methods.findIntersection = (defaultUrl, urlPart) => {
+  const match = (defaultUrl + '####' + urlPart).match(/^.*?(.*)####\1(.*)$/)
+
+  if (match) {
+    return { inside: match[1], outside: match[2] }
+  }
+
+  return { inside: '', outside: urlPart }
 }
 
 /**
@@ -483,7 +507,9 @@ methods.combinePossibleValues = (combinations, entries) =>{
  * @returns {Variable?} the corresponding variable for this array of variables
  */
 methods.convertBaseComponentsIntoVariable = (context, defaultHost, baseComponents) => {
-  const environmentDVCount = baseComponents.filter(methods.isEnvironmentVariable).length
+  const environmentDVCount = baseComponents.filter(({ value }) => {
+    return methods.isEnvironmentVariable(value)
+  }).length
 
   if (environmentDVCount !== 1) {
     return null
@@ -575,8 +601,8 @@ methods.convertComponentEntryIntoStringOrParam = (request, { key, value }) => {
     return key
   }
 
-  const variable = methods.getVariableFromUuid(request, value.variableUuid)
-  const param = methods.convertRequestVariableIntoParameter(variable)
+  const { value: param } = methods.convertRequestVariableDVIntoParameter(
+    request, 'path', List(), value, key)
   return param
 }
 
@@ -628,6 +654,7 @@ methods.createDefaultPathEndpoint = () => {
     string: '',
     parameter: new Parameter({
       key: 'pathname',
+      in: 'path',
       type: 'string',
       default: '/'
     })
@@ -662,6 +689,7 @@ methods.createPathEndpoint = (sequence) => {
     string: '',
     parameter: new Parameter({
       key: 'pathname',
+      in: 'path',
       type: 'string',
       superType: 'sequence',
       value: List(sequence)
@@ -858,25 +886,25 @@ methods.isRequestVariableDS = (ds) => {
 }
 
 /**
- * converts a request variable into a Parameter
+ * converts a request variable DynamicValue into a Parameter
  * @param {PawRequest} request: the request to use to resolve variable parameters
  * @param {string} location: location of the parameter (e.g. 'headers', 'queries')
  * @param {List<Parameter>} contexts: the contexts in which this Parameter is applicable
- * @param {DynamicString} paramDS: the dynamic string to convert
+ * @param {DynamicValue} paramDV: the dynamic string to convert
  * @param {string} paramName: the name of the parameter
  * @returns {Parameter} the corresponding parameter
  */
-methods.convertRequestVariableDSIntoParameter = (
-  request, location, contexts, paramDS, paramName
+methods.convertRequestVariableDVIntoParameter = (
+  request, location, contexts, paramDV, paramName
 ) => {
-  const variableId = paramDS.components[0].variableUUID
+  const variableId = paramDV.variableUUID
   const variable = request.getVariableById(variableId)
-  const { value, schema, type, description } = variable
+  const { name, value, schema, type, description } = variable
 
   const param = new Parameter({
     in: location,
-    key: paramName,
-    name: paramName,
+    key: name || paramName,
+    name: name || paramName,
     type: type || 'string',
     description: description || null,
     default: value.getEvaluatedString(),
@@ -887,6 +915,24 @@ methods.convertRequestVariableDSIntoParameter = (
   })
 
   return { key: paramName, value: param }
+}
+
+/**
+ * converts a request variable DynamicString into a Parameter
+ * @param {PawRequest} request: the request to use to resolve variable parameters
+ * @param {string} location: location of the parameter (e.g. 'headers', 'queries')
+ * @param {List<Parameter>} contexts: the contexts in which this Parameter is applicable
+ * @param {DynamicString} paramDS: the dynamic string to convert
+ * @param {string} paramName: the name of the parameter
+ * @returns {Parameter} the corresponding parameter
+ */
+methods.convertRequestVariableDSIntoParameter = (
+  request, location, contexts, paramDS, paramName
+) => {
+  const paramDV = paramDS.components[0]
+  return methods.convertRequestVariableDVIntoParameter(
+    request, location, contexts, paramDV, paramName
+  )
 }
 
 /**
@@ -974,9 +1020,10 @@ methods.getContentTypeContexts = (contentType) => {
 /**
  * creates a default array parameter.
  * @param {List<Parameter>} contexts: the list of contexts in which the parameter is applicable
+ * @param {string} name: the name of the parameter
  * @returns {Parameter} a default Parameter of type Array
  */
-methods.createDefaultArrayParameter = (contexts) => {
+methods.createDefaultArrayParameter = (contexts, name) => {
   const param = new Parameter({
     key: name,
     name: name,
@@ -1004,7 +1051,7 @@ methods.createUrlEncodedOrMultipartBodyParameters = (dsMap, contexts, request) =
   const bodyParams = OrderedMap(dsMap)
     .map((value, name) => {
       if (Array.isArray(value)) {
-        return methods.createDefaultArrayParameter(contexts)
+        return methods.createDefaultArrayParameter(contexts, name)
       }
 
       return methods.convertParameterDynamicStringIntoParameter(
@@ -1083,10 +1130,12 @@ methods.getHeadersMapFromRequest = (request) => {
     methods.convertParameterDynamicStringIntoParameter, request, 'headers', List()
   )
 
-  return OrderedMap(request.getHeaders(true))
+  const headers = OrderedMap(request.getHeaders(true))
     .filter((_, name) => name !== 'Authorization')
     .map(extractHeaders)
     .reduce(convertEntryListInMap, {})
+
+  return OrderedMap(headers)
 }
 
 /**
@@ -1099,9 +1148,11 @@ methods.getQueriesMapFromRequest = (request) => {
     methods.convertParameterDynamicStringIntoParameter, request, 'queries', List()
   )
 
-  return OrderedMap(request.getUrlParameters(true))
+  const queryParams = OrderedMap(request.getUrlParameters(true))
     .map(extractUrlParams)
     .reduce(convertEntryListInMap, {})
+
+  return OrderedMap(queryParams)
 }
 
 /**
