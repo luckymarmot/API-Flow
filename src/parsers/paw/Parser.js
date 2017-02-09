@@ -15,6 +15,7 @@ import ParameterContainer from '../../models/ParameterContainer'
 import Auth from '../../models/Auth'
 import Store from '../../models/Store'
 import URL from '../../models/URL'
+import Request from '../../models/Request'
 
 import { currify, convertEntryListInMap } from '../../utils/fp-utils'
 
@@ -1302,7 +1303,6 @@ methods.extractAuthReferencesFromRequest = (context, request) => {
  * @returns {OrderedMap<string, Request>} the converted Request saved in an OrderedMap
  */
 methods.extractRequestMapFromPawRequest = (context, pawReq, endpoints) => {
-  const $methods = {}
   const method = pawReq.getMethod()
   const parameters = methods.extractParameterContainerFromRequest(pawReq)
   const auths = methods.extractAuthReferencesFromRequest(context, pawReq)
@@ -1317,7 +1317,7 @@ methods.extractRequestMapFromPawRequest = (context, pawReq, endpoints) => {
     auths
   })
 
-  $methods[method] = request
+  return OrderedMap({ [method]: request })
 }
 
 /**
@@ -1452,7 +1452,7 @@ methods.extractAuthFromAuthString = (authDS) => {
  * @returns {Entry<string?, Auth?>} the corresponding auth DynamicValue
  */
 methods.extractAuthsFromRequest = (context, request, _authDS) => {
-  // potential infinite loop
+  // potential infinite loop ?
   const authDS = _authDS || request.getHeaderByName('Authorization', true)
   const authDV = authDS.getOnlyDynamicValue()
 
@@ -1461,6 +1461,40 @@ methods.extractAuthsFromRequest = (context, request, _authDS) => {
   }
 
   return methods.extractAuthFromAuthString(authDS)
+}
+
+methods.extractResources = (context, reqs) => {
+  const hosts = methods.extractCommonHostsFromRequests(reqs)
+  const convertHostIntoResources = currify(methods.convertHostIntoResources, context)
+  const { resources, variables, endpoints } = hosts
+    .map(convertHostIntoResources)
+    .reduce(
+      methods.groupResourcesVariablesAndEndpoints,
+      { resources: [], variables: [], endpoints: [] }
+    )
+
+  const resourceMap = OrderedMap(resources.reduce(convertEntryListInMap, {}))
+
+  return { resources: resourceMap, variables, endpoints }
+}
+
+methods.extractStore = (variables, endpoints, reqs) => {
+  const auths = reqs
+    .filter(request => request.getHeaderByName('Authorization', true))
+    .map((request) => methods.extractAuthsFromRequest(context, request))
+    .filter(({ key }) => !!key)
+
+  const variableStore = OrderedMap(variables.reduce(convertEntryListInMap, {}))
+  const endpointStore = OrderedMap(endpoints.reduce(convertEntryListInMap, {}))
+  const authStore = OrderedMap(auths.reduce(convertEntryListInMap, {}))
+
+  const store = new Store({
+    variable: variableStore,
+    endpoint: endpointStore,
+    auth: authStore
+  })
+
+  return store
 }
 
 /**
@@ -1473,32 +1507,10 @@ methods.extractAuthsFromRequest = (context, request, _authDS) => {
  * @returns {Store} result.store: the store containing shared objects from resources
  */
 methods.extractResourcesAndStore = (context, reqs) => {
-  const hosts = methods.extractCommonHostsFromRequests(reqs)
-  const convertHostIntoResources = currify(methods.convertHostIntoResources, context)
-  const { resources, variables, endpoints } = hosts
-    .map(convertHostIntoResources)
-    .reduce(
-      methods.groupResourcesVariablesAndEndpoints,
-      { resources: [], variables: [], endpoints: [] }
-    )
+  const { resources, variables, endpoints } = methods.extractResources(context, reqs)
+  const store = methods.extractStore(variables, endpoints, reqs)
 
-  const auths = reqs
-    .filter(request => request.getHeaderByName('Authorization', true))
-    .map(methods.extractAuthsFromRequest)
-    .filter(({ key }) => !!key)
-
-  const resourceMap = OrderedMap(resources.reduce(convertEntryListInMap, {}))
-  const variableStore = OrderedMap(variables.reduce(convertEntryListInMap, {}))
-  const endpointStore = OrderedMap(endpoints.reduce(convertEntryListInMap, {}))
-  const authStore = OrderedMap(auths.reduce(convertEntryListInMap, {}))
-
-  const store = new Store({
-    variable: variableStore,
-    endpoint: endpointStore,
-    auth: authStore
-  })
-
-  return { resources: resourceMap, store }
+  return { resources, store }
 }
 
 // NOTE: we're cheating in this method, as we're not using the standard Item interface, but rather

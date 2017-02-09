@@ -15,6 +15,10 @@ import Reference from '../../../models/Reference'
 import Resource from '../../../models/Resource'
 import Constraint from '../../../models/Constraint'
 import ParameterContainer from '../../../models/ParameterContainer'
+import Request from '../../../models/Request'
+import Auth from '../../../models/Auth'
+import Store from '../../../models/Store'
+import Api from '../../../models/Api'
 
 import Parser, { __internals__ } from '../Parser'
 
@@ -1400,6 +1404,369 @@ describe('parsers/paw/Parser.js', () => {
       const actual = inputs.map(input => {
         return __internals__.getAuthNameFromAuthDV(context, request, input)
       })
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getAuthNameFromAuthString', () => {
+    it('should work', () => {
+      const inputs = [
+        { getEvaluatedString: () => 'Basic 12fb43bf1b2eb==' },
+        { getEvaluatedString: () => 'Digest realm=123' },
+        { getEvaluatedString: () => 'Hawk someVars' },
+        { getEvaluatedString: () => 'AWS4-HMAC-SHA256 stuff' },
+        { getEvaluatedString: () => 'OAuth version=1' },
+        { getEvaluatedString: () => 'Bearer 1251f21f21bceb123a123' }
+      ]
+      const expected = [
+        'basic_auth',
+        'digest_auth',
+        'hawk_auth',
+        'aws_sig4_auth',
+        'oauth_1_auth',
+        'oauth_2_auth'
+      ]
+      const actual = inputs.map(__internals__.getAuthNameFromAuthString)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getAuthNameFromAuth', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'getAuthNameFromAuthDV').andCall((c, r, dv) => dv.name)
+      spyOn(__internals__, 'getAuthNameFromAuthString').andReturn(123)
+
+      const context = {}
+      const request = {}
+      const inputs = [
+        { getOnlyDynamicValue: () => null },
+        { getOnlyDynamicValue: () => ({ type: 'some.random.DV' }) },
+        { getOnlyDynamicValue: () => ({ type: 'some.random.DV', name: 'auth_name' }) }
+      ]
+
+      const expected = [
+        123,
+        123,
+        'auth_name'
+      ]
+
+      const actual = inputs.map((input) => {
+        return __internals__.getAuthNameFromAuth(context, request, input)
+      })
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractAuthReferencesFromRequest', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'getAuthNameFromAuth').andReturn(123)
+
+      const context = {}
+      const inputs = [
+        { getHeaderByName: () => { return null } },
+        { getHeaderByName: () => { return 'someDynamicString' } }
+      ]
+      const expected = [
+        List(),
+        List([ new Reference({ type: 'auth', uuid: 123 }) ])
+      ]
+
+      const actual = inputs.map(input => {
+        return __internals__.extractAuthReferencesFromRequest(context, input)
+      })
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractRequestMapFromPawRequest', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'extractParameterContainerFromRequest').andReturn(678)
+      spyOn(__internals__, 'extractAuthReferencesFromRequest').andReturn(789)
+      const context = {}
+      const endpoints = 123
+      const input = { id: 345, name: 456, description: 567, getMethod: () => 234 }
+      const expected = OrderedMap({
+        '234': new Request({
+          id: 345,
+          name: 456,
+          description: 567,
+          endpoints: 123,
+          method: 234,
+          parameters: 678,
+          auths: 789
+        })
+      })
+      const actual = __internals__.extractRequestMapFromPawRequest(context, input, endpoints)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@groupResourcesVariablesAndEndpoints', () => {
+    it('should work', () => {
+      const inputs = [
+        { resources: [ 123, 234, 345 ], variable: null, endpoint: 321 },
+        { resources: [ 456, 567, 678 ], variable: 432, endpoint: null },
+        { resources: [ 789, 890, 901 ], variable: 543, endpoint: 654 },
+        { resources: [], variable: null, endpoint: null }
+      ]
+      const expected = {
+        resources: [ 123, 234, 345, 456, 567, 678, 789, 890, 901 ],
+        variables: [ 432, 543 ],
+        endpoints: [ 321, 654 ]
+      }
+      const actual = inputs.reduce(
+        __internals__.groupResourcesVariablesAndEndpoints,
+        { resources: [], variables: [], endpoints: [] }
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractAuthFromOAuth2DV', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'getAuthNameFromAuth').andReturn(567)
+
+      const context = {}
+      const request = {}
+      const authDS = {}
+
+      const inputs = [
+        {
+          authorizationURL: { getEvaluatedString: () => null },
+          tokenURL: { getEvaluatedString: () => null },
+          grantType: 0
+        },
+        {
+          authorizationURL: { getEvaluatedString: () => null },
+          tokenURL: { getEvaluatedString: () => 123 },
+          grantType: 1
+        },
+        {
+          authorizationURL: { getEvaluatedString: () => 234 },
+          tokenURL: { getEvaluatedString: () => null },
+          grantType: 2
+        },
+        {
+          authorizationURL: { getEvaluatedString: () => 345 },
+          tokenURL: { getEvaluatedString: () => 456 },
+          grantType: 3
+        }
+      ]
+
+      const expected = [
+        {
+          key: 567,
+          value: new Auth.OAuth2({
+            authName: 567,
+            flow: 'accessCode'
+          })
+        },
+        {
+          key: 567,
+          value: new Auth.OAuth2({
+            authName: 567,
+            tokenUrl: 123,
+            flow: 'implicit'
+          })
+        },
+        {
+          key: 567,
+          value: new Auth.OAuth2({
+            authName: 567,
+            authorizationUrl: 234,
+            flow: 'password'
+          })
+        },
+        {
+          key: 567,
+          value: new Auth.OAuth2({
+            authName: 567,
+            authorizationUrl: 345,
+            tokenUrl: 456,
+            flow: 'application'
+          })
+        }
+      ]
+
+      const actual = inputs.map(input => {
+        return __internals__.extractAuthFromOAuth2DV(context, request, authDS, input)
+      })
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractAuthFromDV', () => {
+    it('should work if underlying methods are correct', () => {
+      const envVars = [ false, false, false, true ]
+      const reqVars = [ false, false, true, false ]
+      spyOn(__internals__, 'isEnvironmentVariable').andCall(() => envVars.shift())
+      spyOn(__internals__, 'isRequestVariableDynamicValue').andCall(() => reqVars.shift())
+
+      spyOn(__internals__, 'extractAuthsFromRequest').andCall((c, r, v) => v)
+      spyOn(__internals__, 'extractAuthFromOAuth2DV').andReturn(345)
+      spyOn(__internals__, 'extractAuthFromAuthString').andReturn(456)
+
+      const context = { getEnvironmentVariableById: () => ({ getCurrentValue: () => 123 }) }
+      const request = { getVariableById: () => ({ value: 234 }) }
+      const authDS = {}
+      const inputs = [
+        {},
+        { type: 'com.luckymarmot.OAuth2DynamicValue' },
+        {},
+        {}
+      ]
+
+      const expected = [ 456, 345, 234, 123 ]
+      const actual = inputs.map(input => {
+        return __internals__.extractAuthFromDV(context, request, authDS, input)
+      })
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractAuthFromAuthString', () => {
+    it('should work', () => {
+      const inputs = [
+        { getEvaluatedString: () => 'Basic 12fb43bf1b2eb==' },
+        { getEvaluatedString: () => 'Digest realm=123' },
+        { getEvaluatedString: () => 'Hawk someVars' },
+        { getEvaluatedString: () => 'AWS4-HMAC-SHA256 stuff' },
+        { getEvaluatedString: () => 'OAuth version=1' },
+        { getEvaluatedString: () => 'Bearer 1251f21f21bceb123a123' }
+      ]
+      const expected = [
+        { key: 'basic_auth', value: new Auth.Basic({ authName: 'basic_auth' }) },
+        { key: 'digest_auth', value: new Auth.Digest({ authName: 'digest_auth' }) },
+        { key: 'hawk_auth', value: new Auth.Hawk({ authName: 'hawk_auth' }) },
+        { key: 'aws_sig4_auth', value: new Auth.AWSSig4({ authName: 'aws_sig4_auth' }) },
+        { key: 'oauth_1_auth', value: new Auth.OAuth1({ authName: 'oauth_1_auth' }) },
+        { key: 'oauth_2_auth', value: new Auth.OAuth2({ authName: 'oauth_2_auth' }) }
+      ]
+
+      const actual = inputs.map(__internals__.extractAuthFromAuthString)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractAuthsFromRequest', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'extractAuthFromDV').andCall((c, r, d, v) => v * 2)
+      spyOn(__internals__, 'extractAuthFromAuthString').andReturn(345)
+
+      const inputs = [
+        null,
+        null,
+        { getOnlyDynamicValue: () => null },
+        { getOnlyDynamicValue: () => 123 }
+      ]
+
+      const authDSs = [
+        { getOnlyDynamicValue: () => null },
+        { getOnlyDynamicValue: () => 234 }
+      ]
+
+      const context = {}
+      const request = { getHeaderByName: () => authDSs.shift() }
+
+      const expected = [ 345, 468, 345, 246 ]
+      const actual = inputs.map(input => {
+        return __internals__.extractAuthsFromRequest(context, request, input)
+      })
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractResources', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'extractCommonHostsFromRequests').andReturn([ 123, 123, 123 ])
+      spyOn(__internals__, 'convertHostIntoResources').andReturn(234)
+      spyOn(__internals__, 'groupResourcesVariablesAndEndpoints').andReturn({
+        resources: [
+          { key: 'abc', value: 123 },
+          { key: 'def', value: 456 },
+          { key: 'ghi', value: 789 }
+        ],
+        variables: 321,
+        endpoints: 432
+      })
+
+      const context = {}
+      const input = []
+      const expected = {
+        resources: OrderedMap({ abc: 123, def: 456, ghi: 789 }),
+        variables: 321,
+        endpoints: 432
+      }
+
+      const actual = __internals__.extractResources(context, input)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractStore', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'extractAuthsFromRequest').andCall((c, r) => {
+        const v = r.getHeaderByName()
+        return { key: v, value: 2 * v }
+      })
+
+      const variables = [
+        { key: 'abc', value: 123 },
+        { key: 'def', value: 456 }
+      ]
+      const endpoints = [
+        { key: 'adf', value: 147 },
+        { key: 'fed', value: 654 }
+      ]
+      const input = [
+        { getHeaderByName: () => null },
+        { getHeaderByName: () => 123 },
+        { getHeaderByName: () => 234 }
+      ]
+
+      const expected = new Store({
+        variable: OrderedMap({ abc: 123, def: 456 }),
+        endpoint: OrderedMap({ adf: 147, fed: 654 }),
+        auth: OrderedMap({ '123': 246, '234': 468 })
+      })
+
+      const actual = __internals__.extractStore(variables, endpoints, input)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractResourcesAndStore', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'extractResources').andReturn({ resources: 123 })
+      spyOn(__internals__, 'extractStore').andReturn(234)
+
+      const context = {}
+      const input = []
+      const expected = { resources: 123, store: 234 }
+
+      const actual = __internals__.extractResourcesAndStore(context, input)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@parse', () => {
+    it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'extractInfo').andReturn(123)
+      spyOn(__internals__, 'extractGroup').andReturn(234)
+      spyOn(__internals__, 'extractResourcesAndStore').andReturn({ resources: 345, store: 456 })
+      const input = { context: {}, reqs: [] }
+
+      const expected = new Api({
+        info: 123,
+        group: 234,
+        resources: 345,
+        store: 456
+      })
+
+      const actual = __internals__.parse(input)
       expect(actual).toEqual(expected)
     })
   })
