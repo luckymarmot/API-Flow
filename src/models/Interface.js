@@ -21,7 +21,8 @@ const InterfaceSpec = {
   uuid: null,
   level: null,
   required: false,
-  description: null
+  description: null,
+  underlay: null
 }
 
 export const Interface = Record(InterfaceSpec)

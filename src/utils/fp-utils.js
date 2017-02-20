@@ -15,4 +15,6 @@ export const convertEntryListInMap = (obj, { key, value }) => {
   return obj
 }
 
+export const flatten = (f, l) => [ ...f, ...l ]
+
 export const __internals__ = { currify, keys, values, entries, convertEntryListInMap }
