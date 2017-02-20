@@ -435,6 +435,11 @@ methods.getOtherSchemasFromPropertiesSchemas = (propSchemas) => {
  */
 methods.getPropertiesSchema = (node) => {
   const properties = node.properties()
+
+  if (!properties) {
+    return []
+  }
+
   const propSchemas = properties
     .map(methods.convertPropertyIntoSchemaEntry)
 
@@ -504,7 +509,7 @@ methods.getSchemaFromArrayType = (type) => {
  */
 methods.getSchemaFromImplicitArrayType = (type) => {
   if (methods.isImplicitArrayType(type)) {
-    const mixedTypesMatch = type.match(/^\(([^()])+\)\[\]$/)
+    const mixedTypesMatch = type.match(/^\(([^()]+)\)\[\]$/)
     const uniqueTypeMatch = type.match(/^([^|]+)\[\]$/)
 
     if (mixedTypesMatch || uniqueTypeMatch) {
@@ -522,7 +527,7 @@ methods.getSchemaFromImplicitArrayType = (type) => {
  * @returns {Object?} the corresponding schema, it is indeed a union type
  */
 methods.getSchemaFromUnionType = (type) => {
-  const union = type.split('|').map(str => str.trim())
+  const union = type.split('|').map(str => str.trim()).filter(v => !!v)
 
   if (union.length > 1) {
     const anyOf = methods.getSchemaListFromTypes(union)
@@ -536,6 +541,8 @@ methods.getSchemaFromUnionType = (type) => {
  * converts a reference type into a schema
  * @param {string} type: the type to convert into a schema
  * @returns {Object} the corresponding schema
+ *
+ * NOTE: What is the semantic difference between this method and @convertTypeDeclaration ?
  */
 methods.getSchemaFromReferenceType = (type) => {
   const $ref = '#/definitions/' + type
@@ -608,6 +615,9 @@ methods.convertMultipleInheritanceObject = (types) => {
     const type = $types[0].type
     const allOf = schemas.filter((schema) => !schema.type)
     const schema = { type }
+    if (type === 'array' && $types[0].items) {
+      schema.items = $types[0].items
+    }
     if (allOf.length) {
       schema.allOf = allOf
     }
