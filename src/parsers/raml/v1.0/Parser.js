@@ -1109,7 +1109,7 @@ methods.extractParameterStore = (api) => {
  * @param {RAMLOAuth2SecuritySchemeSettings} settings: the settings from which to get the scopes
  * @returns {List<Entry<string, string>>} the corresponding scopes
  */
-methods.extractScopesFromAuthSettings = (settings) => {
+methods.extractScopesFromOAuth2Settings = (settings) => {
   const scopes = settings.scopes().map(scope => ({ key: scope, value: '' }))
 
   return List(scopes)
@@ -1155,7 +1155,7 @@ methods.extractTokenUrlFromOAuth2Settings = (settings) => {
  * @param {RAMLSecurityScheme} scheme: the scheme to get the authName from
  * @returns {string} the corresponding url
  */
-methods.extractAuthNameFromOauth2Scheme = (scheme) => scheme.name()
+methods.extractAuthNameFromAuthScheme = (scheme) => scheme.name()
 
 /**
  * converts a RAML OAuth2 Security Scheme into an OAuth2 Record
@@ -1218,7 +1218,7 @@ methods.extractTokenCredentialsUriFromOAuth1Settings = (settings) => {
  * @returns {string?} the corresponding signature
  */
 methods.extractSignatureFromOAuth1Settings = (settings) => {
-  return settings.signatures()[0] || null
+  return (settings.signatures() || [])[0] || null
 }
 
 /**
@@ -1257,15 +1257,21 @@ methods.convertRAMLAuthIntoOAuth1AuthEntry = (scheme) => {
  * location
  */
 methods.extractLocationAndKeyFromApiKeyScheme = (scheme) => {
-  const headers = scheme.describedBy().headers()
-  const queries = scheme.describedBy().queryParameters()
+  const describedBy = scheme.describedBy()
 
-  if (headers.length) {
+  if (!describedBy) {
+    return { key: null, location: null }
+  }
+
+  const headers = describedBy.headers()
+  const queries = describedBy.queryParameters()
+
+  if (headers && headers.length) {
     return { key: headers[0].name() || null, location: 'header' }
   }
 
-  if (queries.length) {
-    return { key: headers[0].name() || null, location: 'header' }
+  if (queries && queries.length) {
+    return { key: queries[0].name() || null, location: 'query' }
   }
 
   return { key: null, location: null }
@@ -1280,7 +1286,7 @@ methods.convertRAMLAuthIntoApiKeyAuthEntry = (scheme) => {
   const authName = methods.extractAuthNameFromAuthScheme(scheme)
   const description = methods.extractDescription(scheme)
 
-  const { key, location } = methods.extractLocationAndNameFromApiKeyScheme(scheme)
+  const { key, location } = methods.extractLocationAndKeyFromApiKeyScheme(scheme)
 
   const authInstance = {
     description,
@@ -1357,8 +1363,14 @@ methods.convertRAMLAuthIntoAuthEntry = (scheme) => {
  * @returns {OrderedMap<string, Auth>} the corresponding TypedStore
  */
 methods.extractAuthStore = (api) => {
-  const auths = api.securitySchemes()
-    .map(methods.convertRAMLAuthIntoAuth)
+  const securitySchemes = api.securitySchemes()
+
+  if (!securitySchemes) {
+    return OrderedMap()
+  }
+
+  const auths = securitySchemes
+    .map(methods.convertRAMLAuthIntoAuthEntry)
     .filter(v => !!v)
     .reduce(convertEntryListInMap, {})
 
@@ -1385,7 +1397,9 @@ methods.extractInterfaceUUIDFromResourceName = (name) => 'resourceType_' + name
  * description
  * @returns {string} the corresponding interface description
  */
-methods.extractInterfaceDescriptionFromResourceBase = (resourceBase) => resourceBase.usage() || null
+methods.extractInterfaceDescriptionFromResourceBase = (resourceBase) => {
+  return resourceBase.usage() || null
+}
 
 /**
  * converts a RAML resourceBase into an interface entry
@@ -1447,10 +1461,10 @@ methods.convertMethodBaseIntoInterfaceEntry = (methodBase) => {
  * @returns {OrderedMap<string, Interface>} the corresponding TypedStore
  */
 methods.extractInterfaceStore = (api) => {
-  const resourceInterfaces = api.resourceTypes()
+  const resourceInterfaces = (api.resourceTypes() || [])
     .map(methods.convertResourceBaseIntoInterfaceEntry)
 
-  const requestInterfaces = api.traits()
+  const requestInterfaces = (api.traits() || [])
     .map(methods.convertMethodBaseIntoInterfaceEntry)
 
   const interfaces = [].concat(resourceInterfaces, requestInterfaces)
@@ -1481,6 +1495,13 @@ methods.extractStore = (api) => {
  * @returns {Group} the corresponding group
  */
 methods.createGroupFromResource = (resource) => {
+  const relativeUri = resource.relativeUri()
+  if (!relativeUri) {
+    return new Group({
+      id: resource.completeRelativeUri()
+    })
+  }
+
   return new Group({
     id: resource.completeRelativeUri(),
     name: resource.relativeUri().value()
@@ -1514,7 +1535,7 @@ methods.createGroupEntryFromResource = (resource) => {
  * @returns {boolean} returns true if it has the method `methods`
  */
 methods.resourceHasMethods = (resource) => {
-  const hasMethods = typeof resource.methods === 'function' ? resource.methods().length : false
+  const hasMethods = typeof resource.methods === 'function' ? !!resource.methods().length : false
   return hasMethods
 }
 
