@@ -1768,9 +1768,11 @@ methods.extractInterfacesFromResource = (resource) => {
   const type = resource.type()
   if (type) {
     const uuid = type.name()
-    return OrderedMap({
-      [uuid]: new Reference({ type: 'interface', uuid })
-    })
+    if (uuid) {
+      return OrderedMap({
+        [uuid]: new Reference({ type: 'interface', uuid })
+      })
+    }
   }
 
   return OrderedMap()
@@ -1800,7 +1802,12 @@ methods.createContextFromContentType = (contentType) => {
  * @returns {List<Context>} the corresponding list of Contexts
  */
 methods.extractContextsFromRequest = (request) => {
-  const contexts = request.body()
+  const bodies = request.body()
+  if (!bodies) {
+    return List()
+  }
+
+  const contexts = bodies
     .map(body => body.name())
     .map(methods.createContextFromContentType)
 
@@ -1843,7 +1850,7 @@ methods.convertSchemaIntoParameterEntry = (location, contexts, schema) => {
   const clone = Object.assign({}, schema)
   delete clone.$key
 
-  const key = schema.$key
+  const key = schema.$key || null
   const value = methods.createParameterFromSchemaAndNameAndContexts(location, contexts, key, clone)
 
   return { key, value }
@@ -1926,8 +1933,7 @@ methods.convertStandardBodyParameterIntoParameterEntries = (parameter, contexts,
   const clone = Object.assign({}, schema)
   delete clone.$key
 
-  const name = schema.$key
-
+  const name = schema.$key || null
   const value = methods.createParameterFromSchemaAndNameAndContexts(contexts, name, clone)
 
   return [ { key, value } ]
@@ -1942,7 +1948,7 @@ methods.convertBodyParameterIntoParameterEntries = (parameter) => {
   const contentType = parameter.name()
   const contexts = methods.convertContentTypeToApplicableContexts(contentType)
 
-  if (methods.isWebForm(context)) {
+  if (contentType && methods.isWebForm(contentType)) {
     return methods.convertWebFormParameterIntoParameterEntries(parameter, contexts, contentType)
   }
 
@@ -1956,7 +1962,13 @@ methods.convertBodyParameterIntoParameterEntries = (parameter) => {
  * @returns {Parameter?} the corresponding contentType parameter, if it exists
  */
 methods.getContentTypeParameterFromRequestOrResponse = (requestOrResponse) => {
-  const contentTypes = requestOrResponse.body().map(body => body.name())
+  const bodies = requestOrResponse.body()
+
+  if (!bodies) {
+    return null
+  }
+
+  const contentTypes = bodies.map(body => body.name()).filter(v => !!v)
 
   if (!contentTypes.length) {
     return null
@@ -1979,7 +1991,13 @@ methods.getContentTypeParameterFromRequestOrResponse = (requestOrResponse) => {
  * @returns {Parameter?} the corresponding contentType parameter, if it exists
  */
 methods.getGlobalContentTypeParameter = (api) => {
-  const contentTypes = api.mediaType()
+  const mediaTypes = api.mediaType()
+
+  if (!mediaTypes) {
+    return null
+  }
+
+  const contentTypes = mediaTypes.map(mediaType => mediaType.value()).filter(v => !!v)
 
   if (!contentTypes.length) {
     return null
@@ -2006,7 +2024,13 @@ methods.getGlobalContentTypeParameterReference = (api) => {
     return null
   }
 
-  const hasMediaType = !!api.mediaType().length
+  const mediaTypes = api.mediaType()
+
+  if (!mediaTypes) {
+    return null
+  }
+
+  const hasMediaType = !!mediaTypes.filter(mediaType => !!mediaType.value()).length
   if (hasMediaType) {
     return new Reference({
       type: 'parameter',
@@ -2038,7 +2062,13 @@ methods.getContentTypeParameter = (api, request) => {
  * @returns {OrderedMap<string, Parameter>} an OrderedMap containing all query parameters
  */
 methods.createQueryParameterBlockFromRequest = (request) => {
-  const queryParameters = request.queryParameters()
+  const params = request.queryParameters()
+
+  if (!params) {
+    return OrderedMap()
+  }
+
+  const queryParameters = params
     .map(parameter => methods.createSchema(parameter).map(methods.normalizeSchema)[0])
     .map((schema) => methods.convertSchemaIntoParameterEntry('queries', List(), schema))
     .reduce(convertEntryListInMap, {})
@@ -2053,12 +2083,18 @@ methods.createQueryParameterBlockFromRequest = (request) => {
  * @returns {OrderedMap<string, Parameter>} an OrderedMap containing all headers
  */
 methods.createHeaderParameterBlockFromRequest = (api, request) => {
-  const headers = request.headers()
+  const params = request.headers() || []
+
+  const headers = params
     .map(parameter => methods.createSchema(parameter).map(methods.normalizeSchema)[0])
     .map((schema) => methods.convertSchemaIntoParameterEntry('headers', List(), schema))
     .reduce(convertEntryListInMap, {})
 
   const contentTypeParameter = methods.getContentTypeParameter(api, request)
+
+  if (!contentTypeParameter) {
+    return OrderedMap(headers)
+  }
 
   return OrderedMap(headers).set('Content-Type', contentTypeParameter)
 }
@@ -2069,7 +2105,13 @@ methods.createHeaderParameterBlockFromRequest = (api, request) => {
  * @returns {OrderedMap<string, Parameter>} an OrderedMap containing all the body parameters
  */
 methods.createBodyParameterBlockFromRequest = (request) => {
-  const body = request.body()
+  const bodies = request.body()
+
+  if (!bodies) {
+    return OrderedMap()
+  }
+
+  const body = bodies
     .map(methods.convertBodyParameterIntoParameterEntries)
     .reduce(flatten, [])
     .reduce(convertEntryListInMap, {})
@@ -2099,7 +2141,9 @@ methods.extractParameterContainerFromRequest = (api, request) => {
  * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap containing all headers
  */
 methods.createHeaderParameterBlockFromResponse = (response) => {
-  const headers = response.headers()
+  const params = response.headers() || []
+
+  const headers = params
     .map(parameter => methods.createSchema(parameter).map(methods.normalizeSchema)[0])
     .map((schema) => {
       const { key, value } = methods.convertSchemaIntoParameterEntry('headers', List(), schema)
@@ -2109,7 +2153,11 @@ methods.createHeaderParameterBlockFromResponse = (response) => {
 
   const contentTypeParameter = methods.getContentTypeParameterFromRequestOrResponse(response)
 
-  return OrderedMap(headers).set('Content-Type', contentTypeParameter)
+  if (!contentTypeParameter) {
+    return OrderedMap(headers)
+  }
+
+  return OrderedMap(headers).set('Content-Type', contentTypeParameter.set('usedIn', 'response'))
 }
 
 /**
@@ -2119,6 +2167,12 @@ methods.createHeaderParameterBlockFromResponse = (response) => {
  * parameters
  */
 methods.createBodyParameterBlockFromResponse = (response) => {
+  const bodies = response.body()
+
+  if (!bodies) {
+    return OrderedMap()
+  }
+
   const body = response.body()
     .map(methods.convertBodyParameterIntoParameterEntries)
     .reduce(flatten, [])
@@ -2165,7 +2219,9 @@ methods.convertRAMLAuthRefIntoAuthReference = (auth) => {
  * @returns {List<References>} the corresponding List of Referenceså
  */
 methods.extractAuthsFromRequest = (request) => {
-  const auths = request.securedBy()
+  const securedBy = request.securedBy() || []
+
+  const auths = securedBy
     .map(methods.convertRAMLAuthRefIntoAuthReference)
 
   return List(auths)
@@ -2177,7 +2233,7 @@ methods.extractAuthsFromRequest = (request) => {
  * @returns {Entry<string, Response>} the corresponding Response as an entry
  */
 methods.convertRAMLResponseIntoResponseEntry = (response) => {
-  const code = response.code()
+  const code = response.code() || null
   const description = methods.extractDescription(response)
 
   const parameters = methods.extractParameterContainerFromResponse(response)
@@ -2194,7 +2250,7 @@ methods.convertRAMLResponseIntoResponseEntry = (response) => {
  * @returns {OrderedMap<string, Response>} the corresponding OrderedMap of Responses
  */
 methods.extractResponsesFromRequest = (request) => {
-  const responses = request.responses()
+  const responses = (request.responses() || [])
     .map(methods.convertRAMLResponseIntoResponseEntry)
     .reduce(convertEntryListInMap, {})
 
@@ -2225,7 +2281,7 @@ methods.convertRAMLTraitRefIntoReferenceEntry = (trait) => {
  * TODO: Add type references
  */
 methods.extractInterfacesFromRequest = (request) => {
-  const interfaces = request.is()
+  const interfaces = (request.is() || [])
     .map(methods.convertRAMLTraitRefIntoReferenceEntry)
     .reduce(convertEntryListInMap, {})
 
@@ -2298,7 +2354,7 @@ methods.convertRAMLMethodIntoRequestEntry = (api, method) => {
  */
 methods.extractRequestsFromResource = (api, resource) => {
   const convertRAMLMethodIntoRequestEntry = currify(methods.convertRAMLMethodIntoRequestEntry, api)
-  const requests = resource.methods
+  const requests = (resource.methods() || [])
     .map(convertRAMLMethodIntoRequestEntry)
     .reduce(convertEntryListInMap, {})
 
@@ -2382,6 +2438,7 @@ methods.convertRAMLResourceListIntoResourceMap = (api, resources) => {
   )
   const resourceMap = resources
     .map(convertRAMLResourceIntoResourceEntry)
+    .reduce(convertEntryListInMap, {})
 
   return OrderedMap(resourceMap)
 }
