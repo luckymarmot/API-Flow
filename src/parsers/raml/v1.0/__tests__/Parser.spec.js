@@ -28,8 +28,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         const expected = 1234
         spyOn(__internals__, 'parse').andReturn(expected)
 
-        const parser = new Parser()
-        const actual = parser.parse()
+        const actual = Parser.parse()
 
         expect(__internals__.parse).toHaveBeenCalled()
         expect(actual).toEqual(expected)
@@ -39,12 +38,10 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         const expected = 1234
         spyOn(__internals__, 'parse').andReturn(expected)
 
-        const options = { context: 123, items: 321, options: 234 }
-        const input = '1235124125412'
-        const parser = new Parser()
-        const actual = parser.parse(options, input)
+        const args = { options: { context: 123, items: 321 }, item: 234 }
+        const actual = Parser.parse(args)
 
-        expect(__internals__.parse).toHaveBeenCalledWith(options, input)
+        expect(__internals__.parse).toHaveBeenCalledWith(args)
         expect(actual).toEqual(expected)
       })
     })
@@ -2519,9 +2516,9 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         [ { $key: 345, title: 456 }, 123, 234 ]
       ]
       const expected = [
-        [ { key: 234, value: [ 123, null, {} ] } ],
-        [ { key: 234, value: [ 123, 345, {} ] } ],
-        [ { key: 234, value: [ 123, 345, { title: 456 } ] } ]
+        [ { key: 234, value: [ 'body', 123, null, {} ] } ],
+        [ { key: 234, value: [ 'body', 123, 345, {} ] } ],
+        [ { key: 234, value: [ 'body', 123, 345, { title: 456 } ] } ]
       ]
       const actual = inputs.map(
         input => __internals__.convertStandardBodyParameterIntoParameterEntries(...input)
@@ -2930,8 +2927,8 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       spyOn(__internals__, 'extractContextsFromRequest').andCall(v => v.value * 3)
 
       const inputs = [
-        { code: () => null, value: 123 },
-        { code: () => 200, value: 123 }
+        { code: () => ({ value: () => null }), value: 123 },
+        { code: () => ({ value: () => 200 }), value: 123 }
       ]
       const expected = [
         {

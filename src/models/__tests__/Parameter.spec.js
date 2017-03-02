@@ -1289,71 +1289,18 @@ describe('models/Parameter.js', () => {
     })
   })
 
-  describe('@addFakerFunctionalities', () => {
-    it('should add helper if schema is for simple string without faker information', () => {
-      const schema = {
-        type: 'string'
-      }
-
-      const expected = {
-        type: 'string',
-        'x-faker': 'company.bsNoun'
-      }
-      const actual = __internals__.addFakerFunctionalities(schema)
-
-      expect(actual).toEqual(expected)
-    })
-
-    it('should do nothing if not string type', () => {
-      const schema = {
-        type: 'number'
-      }
-
-      const expected = schema
-      const actual = __internals__.addFakerFunctionalities(schema)
-
-      expect(actual).toEqual(expected)
-    })
-
-    it('should do nothing if format is sequence', () => {
-      const schema = {
-        type: 'string',
-        format: 'sequence'
-      }
-
-      const expected = schema
-      const actual = __internals__.addFakerFunctionalities(schema)
-
-      expect(actual).toEqual(expected)
-    })
-
-    it('should do nothing if faker already present', () => {
-      const schema = {
-        type: 'string',
-        faker: 'internet.email'
-      }
-
-      const expected = schema
-      const actual = __internals__.addFakerFunctionalities(schema)
-
-      expect(actual).toEqual(expected)
-    })
-
-    it('should do nothing if x-faker already present', () => {
-      const schema = {
-        type: 'string',
-        'x-faker': 'internet.email'
-      }
-
-      const expected = schema
-      const actual = __internals__.addFakerFunctionalities(schema)
-
-      expect(actual).toEqual(expected)
-    })
-  })
-
   describe('@generate', () => {
-    it('should call generateFromDefault if useDefault', () => {
+    it('should call generateFromSequenceDefaults if param has sequence superType', () => {
+      spyOn(__internals__, 'generateFromSequenceDefaults').andReturn(true)
+
+      const param = new Parameter({ superType: 'sequence' })
+
+      __internals__.generate(param, true)
+
+      expect(__internals__.generateFromSequenceDefaults).toHaveBeenCalled()
+    })
+
+    it('should call generateFromDefault otherwise', () => {
       spyOn(__internals__, 'generateFromDefault').andReturn(true)
 
       const param = new Parameter()
@@ -1363,7 +1310,18 @@ describe('models/Parameter.js', () => {
       expect(__internals__.generateFromDefault).toHaveBeenCalled()
     })
 
-    it('should return generateFromDefault value if not null', () => {
+    it('should return generateFromSequenceDefaults value if superType is sequence', () => {
+      spyOn(__internals__, 'generateFromSequenceDefaults').andReturn(12345)
+
+      const param = new Parameter({ superType: 'sequence' })
+
+      const expected = 12345
+      const actual = __internals__.generate(param, true)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return generateFromDefault value otherwise', () => {
       spyOn(__internals__, 'generateFromDefault').andReturn(12345)
 
       const param = new Parameter()
@@ -1374,48 +1332,30 @@ describe('models/Parameter.js', () => {
       expect(actual).toEqual(expected)
     })
 
-    it('should call getJSONSchema if no schema is provided', () => {
-      spyOn(__internals__, 'getJSONSchema').andReturn({ type: 'integer' })
-
-      const param = new Parameter()
-
-      __internals__.generate(param)
-
-      expect(__internals__.getJSONSchema).toHaveBeenCalled()
-    })
-
-    it('should not call getJSONSchema if a schema is provided', () => {
-      spyOn(__internals__, 'getJSONSchema').andReturn({ type: 'integer' })
-
-      __internals__.generate(null, false, { type: 'number' })
-
-      expect(__internals__.getJSONSchema).toNotHaveBeenCalled()
-    })
-
-    it('should call replaceRefs on schema', () => {
-      spyOn(__internals__, 'replaceRefs').andReturn({ type: 'integer' })
-
-      __internals__.generate(null, false, { type: 'number' })
-
-      expect(__internals__.replaceRefs).toHaveBeenCalled()
-    })
-
-    it('should call addFakerFunctionalities on schema', () => {
-      spyOn(__internals__, 'addFakerFunctionalities').andReturn({ type: 'integer' })
-
-      __internals__.generate(null, false, { type: 'number' })
-
-      expect(__internals__.addFakerFunctionalities).toHaveBeenCalled()
-    })
-
     it('should work', () => {
-      const schema = {
-        type: 'string',
-        enum: [ 123 ]
-      }
+      const inputs = [
+        new Parameter(),
+        new Parameter({ default: 123 }),
+        new Parameter({ superType: 'sequence' }),
+        new Parameter({ superType: 'sequence', value: List() }),
+        new Parameter({ superType: 'sequence', value: List([
+          new Parameter(),
+          new Parameter({ default: 234 }),
+          new Parameter({ default: 345 })
+        ]) }),
+        new Parameter({ superType: 'sequence', value: List([
+          new Parameter(),
+          new Parameter({ default: 456 }),
+          new Parameter({ superType: 'sequence', value: List([
+            new Parameter(),
+            new Parameter({ default: 567 }),
+            new Parameter({ default: 678 })
+          ]) })
+        ]) })
+      ]
 
-      const expected = 123
-      const actual = __internals__.generate(null, false, schema)
+      const expected = [ null, 123, null, '', '234345', '456567678' ]
+      const actual = inputs.map(input => __internals__.generate(input))
 
       expect(actual).toEqual(expected)
     })

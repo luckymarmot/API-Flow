@@ -37,23 +37,15 @@ export class RAMLParser {
     return methods.getAPIName(content)
   }
 
-  isParsable({ content }) {
+  static isParsable({ content }) {
     return methods.detect(content)
   }
 
-  resolve() {
+  static resolve() {
     return methods.resolve(...arguments)
   }
 
-  detect() {
-    return methods.detect(...arguments)
-  }
-
-  getAPIName() {
-    return methods.getAPIName(...arguments)
-  }
-
-  parse() {
+  static parse() {
     return methods.parse(...arguments)
   }
 }
@@ -1929,12 +1921,11 @@ methods.isWebForm = (contentType) => {
  */
 methods.convertStandardBodyParameterIntoParameterEntries = (parameter, contexts, key) => {
   const schema = methods.createSchema(parameter).map(methods.normalizeSchema)[0]
-
   const clone = Object.assign({}, schema)
   delete clone.$key
 
   const name = schema.$key || null
-  const value = methods.createParameterFromSchemaAndNameAndContexts(contexts, name, clone)
+  const value = methods.createParameterFromSchemaAndNameAndContexts('body', contexts, name, clone)
 
   return [ { key, value } ]
 }
@@ -1947,11 +1938,9 @@ methods.convertStandardBodyParameterIntoParameterEntries = (parameter, contexts,
 methods.convertBodyParameterIntoParameterEntries = (parameter) => {
   const contentType = parameter.name()
   const contexts = methods.convertContentTypeToApplicableContexts(contentType)
-
   if (contentType && methods.isWebForm(contentType)) {
     return methods.convertWebFormParameterIntoParameterEntries(parameter, contexts, contentType)
   }
-
   return methods.convertStandardBodyParameterIntoParameterEntries(parameter, contexts, contentType)
 }
 
@@ -2233,7 +2222,7 @@ methods.extractAuthsFromRequest = (request) => {
  * @returns {Entry<string, Response>} the corresponding Response as an entry
  */
 methods.convertRAMLResponseIntoResponseEntry = (response) => {
-  const code = response.code() || null
+  const code = response.code().value() || null
   const description = methods.extractDescription(response)
 
   const parameters = methods.extractParameterContainerFromResponse(response)
@@ -2486,9 +2475,8 @@ methods.extractInfo = (api) => {
 }
 
 // TODO improve behavior around multiple items
-methods.parse = (parserOptions, { content, url = null, file = null } = {}) => {
-  // TODO actually get the api object
-  const api = content
+methods.parse = ({ options, item }) => {
+  const api = item
   const group = methods.createGroups(api)
   const $resources = methods.getAllResourcesFromApi(api)
   const resources = methods.convertRAMLResourceListIntoResourceMap(api, $resources)
@@ -2497,7 +2485,7 @@ methods.parse = (parserOptions, { content, url = null, file = null } = {}) => {
 
   const apiInstance = { group, resources, info, store }
 
-  return new Api(apiInstance)
+  return { options, api: new Api(apiInstance) }
 }
 
 export const __internals__ = methods

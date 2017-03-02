@@ -30,8 +30,7 @@ describe('parsers/paw/Parser.js', () => {
         const expected = 1234
         spyOn(__internals__, 'parse').andReturn(expected)
 
-        const parser = new Parser()
-        const actual = parser.parse()
+        const actual = Parser.parse()
 
         expect(__internals__.parse).toHaveBeenCalled()
         expect(actual).toEqual(expected)
@@ -42,11 +41,9 @@ describe('parsers/paw/Parser.js', () => {
         spyOn(__internals__, 'parse').andReturn(expected)
 
         const options = { context: 123, items: 321, options: 234 }
-        const input = '1235124125412'
-        const parser = new Parser()
-        const actual = parser.parse(options, input)
+        const actual = Parser.parse({ options })
 
-        expect(__internals__.parse).toHaveBeenCalledWith(options, input)
+        expect(__internals__.parse).toHaveBeenCalledWith({ options })
         expect(actual).toEqual(expected)
       })
     })
@@ -626,11 +623,11 @@ describe('parsers/paw/Parser.js', () => {
 
       const variable = {
         domain: domain,
-        getValue: (envName) => { return { getEvaluatedString: () => { return '**' + envName } } }
+        getValue: (env) => { return { getEvaluatedString: () => { return '**' + env.name } } }
       }
 
       const context = {
-        getEnvironmentById: () => { return variable }
+        getEnvironmentVariableById: () => { return variable }
       }
 
       const input = { EnvironmentVariable: 123 }
@@ -952,11 +949,12 @@ describe('parsers/paw/Parser.js', () => {
         return acc
       })
 
+      const context = {}
       const defaultHost = 'echo.paw.cloud/users'
       const input = [ 123, 123, 123, 123 ]
       const expected = { hostVariable: 234, requestEntries: [ 248, 248, 248, 248 ] }
       const actual = __internals__.convertHostEntriesIntoHostVariableAndRequestEntries(
-        defaultHost, input
+        context, defaultHost, input
       )
       expect(actual).toEqual(expected)
     })
@@ -1713,6 +1711,7 @@ describe('parsers/paw/Parser.js', () => {
         return { key: v, value: 2 * v }
       })
 
+      const context = {}
       const variables = [
         { key: 'abc', value: 123 },
         { key: 'def', value: 456 }
@@ -1733,7 +1732,7 @@ describe('parsers/paw/Parser.js', () => {
         auth: OrderedMap({ '123': 246, '234': 468 })
       })
 
-      const actual = __internals__.extractStore(variables, endpoints, input)
+      const actual = __internals__.extractStore(context, variables, endpoints, input)
       expect(actual).toEqual(expected)
     })
   })
@@ -1757,14 +1756,19 @@ describe('parsers/paw/Parser.js', () => {
       spyOn(__internals__, 'extractInfo').andReturn(123)
       spyOn(__internals__, 'extractGroup').andReturn(234)
       spyOn(__internals__, 'extractResourcesAndStore').andReturn({ resources: 345, store: 456 })
-      const input = { context: {}, reqs: [] }
 
-      const expected = new Api({
-        info: 123,
-        group: 234,
-        resources: 345,
-        store: 456
-      })
+      const options = { context: {}, reqs: [] }
+      const input = { options }
+
+      const expected = {
+        options,
+        api: new Api({
+          info: 123,
+          group: 234,
+          resources: 345,
+          store: 456
+        })
+      }
 
       const actual = __internals__.parse(input)
       expect(actual).toEqual(expected)

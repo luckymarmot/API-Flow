@@ -21,7 +21,7 @@ import Resource from '../../../models/Resource'
 
 import Serializer, { __internals__ } from '../Serializer'
 
-describe('serializers/paw/Parser.js', () => {
+describe('serializers/paw/Serializer.js', () => {
   afterEach(() => restoreSpies())
   describe('{ Serializer }', () => {
     describe('@serialize', () => {
@@ -29,8 +29,7 @@ describe('serializers/paw/Parser.js', () => {
         const expected = 1234
         spyOn(__internals__, 'serialize').andReturn(expected)
 
-        const serializer = new Serializer()
-        const actual = serializer.serialize()
+        const actual = Serializer.serialize()
 
         expect(__internals__.serialize).toHaveBeenCalled()
         expect(actual).toEqual(expected)
@@ -40,12 +39,10 @@ describe('serializers/paw/Parser.js', () => {
         const expected = 1234
         spyOn(__internals__, 'serialize').andReturn(expected)
 
-        const options = { context: 123, items: 321, options: 234 }
-        const input = '1235124125412'
-        const serializer = new Serializer()
-        const actual = serializer.serialize(options, input)
+        const args = { options: { context: 123, items: 321 }, api: 234 }
+        const actual = Serializer.serialize(args)
 
-        expect(__internals__.serialize).toHaveBeenCalledWith(options, input)
+        expect(__internals__.serialize).toHaveBeenCalledWith(args)
         expect(actual).toEqual(expected)
       })
     })
@@ -1347,7 +1344,11 @@ describe('serializers/paw/Parser.js', () => {
       ])
 
       const expected = {
-        body: 123
+        body: new DynamicString(
+          new DynamicValue('com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue', {
+            schema: JSON.stringify({ enum: [ 123 ], type: 'integer' })
+          })
+        )
       }
 
       const actual = __internals__.setRawBody(pawReq, params)
@@ -1770,7 +1771,7 @@ describe('serializers/paw/Parser.js', () => {
 
       const context = {}
       const api = new Api()
-      __internals__.serialize({ context }, api)
+      __internals__.serialize({ options: { context }, api })
 
       expect(__internals__.createEnvironments).toHaveBeenCalledWith(context, api)
       expect(__internals__.createRequests).toHaveBeenCalledWith(context, 123, api)

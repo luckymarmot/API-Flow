@@ -54,23 +54,15 @@ export class SwaggerParser {
     return methods.getAPIName(content)
   }
 
-  isParsable({ content }) {
+  static isParsable({ content }) {
     return methods.detect(content)
   }
 
-  resolve() {
+  static resolve() {
     return methods.resolve(...arguments)
   }
 
-  detect() {
-    return methods.detect(...arguments)
-  }
-
-  getAPIName() {
-    return methods.getAPIName(...arguments)
-  }
-
-  parse() {
+  static parse() {
     return methods.parse(...arguments)
   }
 }
@@ -559,10 +551,10 @@ methods.getOverlayFromRequirement = (auth, scopes = []) => {
  * creates an Auth from each security requirement.
  * @param {Store} store: the store in which the auths are saved.
  * @param {Array<SwaggerSecurityRequirementObject>} requirements: the list of security requirements.
- * @returns {Array<Reference>}: the corresponding array of references to auth objects in the store.
+ * @returns {List<Reference>}: the corresponding array of references to auth objects in the store.
  */
 methods.getAuthReferences = (store, requirements = []) => {
-  return requirements.map((req) => {
+  const authReferences = requirements.map((req) => {
     const $ref = Object.keys(req)[0]
     const overlay = methods.getOverlayFromRequirement(store.getIn([ 'auth', $ref ]), req[$ref])
     return new Reference({
@@ -571,6 +563,8 @@ methods.getAuthReferences = (store, requirements = []) => {
       overlay
     })
   })
+
+  return List(authReferences)
 }
 
 /**
@@ -686,14 +680,21 @@ methods.updateResponsesWithProduceParameter = (producesParameter, entry) => {
 /**
  * creates a list of Interfaces from a list of tags.
  * @param {Array<string>} tags: the list of tags to use for the interfaces.
- * @returns {Array<Interface>} the corresponding list of interfaces
+ * @returns {OrderedMap<string, Interface>} the corresponding list of interfaces
  */
 methods.getInterfacesFromTags = (tags = []) => {
-  return tags.map(tag => new Interface({
-    name: tag,
-    uuid: tag,
-    level: 'request'
-  }))
+  const interfaces = tags.map(tag => {
+    return {
+      key: tag,
+      value: new Interface({
+        name: tag,
+        uuid: tag,
+        level: 'request'
+      })
+    }
+  }).reduce(convertEntryListInMap, {})
+
+  return OrderedMap(interfaces)
 }
 
 /**
@@ -1590,18 +1591,13 @@ methods.createApi = (swagger = {}) => {
  * locally. example of file object: { path: 'someAbsolutePath', name: 'someFileName'}
  * @returns {Api} the Api Record corresponding to the swagger file
  */
-methods.parse = ({ content, url = null } = {}) => {
-  const parsed = methods.parseJSONorYAML(content)
-  if (!parsed) {
-    return methods.handleUnkownFormat()
-  }
-
-  if (!methods.isSwagger(parsed)) {
+methods.parse = ({ options, item: swagger }) => {
+  if (!methods.isSwagger(swagger)) {
     return methods.handleInvalidSwagger()
   }
 
-  const swagger = methods.fixExternalContextDependencies(parsed, url)
-  return methods.createApi(swagger)
+  const api = methods.createApi(swagger)
+  return { options, api }
 }
 
 export const __internals__ = methods

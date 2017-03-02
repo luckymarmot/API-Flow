@@ -52,8 +52,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         const expected = 1234
         spyOn(__internals__, 'detect').andReturn(expected)
 
-        const parser = new Parser()
-        const actual = parser.detect()
+        const actual = Parser.detect()
 
         expect(__internals__.detect).toHaveBeenCalled()
         expect(actual).toEqual(expected)
@@ -64,8 +63,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         spyOn(__internals__, 'detect').andReturn(expected)
 
         const input = '1235124125412'
-        const parser = new Parser()
-        const actual = parser.detect(input)
+        const actual = Parser.detect(input)
 
         expect(__internals__.detect).toHaveBeenCalledWith(input)
         expect(actual).toEqual(expected)
@@ -100,8 +98,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         const expected = 1234
         spyOn(__internals__, 'getAPIName').andReturn(expected)
 
-        const parser = new Parser()
-        const actual = parser.getAPIName()
+        const actual = Parser.getAPIName()
 
         expect(__internals__.getAPIName).toHaveBeenCalled()
         expect(actual).toEqual(expected)
@@ -112,8 +109,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         spyOn(__internals__, 'getAPIName').andReturn(expected)
 
         const input = '1235124125412'
-        const parser = new Parser()
-        const actual = parser.getAPIName(input)
+        const actual = Parser.getAPIName(input)
 
         expect(__internals__.getAPIName).toHaveBeenCalledWith(input)
         expect(actual).toEqual(expected)
@@ -125,8 +121,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         const expected = 1234
         spyOn(__internals__, 'parse').andReturn(expected)
 
-        const parser = new Parser()
-        const actual = parser.parse()
+        const actual = Parser.parse()
 
         expect(__internals__.parse).toHaveBeenCalled()
         expect(actual).toEqual(expected)
@@ -139,8 +134,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         const input = {
           content: '...some swagger file'
         }
-        const parser = new Parser()
-        const actual = parser.parse(input)
+
+        const actual = Parser.parse(input)
 
         expect(__internals__.parse).toHaveBeenCalledWith(input)
         expect(actual).toEqual(expected)
@@ -149,52 +144,14 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@parse', () => {
-    it('should call parseJSONorYAML', () => {
-      spyOn(__internals__, 'parseJSONorYAML').andReturn(null)
-
-      const input = {
-        content: 'some content'
-      }
-
-      try {
-        __internals__.parse(input)
-      }
-      catch (e) {
-        // do nothing
-      }
-
-      expect(__internals__.parseJSONorYAML).toHaveBeenCalledWith(input.content)
-    })
-
-    it('should call handleUnkownFormat if parseJSONorYAML returns null', () => {
-      spyOn(__internals__, 'parseJSONorYAML').andReturn(null)
-      spyOn(__internals__, 'handleUnkownFormat').andReturn(null)
-
-      const input = {
-        content: 'some content'
-      }
-
-      try {
-        __internals__.parse(input)
-      }
-      catch (e) {
-        // do nothing
-      }
-
-      expect(__internals__.handleUnkownFormat).toHaveBeenCalled()
-    })
-
-    it('should call isSwagger if parseJSONorYAML returns an object', () => {
-      const parsed = {
-        some: 'object'
-      }
-
-      spyOn(__internals__, 'parseJSONorYAML').andReturn(parsed)
+    it('should call isSwagger', () => {
       spyOn(__internals__, 'isSwagger').andReturn(false)
 
-      const input = {
+      const item = {
         content: 'some content'
       }
+
+      const input = { item }
 
       try {
         __internals__.parse(input)
@@ -203,21 +160,17 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         // do nothing
       }
 
-      expect(__internals__.isSwagger).toHaveBeenCalledWith(parsed)
+      expect(__internals__.isSwagger).toHaveBeenCalledWith(item)
     })
 
     it('should call handleInvalidSwagger if isSwagger returns false', () => {
-      const parsed = {
-        some: 'object'
-      }
-
-      spyOn(__internals__, 'parseJSONorYAML').andReturn(parsed)
       spyOn(__internals__, 'isSwagger').andReturn(false)
       spyOn(__internals__, 'handleInvalidSwagger').andReturn(null)
 
-      const input = {
+      const item = {
         content: 'some content'
       }
+      const input = { item }
 
       try {
         __internals__.parse(input)
@@ -230,23 +183,21 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should call createApi otherwise', () => {
-      const parsed = {
-        some: 'object'
-      }
+      const parsed = 1234
 
-      const expected = 1234
-
-      spyOn(__internals__, 'parseJSONorYAML').andReturn(parsed)
       spyOn(__internals__, 'isSwagger').andReturn(true)
-      spyOn(__internals__, 'createApi').andReturn(expected)
+      spyOn(__internals__, 'createApi').andReturn(parsed)
 
-      const input = {
+      const item = {
         content: 'some content'
       }
+      const options = { test: 123, other: 234 }
+      const input = { options, item }
 
+      const expected = { options, api: parsed }
       const actual = __internals__.parse(input)
 
-      expect(__internals__.createApi).toHaveBeenCalledWith(parsed)
+      expect(__internals__.createApi).toHaveBeenCalledWith(item)
       expect(actual).toEqual(expected)
     })
   })
@@ -1287,7 +1238,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         { basic_auth: [ 'ignored' ] }
       ]
 
-      const expected = [
+      const expected = List([
         new Reference({
           type: 'auth',
           uuid: 'petstore_auth',
@@ -1307,7 +1258,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           uuid: 'basic_auth',
           overlay: null
         })
-      ]
+      ])
       const actual = __internals__.getAuthReferences(store, requirements)
 
       expect(actual).toEqual(expected)
@@ -1603,10 +1554,10 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   describe('@getInterfacesFromTags', () => {
     it('should work', () => {
       const tags = [ 'abc', '123' ]
-      const expected = [
-        new Interface({ name: 'abc', uuid: 'abc', level: 'request' }),
-        new Interface({ name: '123', uuid: '123', level: 'request' })
-      ]
+      const expected = OrderedMap({
+        abc: new Interface({ name: 'abc', uuid: 'abc', level: 'request' }),
+        '123': new Interface({ name: '123', uuid: '123', level: 'request' })
+      })
       const actual = __internals__.getInterfacesFromTags(tags)
 
       expect(actual).toEqual(expected)

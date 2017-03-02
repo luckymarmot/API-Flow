@@ -28,8 +28,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         const expected = 1234
         spyOn(__internals__, 'serialize').andReturn(expected)
 
-        const serializer = new Serializer()
-        const actual = serializer.serialize()
+        const actual = Serializer.serialize()
 
         expect(__internals__.serialize).toHaveBeenCalled()
         expect(actual).toEqual(expected)
@@ -40,8 +39,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         spyOn(__internals__, 'serialize').andReturn(expected)
 
         const input = '123412312'
-        const serializer = new Serializer()
-        const actual = serializer.serialize(input)
+        const actual = Serializer.serialize(input)
 
         expect(__internals__.serialize).toHaveBeenCalledWith(input)
         expect(actual).toEqual(expected)
@@ -53,8 +51,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         const expected = 1234
         spyOn(__internals__, 'validate').andReturn(expected)
 
-        const serializer = new Serializer()
-        const actual = serializer.validate()
+        const actual = Serializer.validate()
 
         expect(__internals__.validate).toHaveBeenCalled()
         expect(actual).toEqual(expected)
@@ -65,8 +62,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         spyOn(__internals__, 'validate').andReturn(expected)
 
         const input = '123412312'
-        const serializer = new Serializer()
-        const actual = serializer.validate(input)
+        const actual = Serializer.validate(input)
 
         expect(__internals__.validate).toHaveBeenCalledWith(input)
         expect(actual).toEqual(expected)
@@ -640,7 +636,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
           parameters: new ParameterContainer({
             headers: new OrderedMap({
               userId: new Parameter({ key: 'userId', type: 'string' }),
-              petId: new Parameter({ key: 'userId', type: 'number' })
+              petId: new Parameter({ key: 'petId', type: 'number' })
             }),
             body: new OrderedMap({
               '123': new Parameter({
@@ -946,19 +942,19 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       spyOn(__internals__, 'getCommonFieldsFromParameter').andReturn({ a: 321 })
 
       const parameter = new Parameter({
+        key: 123,
         description: 'test'
       })
-      const key = 123
 
       const expected = {
-        key,
+        key: 123,
         value: {
           a: 321,
           description: 'test'
         }
       }
 
-      const actual = __internals__.convertParameterToHeaderObject(parameter, key)
+      const actual = __internals__.convertParameterToHeaderObject(parameter)
       expect(actual).toEqual(expected)
     })
   })
@@ -1387,7 +1383,8 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const key = 'abc'
       const expected = 123
       const actual = __internals__.convertReferenceOrResponseRecordToResponseObject(input, key)
-      expect(__internals__.convertResponseRecordToResponseObject).toHaveBeenCalledWith(input, key)
+      expect(__internals__.convertResponseRecordToResponseObject)
+        .toHaveBeenCalledWith({ value: input, key })
       expect(actual).toEqual(expected)
     })
   })

@@ -1,5 +1,5 @@
 import { List, Map, Record } from 'immutable'
-import jsf from 'json-schema-faker'
+// import jsf from 'json-schema-faker'
 
 import Model from './ModelInfo'
 import Reference from './Reference'
@@ -503,8 +503,8 @@ methods.isReferenceParameter = (
  */
 methods.getJSONSchema = (
     parameter,
-    useFaker = true,
-    replaceRefs = true
+    useFaker = false,
+    replaceRefs = false
 ) => {
   let schema = {}
 
@@ -556,24 +556,17 @@ methods.generateFromDefault = (parameter) => {
   return null
 }
 
-/**
- * Adds Faker fields to improve generation, if applicable
- * @param {schema} schema: the schema to improve the generation of
- * @returns {schema} the improved schema
- */
-methods.addFakerFunctionalities = (
-  schema
-) => {
-  if (
-        schema.type === 'string' &&
-        schema.format !== 'sequence' &&
-        !schema.faker &&
-        !schema['x-faker']
-    ) {
-    schema['x-faker'] = 'company.bsNoun'
+methods.generateFromSequenceDefaults = (parameter) => {
+  const sequence = parameter.get('value')
+  if (!sequence) {
+    return null
   }
 
-  return schema
+  const defaults = sequence.map(param => {
+    return methods.generate(param) || ''
+  }).toJS()
+
+  return defaults.join('')
 }
 
 /**
@@ -585,46 +578,13 @@ methods.addFakerFunctionalities = (
  * @returns {any} the generated value
  */
 methods.generate = (
-    parameter,
-    useDefault,
-    _schema
+    parameter
 ) => {
-  if (useDefault) {
-    const _default = methods.generateFromDefault(parameter)
-    if (_default !== null) {
-      return _default
-    }
+  if (parameter.get('superType') === 'sequence') {
+    return methods.generateFromSequenceDefaults(parameter)
   }
 
-  let schema = JSON.parse(JSON.stringify(
-        _schema || methods.getJSONSchema(parameter)
-    ))
-
-  schema = methods.replaceRefs(schema)
-  schema = methods.addFakerFunctionalities(schema)
-
-  jsf.format('sequence', (gen, $schema) => {
-    let result = ''
-    for (const item of $schema['x-sequence']) {
-      if (useDefault && typeof item.default !== 'undefined' && item.default !== null) {
-        item.enum = [ item.default ]
-      }
-      else if (
-                item.type === 'string' &&
-                item.format !== 'sequence' &&
-                !item.faker &&
-                !item['x-faker']
-            ) {
-        item['x-faker'] = 'company.bsNoun'
-      }
-      result += jsf(item)
-    }
-    return result
-  })
-
-
-  const generated = jsf(schema)
-  return generated
+  return methods.generateFromDefault(parameter)
 }
 
 /**

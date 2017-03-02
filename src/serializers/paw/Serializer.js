@@ -14,16 +14,21 @@ import Group from '../../models/Group'
 import { currify } from '../../utils/fp-utils'
 
 const __inputs__ = []
+const __meta__ = {
+  format: 'paw',
+  version: 'v3.0'
+}
 
 const methods = {}
 
 export class PawSerializer {
   static fileExtensions = [];
 
+  static __meta__ = __meta__
   static inputs = __inputs__
 
-  serialize(options, api) {
-    return methods.serialize(options, api)
+  static serialize({ options, api } = {}) {
+    return methods.serialize({ options, api })
   }
 }
 
@@ -862,7 +867,12 @@ methods.isBodyParameter = (parameter) => {
  */
 methods.setRawBody = (pawRequest, params) => {
   const body = params.valueSeq().get(0)
-  pawRequest.body = body.generate(false)
+  pawRequest.body = new DynamicString(
+    new DynamicValue('com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue', {
+      schema: JSON.stringify(body.getJSONSchema())
+    })
+  )
+
   return pawRequest
 }
 
@@ -1143,7 +1153,7 @@ methods.createGroups = (context, resources, group, groupName) => {
  * importing in paw.
  * @returns {boolean} whether the import was successful or not
  */
-methods.serialize = ({ context, items, options } = {}, api) => {
+methods.serialize = ({ options: { context } = {}, api } = {}) => {
   const store = methods.createEnvironments(context, api)
   const resources = methods.createRequests(context, store, api)
   methods.createGroups(context, resources, api.get('group'), methods.getTitleFromApi(api))

@@ -34,10 +34,12 @@ import Reference from '../../../models/Reference'
 import Auth from '../../../models/Auth'
 import Parameter from '../../../models/Parameter'
 
-import BaseSerializer from '../../BaseSerializer'
-
 import { currify, entries, convertEntryListInMap } from '../../../utils/fp-utils'
 
+const __meta__ = {
+  format: 'swagger',
+  version: 'v2.0'
+}
 
 const methods = {}
 
@@ -49,12 +51,14 @@ methods.getKeysFromRecord = (keyMap, record) => {
     .reduce(convertEntryListInMap, {})
 }
 
-export class SwaggerSerializer extends BaseSerializer {
-  serialize(api) {
+export class SwaggerSerializer {
+  static __meta__ = __meta__
+
+  static serialize(api) {
     return methods.serialize(api)
   }
 
-  validate(content) {
+  static validate(content) {
     return methods.validate(content)
   }
 }
@@ -704,7 +708,8 @@ methods.convertParameterToItemsObject = (parameter) => {
  * NOTE: This method has parameter as [value, key] instead of {key, value} because it is invoked
  * on an Immutable structure.
  */
-methods.convertParameterToHeaderObject = (parameter, key) => {
+methods.convertParameterToHeaderObject = (parameter) => {
+  const key = parameter.get('key')
   const value = methods.getCommonFieldsFromParameter(parameter)
 
   value.description = parameter.get('description') || undefined
@@ -1036,7 +1041,7 @@ methods.convertReferenceOrResponseRecordToResponseObject = (response, key) => {
   if (response instanceof Reference) {
     return methods.convertReferenceToResponseObject(response, key)
   }
-  return methods.convertResponseRecordToResponseObject(response, key)
+  return methods.convertResponseRecordToResponseObject({ value: response, key })
 }
 
 /**
@@ -1432,13 +1437,18 @@ methods.createSwaggerObject = ($api) => {
 
 /**
  * serializes an Api into a Swagger formatted string
- * @param {Api} $api: the api to convert
+ * @param {Api} api: the api to convert
  * @returns {string} the corresponding swagger object, as a string
  */
-methods.serialize = ($api) => {
-  const swagger = methods.createSwaggerObject($api)
-
-  return JSON.stringify(swagger, null, 2)
+methods.serialize = ({ api }) => {
+  try {
+    const swagger = methods.createSwaggerObject(api)
+    const serialized = JSON.stringify(swagger, null, 2)
+    return serialized
+  }
+  catch (e) {
+    throw e
+  }
 }
 
 export const __internals__ = methods

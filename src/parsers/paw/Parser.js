@@ -19,9 +19,15 @@ import Request from '../../models/Request'
 
 import { currify, convertEntryListInMap } from '../../utils/fp-utils'
 
+const __meta__ = {
+  format: 'paw',
+  version: 'v3.0'
+}
+
 const methods = {}
 
 export class PawParser {
+  static __meta__ = __meta__
   static identifier =
         'com.luckymarmot.PawExtensions.API-Flow'
   static title = 'Api-Flow'
@@ -30,8 +36,8 @@ export class PawParser {
   static languageHighlighter = null
   static fileExtension = null
 
-  parse(parserOptions, item) {
-    return methods.parse(parserOptions, item)
+  static parse({ options } = {}) {
+    return methods.parse({ options })
   }
 }
 
@@ -452,11 +458,20 @@ methods.isEnvironmentVariable = (stringOrDV) => {
  */
 methods.extractPossibleValuesFromEnvironmentVariableDV = (context, dv) => {
   const variableId = dv.environmentVariable
-  const variable = context.getEnvironmentById(variableId)
+  const variable = context.getEnvironmentVariableById(variableId)
   const domain = variable.domain
-  const environmentNames = domain.environments.map((env) => env.name)
-  const values = environmentNames.map((envName) => {
-    return { key: envName, value: variable.getValue(envName).getEvaluatedString() }
+  const environments = domain.environments
+  const values = environments.map((env) => {
+    const rawValue = variable.getValue(env, true)
+    // NOTE: this should not be needed anymore
+    let value = null
+    if (typeof rawValue === 'string') {
+      value = rawValue
+    }
+    else {
+      value = rawValue.getEvaluatedString()
+    }
+    return { key: env.name, value }
   })
 
   return values
@@ -761,7 +776,9 @@ methods.extractResourceFromPawRequest = (context, reference, { request, pathComp
  * @returns {Array<ResourceEntry>} hostObject.requestEntries: the list of requests and their
  * associated path components that belong to this host
  */
-methods.convertHostEntriesIntoHostVariableAndRequestEntries = (defaultHost, hostEntries) => {
+methods.convertHostEntriesIntoHostVariableAndRequestEntries = (
+  context, defaultHost, hostEntries
+) => {
   const defaultUrl = 'http://' + defaultHost
   const defaultSecureUrl = 'https://' + defaultHost
 
@@ -846,7 +863,7 @@ methods.convertHostIntoResources = (context, { key: defaultHost, value: hostEntr
   const {
     hostVariable,
     requestEntries
-  } = methods.convertHostEntriesIntoHostVariableAndRequestEntries(defaultHost, hostEntries)
+  } = methods.convertHostEntriesIntoHostVariableAndRequestEntries(context, defaultHost, hostEntries)
 
   const variable = hostVariable ? { key: defaultHost, value: hostVariable } : null
   const endpoint = hostVariable ? null : methods.createDefaultHostEndpoint(defaultHost, hostEntries)
@@ -900,6 +917,17 @@ methods.convertRequestVariableDVIntoParameter = (
 ) => {
   const variableId = paramDV.variableUUID
   const variable = request.getVariableById(variableId)
+
+  if (!variable) {
+    return { key: paramName, value: new Parameter({
+      in: location,
+      key: paramName,
+      name: paramName,
+      type: 'string',
+      applicableContexts: contexts
+    }) }
+  }
+
   const { name, value, schema, type, description } = variable
 
   const param = new Parameter({
@@ -985,7 +1013,7 @@ methods.convertParameterDynamicStringIntoParameter = (
  * @returns {boolean} true if its body is urlEncoded, false otherwise
  */
 methods.isRequestBodyUrlEncoded = (request) => {
-  return !!request.getHeaderByName('Content-Type')
+  return !!(request.getHeaderByName('Content-Type') || '')
     .match(/application\/x-www-form-urlencoded/)
 }
 
@@ -995,7 +1023,7 @@ methods.isRequestBodyUrlEncoded = (request) => {
  * @returns {boolean} true if its body is multipart, false otherwise
  */
 methods.isRequestBodyMultipart = (request) => {
-  return !!request.getHeaderByName('Content-Type')
+  return !!(request.getHeaderByName('Content-Type') || '')
     .match(/multipart\/form-data/)
 }
 
@@ -1095,6 +1123,10 @@ methods.createMultipartBodyParameters = (request) => {
  */
 methods.createStandardBodyParameters = (request) => {
   const bodyDS = request.getBody(true)
+
+  if (!bodyDS) {
+    return OrderedMap()
+  }
 
   const { key, value } = methods.convertParameterDynamicStringIntoParameter(
     request, 'body', List(), bodyDS, null
@@ -1280,7 +1312,7 @@ methods.getAuthNameFromAuth = (context, request, authDS) => {
  * @returns {List<References>} the corresponding list of References
  */
 methods.extractAuthReferencesFromRequest = (context, request) => {
-  const auth = request.getHeaderByName('Authorization')
+  const auth = request.getHeaderByName('Authorization', true)
   if (!auth) {
     return List()
   }
@@ -1400,7 +1432,9 @@ methods.extractAuthFromOAuth2DV = (context, request, authDS, authDV) => {
  */
 methods.extractAuthFromDV = (context, request, authDS, authDV) => {
   if (methods.isEnvironmentVariable(authDV)) {
-    const value = context.getEnvironmentVariableById(authDV.environmentVariable).getCurrentValue()
+    const value = context
+      .getEnvironmentVariableById(authDV.environmentVariable)
+      .getCurrentValue(true)
     return methods.extractAuthsFromRequest(context, request, value)
   }
 
@@ -1478,7 +1512,7 @@ methods.extractResources = (context, reqs) => {
   return { resources: resourceMap, variables, endpoints }
 }
 
-methods.extractStore = (variables, endpoints, reqs) => {
+methods.extractStore = (context, variables, endpoints, reqs) => {
   const auths = reqs
     .filter(request => request.getHeaderByName('Authorization', true))
     .map((request) => methods.extractAuthsFromRequest(context, request))
@@ -1508,7 +1542,7 @@ methods.extractStore = (variables, endpoints, reqs) => {
  */
 methods.extractResourcesAndStore = (context, reqs) => {
   const { resources, variables, endpoints } = methods.extractResources(context, reqs)
-  const store = methods.extractStore(variables, endpoints, reqs)
+  const store = methods.extractStore(context, variables, endpoints, reqs)
 
   return { resources, store }
 }
@@ -1522,7 +1556,8 @@ methods.extractResourcesAndStore = (context, reqs) => {
  * @param {PawRequest} parserOptions.reqs: the array of requests to import
  * @returns {Api} the corresponding Api
  */
-methods.parse = ({ context, reqs }) => {
+methods.parse = ({ options }) => {
+  const { context, reqs } = options
   const info = methods.extractInfo(context)
   const group = methods.extractGroup(reqs)
   const { resources, store } = methods.extractResourcesAndStore(context, reqs)
@@ -1531,7 +1566,7 @@ methods.parse = ({ context, reqs }) => {
     info, store, group, resources
   })
 
-  return api
+  return { options, api }
 }
 
 export const __internals__ = methods

@@ -13,14 +13,21 @@ process.env.NODE_ENV = 'test'
  * tested files dynamically (except for adding), we need to clear require's
  * cache on every run and instantiate a new runner.
  */
-let fileList = []
+const fileList = []
 function runSuite() {
   Object.keys(require.cache).forEach(key => delete require.cache[key])
   const mocha = new Mocha({ reporter: 'spec' })
   fileList.forEach(filepath => mocha.addFile(filepath))
   try {
     mocha.run()
-    global.gc()
+    if (global.gc) {
+      global.gc()
+    }
+    else {
+      /* eslint-disable no-console */
+      console.log('Garbage collection unavailable')
+      /* eslint-enable no-console */
+    }
   }
   catch (e) {
     /* eslint-disable no-console */
@@ -34,8 +41,8 @@ function runSuite() {
 /**
  * Chokidar watches all the files for any kind of change and calls the run function
  * from above. Read more: https://github.com/paulmillr/chokidar
- * @param  {string} a glob of files to watch
- * @param  {object} settings
+ * @param {string} glob: a glob of files to watch
+ * @param {object} settings
  */
 chokidar.watch('src/**/*.spec.js', { persistent: true })
   .on('add', path => fileList.push(path))
