@@ -1114,10 +1114,10 @@ methods.extractScopesFromOAuth2Settings = (settings) => {
  */
 methods.extractFlowFromOAuth2Settings = (settings) => {
   const grantMap = {
-    authorization_code: 'code',
+    authorization_code: 'accessCode',
     implicit: 'implicit',
-    password: 'resource_owner',
-    client_credentials: 'client_credentials'
+    password: 'password',
+    client_credentials: 'application'
   }
   const flow = grantMap[(settings.authorizationGrants() || [])[0]] || null
 

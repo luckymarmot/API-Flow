@@ -93,6 +93,8 @@ methods.sectionMapper = (section, index) => {
  * @param {List<string>} delimiters: the variable delimiters used to separate variables from
  * non-variables. like List([ '{{', '}}' ])
  * @returns {List<string>} the list containing all the variable/non-variable strings, in order
+ *
+ * NOTE: this will fail to behave correctly if the delimiters are special parts of a regex, like '$'
  */
 methods.extractSectionsFromString = (string, delimiters) => {
   const regex = new RegExp(delimiters.join('(.+?)'))

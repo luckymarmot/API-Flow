@@ -14,6 +14,14 @@ const model = new Model(modelInstance)
 
 /**
  * Default Spec for the OAuth2Auth Record.
+ * flowMap: {
+ *    'accessCode': 'authorization_code',
+ *    'implicit': 'implicit',
+ *    'application': 'client_credentials',
+ *    'password': 'password' or 'resource_owner'
+ * }
+ *
+ *
  */
 const OAuth2AuthSpec = {
   _model: model,

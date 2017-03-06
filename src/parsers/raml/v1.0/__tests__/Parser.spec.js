@@ -1369,10 +1369,10 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       const expected = [
         null,
         null,
-        'code',
+        'accessCode',
         'implicit',
-        'resource_owner',
-        'client_credentials',
+        'password',
+        'application',
         'implicit',
         null
       ]

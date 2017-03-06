@@ -1,2 +1,2 @@
 base=$1
-node "$base/node_modules/.bin/mocha" --require mocha --compilers js:babel-register --reporter spec "$base/src/**/__tests__/*-test.js"
+node "$base/node_modules/.bin/mocha" --require mocha --compilers js:babel-register --reporter spec "$base/src/**/__tests__/*.spec.js"
