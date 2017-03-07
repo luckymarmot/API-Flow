@@ -1001,9 +1001,15 @@ methods.extractSingleParameterFromRequestWithNoContext = (coreInfoMap, bodyParam
 
 methods.extractMultipleParametersFromRequestWithNoContext = (coreInfoMap, bodyParams) => {
   const contentType = '*/*'
-  const properties = bodyParams.map(
+  const propsEntries = bodyParams.map(
     (param) => methods.convertParameterIntoNamedParameter(coreInfoMap, param)
-  ).reduce(convertEntryListInMap, {})
+  )
+
+  if (!propsEntries.size) {
+    return null
+  }
+
+  const properties = propsEntries.reduce(convertEntryListInMap, {})
   const value = { properties }
 
   return { body: { [contentType]: value } }
@@ -1011,6 +1017,10 @@ methods.extractMultipleParametersFromRequestWithNoContext = (coreInfoMap, bodyPa
 
 methods.extractBodyParamsFromRequestWithNoContext = (coreInfoMap, paramContainer) => {
   const bodyParams = paramContainer.get('body')
+
+  if (!bodyParams.size) {
+    return null
+  }
 
   if (bodyParams.size === 1) {
     return methods.extractSingleParameterFromRequestWithNoContext(coreInfoMap, bodyParams)
@@ -1021,16 +1031,20 @@ methods.extractBodyParamsFromRequestWithNoContext = (coreInfoMap, paramContainer
 
 methods.getContentTypeFromContext = (context) => {
   return context.get('constraints')
-    .filter(param => param.get('key') === 'Content-Type')
+    .filter(param => {
+      return param.get('key') === 'Content-Type' &&
+        param.get('usedIn') === 'request' &&
+        param.get('in') === 'headers'
+    })
     .map(param => param.get('default'))
-    .valueSeq().get(0)
+    .valueSeq().get(0) || null
 }
 
 methods.extractBodyParamsFromRequestForContext = (coreInfoMap, paramContainer, context) => {
-  const contentType = methods.getContentTypeFromContext(context)
+  const contentType = methods.getContentTypeFromContext(context) || '*/*'
 
   const bodyParams = paramContainer
-    .filter(context)
+    .filter(context.get('constraints'))
     .get('body')
     .map(param => {
       return methods.convertParameterIntoNamedParameter(coreInfoMap, param)
@@ -1067,6 +1081,7 @@ methods.extractBodyFromRequest = (coreInfoMap, request) => {
   return methods.extractBodyParamsFromRequestWithContexts(coreInfoMap, bodyContexts, paramContainer)
 }
 
+// TODO fix that ugly code
 methods.extractProtocolsFromRequest = (request) => {
   const protocols = request.get('endpoints')
     .map(endpoint => {
@@ -1077,8 +1092,17 @@ methods.extractProtocolsFromRequest = (request) => {
       return endpoint
     })
     .filter(v => !!v)
-    .map(endpoint => endpoint.get('protocol'))
-    .filter(v => !!v && v.size !== 0)
+    .map(endpoint => {
+      return endpoint.get('protocol')
+    })
+    .filter(v => {
+      return !!v && v.filter(protocol => protocol.match(/https?:?/i)).size !== 0
+    })
+    .map(v => v
+      .filter(protocol => protocol.match(/https?:?/i))
+      .map(protocol => protocol.match(/(https?):?/i)[1].toUpperCase())
+    )
+    .valueSeq()
     .get(0)
 
   if (!protocols) {
@@ -1143,11 +1167,11 @@ methods.extractResponseFromResponseRecord = (coreInfoMap, response) => {
   return kvs.reduce(convertEntryListInMap, {})
 }
 
-methods.extractResponsesFromRequest = (request) => {
+methods.extractResponsesFromRequest = (coreInfoMap, request) => {
   const responses = request.get('responses')
     .map(response => {
       const key = response.get('code')
-      const value = methods.extractResponseFromResponseRecord(response)
+      const value = methods.extractResponseFromResponseRecord(coreInfoMap, response)
 
       if (!value) {
         return null
@@ -1174,7 +1198,7 @@ methods.extractMethodFromRequest = (coreInfoMap, request) => {
     methods.extractProtocolsFromRequest(request),
     methods.extractIsFromRequest(request),
     methods.extractSecuredByFromRequest(request),
-    methods.extractResponsesFromRequest(request)
+    methods.extractResponsesFromRequest(coreInfoMap, request)
   ].filter(v => !!v)
 
   if (!kvs.length) {
@@ -1199,26 +1223,77 @@ methods.extractMethodsFromResource = (coreInfoMap, resource) => {
   const requests = resource.get('methods')
     .map((request) => methods.extractMethodEntryFromRequest(coreInfoMap, request))
     .filter(v => !!v)
-    .reduce(convertEntryListInMap, {})
 
-  return requests
+  if (!requests.size) {
+    return []
+  }
+
+  return requests.valueSeq().toJS()
+}
+
+methods.extractDisplayNameFromResource = (resource) => {
+  const key = 'name'
+  const value = resource.get(key) || null
+
+  if (!value) {
+    return null
+  }
+
+  return { key: 'displayName', value }
+}
+
+methods.extractDescriptionFromResource = (resource) => {
+  const key = 'description'
+  const value = resource.get(key) || null
+
+  if (!value) {
+    return null
+  }
+
+  return { key, value }
+}
+
+methods.extractTypeFromResource = (resource) => {
+  const type = resource.get('interfaces')
+    .filter(itf => itf instanceof Reference)
+    .map(itf => itf.get('uuid'))
+    .valueSeq()
+    .get(0)
+
+  if (!type) {
+    return null
+  }
+
+  return { key: 'type', value: type }
+}
+
+methods.extractResourceFromResourceRecord = (coreInfoMap, resource) => {
+  const kvs = [
+    methods.extractDisplayNameFromResource(resource),
+    methods.extractDescriptionFromResource(resource),
+    methods.extractTypeFromResource(resource),
+    ...methods.extractMethodsFromResource(coreInfoMap, resource)
+  ].filter(v => !!v)
+
+  return kvs.reduce(convertEntryListInMap, {})
 }
 
 methods.nestResources = (coreInfoMap, resources) => {
-  const nested = {}
+  let nested = {}
   const subResources = {}
-  for (const resource in resources) {
+  for (const resource of resources) {
     if (!resource.key.length) {
-      nested.methods = methods.extractMethodsFromResource(coreInfoMap, resource)
+      nested = methods.extractResourceFromResourceRecord(coreInfoMap, resource.value)
     }
-
-    const relativeUri = '/' + (resource.key.shift() || '')
-    subResources[relativeUri] = subResources[relativeUri] || []
-    subResources[relativeUri].push(resource)
+    else {
+      const relativeUri = '/' + (resource.key.shift() || '')
+      subResources[relativeUri] = subResources[relativeUri] || []
+      subResources[relativeUri].push(resource)
+    }
   }
 
   const relativeUris = Object.keys(subResources)
-  for (const relativeUri in relativeUris) {
+  for (const relativeUri of relativeUris) {
     if (subResources.hasOwnProperty(relativeUri)) {
       nested[relativeUri] = methods.nestResources(coreInfoMap, subResources[relativeUri])
     }
@@ -1227,14 +1302,18 @@ methods.nestResources = (coreInfoMap, resources) => {
   return nested
 }
 
+// TODO write extractResourceFromResourceRecord
 methods.extractResourcesFromApi = (coreInfoMap, api) => {
   const resourceKVs = api.get('resources')
-    .map(resource => ({
-      key: resource.get('path').generate(List([ '{', '}' ])).split('/').slice(1),
-      value: methods.extractResourceFromResourceRecord(resource)
-    }))
+    .map(resource => {
+      return {
+        key: resource.get('path').generate(List([ '{', '}' ])).split('/').slice(1),
+        value: resource
+      }
+    })
 
-  return methods.nestResources(coreInfoMap, resourceKVs)
+  const nested = methods.nestResources(coreInfoMap, resourceKVs)
+  return entries(nested)
 }
 
 methods.createRAMLJSONModel = (api) => {
@@ -1247,16 +1326,15 @@ methods.createRAMLJSONModel = (api) => {
     methods.extractBaseUriParametersFromApi(coreInfoMap, api),
     methods.extractProtocolsFromApi(api),
     methods.extractMediaTypeFromApi(api),
-    methods.extractDocumentationFromApi(api),
     methods.extractDataTypesFromApi(coreInfoMap),
     methods.extractTraitsFromApi(api),
     methods.extractResourceTypesFromApi(api),
     methods.extractSecuritySchemesFromApi(api),
     methods.extractSecuredByFromApi(api),
     ...methods.extractResourcesFromApi(coreInfoMap, api)
-  ]
+  ].filter(v => !!v)
 
-  return model
+  return kvs.reduce(convertEntryListInMap, {})
 }
 
 methods.serialize = ({ api }) => {

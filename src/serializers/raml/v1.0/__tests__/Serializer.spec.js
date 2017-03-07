@@ -2,6 +2,8 @@
 import expect, { spyOn, restoreSpies } from 'expect'
 import { Record, OrderedMap, List } from 'immutable'
 
+import { convertEntryListInMap } from '../../../../utils/fp-utils'
+
 import Api from '../../../../models/Api'
 import Store from '../../../../models/Store'
 import Constraint from '../../../../models/Constraint'
@@ -15,6 +17,8 @@ import Request from '../../../../models/Request'
 import Auth from '../../../../models/Auth'
 import ParameterContainer from '../../../../models/ParameterContainer'
 import Context from '../../../../models/Context'
+import Reference from '../../../../models/Reference'
+import Response from '../../../../models/Response'
 
 import Serializer, { __internals__ } from '../Serializer'
 
@@ -2099,6 +2103,855 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         null, null, List([ 123, 345 ])
       ]
       const actual = inputs.map(input => __internals__.getBodyContextsFromRequest(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractSingleParameterFromRequestWithNoContext', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertParameterIntoNamedParameter').andCall(({ a }, v) => a * v)
+
+      const inputs = [
+        [ { a: 123 }, OrderedMap({ b: 234 }) ]
+      ]
+      const expected = [
+        { body: { '*/*': 123 * 234 } }
+      ]
+      const actual = inputs.map(
+        input => __internals__.extractSingleParameterFromRequestWithNoContext(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractMultipleParametersFromRequestWithNoContext', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertParameterIntoNamedParameter').andCall(({ a }, v) => {
+        return { key: v, value: a }
+      })
+
+      const inputs = [
+        [ { a: 123 }, OrderedMap() ],
+        [ { a: 123 }, OrderedMap({ a: 234, b: 345 }) ]
+      ]
+
+      const expected = [
+        null,
+        { body: { '*/*': { properties: { '234': 123, '345': 123 } } } }
+      ]
+
+      const actual = inputs.map(
+        input => __internals__.extractMultipleParametersFromRequestWithNoContext(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractBodyParamsFromRequestWithNoContext', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractSingleParameterFromRequestWithNoContext').andReturn(100)
+      spyOn(__internals__, 'extractMultipleParametersFromRequestWithNoContext').andReturn(200)
+
+      const inputs = [
+        [ { a: 123 }, new ParameterContainer() ],
+        [ { a: 123 }, new ParameterContainer({ body: OrderedMap({ a: 234 }) }) ],
+        [ { a: 123 }, new ParameterContainer({ body: OrderedMap({ a: 234, b: 345 }) }) ]
+      ]
+      const expected = [
+        null,
+        100,
+        200
+      ]
+
+      const actual = inputs.map(
+        input => __internals__.extractBodyParamsFromRequestWithNoContext(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getContentTypeFromContext', () => {
+    it('should work', () => {
+      const inputs = [
+        new Context(),
+        new Context({ constraints: List() }),
+        new Context({ constraints: List([
+          new Parameter({ key: 'Irrelevant', in: 'headers', default: 123 })
+        ]) }),
+        new Context({ constraints: List([
+          new Parameter({ key: 'Irrelevant', in: 'headers', default: 123 }),
+          new Parameter({ key: 'Content-Type', in: 'headers', default: 234 })
+        ]) }),
+        new Context({ constraints: List([
+          new Parameter({ key: 'Irrelevant', in: 'headers', default: 123 }),
+          new Parameter({ key: 'Content-Type', in: 'headers', usedIn: 'response', default: 345 })
+        ]) }),
+        new Context({ constraints: List([
+          new Parameter({ key: 'Irrelevant', in: 'headers', default: 234 }),
+          new Parameter({ key: 'Content-Type', in: 'queries', default: 456 })
+        ]) }),
+        new Context({ constraints: List([
+          new Parameter({ key: 'Irrelevant', in: 'headers', default: 123 }),
+          new Parameter({ key: 'Content-Type', in: 'headers', default: 234 }),
+          new Parameter({ key: 'Content-Type', in: 'headers', default: 567 })
+        ]) })
+      ]
+      const expected = [
+        null,
+        null,
+        null,
+        234,
+        null,
+        null,
+        234
+      ]
+      const actual = inputs.map(input => __internals__.getContentTypeFromContext(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractBodyParamsFromRequestForContext', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertParameterIntoNamedParameter').andCall(({ a }, p) => {
+        return { key: p.get('default'), value: a }
+      })
+      const inputs = [
+        // null
+        [ { a: 123 }, new ParameterContainer(), new Context() ],
+        // { key: '*/*', value: { '234': 123 } }
+        [
+          { a: 123 },
+          new ParameterContainer({
+            body: OrderedMap({
+              a: new Parameter({
+                default: 234,
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([ new Constraint.Enum([ 'json', 'xml' ]) ])
+                  })
+                ])
+              })
+            })
+          }),
+          new Context()
+        ],
+        // null
+        [
+          { a: 123 },
+          new ParameterContainer({
+            body: OrderedMap({
+              a: new Parameter({
+                default: 234,
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([ new Constraint.Enum([ 'json', 'xml' ]) ])
+                  })
+                ])
+              })
+            })
+          }),
+          new Context({
+            constraints: List([
+              new Parameter({
+                key: 'Content-Type',
+                default: 'text'
+              })
+            ])
+          })
+        ],
+        // { key: 'json', value: { '234': 123 } }
+        [
+          { a: 123 },
+          new ParameterContainer({
+            body: OrderedMap({
+              a: new Parameter({
+                default: 234,
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([ new Constraint.Enum([ 'json', 'xml' ]) ])
+                  })
+                ])
+              })
+            })
+          }),
+          new Context({
+            constraints: List([
+              new Parameter({
+                in: 'headers',
+                key: 'Content-Type',
+                default: 'json'
+              })
+            ])
+          })
+        ],
+        // { key: 'json', value: { '234': 123 } }
+        [
+          { a: 123 },
+          new ParameterContainer({
+            body: OrderedMap({
+              a: new Parameter({
+                default: 234,
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([ new Constraint.Enum([ 'json', 'xml' ]) ])
+                  })
+                ])
+              }),
+              b: new Parameter({
+                default: 345,
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([ new Constraint.Enum([ 'xml', 'text' ]) ])
+                  })
+                ])
+              })
+            })
+          }),
+          new Context({
+            constraints: List([
+              new Parameter({
+                in: 'headers',
+                key: 'Content-Type',
+                default: 'json'
+              })
+            ])
+          })
+        ]
+      ]
+      const expected = [
+        null,
+        { key: '*/*', value: { '234': 123 } },
+        null,
+        { key: 'json', value: { '234': 123 } },
+        { key: 'json', value: { '234': 123 } }
+      ]
+      const actual = inputs.map(
+        input => __internals__.extractBodyParamsFromRequestForContext(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractBodyParamsFromRequestWithContexts', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractBodyParamsFromRequestForContext').andCall(({ a }, p, c) => {
+        return p[c] ? { key: p[c], value: a } : null
+      })
+      const inputs = [
+        [ { a: 123 }, List(), { b: 234 } ],
+        [ { a: 123 }, List([ 'd' ]), { b: 234, c: 345 } ],
+        [ { a: 123 }, List([ 'b' ]), { b: 234, c: 345 } ],
+        [ { a: 123 }, List([ 'b', 'c' ]), { b: 234, c: 345 } ],
+        [ { a: 123 }, List([ 'b', 'c', 'd' ]), { b: 234, c: 345 } ]
+      ]
+      const expected = [
+        null,
+        null,
+        { key: 'body', value: { '234': 123 } },
+        { key: 'body', value: { '234': 123, '345': 123 } },
+        { key: 'body', value: { '234': 123, '345': 123 } }
+      ]
+
+      const actual = inputs.map(
+        input => __internals__.extractBodyParamsFromRequestWithContexts(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractBodyFromRequest', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'getBodyContextsFromRequest').andCall(r => {
+        return r.get('contexts').length ? r.get('contexts') : null
+      })
+
+      spyOn(__internals__, 'extractBodyParamsFromRequestWithNoContext').andCall(({ a }, p) => {
+        return p instanceof ParameterContainer ? null : { key: p.c, value: a }
+      })
+
+      spyOn(__internals__, 'extractBodyParamsFromRequestWithContexts').andCall(({ a }, c, p) => {
+        return { key: p[c[0]], value: a }
+      })
+
+      const inputs = [
+        [ { a: 123 }, new Request() ],
+        [ { a: 123 }, new Request({ parameters: { b: 234, c: 345 }, contexts: [] }) ],
+        [ { a: 123 }, new Request({ parameters: { b: 234, c: 345 }, contexts: [ 'b' ] }) ]
+      ]
+      const expected = [
+        null,
+        { key: 345, value: 123 },
+        { key: 234, value: 123 }
+      ]
+      const actual = inputs.map(input => __internals__.extractBodyFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractProtocolsFromRequest', () => {
+    it('should work', () => {
+      const inputs = [
+        new Request(),
+        new Request({ endpoints: OrderedMap() }),
+        new Request({ endpoints: OrderedMap({
+          a: new Reference({ uuid: 'a' })
+        }) }),
+        new Request({ endpoints: OrderedMap({
+          a: new URL({ url: 'https://echo.paw.cloud/base' })
+        }) }),
+        new Request({ endpoints: OrderedMap({
+          a: new Reference({ uuid: 'a', overlay: new URL({ url: 'https://echo.paw.cloud/base' }) })
+        }) }),
+        new Request({ endpoints: OrderedMap({
+          a: new URL({ url: 'wss://echo.paw.cloud/socket' }),
+          b: new URL({ url: 'https://echo.paw.cloud/base' })
+        }) }),
+        new Request({ endpoints: OrderedMap({
+          a: new URL().set('protocol', List([ 'ws', 'http', 'wss' ])),
+          b: new URL({ url: 'https://echo.paw.cloud/base' })
+        }) })
+      ]
+      const expected = [
+        null,
+        null,
+        null,
+        { key: 'protocols', value: [ 'HTTPS' ] },
+        { key: 'protocols', value: [ 'HTTPS' ] },
+        { key: 'protocols', value: [ 'HTTPS' ] },
+        { key: 'protocols', value: [ 'HTTP' ] }
+      ]
+      const actual = inputs.map(input => __internals__.extractProtocolsFromRequest(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractIsFromRequest', () => {
+    it('should work', () => {
+      const inputs = [
+        new Request(),
+        new Request({ interfaces: OrderedMap() }),
+        new Request({ interfaces: OrderedMap({
+          a: new Reference({ uuid: 123 })
+        }) }),
+        new Request({ interfaces: OrderedMap({
+          a: new Reference({ uuid: 123 }),
+          b: new Interface({ uuid: 234 })
+        }) })
+      ]
+      const expected = [
+        null,
+        null,
+        { key: 'is', value: [ 123 ] },
+        { key: 'is', value: [ 123, 234 ] }
+      ]
+      const actual = inputs.map(input => __internals__.extractIsFromRequest(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractSecuredByFromRequest', () => {
+    it('should work', () => {
+      const inputs = [
+        new Request(),
+        new Request({ auths: List() }),
+        new Request({ auths: List([ new Auth.Basic() ]) }),
+        new Request({ auths: List([ new Auth.Basic(), new Reference({ uuid: 123 }) ]) }),
+        new Request({ auths: List([ new Reference({ uuid: 123 }), new Reference({ uuid: 234 }) ]) })
+      ]
+      const expected = [
+        null,
+        null,
+        null,
+        { key: 'securedBy', value: [ 123 ] },
+        { key: 'securedBy', value: [ 123, 234 ] }
+      ]
+      const actual = inputs.map(input => __internals__.extractSecuredByFromRequest(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractDescriptionFromResponse', () => {
+    it('should work', () => {
+      const inputs = [
+        new Response(),
+        new Response({ description: 123 })
+      ]
+      const expected = [
+        null,
+        { key: 'description', value: 123 }
+      ]
+      const actual = inputs.map(input => __internals__.extractDescriptionFromResponse(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractHeadersFromResponse', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractHeadersFromRequest').andCall((c, r) => c + r)
+      const inputs = [
+        [ 123, 234 ]
+      ]
+      const expected = [
+        123 + 234
+      ]
+      const actual = inputs.map(input => __internals__.extractHeadersFromResponse(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractBodyFromResponse', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractBodyFromRequest').andCall((c, r) => c + r)
+
+      const inputs = [
+        [ 123, 234 ]
+      ]
+      const expected = [
+        123 + 234
+      ]
+      const actual = inputs.map(input => __internals__.extractBodyFromResponse(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractResponseFromResponseRecord', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractDescriptionFromResponse').andCall(({ desc }) => {
+        return desc ? { key: 'description', value: desc } : null
+      })
+
+      spyOn(__internals__, 'extractHeadersFromResponse').andCall(({ headers }) => {
+        return headers ? { key: 'headers', value: headers } : null
+      })
+
+      spyOn(__internals__, 'extractBodyFromResponse').andCall(({ body }) => {
+        return body ? { key: 'body', value: body } : null
+      })
+
+      const inputs = [
+        [ { headers: null, body: null }, { desc: null } ],
+        [ { headers: 123, body: 234 }, { desc: null } ],
+        [ { headers: null, body: null }, { desc: 345 } ],
+        [ { headers: 123, body: 234 }, { desc: 345 } ]
+      ]
+
+      const expected = [
+        {},
+        { headers: 123, body: 234 },
+        { description: 345 },
+        { description: 345, headers: 123, body: 234 }
+      ]
+
+      const actual = inputs.map(input => __internals__.extractResponseFromResponseRecord(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractResponsesFromRequest', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractResponseFromResponseRecord').andCall((c, r) => {
+        return r.get('description') ? r.get('description') + c : null
+      })
+
+      const inputs = [
+        [ 123, new Request() ],
+        [ 123, new Request({ responses: OrderedMap() }) ],
+        [ 123, new Request({ responses: OrderedMap({
+          '200': new Response({ code: 200, description: 234 })
+        }) }) ],
+        [ 123, new Request({ responses: OrderedMap({
+          '200': new Response({ code: 200, description: null })
+        }) }) ],
+        [ 123, new Request({ responses: OrderedMap({
+          '200': new Response({ code: 200, description: 234 }),
+          '400': new Response({ code: 400, description: null }),
+          '404': new Response({ code: 404, description: 345 })
+        }) }) ]
+      ]
+
+      const expected = [
+        null,
+        null,
+        { key: 'responses', value: { '200': 234 + 123 } },
+        null,
+        { key: 'responses', value: { '200': 234 + 123, '404': 345 + 123 } }
+      ]
+
+      const actual = inputs.map(input => __internals__.extractResponsesFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractMethodFromRequest', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractDisplayNameFromRequest').andCall((r) => {
+        const key = 'displayName'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
+      spyOn(__internals__, 'extractDescriptionFromRequest').andCall((r) => {
+        const key = 'description'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
+      spyOn(__internals__, 'extractProtocolsFromRequest').andCall((r) => {
+        const key = 'protocols'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
+      spyOn(__internals__, 'extractIsFromRequest').andCall((r) => {
+        const key = 'is'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
+      spyOn(__internals__, 'extractSecuredByFromRequest').andCall((r) => {
+        const key = 'securedBy'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
+      spyOn(__internals__, 'extractQueryParametersFromRequest').andCall((c) => {
+        const key = 'queryParameters'
+        return c[key] ? { key, value: c[key] } : null
+      })
+
+      spyOn(__internals__, 'extractHeadersFromRequest').andCall((c) => {
+        const key = 'headers'
+        return c[key] ? { key, value: c[key] } : null
+      })
+
+      spyOn(__internals__, 'extractBodyFromRequest').andCall((c) => {
+        const key = 'body'
+        return c[key] ? { key, value: c[key] } : null
+      })
+
+      spyOn(__internals__, 'extractResponsesFromRequest').andCall((c) => {
+        const key = 'responses'
+        return c[key] ? { key, value: c[key] } : null
+      })
+
+      const inputs = [
+        [ {}, {} ],
+        [
+          { queryParameters: 678, headers: 789, body: 890, responses: 901 },
+          { displayName: 123, description: 234, protocols: 345, is: 456, securedBy: 567 }
+        ]
+      ]
+      const expected = [
+        null,
+        {
+          queryParameters: 678, headers: 789, body: 890, responses: 901,
+          displayName: 123, description: 234, protocols: 345, is: 456, securedBy: 567
+        }
+      ]
+      const actual = inputs.map(input => __internals__.extractMethodFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractMethodEntryFromRequest', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractMethodFromRequest').andCall((c, r) => {
+        return r.get('method') ? c : null
+      })
+
+      const inputs = [
+        [ 123, new Request() ],
+        [ 123, new Request({ method: 234 }) ]
+      ]
+      const expected = [
+        null,
+        { key: 234, value: 123 }
+      ]
+      const actual = inputs.map(input => __internals__.extractMethodEntryFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractMethodsFromResource', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractMethodEntryFromRequest').andCall((c, r) => {
+        return r % 2 === 0 ? { key: r, value: c } : null
+      })
+
+      const inputs = [
+        [ 123, new Resource() ],
+        [ 123, new Resource({ methods: OrderedMap() }) ],
+        [ 123, new Resource({ methods: OrderedMap({
+          get: 234,
+          post: 345,
+          delete: 456
+        }) }) ]
+      ]
+      const expected = [
+        [],
+        [],
+        [ { key: 234, value: 123 }, { key: 456, value: 123 } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractMethodsFromResource(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractDisplayNameFromResource', () => {
+    it('should work', () => {
+      const inputs = [
+        new Resource(),
+        new Resource({ name: 123 })
+      ]
+      const expected = [
+        null,
+        { key: 'displayName', value: 123 }
+      ]
+      const actual = inputs.map(input => __internals__.extractDisplayNameFromResource(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractDescriptionFromResource', () => {
+    it('should work', () => {
+      const inputs = [
+        new Resource(),
+        new Resource({ description: 123 })
+      ]
+      const expected = [
+        null,
+        { key: 'description', value: 123 }
+      ]
+      const actual = inputs.map(input => __internals__.extractDescriptionFromResource(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractTypeFromResource', () => {
+    it('should work', () => {
+      const inputs = [
+        new Resource(),
+        new Resource({ interfaces: OrderedMap() }),
+        new Resource({ interfaces: OrderedMap({
+          a: new Interface({ uuid: 123 }),
+          b: new Interface({ uuid: 234 })
+        }) }),
+        new Resource({ interfaces: OrderedMap({
+          a: new Interface({ uuid: 123 }),
+          b: new Reference({ uuid: 234 }),
+          c: new Reference({ uuid: 345 })
+        }) })
+      ]
+      const expected = [
+        null,
+        null,
+        null,
+        { key: 'type', value: 234 }
+      ]
+      const actual = inputs.map(input => __internals__.extractTypeFromResource(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractResourceFromResourceRecord', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractDisplayNameFromResource').andCall((r) => {
+        const key = 'displayName'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
+      spyOn(__internals__, 'extractDescriptionFromResource').andCall((r) => {
+        const key = 'description'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
+      spyOn(__internals__, 'extractTypeFromResource').andCall((r) => {
+        const key = 'type'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
+      spyOn(__internals__, 'extractMethodsFromResource').andCall((r) => {
+        const key = 'get'
+        return r[key] ? [ { key, value: r[key] } ] : []
+      })
+
+      const inputs = [
+        [ {}, {} ],
+        [ { get: 123 }, { displayName: 234, description: 345, type: 456 } ]
+      ]
+      const expected = [
+        {},
+        { get: 123, displayName: 234, description: 345, type: 456 }
+      ]
+      const actual = inputs.map(input => __internals__.extractResourceFromResourceRecord(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@nestResources', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractResourceFromResourceRecord').andCall((c, r) => {
+        return { [r]: c }
+      })
+
+      const inputs = [
+        [ 123, [] ],
+        [ 123, [ { key: [ 'paths' ], value: 234 } ] ],
+        [ 123, [ { key: [ 'paths', '{pathId}' ], value: 345 } ] ],
+        [ 123, [ { key: [ 'paths' ], value: 234 }, { key: [ 'paths', '{pathId}' ], value: 345 } ] ]
+      ]
+      const expected = [
+        {},
+        { '/paths': { '234': 123 } },
+        { '/paths': { '/{pathId}': { '345': 123 } } },
+        { '/paths': { '234': 123, '/{pathId}': { '345': 123 } } }
+      ]
+      const actual = inputs.map(input => __internals__.nestResources(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractResourcesFromApi', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'nestResources').andCall((c, array) => {
+        return array
+          .map(({ key }) => ({
+            key: '/' + key.join('/'),
+            value: c
+          }))
+          .reduce(convertEntryListInMap, {})
+      })
+
+      const inputs = [
+        [ 123, new Api() ],
+        [ 123, new Api({ resources: OrderedMap() }) ],
+        [ 123, new Api({ resources: OrderedMap({
+          a: new Resource({
+            path: new URL({ url: '/paths/{{pathId}}', variableDelimiters: List([ '{{', '}}' ]) })
+          }),
+          b: new Resource({
+            path: new URL({ url: '/paths', variableDelimiters: List([ '{{', '}}' ]) })
+          })
+        }) }) ]
+      ]
+      const expected = [
+        [],
+        [],
+        [ { key: '/paths/{pathId}', value: 123 }, { key: '/paths', value: 123 } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractResourcesFromApi(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createRAMLJSONModel', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractCoreInformationMapFromApi').andCall(a => {
+        const key = 'coreInfo'
+        return a[key] ? a[key] : null
+      })
+
+      spyOn(__internals__, 'extractTitleFromApi').andCall(a => {
+        const key = 'title'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractDescriptionFromApi').andCall(a => {
+        const key = 'description'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractVersionFromApi').andCall(a => {
+        const key = 'version'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractBaseUriFromApi').andCall(a => {
+        const key = 'baseUri'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractBaseUriParametersFromApi').andCall((c, a) => {
+        const key = 'baseUriParameters'
+        return a[key] ? { key, value: a[key] + c } : null
+      })
+
+      spyOn(__internals__, 'extractProtocolsFromApi').andCall(a => {
+        const key = 'protocols'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractMediaTypeFromApi').andCall(a => {
+        const key = 'mediaType'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractDataTypesFromApi').andCall(c => {
+        return c ? { key: 'types', value: c * 2 } : null
+      })
+
+      spyOn(__internals__, 'extractTraitsFromApi').andCall(a => {
+        const key = 'traits'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractResourceTypesFromApi').andCall(a => {
+        const key = 'resourceTypes'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractSecuritySchemesFromApi').andCall(a => {
+        const key = 'securitySchemes'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractSecuredByFromApi').andCall(a => {
+        const key = 'securedBy'
+        return a[key] ? { key, value: a[key] + 1 } : null
+      })
+
+      spyOn(__internals__, 'extractResourcesFromApi').andCall((c, a) => {
+        const key = 'resources'
+        return a[key] ? [ { key, value: a[key] + c } ] : []
+      })
+
+      const inputs = [
+        {},
+        {
+          coreInfo: 123,
+          title: 234,
+          description: 345,
+          version: 456,
+          baseUri: 567,
+          baseUriParameters: 678,
+          protocols: 789,
+          mediaType: 890,
+          traits: 246,
+          resourceTypes: 357,
+          securitySchemes: 468,
+          securedBy: 579,
+          resources: 680
+        }
+      ]
+      const expected = [
+        {},
+        {
+          title: 234 + 1,
+          description: 345 + 1,
+          version: 456 + 1,
+          baseUri: 567 + 1,
+          baseUriParameters: 678 + 123,
+          protocols: 789 + 1,
+          mediaType: 890 + 1,
+          types: 123 * 2,
+          traits: 246 + 1,
+          resourceTypes: 357 + 1,
+          securitySchemes: 468 + 1,
+          securedBy: 579 + 1,
+          resources: 680 + 123
+        }
+      ]
+      const actual = inputs.map(input => __internals__.createRAMLJSONModel(input))
       expect(actual).toEqual(expected)
     })
   })
