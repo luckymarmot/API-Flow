@@ -1341,7 +1341,7 @@ methods.extractRequestMapFromPawRequest = (context, pawReq, endpoints) => {
 
   const request = new Request({
     id: pawReq.id,
-    endpoints: endpoints,
+    endpoints: OrderedMap(endpoints),
     name: pawReq.name,
     description: pawReq.description,
     method,

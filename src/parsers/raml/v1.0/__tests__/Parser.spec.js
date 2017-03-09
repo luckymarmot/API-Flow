@@ -1860,13 +1860,14 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       spyOn(__internals__, 'extractParameterStore').andCall(({ parameter: v }) => v + 2)
       spyOn(__internals__, 'extractAuthStore').andCall(({ auth: v }) => v + 3)
       spyOn(__internals__, 'extractInterfaceStore').andCall(({ interface: v }) => v + 4)
+      spyOn(__internals__, 'extractEndpointStore').andCall(({ endpoint: v }) => v + 5)
 
       const inputs = [
-        { constraint: 123, parameter: 234, auth: 345, interface: 456 }
+        { constraint: 123, parameter: 234, auth: 345, interface: 456, endpoint: 567 }
       ]
       const expected = [
         new Store({
-          constraint: 124, parameter: 236, auth: 348, interface: 460
+          constraint: 124, parameter: 236, auth: 348, interface: 460, endpoint: 572
         })
       ]
       const actual = inputs.map(input => __internals__.extractStore(input))
@@ -2344,55 +2345,59 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@createParameterFromSchemaAndNameAndContexts', () => {
     it('should work', () => {
       const inputs = [
-        [ 123, 234, 345, {} ],
-        [ 123, 234, 345, { description: 456 } ],
-        [ 123, 234, 345, { type: 567 } ],
-        [ 123, 234, 345, { description: 456, type: 567 } ]
+        [ 123, 234, 345, {}, 678 ],
+        [ 123, 234, 345, { description: 456 }, 678 ],
+        [ 123, 234, 345, { type: 567 }, 678 ],
+        [ 123, 234, 345, { description: 456, type: 567 }, 678 ]
       ]
       const expected = [
         new Parameter({
           key: 345,
           name: 345,
+          uuid: 678,
           in: 123,
           description: null,
           type: 'string',
           constraints: List([
             new Constraint.JSONSchema({})
           ]),
-          contexts: 234
+          applicableContexts: 234
         }),
         new Parameter({
           key: 345,
           name: 345,
+          uuid: 678,
           in: 123,
           description: 456,
           type: 'string',
           constraints: List([
             new Constraint.JSONSchema({ description: 456 })
           ]),
-          contexts: 234
+          applicableContexts: 234
         }),
         new Parameter({
           key: 345,
           name: 345,
+          uuid: 678,
           in: 123,
           description: null,
           type: 567,
           constraints: List([
             new Constraint.JSONSchema({ type: 567 })
           ]),
-          contexts: 234
+          applicableContexts: 234
         }),
         new Parameter({
           key: 345,
           name: 345,
+          uuid: 678,
           in: 123,
           description: 456,
           type: 567,
           constraints: List([
             new Constraint.JSONSchema({ description: 456, type: 567 })
           ]),
-          contexts: 234
+          applicableContexts: 234
         })
       ]
 
@@ -2412,9 +2417,9 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         [ 123, 234, { $key: 345, desc: 456 } ]
       ]
       const expected = [
-        { key: null, value: [ 123, 234, null, {} ] },
-        { key: 345, value: [ 123, 234, 345, {} ] },
-        { key: 345, value: [ 123, 234, 345, { desc: 456 } ] }
+        { key: null, value: [ 123, 234, null, {}, null ] },
+        { key: 345, value: [ 123, 234, 345, {}, 345 ] },
+        { key: 345, value: [ 123, 234, 345, { desc: 456 }, 345 ] }
       ]
       const actual = inputs.map(input => __internals__.convertSchemaIntoParameterEntry(...input))
       expect(actual).toEqual(expected)
@@ -2471,11 +2476,15 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       const expected = [
         [],
         [],
-        [ { key: '234-userId', value: [ 'body', 123, 'userId', {} ] } ],
-        [ { key: '234-userId', value: [ 'body', 123, 'userId', { type: 'string' } ] } ],
         [
-          { key: '234-userId', value: [ 'body', 123, 'userId', { type: 'string' } ] },
-          { key: '234-name', value: [ 'body', 123, 'name', { type: 'string' } ] }
+          { key: '234-userId', value: [ 'body', 123, 'userId', {}, '234-userId' ] }
+        ],
+        [
+          { key: '234-userId', value: [ 'body', 123, 'userId', { type: 'string' }, '234-userId' ] }
+        ],
+        [
+          { key: '234-userId', value: [ 'body', 123, 'userId', { type: 'string' }, '234-userId' ] },
+          { key: '234-name', value: [ 'body', 123, 'name', { type: 'string' }, '234-name' ] }
         ]
       ]
 
@@ -2516,9 +2525,9 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         [ { $key: 345, title: 456 }, 123, 234 ]
       ]
       const expected = [
-        [ { key: 234, value: [ 'body', 123, null, {} ] } ],
-        [ { key: 234, value: [ 'body', 123, 345, {} ] } ],
-        [ { key: 234, value: [ 'body', 123, 345, { title: 456 } ] } ]
+        [ { key: 234, value: [ 'body', 123, null, {}, 234 ] } ],
+        [ { key: 234, value: [ 'body', 123, null, {}, 234 ] } ],
+        [ { key: 234, value: [ 'body', 123, null, { title: 456 }, 234 ] } ]
       ]
       const actual = inputs.map(
         input => __internals__.convertStandardBodyParameterIntoParameterEntries(...input)
@@ -3014,6 +3023,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
 
   describe('@convertRAMLMethodBaseIntoRequestInstance', () => {
     it('should work', () => {
+      spyOn(__internals__, 'areProtocolsEquals').andCall((f, s) => f && s && f[0] === s[0])
       spyOn(__internals__, 'extractDescription').andCall(({ desc }) => desc)
       spyOn(__internals__, 'extractContextsFromRequest').andCall(({ ctx }) => ctx)
       spyOn(__internals__, 'extractParameterContainerFromRequest').andCall(
@@ -3024,24 +3034,28 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       spyOn(__internals__, 'extractInterfacesFromRequest').andCall(({ itfs }) => itfs)
 
       const inputs = [
-        [ { a: 123 }, {
+        [ { a: 123, protocols: () => null }, {
           protocols: () => null,
           displayName: () => null,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ],
-        [ { a: 123 }, {
-          protocols: () => [ 234, 345 ],
+        [ { a: 123, protocols: () => null }, {
+          protocols: () => [ '234', '345' ],
           displayName: () => null,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ],
-        [ { a: 123 }, {
+        [ { a: 123, protocols: () => [ '234', '345' ] }, {
+          protocols: () => [ '234', '345' ],
+          displayName: () => null,
+          desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
+        } ],
+        [ { a: 123, protocols: () => null }, {
           protocols: () => null,
           displayName: () => 456,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ],
-        [ { a: 123 }, {
-
-          protocols: () => [ 234, 345 ],
+        [ { a: 123, protocols: () => null }, {
+          protocols: () => [ '234', '345' ],
           displayName: () => 456,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ]
@@ -3068,7 +3082,23 @@ describe('parsers/raml/v1.0/Parser.js', () => {
             base: new Reference({
               type: 'endpoint',
               uuid: 'base',
-              overlay: new URL().set('protocol', List([ 234, 345 ]))
+              overlay: new URL().set('protocol', List([ '234:', '345:' ]))
+            })
+          }),
+          name: null,
+          description: 'abc',
+          contexts: 'def',
+          parameters: 'ghi',
+          auths: 'jkl',
+          responses: 'mno',
+          interfaces: 'pqr'
+        },
+        {
+          endpoints: OrderedMap({
+            base: new Reference({
+              type: 'endpoint',
+              uuid: 'base',
+              overlay: null
             })
           }),
           name: null,
@@ -3100,7 +3130,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
             base: new Reference({
               type: 'endpoint',
               uuid: 'base',
-              overlay: new URL().set('protocol', List([ 234, 345 ]))
+              overlay: new URL().set('protocol', List([ '234:', '345:' ]))
             })
           }),
           name: 456,

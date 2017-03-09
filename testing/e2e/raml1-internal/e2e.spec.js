@@ -2,13 +2,6 @@ require('colors')
 import fs from 'fs'
 import { resolve } from 'path'
 
-/* gen-utils normalization */
-import seedrandom from 'seedrandom'
-seedrandom('swagger-e2e-seed', { global: true })
-import { __internals__ } from '../../../src/utils/gen-utils'
-__internals__.date = new Date(1).getTime()
-/* end of gen-utils normalization */
-
 import expect from 'expect'
 const diff = require('diff')
 
@@ -43,30 +36,30 @@ const compare = (actual, expected) => {
 }
 
 const fixDiff = (actual) => {
-  if (process.env.FIX === 'swagger-v2.0--internal-v1.0') {
+  if (process.env.FIX === 'raml-v1.0--internal-v1.0') {
     /* eslint-disable no-console */
     console.log('updating spec')
     /* eslint-enable no-console */
-    fs.writeFileSync(resolve(__dirname, './output.json'), actual)
+    fs.writeFileSync(resolve(__dirname, './output.raml'), actual)
   }
 }
 
-describe('swagger v2 -> internal', () => {
+describe('raml v1 -> internal', () => {
   it('should match expected output', (done) => {
-    // const input = fs.readFileSync(resolve(__dirname, './input.json'), 'utf-8').toString()
-    const output = fs.readFileSync(resolve(__dirname, './output.json'), 'utf-8').toString()
+    const output = fs.readFileSync(resolve(__dirname, './output.raml'), 'utf-8').toString()
     // const item = { content: input }
     /* eslint-disable no-console */
     try {
       const options = ApiFlow.setup({
         options: {
-          source: { format: 'swagger', version: 'v2.0' },
+          source: { format: 'raml', version: 'v1.0' },
           target: { format: 'internal', version: 'v1.0' }
         }
       })
 
+      console.log('hey there 3')
       ApiFlow
-        .transform({ options, uri: 'file://' + resolve(__dirname, './input.json') })
+        .transform({ options, uri: 'file://' + resolve(__dirname, './input.raml') })
         .then(serialized => {
           const success = compare(serialized, output)
           if (!success) {

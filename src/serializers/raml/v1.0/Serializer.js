@@ -1307,10 +1307,12 @@ methods.extractResourcesFromApi = (coreInfoMap, api) => {
   const resourceKVs = api.get('resources')
     .map(resource => {
       return {
-        key: resource.get('path').generate(List([ '{', '}' ])).split('/').slice(1),
+        key: resource.get('path').get('pathname').generate(List([ '{', '}' ])).split('/').slice(1),
         value: resource
       }
     })
+    .valueSeq()
+    .toJS()
 
   const nested = methods.nestResources(coreInfoMap, resourceKVs)
   return entries(nested)

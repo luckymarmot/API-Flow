@@ -281,8 +281,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "pet": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -291,9 +291,10 @@
               "uuid": "pet",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         },
         "put": {
           "_model": {
@@ -520,8 +521,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "pet": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -530,9 +531,10 @@
               "uuid": "pet",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -871,8 +873,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "pet": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -881,9 +883,10 @@
               "uuid": "pet",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -1222,8 +1225,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "pet": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -1232,9 +1235,10 @@
               "uuid": "pet",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -1681,8 +1685,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "pet": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -1691,9 +1695,10 @@
               "uuid": "pet",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         },
         "post": {
           "_model": {
@@ -1996,8 +2001,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "pet": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -2006,9 +2011,10 @@
               "uuid": "pet",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         },
         "delete": {
           "_model": {
@@ -2185,8 +2191,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "pet": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -2195,9 +2201,10 @@
               "uuid": "pet",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -2504,8 +2511,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "store": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -2514,9 +2521,10 @@
               "uuid": "store",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -2926,8 +2934,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "store": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -2936,9 +2944,10 @@
               "uuid": "store",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         },
         "delete": {
           "_model": {
@@ -3121,8 +3130,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "store": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -3131,9 +3140,10 @@
               "uuid": "store",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -3350,8 +3360,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "user": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -3360,9 +3370,10 @@
               "uuid": "user",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -3582,8 +3593,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "user": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -3592,9 +3603,10 @@
               "uuid": "user",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -3814,8 +3826,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "user": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -3824,9 +3836,10 @@
               "uuid": "user",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -4135,8 +4148,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "user": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -4145,9 +4158,10 @@
               "uuid": "user",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -4321,8 +4335,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "user": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -4331,9 +4345,10 @@
               "uuid": "user",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -4743,8 +4758,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "user": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -4753,9 +4768,10 @@
               "uuid": "user",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         },
         "put": {
           "_model": {
@@ -4971,8 +4987,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "user": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -4981,9 +4997,10 @@
               "uuid": "user",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         },
         "delete": {
           "_model": {
@@ -5166,8 +5183,8 @@
           },
           "timeout": null,
           "tags": [],
-          "interfaces": [
-            {
+          "interfaces": {
+            "user": {
               "_model": {
                 "name": "interface.models",
                 "version": "0.1.0"
@@ -5176,9 +5193,10 @@
               "uuid": "user",
               "level": "request",
               "required": false,
-              "description": null
+              "description": null,
+              "underlay": null
             }
-          ]
+          }
         }
       },
       "description": null,
@@ -5600,7 +5618,8 @@
         "uuid": "apiRequestMediaType",
         "level": "request",
         "required": false,
-        "description": "defines the common media type of requests in the API."
+        "description": "defines the common media type of requests in the API.",
+        "underlay": null
       },
       "apiResponseMediaType": {
         "_model": {
@@ -5611,7 +5630,8 @@
         "uuid": "apiResponseMediaType",
         "level": "response",
         "required": false,
-        "description": "defines the common media type of responses in the API."
+        "description": "defines the common media type of responses in the API.",
+        "underlay": null
       }
     }
   },

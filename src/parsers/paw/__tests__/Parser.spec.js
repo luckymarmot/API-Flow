@@ -1483,14 +1483,14 @@ describe('parsers/paw/Parser.js', () => {
       spyOn(__internals__, 'extractParameterContainerFromRequest').andReturn(678)
       spyOn(__internals__, 'extractAuthReferencesFromRequest').andReturn(789)
       const context = {}
-      const endpoints = 123
+      const endpoints = { '123': 234 }
       const input = { id: 345, name: 456, description: 567, getMethod: () => 234 }
       const expected = OrderedMap({
         '234': new Request({
           id: 345,
           name: 456,
           description: 567,
-          endpoints: 123,
+          endpoints: OrderedMap({ '123': 234 }),
           method: 234,
           parameters: 678,
           auths: 789

@@ -1465,6 +1465,77 @@ methods.extractInterfaceStore = (api) => {
   return OrderedMap(interfaces)
 }
 
+methods.updateURLComponentWithUriParameters = (endpoint, componentName, uriParameters) => {
+  const component = endpoint.get(componentName)
+
+  if (component && component.getIn([ 'parameter', 'superType' ]) === 'sequence') {
+    const componentValue = component
+      .getIn([ 'parameter', 'value' ])
+      .map(param => {
+        const candidates = uriParameters
+          .filter(uriParameter => {
+            return uriParameter.$key === param.get('key')
+          })
+
+        if (candidates.length) {
+          return methods.convertSchemaIntoParameterEntry(componentName, List(), candidates[0]).value
+        }
+
+        return param
+      })
+    return component.setIn([ 'parameter', 'value' ], componentValue)
+  }
+
+  return component
+}
+
+methods.updateEndpointWithUriParameters = ($endpoint, uriParameters) => {
+  return $endpoint.withMutations(endpoint => {
+    const componentNames = [ 'hostname', 'port', 'pathname' ]
+    componentNames.forEach(componentName => {
+      const updatedComponent = methods
+        .updateURLComponentWithUriParameters(endpoint, componentName, uriParameters)
+      endpoint.set(componentName, updatedComponent)
+    })
+  })
+}
+
+methods.extractBaseUriWithParameters = (baseUri, api) => {
+  const uri = baseUri.value()
+  const protocols = api.protocols()
+  let endpoint = new URL({ url: uri, variableDelimiters: List([ '{', '}' ]) })
+  if (protocols && protocols.length) {
+    endpoint = endpoint.set('protocol', List(protocols.map(protocol => {
+      if (protocol[protocol.length - 1] !== ':') {
+        return protocol.toLowerCase() + ':'
+      }
+
+      return protocol.toLowerCase()
+    })))
+  }
+
+  const parameters = api.baseUriParameters()
+  if (!parameters || !parameters.length) {
+    return endpoint
+  }
+
+  const uriParameters = parameters
+    .map(uriParameter => methods.createSchema(uriParameter).map(methods.normalizeSchema)[0])
+
+  return methods.updateEndpointWithUriParameters(endpoint, uriParameters)
+}
+
+methods.extractEndpointStore = (api) => {
+  const baseUri = api.baseUri()
+  if (!baseUri) {
+    const base = new URL()
+    return OrderedMap({ base })
+  }
+
+  const base = methods.extractBaseUriWithParameters(baseUri, api)
+  return OrderedMap({ base })
+}
+
 /**
  * extracts all shared objects from a RAML Api and stores them in a Store
  * @param {RAMLApi} api: the api to get the shared objects from
@@ -1472,11 +1543,12 @@ methods.extractInterfaceStore = (api) => {
  */
 methods.extractStore = (api) => {
   const constraint = methods.extractConstraintStore(api)
+  const endpoint = methods.extractEndpointStore(api)
   const parameter = methods.extractParameterStore(api)
   const auth = methods.extractAuthStore(api)
   const $interface = methods.extractInterfaceStore(api)
 
-  const storeInstance = { constraint, parameter, auth, interface: $interface }
+  const storeInstance = { constraint, endpoint, parameter, auth, interface: $interface }
 
   return new Store(storeInstance)
 }
@@ -1653,17 +1725,31 @@ methods.addPathParameterToSequence = ({ remaining, sequence }, schema) => {
   return { sequence: [ ...sequence, beforeParam, param ], remaining: after.join(key) }
 }
 
+methods.createSimpleURLComponentParameter = (componentName, resourceUri) => {
+  return new Parameter({
+    key: componentName,
+    name: componentName,
+    type: 'string',
+    default: resourceUri
+  })
+}
+
 /**
  * creates a simple pathname Parameter from a resource uri string
  * @param {string} resourceUri: the uri to convert into a pathname Parameter
  * @returns {Parameter} the corresponding Parameter
  */
 methods.createSimplePathnameParameter = (resourceUri) => {
+  return methods.createSimpleURLComponentParameter('pathname', resourceUri)
+}
+
+methods.createSequenceURLComponentParameter = (componentName, sequence) => {
   return new Parameter({
-    key: 'pathname',
-    name: 'pathname',
+    key: componentName,
+    name: componentName,
     type: 'string',
-    default: resourceUri
+    superType: 'sequence',
+    value: List(sequence)
   })
 }
 
@@ -1673,13 +1759,18 @@ methods.createSimplePathnameParameter = (resourceUri) => {
  * @returns {Parameter} the corresponding sequence parameter
  */
 methods.createSequencePathnameParameter = (sequence) => {
-  return new Parameter({
-    key: 'pathname',
-    name: 'pathname',
-    type: 'string',
-    superType: 'sequence',
-    value: List(sequence)
+  return methods.createSequenceURLComponentParameter('pathname', sequence)
+}
+
+methods.createURLComponentFromParameter = (componentName, resourceUri, param) => {
+  const urlComponent = new URLComponent({
+    componentName,
+    string: resourceUri,
+    parameter: param,
+    variableDelimiters: List([ '{', '}' ])
   })
+
+  return urlComponent
 }
 
 /**
@@ -1689,14 +1780,7 @@ methods.createSequencePathnameParameter = (sequence) => {
  * @returns {URLComponent} the corresponding URLComponent
  */
 methods.createPathnameURLComponentFromParameter = (resourceUri, param) => {
-  const pathname = new URLComponent({
-    componentName: 'pathname',
-    string: resourceUri,
-    parameter: param,
-    variableDelimiters: List([ '{', '}' ])
-  })
-
-  return pathname
+  return methods.createURLComponentFromParameter('pathname', resourceUri, param)
 }
 
 /**
@@ -1814,19 +1898,21 @@ methods.extractContextsFromRequest = (request) => {
  * this parameter can be used
  * @param {string} name: the name of the parameter
  * @param {Object} schema: the set of constraints this parameter must respect
+ * @param {string} uuid: the uuid of the parameter
  * @returns {Parameter} the corresponding Parameter
  */
-methods.createParameterFromSchemaAndNameAndContexts = (location, contexts, name, schema) => {
+methods.createParameterFromSchemaAndNameAndContexts = (location, contexts, name, schema, uuid) => {
   return new Parameter({
     key: name,
     name: name,
+    uuid: uuid,
     in: location,
     description: schema.description || null,
     type: schema.type || 'string',
     constraints: List([
       new Constraint.JSONSchema(schema)
     ]),
-    contexts: contexts
+    applicableContexts: contexts
   })
 }
 
@@ -1843,7 +1929,9 @@ methods.convertSchemaIntoParameterEntry = (location, contexts, schema) => {
   delete clone.$key
 
   const key = schema.$key || null
-  const value = methods.createParameterFromSchemaAndNameAndContexts(location, contexts, key, clone)
+  const value = methods.createParameterFromSchemaAndNameAndContexts(
+    location, contexts, key, clone, key
+  )
 
   return { key, value }
 }
@@ -1892,7 +1980,7 @@ methods.convertWebFormParameterIntoParameterEntries = (parameter, contexts, cont
 
     const key = contentType + '-' + $key
     const value = methods.createParameterFromSchemaAndNameAndContexts(
-      location, contexts, $key, currentSchema
+      location, contexts, $key, currentSchema, key
     )
 
     return { key, value }
@@ -1924,8 +2012,9 @@ methods.convertStandardBodyParameterIntoParameterEntries = (parameter, contexts,
   const clone = Object.assign({}, schema)
   delete clone.$key
 
-  const name = schema.$key || null
-  const value = methods.createParameterFromSchemaAndNameAndContexts('body', contexts, name, clone)
+  const value = methods.createParameterFromSchemaAndNameAndContexts(
+    'body', contexts, null, clone, key
+  )
 
   return [ { key, value } ]
 }
@@ -2277,6 +2366,12 @@ methods.extractInterfacesFromRequest = (request) => {
   return OrderedMap(interfaces)
 }
 
+methods.areProtocolsEquals = (first, second) => {
+  return first && second &&
+    first.length && first.length === second.length &&
+    first.reduce((acc, v, i) => acc && v === second[i], true)
+}
+
 /**
  * converts a RAML methodBase into a Request instance
  * @param {RAMLApi} api: the api from which to get the global contentType, if needed
@@ -2285,8 +2380,14 @@ methods.extractInterfacesFromRequest = (request) => {
  * @returns {RequestInstance} the corresponding RequestInstance object
  */
 methods.convertRAMLMethodBaseIntoRequestInstance = (api, methodBase) => {
-  const overlay = methodBase.protocols() ?
-    new URL().set('protocol', List(methodBase.protocols())) :
+  const overlay = methodBase.protocols() &&
+    !methods.areProtocolsEquals(methodBase.protocols(), api.protocols()) ?
+    new URL().set('protocol', List(methodBase.protocols().map(protocol => {
+      if (protocol[protocol.length - 1] !== ':') {
+        return protocol.toLowerCase() + ':'
+      }
+      return protocol.toLowerCase()
+    }))) :
     null
 
   const endpoints = OrderedMap({

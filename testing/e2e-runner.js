@@ -1,6 +1,18 @@
 import Mocha from 'mocha'
 import chokidar from 'chokidar'
+import path from 'path'
 
+const configPath = path.join(__dirname, '../src/api-flow-config.js')
+
+const Module = require('module')
+const realResolve = Module._resolveFilename
+Module._resolveFilename = (request, parent) => {
+  if (request === 'api-flow-config') {
+    return configPath
+  }
+  const resolved = realResolve(request, parent)
+  return resolved
+}
 // Let's import and globalize testing tools so
 // there's no need to require them in each test
 
@@ -38,7 +50,7 @@ function runSuite() {
  * @param  {object} settings
  */
 chokidar.watch('testing/e2e/**/*.spec.js', { persistent: true })
-  .on('add', path => fileList.push(path))
+  .on('add', $path => fileList.push($path))
   .on('change', () => runSuite())
   .on('ready', () => runSuite())
 
