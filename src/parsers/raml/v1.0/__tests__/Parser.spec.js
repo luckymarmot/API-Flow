@@ -3048,13 +3048,15 @@ describe('parsers/raml/v1.0/Parser.js', () => {
 
   describe('@convertRAMLTraitRefIntoReferenceEntry', () => {
     it('should work', () => {
+      // NOTE this behavior is due to a bug in the official RAML parser (v1.16)
       const inputs = [
-        { name: () => null },
-        { name: () => 123 }
+        { name: () => '123' },
+        { name: () => 'Api.234' }
       ]
+
       const expected = [
-        { key: 'trait_null', value: new Reference({ type: 'interface', uuid: 'trait_null' }) },
-        { key: 'trait_123', value: new Reference({ type: 'interface', uuid: 'trait_123' }) }
+        { key: 'trait_123', value: new Reference({ type: 'interface', uuid: 'trait_123' }) },
+        { key: 'trait_234', value: new Reference({ type: 'interface', uuid: 'trait_234' }) }
       ]
       const actual = inputs.map(input => __internals__.convertRAMLTraitRefIntoReferenceEntry(input))
       expect(actual).toEqual(expected)

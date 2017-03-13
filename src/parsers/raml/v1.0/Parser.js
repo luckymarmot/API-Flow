@@ -2394,7 +2394,9 @@ methods.extractResponsesFromRequest = (request) => {
  * @returns {Entry<string, Reference>} the corresponding Reference, as an Entry
  */
 methods.convertRAMLTraitRefIntoReferenceEntry = (trait) => {
-  const uuid = 'trait_' + trait.name()
+  // FIXME: we have to implement this behavior because of a bug in the official RAML parser
+  const name = trait.name().split('.').slice(-1).join()
+  const uuid = 'trait_' + name
 
   const referenceInstance = {
     type: 'interface',

@@ -403,7 +403,17 @@
           "responses": {},
           "timeout": null,
           "tags": [],
-          "interfaces": {}
+          "interfaces": {
+            "trait_described": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "interface",
+              "uuid": "trait_described",
+              "overlay": null
+            }
+          }
         }
       },
       "description": null,
@@ -3070,6 +3080,46 @@
               "interfaces": {}
             }
           }
+        }
+      },
+      "trait_described": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "described",
+        "uuid": "trait_described",
+        "level": "request",
+        "required": false,
+        "description": null,
+        "underlay": {
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": "This is an awesome description",
+          "contexts": [],
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "auths": [],
+          "responses": {},
+          "interfaces": {}
         }
       },
       "trait_secured": {
