@@ -2189,11 +2189,15 @@ methods.getContentTypeParameter = (api, request) => {
  * @returns {OrderedMap<string, Parameter>} an OrderedMap containing all query parameters
  */
 methods.createQueryParameterBlockFromRequest = (request) => {
-  const params = request.queryParameters()
+  const qParams = request.queryParameters()
+  const qString = request.queryString()
 
-  if (!params) {
+  if (!(qParams && qParams.length) && !qString) {
     return OrderedMap()
   }
+
+  // FIXME: the behavior for the queryString is dubious at best
+  const params = qParams && qParams.length ? qParams : [ qString ]
 
   const queryParameters = params
     .map(parameter => methods.createSchema(parameter).map(methods.normalizeSchema)[0])

@@ -2751,17 +2751,19 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       )
 
       const inputs = [
-        { queryParameters: () => null },
-        { queryParameters: () => [] },
+        { queryParameters: () => null, queryString: () => null },
+        { queryParameters: () => [], queryString: () => null },
         { queryParameters: () => [
           { param: 123 },
           { param: 234 }
-        ] }
+        ], queryString: () => null },
+        { queryParameters: () => [], queryString: () => ({ param: 345 }) }
       ]
       const expected = [
         OrderedMap(),
         OrderedMap(),
-        OrderedMap({ '123': [ 'queries', List() ], '234': [ 'queries', List() ] })
+        OrderedMap({ '123': [ 'queries', List() ], '234': [ 'queries', List() ] }),
+        OrderedMap({ '345': [ 'queries', List() ] })
       ]
       const actual = inputs.map(input => __internals__.createQueryParameterBlockFromRequest(input))
       expect(actual).toEqual(expected)

@@ -137,7 +137,49 @@
                 "overlay": null
               }
             },
-            "queries": {},
+            "queries": {
+              "queryString": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "queries",
+                "usedIn": "request",
+                "uuid": "queryString",
+                "key": "queryString",
+                "name": "queryString",
+                "description": null,
+                "examples": [],
+                "type": "object",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "object",
+                      "properties": {
+                        "start": {
+                          "type": "number"
+                        },
+                        "page-size": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
             "body": {},
             "path": {}
           },
