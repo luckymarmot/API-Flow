@@ -8,6 +8,10 @@ baseUriParameters:
     enum: [ 'echo', 'app' ]
 /helloworld: # optional resource
   get: # HTTP method declaration
+    queryParameters:
+      toto:
+        type: 'string'
+        enum: [ '123', '234' ]
     responses: # declare a response
       200: # HTTP status code
         body: # declare content of response

@@ -800,6 +800,10 @@ methods.addSimpleStringFieldsToSchema = (schema, node) => {
     {
       key: 'pattern',
       value: node.pattern()
+    },
+    {
+      key: 'enum',
+      value: (node.enum() || []).length ? node.enum() : null
     }
   ]
 
@@ -841,6 +845,10 @@ methods.addSimpleNumberFieldsToSchema = (schema, node) => {
     {
       key: 'multipleOf',
       value: node.multipleOf()
+    },
+    {
+      key: 'enum',
+      value: (node.enum() || []).length ? node.enum() : null
     }
   ]
 
@@ -1130,7 +1138,7 @@ methods.extractFlowFromOAuth2Settings = (settings) => {
  * @returns {string?} the corresponding url
  */
 methods.extractAuthorizationUrlFromOAuth2Settings = (settings) => {
-  return settings.authorizationUri() || null
+  return (settings.authorizationUri() || { value: () => null }).value() || null
 }
 
 /**
@@ -1139,7 +1147,7 @@ methods.extractAuthorizationUrlFromOAuth2Settings = (settings) => {
  * @returns {string?} the corresponding url
  */
 methods.extractTokenUrlFromOAuth2Settings = (settings) => {
-  return settings.accessTokenUri() || null
+  return (settings.accessTokenUri() || { value: () => null }).value() || null
 }
 
 /**
@@ -1183,7 +1191,7 @@ methods.convertRAMLAuthIntoOAuth2AuthEntry = (scheme) => {
  * @returns {string?} the corresponding url
  */
 methods.extractRequestTokenUriFromOAuth1Settings = (settings) => {
-  return settings.requestTokenUri() || null
+  return (settings.requestTokenUri() || { value: () => null }).value() || null
 }
 
 /**
@@ -1192,7 +1200,7 @@ methods.extractRequestTokenUriFromOAuth1Settings = (settings) => {
  * @returns {string?} the corresponding url
  */
 methods.extractAuthorizationUriFromOAuth1Settings = (settings) => {
-  return settings.authorizationUri() || null
+  return (settings.authorizationUri() || { value: () => null }).value() || null
 }
 
 /**
@@ -1201,7 +1209,7 @@ methods.extractAuthorizationUriFromOAuth1Settings = (settings) => {
  * @returns {string?} the corresponding url
  */
 methods.extractTokenCredentialsUriFromOAuth1Settings = (settings) => {
-  return settings.tokenCredentialsUri() || null
+  return (settings.tokenCredentialsUri() || { value: () => null }).value() || null
 }
 
 /**
@@ -2380,7 +2388,7 @@ methods.areProtocolsEquals = (first, second) => {
  * @returns {RequestInstance} the corresponding RequestInstance object
  */
 methods.convertRAMLMethodBaseIntoRequestInstance = (api, methodBase) => {
-  const overlay = methodBase.protocols() &&
+  const overlay = methodBase.protocols() && api &&
     !methods.areProtocolsEquals(methodBase.protocols(), api.protocols()) ?
     new URL().set('protocol', List(methodBase.protocols().map(protocol => {
       if (protocol[protocol.length - 1] !== ':') {

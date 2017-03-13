@@ -32,7 +32,7 @@ function runSuite() {
   catch (e) {
     /* eslint-disable no-console */
     console.log('------------')
-    console.log('Failed with Error', e)
+    console.log('Failed with Error', e.stack)
     console.log('------------')
     /* eslint-enable no-console */
   }

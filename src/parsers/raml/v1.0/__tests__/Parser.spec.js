@@ -970,17 +970,26 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         [ { a: 123 }, {
           minLength: () => null,
           maxLength: () => null,
-          pattern: () => null
+          pattern: () => null,
+          enum: () => null
         } ],
         [ { a: 123 }, {
           minLength: () => 123,
           maxLength: () => 234,
-          pattern: () => 345
+          pattern: () => 345,
+          enum: () => []
+        } ],
+        [ { a: 123 }, {
+          minLength: () => 123,
+          maxLength: () => 234,
+          pattern: () => 345,
+          enum: () => [ 456 ]
         } ]
       ]
       const expected = [
         { a: 123 },
-        { a: 123, minLength: 123, maxLength: 234, pattern: 345 }
+        { a: 123, minLength: 123, maxLength: 234, pattern: 345 },
+        { a: 123, minLength: 123, maxLength: 234, pattern: 345, enum: [ 456 ] }
       ]
       const actual = inputs.map(input => __internals__.addSimpleStringFieldsToSchema(...input))
       expect(actual).toEqual(expected)
@@ -1013,17 +1022,26 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         [ { a: 123 }, {
           minimum: () => null,
           maximum: () => null,
-          multipleOf: () => null
+          multipleOf: () => null,
+          enum: () => null
         } ],
         [ { a: 123 }, {
           minimum: () => 234,
           maximum: () => 345,
-          multipleOf: () => 456
+          multipleOf: () => 456,
+          enum: () => []
+        } ],
+        [ { a: 123 }, {
+          minimum: () => 234,
+          maximum: () => 345,
+          multipleOf: () => 456,
+          enum: () => [ 567 ]
         } ]
       ]
       const expected = [
         { a: 123 },
-        { a: 123, minimum: 234, maximum: 345, multipleOf: 456 }
+        { a: 123, minimum: 234, maximum: 345, multipleOf: 456 },
+        { a: 123, minimum: 234, maximum: 345, multipleOf: 456, enum: [ 567 ] }
       ]
       const actual = inputs.map(input => __internals__.addSimpleNumberFieldsToSchema(...input))
       expect(actual).toEqual(expected)
@@ -1385,9 +1403,11 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     it('should work', () => {
       const inputs = [
         { accessTokenUri: () => null },
-        { accessTokenUri: () => 123 }
+        { accessTokenUri: () => ({ value: () => null }) },
+        { accessTokenUri: () => ({ value: () => 123 }) }
       ]
       const expected = [
+        null,
         null,
         123
       ]
@@ -1442,10 +1462,11 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     it('should work', () => {
       const inputs = [
         { requestTokenUri: () => null },
-        { requestTokenUri: () => 123 }
+        { requestTokenUri: () => ({ value: () => null }) },
+        { requestTokenUri: () => ({ value: () => 123 }) }
       ]
       const expected = [
-        null, 123
+        null, null, 123
       ]
       const actual = inputs.map(
         input => __internals__.extractRequestTokenUriFromOAuth1Settings(input)
@@ -1458,10 +1479,11 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     it('should work', () => {
       const inputs = [
         { authorizationUri: () => null },
-        { authorizationUri: () => 123 }
+        { authorizationUri: () => ({ value: () => null }) },
+        { authorizationUri: () => ({ value: () => 123 }) }
       ]
       const expected = [
-        null, 123
+        null, null, 123
       ]
       const actual = inputs.map(
         input => __internals__.extractAuthorizationUriFromOAuth1Settings(input)
@@ -1474,10 +1496,11 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     it('should work', () => {
       const inputs = [
         { tokenCredentialsUri: () => null },
-        { tokenCredentialsUri: () => 123 }
+        { tokenCredentialsUri: () => ({ value: () => null }) },
+        { tokenCredentialsUri: () => ({ value: () => 123 }) }
       ]
       const expected = [
-        null, 123
+        null, null, 123
       ]
 
       const actual = inputs.map(

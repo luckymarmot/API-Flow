@@ -27,16 +27,13 @@ import Response from '../../../models/Response'
 import Request from '../../../models/Request'
 
 import { currify, entries, convertEntryListInMap } from '../../../utils/fp-utils'
-import { genUuid } from '../../../utils/gen-utils'
 
 export const __errors__ = {
   InvalidJSONorYAML: class InvalidJSONorYAMLError extends SyntaxError {},
   NotASwaggerV2: class NotASwaggerV2Error extends TypeError {}
 }
 
-const methods = {
-  genUuid
-}
+const methods = {}
 
 export const __meta__ = {
   version: 'v2.0',
@@ -279,7 +276,7 @@ methods.getParametersAndReferencesFromParameterArray = (params = []) => {
     }
     else {
       acc.parameters.push({
-        key: methods.genUuid(),
+        key: param.name + '-' + param.in,
         value: param
       })
     }
@@ -360,7 +357,7 @@ methods.getConsumesParamFromOperation = (store = new Store(), operation = {}) =>
     const consumes = operation.consumes || []
     if (consumes.length) {
       consumeParam = new Parameter({
-        uuid: methods.genUuid(),
+        uuid: 'Content-Type-header',
         in: 'headers',
         key: 'Content-Type',
         name: 'Content Type Header',
@@ -401,7 +398,7 @@ methods.getProducesParamFromOperation = (store, operation) => {
     const produces = operation.produces || []
     if (produces.length) {
       produceParam = new Parameter({
-        uuid: methods.genUuid(),
+        uuid: 'Content-Type-header',
         in: 'headers',
         usedIn: 'response',
         key: 'Content-Type',
@@ -807,7 +804,7 @@ methods.getEndpointsForOperation = (store, operation) => {
  * @returns {string} the extracted requestId
  */
 methods.getRequestIdFromOperation = ({ operationId }) => {
-  return operationId || methods.genUuid()
+  return operationId || null
 }
 
 // TODO deal with externalDocs
@@ -961,7 +958,7 @@ methods.getSharedEndpoints = ({
   const secure = schemes.filter(scheme => scheme.match(/[^w]s:?$/)).length > 0
   const protocol = schemes[0]
   const url = format({ protocol, host, pathname: basePath })
-  const uuid = methods.genUuid()
+  const uuid = 'base'
   const variableDelimiters = List([ '{', '}' ])
 
   let endpoint = new URL({ url, uuid, secure, variableDelimiters })
@@ -1266,11 +1263,10 @@ methods.getSharedParameters = ({ consumes = [], produces = [], parameters = {} }
  * @returns {Entry<string, Parameter>} the Parameter, in Entry format
  */
 methods.convertSchemaIntoParameterEntry = (schema) => {
-  const paramUuid = methods.genUuid()
   const paramEntry = {
-    key: paramUuid,
+    key: 'body',
     value: new Parameter({
-      uuid: paramUuid,
+      uuid: 'body',
       usedIn: 'response',
       constraints: new List([
         new Constraint.JSONSchema(schema)
@@ -1559,7 +1555,7 @@ methods.getGroup = ({ paths }) => {
   }).reduce(convertEntryListInMap, {})
 
   return new Group({
-    id: methods.genUuid(),
+    id: null,
     name: null,
     description: 'All the requests',
     children: new OrderedMap(children)

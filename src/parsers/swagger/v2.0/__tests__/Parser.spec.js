@@ -618,8 +618,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
   describe('@getParametersAndReferencesFromParameterArray', () => {
     it('should split refs from params', () => {
-      spyOn(__internals__, 'genUuid').andReturn(123)
-
       const input = [
         {
           title: 'some ref',
@@ -627,6 +625,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         },
         {
           title: 'some param',
+          name: 'param1',
           in: 'query',
           type: 'string'
         },
@@ -636,7 +635,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         },
         {
           title: 'some other param',
-          in: 'headers',
+          name: 'param2',
+          in: 'header',
           type: 'string'
         }
       ]
@@ -660,18 +660,20 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         ],
         parameters: [
           {
-            key: 123,
+            key: 'param1-query',
             value: {
               title: 'some param',
+              name: 'param1',
               in: 'query',
               type: 'string'
             }
           },
           {
-            key: 123,
+            key: 'param2-header',
             value: {
               title: 'some other param',
-              in: 'headers',
+              name: 'param2',
+              in: 'header',
               type: 'string'
             }
           }
@@ -764,8 +766,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should return local consumes if it exists', () => {
-      spyOn(__internals__, 'genUuid').andReturn(123)
-
       const store = new Store()
       const operation = {
         consumes: [ 'application/json' ]
@@ -773,7 +773,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       const expected = {
         consumeParameter: new Parameter({
-          uuid: 123,
+          uuid: 'Content-Type-header',
           in: 'headers',
           key: 'Content-Type',
           name: 'Content Type Header',
@@ -793,8 +793,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should use global consumes if no local consumes exists', () => {
-      spyOn(__internals__, 'genUuid').andReturn(123)
-
       const globalParam = new Parameter({
         name: 'global consume param'
       })
@@ -815,8 +813,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should ignore global consumes if local consumes exists', () => {
-      spyOn(__internals__, 'genUuid').andReturn(123)
-
       const globalParam = new Parameter({
         name: 'global consume param'
       })
@@ -830,7 +826,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       const expected = {
         consumeParameter: new Parameter({
-          uuid: 123,
+          uuid: 'Content-Type-header',
           in: 'headers',
           key: 'Content-Type',
           name: 'Content Type Header',
@@ -865,8 +861,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should return local produces if it exists', () => {
-      spyOn(__internals__, 'genUuid').andReturn(123)
-
       const store = new Store()
       const operation = {
         produces: [ 'application/json' ]
@@ -874,7 +868,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       const expected = {
         produceParameter: new Parameter({
-          uuid: 123,
+          uuid: 'Content-Type-header',
           in: 'headers',
           usedIn: 'response',
           key: 'Content-Type',
@@ -894,8 +888,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should use global consumes if no local produces exists', () => {
-      spyOn(__internals__, 'genUuid').andReturn(123)
-
       const globalParam = new Parameter({
         name: 'global produce param'
       })
@@ -915,8 +907,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should ignore global produces if local consumes exists', () => {
-      spyOn(__internals__, 'genUuid').andReturn(123)
-
       const globalParam = new Parameter({
         name: 'global produce param'
       })
@@ -930,7 +920,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       const expected = {
         produceParameter: new Parameter({
-          uuid: 123,
+          uuid: 'Content-Type-header',
           usedIn: 'response',
           in: 'headers',
           key: 'Content-Type',
@@ -1682,8 +1672,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
   describe('@getRequestIdFromOperation', () => {
     it('should return operationId if it exists', () => {
-      spyOn(__internals__, 'genUuid').andReturn(444)
-
       const operation = {
         operationId: 123
       }
@@ -1694,15 +1682,12 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       expect(actual).toEqual(expected)
     })
 
-    it('should call genUuid if operationId does not exists', () => {
-      spyOn(__internals__, 'genUuid').andReturn(444)
-
+    it('should return null if operationId does not exists', () => {
       const operation = {}
 
-      const expected = 444
+      const expected = null
       const actual = __internals__.getRequestIdFromOperation(operation)
 
-      expect(__internals__.genUuid).toHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
   })
@@ -1869,8 +1854,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
   describe('@getSharedEndpoints', () => {
     it('should work', () => {
-      spyOn(__internals__, 'genUuid').andReturn('abc')
-
       const swagger = {
         schemes: [ 'https:' ],
         host: 'some.host.com',
@@ -1878,9 +1861,9 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       }
 
       const expected = {
-        abc: new URL({
+        base: new URL({
           url: 'https://some.host.com/v2',
-          uuid: 'abc',
+          uuid: 'base',
           secure: true,
           variableDelimiters: List([ '{', '}' ])
         })
@@ -1891,17 +1874,15 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should work with missing basePath', () => {
-      spyOn(__internals__, 'genUuid').andReturn('abc')
-
       const swagger = {
         schemes: [ 'https:' ],
         host: 'some.host.com'
       }
 
       const expected = {
-        abc: new URL({
+        base: new URL({
           url: 'https://some.host.com/',
-          uuid: 'abc',
+          uuid: 'base',
           secure: true,
           variableDelimiters: List([ '{', '}' ])
         })
@@ -1912,16 +1893,14 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should work with missing host', () => {
-      spyOn(__internals__, 'genUuid').andReturn('abc')
-
       const swagger = {
         schemes: [ 'https:' ]
       }
 
       const expected = {
-        abc: new URL({
+        base: new URL({
           url: 'https://localhost/',
-          uuid: 'abc',
+          uuid: 'base',
           secure: true,
           variableDelimiters: List([ '{', '}' ])
         })
@@ -1932,14 +1911,12 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
 
     it('should work with everything missing', () => {
-      spyOn(__internals__, 'genUuid').andReturn('abc')
-
       const swagger = {}
 
       const expected = {
-        abc: new URL({
+        base: new URL({
           url: 'http://localhost/',
-          uuid: 'abc',
+          uuid: 'base',
           secure: false,
           variableDelimiters: List([ '{', '}' ])
         })
@@ -2335,25 +2312,25 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@convertSchemaIntoParameterEntry', () => {
-    spyOn(__internals__, 'genUuid').andReturn(321)
+    it('should work', () => {
+      const schema = {
+        type: 'string'
+      }
 
-    const schema = {
-      type: 'string'
-    }
+      const expected = {
+        key: 'body',
+        value: new Parameter({
+          usedIn: 'response',
+          uuid: 'body',
+          constraints: List([
+            new Constraint.JSONSchema(schema)
+          ])
+        })
+      }
+      const actual = __internals__.convertSchemaIntoParameterEntry(schema)
 
-    const expected = {
-      key: 321,
-      value: new Parameter({
-        usedIn: 'response',
-        uuid: 321,
-        constraints: List([
-          new Constraint.JSONSchema(schema)
-        ])
-      })
-    }
-    const actual = __internals__.convertSchemaIntoParameterEntry(schema)
-
-    expect(actual).toEqual(expected)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@createResponseParameterContainer', () => {
@@ -2684,8 +2661,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
   describe('@getGroup', () => {
     it('should work', () => {
-      spyOn(__internals__, 'genUuid').andReturn(987)
-
       const swagger = {
         paths: {
           a: 123,
@@ -2694,7 +2669,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       }
 
       const expected = new Group({
-        id: 987,
+        id: null,
         name: null,
         description: 'All the requests',
         children: new OrderedMap({

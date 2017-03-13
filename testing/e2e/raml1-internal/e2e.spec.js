@@ -35,36 +35,42 @@ const compare = (actual, expected) => {
   return false
 }
 
-const fixDiff = (actual) => {
+const fixDiff = (actual, index) => {
   if (process.env.FIX === 'raml-v1.0--internal-v1.0') {
     /* eslint-disable no-console */
     console.log('updating spec')
     /* eslint-enable no-console */
-    fs.writeFileSync(resolve(__dirname, './output.raml'), actual)
+    fs.writeFileSync(resolve(__dirname, './test-case-' + index + '/output.json'), actual)
   }
 }
 
 describe('raml v1 -> internal', () => {
-  it('should match expected output', (done) => {
-    const output = fs.readFileSync(resolve(__dirname, './output.raml'), 'utf-8').toString()
-    // const item = { content: input }
-    /* eslint-disable no-console */
-    try {
-      const options = ApiFlow.setup({
-        options: {
-          source: { format: 'raml', version: 'v1.0' },
-          target: { format: 'internal', version: 'v1.0' }
-        }
-      })
+  for (let index = 0; index < 2; index += 1) {
+    it('should match expected output for test case #' + index, (done) => {
+      const output = fs.readFileSync(
+        resolve(__dirname, './test-case-' + index + '/output.json'),
+        'utf-8'
+      ).toString()
+      // const item = { content: input }
+      /* eslint-disable no-console */
+      try {
+        const options = ApiFlow.setup({
+          options: {
+            source: { format: 'raml', version: 'v1.0' },
+            target: { format: 'internal', version: 'v1.0' }
+          }
+        })
 
-      console.log('hey there 3')
-      ApiFlow
-        .transform({ options, uri: 'file://' + resolve(__dirname, './input.raml') })
+        ApiFlow
+        .transform({
+          options,
+          uri: 'file://' + resolve(__dirname, './test-case-' + index + '/input.raml')
+        })
         .then(serialized => {
           const success = compare(serialized, output)
           if (!success) {
             done(new Error('found differences'))
-            return fixDiff(serialized)
+            return fixDiff(serialized, index)
           }
           done()
         }, e => {
@@ -72,12 +78,13 @@ describe('raml v1 -> internal', () => {
           done()
         })
         .catch()
-    }
-    catch (e) {
-      console.error(e.stack)
-      expect(true).toEqual(false)
-      done()
-    }
-    /* eslint-enable no-console */
-  })
+      }
+      catch (e) {
+        console.error(e.stack)
+        expect(true).toEqual(false)
+        done()
+      }
+      /* eslint-enable no-console */
+    })
+  }
 })
