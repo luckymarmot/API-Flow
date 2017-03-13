@@ -193,12 +193,13 @@ describe('parsers/raml/v1.0/Parser.js', () => {
 
       const input = { a: 123 }
       const node = { test: 'test' }
+      const offsetKey = 678
       const expected = { a: 123, b: 234, c: 345, d: 456, e: 567 }
-      const actual = __internals__.addDescriptiveFields(input, node)
+      const actual = __internals__.addDescriptiveFields(input, node, offsetKey)
 
       expect(actual).toEqual(expected)
 
-      expect(__internals__.addKey).toHaveBeenCalledWith({ a: 123 }, node)
+      expect(__internals__.addKey).toHaveBeenCalledWith({ a: 123 }, node, offsetKey)
       expect(__internals__.addTitle).toHaveBeenCalledWith({ a: 123, b: 234 }, node)
       expect(__internals__.addDescription).toHaveBeenCalledWith({ a: 123, b: 234, c: 345 }, node)
       expect(__internals__.addExamples).toHaveBeenCalledWith(
@@ -1299,7 +1300,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       })
 
       const inputs = [
-        [ { a: 123 }, { b: 234, c: 345 } ]
+        [ null, { a: 123 }, { b: 234, c: 345 } ]
       ]
       const expected = [
         { a: 123, b: 469, c: 668 }
@@ -1311,7 +1312,9 @@ describe('parsers/raml/v1.0/Parser.js', () => {
 
   describe('@createDefinitions', () => {
     it('should work', () => {
-      spyOn(__internals__, 'addDefinitionsReducer').andCall((s, v) => Object.assign(s, { [v]: v }))
+      spyOn(__internals__, 'addDefinitionsReducer').andCall((o, s, v) => {
+        return Object.assign(s, { [v]: v })
+      })
 
       const inputs = [
         { types: () => [] },
@@ -1326,16 +1329,49 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     })
   })
 
+  describe('@extractDefinitionsFromLibaries', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createDefinitions').andCall(a => {
+        return { definitions: { [a]: a } }
+      })
+      const inputs = [
+        { uses: () => null },
+        { uses: () => [] },
+        { uses: () => [ { ast: () => null, key: () => 'Song' } ] },
+        { uses: () => [
+          { ast: () => 123, key: () => 'Song' }
+        ] },
+        { uses: () => [
+          { ast: () => 123, key: () => 'Song' },
+          { ast: () => 234, key: () => 'Library' }
+        ] }
+      ]
+      const expected = [
+        {},
+        {},
+        {},
+        { '123': 123 },
+        { '123': 123, '234': 234 }
+      ]
+      const actual = inputs.map(input => __internals__.extractDefinitionsFromLibaries(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@extractConstraintStore', () => {
     it('should work', () => {
       spyOn(__internals__, 'createDefinitions').andCall(v => v)
+      spyOn(__internals__, 'extractDefinitionsFromLibaries').andReturn({ Product: 345 })
+
       const inputs = [
         { definitions: { User: 123, Song: 234 } }
       ]
+
       const expected = [
         OrderedMap({
           User: new Constraint.JSONSchema(123),
-          Song: new Constraint.JSONSchema(234)
+          Song: new Constraint.JSONSchema(234),
+          Product: new Constraint.JSONSchema(345)
         })
       ]
       const actual = inputs.map(input => __internals__.extractConstraintStore(input))
@@ -2309,14 +2345,14 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       const inputs = [
         { type: () => null },
         { type: () => ({ name: () => null }) },
-        { type: () => ({ name: () => 123 }) },
         { type: () => ({ name: () => 'abc' }) }
       ]
       const expected = [
         OrderedMap(),
         OrderedMap(),
-        OrderedMap({ '123': new Reference({ type: 'interface', uuid: 123 }) }),
-        OrderedMap({ abc: new Reference({ type: 'interface', uuid: 'abc' }) })
+        OrderedMap({
+          resourceType_abc: new Reference({ type: 'interface', uuid: 'resourceType_abc' })
+        })
       ]
       const actual = inputs.map(input => __internals__.extractInterfacesFromResource(input))
       expect(actual).toEqual(expected)

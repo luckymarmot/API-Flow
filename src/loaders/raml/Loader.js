@@ -49,7 +49,13 @@ methods.load = ({ options, uri }) => {
   const { fsResolver, httpResolver } = methods.createRAMLResolvers(options)
 
   if (parse(uri).protocol === 'file:') {
-    return raml.loadApi(parse(uri).pathname, { fsResolver, httpResolver }).then(ramlApi => {
+    return raml.loadApi(
+      parse(uri).pathname,
+      {
+        fsResolver,
+        httpResolver
+      }
+    ).then(ramlApi => {
       return { options, item: ramlApi }
     })
   }

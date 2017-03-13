@@ -365,7 +365,17 @@
         }
       },
       "description": null,
-      "interfaces": {}
+      "interfaces": {
+        "resourceType_collectionFromApiLib": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "interface",
+          "uuid": "resourceType_collectionFromApiLib",
+          "overlay": null
+        }
+      }
     },
     "http://{environment}.musicapi.com/{version}/entry": {
       "_model": {
@@ -681,13 +691,13 @@
       },
       "description": null,
       "interfaces": {
-        "collection": {
+        "resourceType_collection": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "interface",
-          "uuid": "collection",
+          "uuid": "resourceType_collection",
           "overlay": null
         }
       }
@@ -964,7 +974,17 @@
         }
       },
       "description": "Access to all songs inside the music world library.",
-      "interfaces": {}
+      "interfaces": {
+        "resourceType_collectionfromSongsLib": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "interface",
+          "uuid": "resourceType_collectionfromSongsLib",
+          "overlay": null
+        }
+      }
     },
     "http://{environment}.musicapi.com/{version}/songs/{songId}": {
       "_model": {
@@ -2062,6 +2082,292 @@
             }
           ]
         }
+      },
+      "SongsLib.Song": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "length": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "title",
+            "length"
+          ],
+          "x-examples": [
+            {
+              "title": "My Song",
+              "length": 12
+            },
+            {
+              "title": "Last",
+              "length": 3
+            }
+          ]
+        }
+      },
+      "SongsLib.Album": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "songs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SongsLib.Song"
+              }
+            }
+          },
+          "required": [
+            "title",
+            "songs"
+          ]
+        }
+      },
+      "SongsLib.Musician": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "discography": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/SongsLib.Song"
+                  },
+                  {
+                    "$ref": "#/definitions/SongsLib.Album"
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "name",
+            "discography"
+          ]
+        }
+      },
+      "ApiLib.RamlDataType": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "propString": {
+              "type": "string"
+            },
+            "propStringArray1": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "ideas": {
+              "type": "array"
+            },
+            "extIdeas": {
+              "properties": {
+                "createdBy": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "createdBy"
+              ]
+            },
+            "feedback": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "pattern": "[a-zA-Z\\s]*",
+              "x-examples": [
+                "very well made"
+              ]
+            },
+            "propNumber": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 32,
+              "multipleOf": 2
+            },
+            "propInteger": {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 5,
+              "multipleOf": 1
+            },
+            "propBoolean": {
+              "type": "boolean"
+            },
+            "propDate": {
+              "type": "string",
+              "$ref": "#/definitions/ApiLib.$DateOnly",
+              "x-examples": [
+                "2015-05-23"
+              ]
+            },
+            "userPicture": {
+              "type": "string",
+              "$ref": "#/definitions/ApiLib.$File"
+            },
+            "NilValue": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "comment": {
+                  "$ref": "#/definitions/ApiLib.string?"
+                }
+              },
+              "required": [
+                "name",
+                "comment"
+              ]
+            },
+            "CatOrDog": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ApiLib.Cat"
+                },
+                {
+                  "$ref": "#/definitions/ApiLib.Dog"
+                }
+              ]
+            },
+            "CatAndDog": {
+              "$ref": "#/definitions/ApiLib.Dog"
+            },
+            "PossibleMeetingDate": {
+              "type": "string",
+              "$ref": "#/definitions/ApiLib.$DateOnly"
+            }
+          },
+          "required": [
+            "propString",
+            "propStringArray1",
+            "ideas",
+            "extIdeas",
+            "feedback",
+            "propNumber",
+            "propInteger",
+            "propBoolean",
+            "propDate",
+            "userPicture",
+            "NilValue",
+            "CatOrDog",
+            "CatAndDog",
+            "CatAndDog",
+            "PossibleMeetingDate"
+          ]
+        }
+      },
+      "ApiLib.$DateOnly": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+          "description": "full-date as defined in RFC#3339"
+        }
+      },
+      "ApiLib.$File": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "description": "file",
+          "pattern": "^[^\u0000]*\u0000$"
+        }
+      },
+      "ApiLib.Cat": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "color"
+          ]
+        }
+      },
+      "ApiLib.Dog": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "fangs": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "fangs"
+          ]
+        }
+      },
+      "ApiLib.CustomDate": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "$ref": "#/definitions/ApiLib.$DateOnly"
+        }
       }
     },
     "endpoint": {
@@ -2395,6 +2701,114 @@
       }
     },
     "interface": {
+      "resourceType_collectionfromSongsLib": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "collectionfromSongsLib",
+        "uuid": "resourceType_collectionfromSongsLib",
+        "level": "resource",
+        "required": false,
+        "description": null,
+        "underlay": {
+          "description": null,
+          "interfaces": {},
+          "methods": {
+            "get": {
+              "_model": {
+                "name": "request.models",
+                "version": "0.1.0"
+              },
+              "id": null,
+              "endpoints": {
+                "base": {
+                  "_model": {
+                    "name": "reference.models",
+                    "version": "0.1.0"
+                  },
+                  "type": "endpoint",
+                  "uuid": "base",
+                  "overlay": null
+                }
+              },
+              "name": null,
+              "description": "This was loaded from songs-library",
+              "method": "get",
+              "parameters": {
+                "_model": {
+                  "name": "parameter-container.core.models",
+                  "version": "0.1.0"
+                },
+                "headers": {},
+                "queries": {},
+                "body": {},
+                "path": {}
+              },
+              "contexts": [],
+              "auths": [],
+              "responses": {},
+              "timeout": null,
+              "tags": [],
+              "interfaces": {}
+            }
+          }
+        }
+      },
+      "resourceType_collectionFromApiLib": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "collectionFromApiLib",
+        "uuid": "resourceType_collectionFromApiLib",
+        "level": "resource",
+        "required": false,
+        "description": null,
+        "underlay": {
+          "description": null,
+          "interfaces": {},
+          "methods": {
+            "get": {
+              "_model": {
+                "name": "request.models",
+                "version": "0.1.0"
+              },
+              "id": null,
+              "endpoints": {
+                "base": {
+                  "_model": {
+                    "name": "reference.models",
+                    "version": "0.1.0"
+                  },
+                  "type": "endpoint",
+                  "uuid": "base",
+                  "overlay": null
+                }
+              },
+              "name": null,
+              "description": "This was loaded from api-library",
+              "method": "get",
+              "parameters": {
+                "_model": {
+                  "name": "parameter-container.core.models",
+                  "version": "0.1.0"
+                },
+                "headers": {},
+                "queries": {},
+                "body": {},
+                "path": {}
+              },
+              "contexts": [],
+              "auths": [],
+              "responses": {},
+              "timeout": null,
+              "tags": [],
+              "interfaces": {}
+            }
+          }
+        }
+      },
       "resourceType_collection": {
         "_model": {
           "name": "interface.models",

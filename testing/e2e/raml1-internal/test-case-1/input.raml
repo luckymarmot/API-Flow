@@ -269,6 +269,7 @@ uses:
   ApiLib: libraries/api-library.raml
 
 /api:
+  type: ApiLib.collectionFromApiLib
   get:
     queryString:
       properties:
@@ -289,6 +290,7 @@ uses:
   description:  Access to all songs inside the music world library.
   (ready):
   is: [ secured ]
+  type: SongsLib.collectionfromSongsLib
   get:
     securedBy: [ oauth_2_0, null ]
     (monitoringInterval): 30

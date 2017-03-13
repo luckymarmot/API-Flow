@@ -17,7 +17,7 @@ import Interface from '../../../models/Interface'
 import Info from '../../../models/Info'
 import Api from '../../../models/Api'
 
-import { convertEntryListInMap, flatten, currify } from '../../../utils/fp-utils'
+import { convertEntryListInMap, flatten, currify, entries } from '../../../utils/fp-utils'
 
 const methods = {}
 
@@ -97,8 +97,9 @@ methods.resolve = (items, item) => {
  * @param {RAMLNode} node: the node to extract the name of
  * @returns {Object} the updated schema
  */
-methods.addKey = (schema, node) => {
-  schema.$key = node.name()
+methods.addKey = (schema, node, offsetKey) => {
+  const key = offsetKey ? offsetKey + '.' + node.name() : node.name()
+  schema.$key = key
   return schema
 }
 
@@ -172,10 +173,10 @@ methods.addExamples = (schema, node) => {
  * @param {RAMLNode} node: the node to extract the information from
  * @returns {Object} the updated schema
  */
-methods.addDescriptiveFields = ($schema, node) => {
+methods.addDescriptiveFields = ($schema, node, offsetKey) => {
   let schema = $schema
 
-  schema = methods.addKey(schema, node)
+  schema = methods.addKey(schema, node, offsetKey)
   schema = methods.addTitle(schema, node)
   schema = methods.addDescription(schema, node)
   schema = methods.addExamples(schema, node)
@@ -257,9 +258,10 @@ methods.convertXMLTypeDeclaration = (type) => {
  * @param {string} type: the inplace type declaration
  * @returns {Array<Object>} the corresponding schemas
  */
-methods.convertInPlaceTypeDeclaration = (type) => {
+methods.convertInPlaceTypeDeclaration = (type, offsetKey) => {
+  const ref = offsetKey ? offsetKey + '.' + type : type
   const schema = {
-    $ref: '#/definitions/' + type
+    $ref: '#/definitions/' + ref
   }
 
   return [ schema ]
@@ -287,7 +289,7 @@ methods.convertAnyTypeDeclaration = () => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding list of schemas
  */
-methods.convertTypeDeclaration = (node) => {
+methods.convertTypeDeclaration = (node, offsetKey) => {
   const type = node.type()[0]
   if (methods.isMaybeJSON(type)) {
     return methods.convertJSONTypeDeclaration(type, node)
@@ -299,7 +301,7 @@ methods.convertTypeDeclaration = (node) => {
     return methods.convertAnyTypeDeclaration(type, node)
   }
 
-  return methods.convertInPlaceTypeDeclaration(type, node)
+  return methods.convertInPlaceTypeDeclaration(type, offsetKey)
 }
 
 /**
@@ -346,8 +348,8 @@ methods.addSimpleObjectFieldsToSchema = (schema, node) => {
  * @param {RAMLNode} prop: the node to to convert
  * @returns {Entry<string, Øbject>} the corresponding key value pair.
  */
-methods.convertPropertyIntoSchemaEntry = (prop) => {
-  const [ $schema, ...dependencies ] = methods.createSchema(prop)
+methods.convertPropertyIntoSchemaEntry = (prop, offsetKey) => {
+  const [ $schema, ...dependencies ] = methods.createSchema(prop, offsetKey)
   return {
     key: prop.name(),
     value: methods.normalizeSchema($schema),
@@ -425,7 +427,7 @@ methods.getOtherSchemasFromPropertiesSchemas = (propSchemas) => {
  * @param {RAMLNode} node: the node to get the properties from
  * @returns {Array<Entry<string, Object>>} the corresponding array
  */
-methods.getPropertiesSchema = (node) => {
+methods.getPropertiesSchema = (node, offsetKey) => {
   const properties = node.properties()
 
   if (!properties) {
@@ -433,7 +435,7 @@ methods.getPropertiesSchema = (node) => {
   }
 
   const propSchemas = properties
-    .map(methods.convertPropertyIntoSchemaEntry)
+    .map((prop) => methods.convertPropertyIntoSchemaEntry(prop, offsetKey))
 
   return propSchemas
 }
@@ -444,10 +446,10 @@ methods.getPropertiesSchema = (node) => {
  * @param {RAMLNode} node: the node to get the properties from
  * @returns {Object} the updated schema
  */
-methods.addPropertiesToSchema = (schema, node) => {
+methods.addPropertiesToSchema = (schema, node, offsetKey) => {
   let updated = schema
 
-  const propSchemas = methods.getPropertiesSchema(node)
+  const propSchemas = methods.getPropertiesSchema(node, offsetKey)
 
   updated = methods.addPropertiesKeyToSchema(updated, propSchemas)
   updated = methods.addRequiredKeyToSchema(updated, propSchemas)
@@ -485,8 +487,8 @@ methods.isImplicitArrayType = (type) => !!type.match(/\[\]$/)
  * @param {string} type: the type to convert into a schema
  * @returns {Object} the corresponding schema
  */
-methods.getSchemaFromArrayType = (type) => {
-  const schemas = methods.getSchemaFromType(type)
+methods.getSchemaFromArrayType = (type, offsetKey) => {
+  const schemas = methods.getSchemaFromType(type, offsetKey)
   const items = schemas.length === 1 ? schemas[0] : schemas
   return {
     type: 'array',
@@ -499,14 +501,14 @@ methods.getSchemaFromArrayType = (type) => {
  * @param {string} type: the type to convert into a schema
  * @returns {Object?} the corresponding schema, it is indeed an implicit array type
  */
-methods.getSchemaFromImplicitArrayType = (type) => {
+methods.getSchemaFromImplicitArrayType = (type, offsetKey) => {
   if (methods.isImplicitArrayType(type)) {
     const mixedTypesMatch = type.match(/^\(([^()]+)\)\[\]$/)
     const uniqueTypeMatch = type.match(/^([^|]+)\[\]$/)
 
     if (mixedTypesMatch || uniqueTypeMatch) {
       const itemType = (mixedTypesMatch || uniqueTypeMatch)[1]
-      return methods.getSchemaFromArrayType(itemType)
+      return methods.getSchemaFromArrayType(itemType, offsetKey)
     }
   }
 
@@ -518,11 +520,11 @@ methods.getSchemaFromImplicitArrayType = (type) => {
  * @param {string} type: the type to convert into a schema
  * @returns {Object?} the corresponding schema, it is indeed a union type
  */
-methods.getSchemaFromUnionType = (type) => {
+methods.getSchemaFromUnionType = (type, offsetKey) => {
   const union = type.split('|').map(str => str.trim()).filter(v => !!v)
 
   if (union.length > 1) {
-    const anyOf = methods.getSchemaListFromTypes(union)
+    const anyOf = methods.getSchemaListFromTypes(union, offsetKey)
     return { anyOf }
   }
 
@@ -536,8 +538,9 @@ methods.getSchemaFromUnionType = (type) => {
  *
  * NOTE: What is the semantic difference between this method and @convertTypeDeclaration ?
  */
-methods.getSchemaFromReferenceType = (type) => {
-  const $ref = '#/definitions/' + type
+methods.getSchemaFromReferenceType = (type, offsetKey) => {
+  const ref = offsetKey ? offsetKey + '.' + type : type
+  const $ref = '#/definitions/' + ref
   return { $ref }
 }
 
@@ -572,14 +575,14 @@ methods.getSchemaFromNilType = (type) => {
  * @param {string} _type: the type to convert into a schema
  * @returns {Object?} the corresponding schema
  */
-methods.getSchemaFromType = (_type) => {
+methods.getSchemaFromType = (_type, offsetKey) => {
   const type = _type.trim()
 
   const schema = methods.getSchemaFromJSONType(type) ||
     methods.getSchemaFromNilType(type) ||
-    methods.getSchemaFromImplicitArrayType(type) ||
-    methods.getSchemaFromUnionType(type) ||
-    methods.getSchemaFromReferenceType(type)
+    methods.getSchemaFromImplicitArrayType(type, offsetKey) ||
+    methods.getSchemaFromUnionType(type, offsetKey) ||
+    methods.getSchemaFromReferenceType(type, offsetKey)
 
   return schema
 }
@@ -589,8 +592,11 @@ methods.getSchemaFromType = (_type) => {
  * @param {Array<string>} types: the array of types to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.getSchemaListFromTypes = (types) => {
-  return types.map(methods.getSchemaFromType)
+methods.getSchemaListFromTypes = (types, offsetKey) => {
+  if (types === null) {
+    return []
+  }
+  return types.map((type) => methods.getSchemaFromType(type, offsetKey))
 }
 
 /**
@@ -598,8 +604,8 @@ methods.getSchemaListFromTypes = (types) => {
  * @param {Array<string>} types: the array of types of the multiple inheritance object
  * @returns {Object} the corresponding schema
  */
-methods.convertMultipleInheritanceObject = (types) => {
-  const schemas = methods.getSchemaListFromTypes(types)
+methods.convertMultipleInheritanceObject = (types, offsetKey) => {
+  const schemas = methods.getSchemaListFromTypes(types, offsetKey)
 
   const $types = schemas.filter(schema => !!schema.type)
 
@@ -629,8 +635,8 @@ methods.convertMultipleInheritanceObject = (types) => {
  * @param {Array<string>} types: the array of types
  * @returns {Object} the corresponding schema
  */
-methods.getSchemasFromTypes = (types) => {
-  const schema = methods.convertMultipleInheritanceObject(types)
+methods.getSchemasFromTypes = (types, offsetKey) => {
+  const schema = methods.convertMultipleInheritanceObject(types, offsetKey)
   return schema
 }
 
@@ -640,10 +646,10 @@ methods.getSchemasFromTypes = (types) => {
  * @param {RAMLNode} node: the raml node to get the types from
  * @returns {Object} the updated schema
  */
-methods.addInheritedTypes = ($schema, node) => {
+methods.addInheritedTypes = ($schema, node, offsetKey) => {
   const types = node.type()
 
-  const schema = methods.getSchemasFromTypes(types)
+  const schema = methods.getSchemasFromTypes(types, offsetKey)
 
   return Object.assign({}, $schema, schema)
 }
@@ -653,13 +659,13 @@ methods.addInheritedTypes = ($schema, node) => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertObjectTypeDeclaration = (node) => {
+methods.convertObjectTypeDeclaration = (node, offsetKey) => {
   let schema = {}
   let otherSchemas = []
 
-  schema = methods.addInheritedTypes(schema, node)
+  schema = methods.addInheritedTypes(schema, node, offsetKey)
   schema = methods.addSimpleObjectFieldsToSchema(schema, node);
-  [ schema, ...otherSchemas ] = methods.addPropertiesToSchema(schema, node)
+  [ schema, ...otherSchemas ] = methods.addPropertiesToSchema(schema, node, offsetKey)
 
   return [ schema, ...otherSchemas ]
 }
@@ -743,9 +749,9 @@ methods.getItemTypes = (node) => {
  * @param {RAMLNode} node: the node to get the items data from
  * @returns {Objet} the updated schema
  */
-methods.addItemFieldToSchema = (schema, node) => {
+methods.addItemFieldToSchema = (schema, node, offsetKey) => {
   const types = methods.getItemTypes(node)
-  const items = methods.getSchemasFromTypes(types)
+  const items = methods.getSchemasFromTypes(types, offsetKey)
   const normalizedItems = methods.normalizeSchema(items)
   if (Object.keys(normalizedItems).length) {
     schema.items = normalizedItems
@@ -758,12 +764,12 @@ methods.addItemFieldToSchema = (schema, node) => {
  * @param {RAMLNode} node: the node to convert into a schema
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertArrayTypeDeclaration = (node) => {
+methods.convertArrayTypeDeclaration = (node, offsetKey) => {
   let schema = {}
 
-  schema = methods.addInheritedTypes(schema, node)
+  schema = methods.addInheritedTypes(schema, node, offsetKey)
   schema = methods.addSimpleArrayFieldsToSchema(schema, node)
-  schema = methods.addItemFieldToSchema(schema, node)
+  schema = methods.addItemFieldToSchema(schema, node, offsetKey)
 
   return [ schema ]
 }
@@ -773,10 +779,10 @@ methods.convertArrayTypeDeclaration = (node) => {
  * @param {RAMLNode} node: the node to convert into a schema
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertUnionTypeDeclaration = (node) => {
+methods.convertUnionTypeDeclaration = (node, offsetKey) => {
   let schema = {}
 
-  schema = methods.addInheritedTypes(schema, node)
+  schema = methods.addInheritedTypes(schema, node, offsetKey)
 
   return [ schema ]
 }
@@ -817,10 +823,10 @@ methods.addSimpleStringFieldsToSchema = (schema, node) => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Object} the corresponding array of schemas
  */
-methods.convertStringTypeDeclaration = (node) => {
+methods.convertStringTypeDeclaration = (node, offsetKey) => {
   let schema = {}
 
-  schema = methods.addInheritedTypes(schema, node)
+  schema = methods.addInheritedTypes(schema, node, offsetKey)
   schema = methods.addSimpleStringFieldsToSchema(schema, node)
 
   return [ schema ]
@@ -862,10 +868,10 @@ methods.addSimpleNumberFieldsToSchema = (schema, node) => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertNumberTypeDeclaration = (node) => {
+methods.convertNumberTypeDeclaration = (node, offsetKey) => {
   let schema = {}
 
-  schema = methods.addInheritedTypes(schema, node)
+  schema = methods.addInheritedTypes(schema, node, offsetKey)
   schema = methods.addSimpleNumberFieldsToSchema(schema, node)
 
   return [ schema ]
@@ -876,10 +882,10 @@ methods.convertNumberTypeDeclaration = (node) => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertBooleanTypeDeclaration = (node) => {
+methods.convertBooleanTypeDeclaration = (node, offsetKey) => {
   let schema = {}
 
-  schema = methods.addInheritedTypes(schema, node)
+  schema = methods.addInheritedTypes(schema, node, offsetKey)
 
   return [ schema ]
 }
@@ -889,14 +895,15 @@ methods.convertBooleanTypeDeclaration = (node) => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertDateOnlyTypeDeclaration = () => {
+methods.convertDateOnlyTypeDeclaration = (offsetKey) => {
+  const ref = offsetKey ? offsetKey + '.$DateOnly' : '$DateOnly'
   const schema = {
     type: 'string',
-    $ref: '#/definitions/$DateOnly'
+    $ref: '#/definitions/' + ref
   }
 
   const DateOnlySchema = {
-    $key: '$DateOnly',
+    $key: ref,
     type: 'string',
     pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$',
     description: 'full-date as defined in RFC#3339'
@@ -910,14 +917,15 @@ methods.convertDateOnlyTypeDeclaration = () => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertTimeOnlyTypeDeclaration = () => {
+methods.convertTimeOnlyTypeDeclaration = (offsetKey) => {
+  const ref = offsetKey ? offsetKey + '.$TimeOnly' : '$TimeOnly'
   const schema = {
     type: 'string',
-    $ref: '#/definitions/$TimeOnly'
+    $ref: '#/definitions/' + ref
   }
 
   const TimeOnlySchema = {
-    $key: '$TimeOnly',
+    $key: ref,
     type: 'string',
     pattern: '^([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$',
     description: 'full-time as defined in RFC#3339'
@@ -931,14 +939,15 @@ methods.convertTimeOnlyTypeDeclaration = () => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertDateTimeOnlyTypeDeclaration = () => {
+methods.convertDateTimeOnlyTypeDeclaration = (offsetKey) => {
+  const ref = offsetKey ? offsetKey + '.$DateTimeOnly' : '$DateTimeOnly'
   const schema = {
     type: 'string',
-    $ref: '#/definitions/$DateTimeOnly'
+    $ref: '#/definitions/' + ref
   }
 
   const DateTimeOnlySchema = {
-    $key: '$DateTimeOnly',
+    $key: ref,
     type: 'string',
     pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T' +
       '([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$',
@@ -953,14 +962,15 @@ methods.convertDateTimeOnlyTypeDeclaration = () => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertDateTimeTypeDeclaration = () => {
+methods.convertDateTimeTypeDeclaration = (offsetKey) => {
+  const ref = offsetKey ? offsetKey + '.$DateTime' : '$DateTime'
   const schema = {
     type: 'string',
-    $ref: '#/definitions/$DateTime'
+    $ref: '#/definitions/' + ref
   }
 
   const DateTimeSchema = {
-    $key: '$DateTime',
+    $key: ref,
     type: 'string',
     description: 'datetime'
   }
@@ -973,14 +983,15 @@ methods.convertDateTimeTypeDeclaration = () => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.convertFileTypeDeclaration = () => {
+methods.convertFileTypeDeclaration = (offsetKey) => {
+  const ref = offsetKey ? offsetKey + '.$File' : '$File'
   const schema = {
     type: 'string',
-    $ref: '#/definitions/$File'
+    $ref: '#/definitions/' + ref
   }
 
   const FileSchema = {
-    $key: '$File',
+    $key: ref,
     type: 'string',
     description: 'file',
     pattern: '^[^\u0000]*\u0000$'
@@ -994,50 +1005,50 @@ methods.convertFileTypeDeclaration = () => {
  * @param {RAMLNode} node: the node to convert
  * @returns {Array<Object>} the corresponding array of schemas
  */
-methods.createSchema = (node) => {
+methods.createSchema = (node, offsetKey) => {
   let schema = {}
   let otherSchemas = []
 
   const typeKind = node.kind()
   // External Declaration
   if (typeKind === 'TypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertTypeDeclaration(node, offsetKey)
   }
   else if (typeKind === 'ObjectTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertObjectTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertObjectTypeDeclaration(node, offsetKey)
   }
   else if (typeKind === 'ArrayTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertArrayTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertArrayTypeDeclaration(node, offsetKey)
   }
   else if (typeKind === 'UnionTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertUnionTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertUnionTypeDeclaration(node, offsetKey)
   }
   else if (typeKind === 'StringTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertStringTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertStringTypeDeclaration(node, offsetKey)
   }
   else if (typeKind === 'NumberTypeDeclaration' || typeKind === 'IntegerTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertNumberTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertNumberTypeDeclaration(node, offsetKey)
   }
   else if (typeKind === 'BooleanTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertBooleanTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertBooleanTypeDeclaration(node, offsetKey)
   }
   else if (typeKind === 'DateOnlyTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertDateOnlyTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertDateOnlyTypeDeclaration(offsetKey)
   }
   else if (typeKind === 'TimeOnlyTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertTimeOnlyTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertTimeOnlyTypeDeclaration(offsetKey)
   }
   else if (typeKind === 'DateTimeOnlyTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertDateTimeOnlyTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertDateTimeOnlyTypeDeclaration(offsetKey)
   }
   else if (typeKind === 'DateTimeTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertDateTimeTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertDateTimeTypeDeclaration(offsetKey)
   }
   else if (typeKind === 'FileTypeDeclaration') {
-    [ schema, ...otherSchemas ] = methods.convertFileTypeDeclaration(node)
+    [ schema, ...otherSchemas ] = methods.convertFileTypeDeclaration(offsetKey)
   }
 
-  schema = methods.addDescriptiveFields(schema, node)
+  schema = methods.addDescriptiveFields(schema, node, offsetKey)
 
   return [ schema, ...otherSchemas ]
 }
@@ -1061,8 +1072,8 @@ methods.addSchemaToDefinitionsReducer = (defs, schema) => {
  * @param {RAMLNode} type: the node to extract the schemas from
  * @returns {Object} the updated definitions object
  */
-methods.addDefinitionsReducer = (definitions, type) => {
-  const schemas = methods.createSchema(type).map(methods.normalizeSchema)
+methods.addDefinitionsReducer = (offsetKey, definitions, type) => {
+  const schemas = methods.createSchema(type, offsetKey).map(methods.normalizeSchema)
   return schemas.reduce(methods.addSchemaToDefinitionsReducer, definitions)
 }
 
@@ -1072,11 +1083,37 @@ methods.addDefinitionsReducer = (definitions, type) => {
  * @returns {{ definitions: Object }} the corresponding definitions object, encapsulating all the
  * schemas present in the api
  */
-methods.createDefinitions = (api) => {
+methods.createDefinitions = (api, offsetKey) => {
   const types = api.types()
-  const definitions = types.reduce(methods.addDefinitionsReducer, {})
+  const addDefinitionsReducer = currify(methods.addDefinitionsReducer, offsetKey)
+  const definitions = types.reduce(addDefinitionsReducer, {})
 
   return { definitions }
+}
+
+methods.extractDefinitionsFromLibaries = (api) => {
+  const libraries = api.uses()
+
+  if (!libraries) {
+    return {}
+  }
+
+  const libraryDefinitions = libraries
+    .map((library) => {
+      if (!library || !library.ast()) {
+        return null
+      }
+
+      return methods.createDefinitions(library.ast(), library.key()).definitions
+    })
+    .filter(v => !!v)
+    .reduce((acc, value) => {
+      const libDefs = entries(value)
+      return [].concat(acc, libDefs)
+    }, [])
+    .reduce(convertEntryListInMap, {})
+
+  return libraryDefinitions
 }
 
 /**
@@ -1086,7 +1123,10 @@ methods.createDefinitions = (api) => {
  */
 methods.extractConstraintStore = (api) => {
   const { definitions } = methods.createDefinitions(api)
-  return OrderedMap(definitions).map((schema) => new Constraint.JSONSchema(schema))
+  const libraryDefinitions = methods.extractDefinitionsFromLibaries(api)
+  const allDefinitions = Object.assign({}, definitions, libraryDefinitions)
+
+  return OrderedMap(allDefinitions).map((schema) => new Constraint.JSONSchema(schema))
 }
 
 /**
@@ -1851,7 +1891,8 @@ methods.convertUriParametersAndResourceIntoPath = (uriParameters, resource) => {
 methods.extractInterfacesFromResource = (resource) => {
   const type = resource.type()
   if (type) {
-    const uuid = type.name()
+    const name = type.name() ? type.name().split('.').slice(-1).join() : null
+    const uuid = name ? 'resourceType_' + name : null
     if (uuid) {
       return OrderedMap({
         [uuid]: new Reference({ type: 'interface', uuid })
@@ -2586,6 +2627,7 @@ methods.extractInfo = (api) => {
 // TODO improve behavior around multiple items
 methods.parse = ({ options, item }) => {
   const api = item
+
   const group = methods.createGroups(api)
   const $resources = methods.getAllResourcesFromApi(api)
   const resources = methods.convertRAMLResourceListIntoResourceMap(api, $resources)
