@@ -1706,6 +1706,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       const store = new Store()
       const operation = { description, summary, security: [ 1, 2, 3 ], tags: [ 4, 5 ] }
+      const security = null
       const entry = {
         key: 'post',
         value: operation
@@ -1726,7 +1727,54 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         })
       }
 
-      const actual = __internals__.convertOperationIntoRequest(store, entry)
+      const actual = __internals__.convertOperationIntoRequest(store, security, entry)
+
+      expect(__internals__.getRequestIdFromOperation).toHaveBeenCalledWith(operation)
+      expect(__internals__.getParameterContainerForOperation).toHaveBeenCalledWith(
+        store, operation, 'post'
+      )
+      expect(__internals__.getAuthReferences).toHaveBeenCalledWith(store, [ 1, 2, 3 ])
+      expect(__internals__.getResponsesForOperation).toHaveBeenCalledWith(store, operation)
+      expect(__internals__.getInterfacesFromTags).toHaveBeenCalledWith([ 4, 5 ])
+      expect(__internals__.getEndpointsForOperation).toHaveBeenCalledWith(store, operation)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should call getAuthReferences with global security if no local security', () => {
+      spyOn(__internals__, 'getRequestIdFromOperation').andReturn(123)
+      spyOn(__internals__, 'getParameterContainerForOperation').andReturn(321)
+      spyOn(__internals__, 'getAuthReferences').andReturn(234)
+      spyOn(__internals__, 'getResponsesForOperation').andReturn(432)
+      spyOn(__internals__, 'getInterfacesFromTags').andReturn(345)
+      spyOn(__internals__, 'getEndpointsForOperation').andReturn(543)
+
+      const description = 'some desc'
+      const summary = 'someName'
+
+      const store = new Store()
+      const operation = { description, summary, tags: [ 4, 5 ] }
+      const security = [ 1, 2, 3 ]
+      const entry = {
+        key: 'post',
+        value: operation
+      }
+
+      const expected = {
+        key: 'post',
+        value: new Request({
+          id: 123,
+          endpoints: 543,
+          name: summary,
+          description,
+          parameters: 321,
+          method: 'post',
+          auths: 234,
+          responses: 432,
+          interfaces: 345
+        })
+      }
+
+      const actual = __internals__.convertOperationIntoRequest(store, security, entry)
 
       expect(__internals__.getRequestIdFromOperation).toHaveBeenCalledWith(operation)
       expect(__internals__.getParameterContainerForOperation).toHaveBeenCalledWith(
@@ -1782,12 +1830,13 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       })
 
       const store = new Store()
+      const security = null
       const resourceObject = {
         parameters: [ 1, 2, 3, 4 ]
       }
 
       const expected = { '321': 321 }
-      const actual = __internals__.getRequestsForResource(store, resourceObject)
+      const actual = __internals__.getRequestsForResource(store, security, resourceObject)
 
       expect(__internals__.getMethodsFromResourceObject).toHaveBeenCalledWith(resourceObject)
       expect(__internals__.updateOperationEntryWithSharedParameters.calls.length).toEqual(3)
@@ -1802,6 +1851,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       spyOn(__internals__, 'createReferencesForEndpoints').andReturn(321)
 
       const store = new Store()
+      const security = null
       const paths = {}
       const path = '/some/path'
 
@@ -1815,7 +1865,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         methods: Map({ a: 123 })
       })
 
-      const actual = __internals__.getResource(store, paths, path)
+      const actual = __internals__.getResource(store, security, paths, path)
 
       expect(actual).toEqual(expected)
     })

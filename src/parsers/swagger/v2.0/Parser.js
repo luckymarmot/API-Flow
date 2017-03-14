@@ -1,5 +1,4 @@
 /**
- * TODO: Deal with external dependencies by having the resolution step before the parsing step
  * TODO: improve Tag management (there's a Tag Object that contains a description)
  */
 
@@ -811,18 +810,19 @@ methods.getRequestIdFromOperation = ({ operationId }) => {
 /**
  * converts a Swagger Operation Object into a Request Record.
  * @param {Store} store: the store from which to get shared values that may be used by the Request.
+ * @param {Array<SwaggerSecurityRequirementObject>} security: the global security requirements
  * @param {string} key: the method associated with this swagger Operation.
  * @param {SwaggerOperationObject} value: the operation object to convert.
  * @returns {Request} the corresponding request record.
  */
-methods.convertOperationIntoRequest = (store, { key, value }) => {
+methods.convertOperationIntoRequest = (store, security, { key, value }) => {
   const method = key
   const operation = value
   const { description, summary } = operation
 
   const reqId = methods.getRequestIdFromOperation(operation)
   const parameters = methods.getParameterContainerForOperation(store, operation, method)
-  const auths = methods.getAuthReferences(store, operation.security || [])
+  const auths = methods.getAuthReferences(store, operation.security || security || [])
   const responses = methods.getResponsesForOperation(store, operation)
   const interfaces = methods.getInterfacesFromTags(operation.tags || [])
   const endpoints = methods.getEndpointsForOperation(store, operation)
@@ -859,15 +859,16 @@ methods.createReferencesForEndpoints = (store) => {
 /**
  * extracts all Requests from a resource objects and store them in an Object.
  * @param {Store} store: the store to get shared objects from (endpoints, parameters, responses ...)
+ * @param {Array<SwaggerSecurityRequirementObject>} security: the global security requirements
  * @param {SwaggerResourceObject} resourceObject: the resource object to extract the requests from
  * @returns {Object<string, Request>} the corresponding Requests, in an object.
  */
-methods.getRequestsForResource = (store, resourceObject) => {
+methods.getRequestsForResource = (store, security, resourceObject) => {
   const $methods = methods.getMethodsFromResourceObject(resourceObject)
   const params = resourceObject.parameters || []
 
   const updateOperationObjects = currify(methods.updateOperationEntryWithSharedParameters, params)
-  const convertOperationIntoRequest = currify(methods.convertOperationIntoRequest, store)
+  const convertOperationIntoRequest = currify(methods.convertOperationIntoRequest, store, security)
 
   const operations = $methods
     .map(updateOperationObjects)
@@ -881,6 +882,7 @@ methods.getRequestsForResource = (store, resourceObject) => {
  * converts a Swagger Resource Object into a Resource Record.
  * @param {Store} store: the store from whicb to get the possibly shared resources relevant to this
  * Resource.
+ * @param {Array<SwaggerSecurityRequirementObject>} security: the global security requirements
  * @param {SwaggerPathObject} paths: the paths of a swagger object.
  * @param {string} path: the path of the swagger resource object.
  * @returns {Resource} the corresponding Resource.
@@ -889,9 +891,9 @@ methods.getRequestsForResource = (store, resourceObject) => {
  * TODO: support $ref for swagger path Items (i.e. this can be a $ref)
  * TODO: transform path into SequenceParameter <- URL
  */
-methods.getResource = (store, paths, path) => {
+methods.getResource = (store, security, paths, path) => {
   const resourceObject = paths[path]
-  const operations = methods.getRequestsForResource(store, resourceObject)
+  const operations = methods.getRequestsForResource(store, security, resourceObject)
   const endpoints = methods.createReferencesForEndpoints(store)
   const $path = new URL({
     url: path,
@@ -914,10 +916,10 @@ methods.getResource = (store, paths, path) => {
  * @param {SwaggerObject} swagger: the swagger file to conver the path objects from.
  * @returns {OrderedMap<string, Resource>} the corresponding Map of Resources
  */
-methods.getResources = (shared, { paths = {} } = {}) => {
+methods.getResources = (shared, { paths = {}, security = null } = {}) => {
   const $paths = Object.keys(paths)
 
-  const resourceConverter = currify(methods.getResource, shared, paths)
+  const resourceConverter = currify(methods.getResource, shared, security, paths)
   const resources = $paths.map(resourceConverter)
 
   const resourceMap = resources.reduce((acc, resource) => {
@@ -1482,18 +1484,28 @@ methods.getSharedAuths = (interfaces, { securityDefinitions }) => {
     .reduce(convertEntryListInMap, {})
 }
 
-/** converts an Entry-formatted Security Requirement into an Entry-formatted Interface
+/**
+ * converts an Entry-formatted Security Requirement into an Entry-formatted Interface
  * @param {string} key: the key of the Security Requirement Entry
  * @returns {Entry<string, Interface>} the corresponding Entry-formatted Interface
  */
-methods.convertSecurityRequirementEntryIntoInterfaceEntry = ({ key }) => ({
-  key,
-  value: new Interface({
-    name: key,
-    uuid: key,
-    level: 'auth'
-  })
-})
+methods.convertSecurityRequirementEntryIntoInterfaceEntry = ({ key, value }) => {
+  const underlay = value && value.length ?
+    new Auth.OAuth2({
+      scopes: List(value.map(scope => ({ key: scope, value: '' })))
+    }) :
+    null
+
+  return {
+    key,
+    value: new Interface({
+      name: key,
+      uuid: key,
+      level: 'auth',
+      underlay
+    })
+  }
+}
 
 /**
  * converts a swagger Security Requirement Object into a map of Interfaces

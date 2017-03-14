@@ -1424,23 +1424,47 @@ methods.convertRAMLAuthIntoAuthEntry = (scheme) => {
 }
 
 /**
+ * extracts all security schemes from a RAML Api and stores them in an array of entries
+ * @param {RAMLApi} api: the api from which to get the security schemes
+ * @returns {Array<Entry<string, Auth>>} the corresponding array of Auth as Entries
+ */
+methods.extractAuthsFromRAMLApi = (api) => {
+  const securitySchemes = api.securitySchemes() || []
+  const authsFromLibs = (api.uses() || [])
+    .map(lib => {
+      const schemes = lib.ast().securitySchemes()
+
+      if (!schemes || !schemes.length) {
+        return []
+      }
+
+      return schemes
+        .map(methods.convertRAMLAuthIntoAuthEntry)
+        .filter(v => !!v)
+        .map(({ key, value }) => {
+          const libKey = lib.key() + '.' + key
+          return { key: libKey, value }
+        })
+    })
+    .reduce(flatten, [])
+
+  const auths = securitySchemes
+    .map(methods.convertRAMLAuthIntoAuthEntry)
+    .filter(v => !!v)
+
+  return [].concat(auths, authsFromLibs)
+}
+
+/**
  * extracts all security schemes from a RAML Api and stores them in an Auth TypedStore
  * @param {RAMLApi} api: the api from which to get the security schemes
  * @returns {OrderedMap<string, Auth>} the corresponding TypedStore
  */
 methods.extractAuthStore = (api) => {
-  const securitySchemes = api.securitySchemes()
+  const auths = methods.extractAuthsFromRAMLApi(api)
+  const authMap = auths.reduce(convertEntryListInMap, {})
 
-  if (!securitySchemes) {
-    return OrderedMap()
-  }
-
-  const auths = securitySchemes
-    .map(methods.convertRAMLAuthIntoAuthEntry)
-    .filter(v => !!v)
-    .reduce(convertEntryListInMap, {})
-
-  return OrderedMap(auths)
+  return OrderedMap(authMap)
 }
 
 /**

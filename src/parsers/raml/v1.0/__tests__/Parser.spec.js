@@ -1725,10 +1725,10 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       })
 
       const inputs = [
-        { securitySchemes: () => null },
-        { securitySchemes: () => [] },
-        { securitySchemes: () => [ null, 123, 234 ] },
-        { securitySchemes: () => [ 345, 456, null ] }
+        { securitySchemes: () => null, uses: () => null },
+        { securitySchemes: () => [], uses: () => null },
+        { securitySchemes: () => [ null, 123, 234 ], uses: () => null },
+        { securitySchemes: () => [ 345, 456, null ], uses: () => null }
       ]
       const expected = [
         OrderedMap(),

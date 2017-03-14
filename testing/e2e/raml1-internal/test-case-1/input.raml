@@ -271,6 +271,7 @@ uses:
 /api:
   type: ApiLib.collectionFromApiLib
   get:
+    securedBy: [ ApiLib.basic_api ]
     queryString:
       properties:
         start?: number
