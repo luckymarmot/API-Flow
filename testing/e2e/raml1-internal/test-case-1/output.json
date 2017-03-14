@@ -191,7 +191,7 @@
                 "version": "0.1.0"
               },
               "type": "auth",
-              "uuid": "custom_scheme",
+              "uuid": "ApiLib.basic_api",
               "overlay": null
             }
           ],
@@ -2750,6 +2750,18 @@
         "authorizationUrl": "https://www.dropbox.com/1/oauth2/authorize",
         "tokenUrl": "https://api.dropbox.com/1/oauth2/token",
         "scopes": []
+      },
+      "ApiLib.basic_api": {
+        "_model": {
+          "name": "basic.auth.models",
+          "version": "0.1.0"
+        },
+        "description": "This is our super secure api auth",
+        "authName": "basic_api",
+        "username": null,
+        "password": null,
+        "raw": null,
+        "interfaces": {}
       }
     },
     "interface": {

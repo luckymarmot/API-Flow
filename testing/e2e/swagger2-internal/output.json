@@ -12,13 +12,13 @@
       "name": null,
       "uuid": "/pets",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -87,13 +87,13 @@
           },
           "id": "addPet",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": {
                 "_model": {
                   "name": "url.models",
@@ -119,14 +119,14 @@
               "version": "0.1.0"
             },
             "headers": {
-              "d9e28355-ee16-4030-9a4a-988e7555de9b": {
+              "Content-Type-header": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "headers",
                 "usedIn": "request",
-                "uuid": "d9e28355-ee16-4030-9a4a-988e7555de9b",
+                "uuid": "Content-Type-header",
                 "key": "Content-Type",
                 "name": "Content Type Header",
                 "description": "describes the media type of the request",
@@ -156,14 +156,14 @@
             },
             "queries": {},
             "body": {
-              "4a1e11a6-b14c-4435-ae80-b20d97e73726": {
+              "body-body": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "4a1e11a6-b14c-4435-ae80-b20d97e73726",
+                "uuid": "body-body",
                 "key": null,
                 "name": "body",
                 "description": "Pet object that needs to be added to the store",
@@ -236,14 +236,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "40e3bcfa-18d7-438b-89f3-16a7c8acc5c3": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "40e3bcfa-18d7-438b-89f3-16a7c8acc5c3",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -303,13 +303,13 @@
           },
           "id": "updatePet",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -322,14 +322,14 @@
               "version": "0.1.0"
             },
             "headers": {
-              "01f86912-ddee-4c8a-ad15-a5b9ac2e43e4": {
+              "Content-Type-header": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "headers",
                 "usedIn": "request",
-                "uuid": "01f86912-ddee-4c8a-ad15-a5b9ac2e43e4",
+                "uuid": "Content-Type-header",
                 "key": "Content-Type",
                 "name": "Content Type Header",
                 "description": "describes the media type of the request",
@@ -359,14 +359,14 @@
             },
             "queries": {},
             "body": {
-              "18261022-e071-4ee3-91b5-0b4b14679e84": {
+              "body-body": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "18261022-e071-4ee3-91b5-0b4b14679e84",
+                "uuid": "body-body",
                 "key": null,
                 "name": "body",
                 "description": "Pet object that needs to be added to the store",
@@ -548,13 +548,13 @@
       "name": null,
       "uuid": "/pets/findByStatus",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -623,13 +623,13 @@
           },
           "id": "findPetsByStatus",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -643,14 +643,14 @@
             },
             "headers": {},
             "queries": {
-              "cc8cf3ae-106b-4e5b-b143-56cd5ec6db25": {
+              "status-query": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
                 "usedIn": "request",
-                "uuid": "cc8cf3ae-106b-4e5b-b143-56cd5ec6db25",
+                "uuid": "status-query",
                 "key": "status",
                 "name": "status",
                 "description": "Status values that need to be considered for filter",
@@ -735,14 +735,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "3e4c40e6-33fc-497d-a597-ea5c1d81ce7c": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "3e4c40e6-33fc-497d-a597-ea5c1d81ce7c",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -772,14 +772,14 @@
                 },
                 "queries": {},
                 "body": {
-                  "241e015e-b802-4734-b8b3-637e0da5a790": {
+                  "body": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": null,
                     "usedIn": "response",
-                    "uuid": "241e015e-b802-4734-b8b3-637e0da5a790",
+                    "uuid": "body",
                     "key": null,
                     "name": null,
                     "description": null,
@@ -828,14 +828,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "3e4c40e6-33fc-497d-a597-ea5c1d81ce7c": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "3e4c40e6-33fc-497d-a597-ea5c1d81ce7c",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -900,13 +900,13 @@
       "name": null,
       "uuid": "/pets/findByTags",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -975,13 +975,13 @@
           },
           "id": "findPetsByTags",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -995,14 +995,14 @@
             },
             "headers": {},
             "queries": {
-              "59fa6bb3-8566-4322-9a82-e865355b2f87": {
+              "tags-query": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
                 "usedIn": "request",
-                "uuid": "59fa6bb3-8566-4322-9a82-e865355b2f87",
+                "uuid": "tags-query",
                 "key": "tags",
                 "name": "tags",
                 "description": "Tags to filter by",
@@ -1087,14 +1087,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "9b6cc0eb-5874-4621-903d-65717afa5cdc": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "9b6cc0eb-5874-4621-903d-65717afa5cdc",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -1124,14 +1124,14 @@
                 },
                 "queries": {},
                 "body": {
-                  "2649e317-39d8-4be5-a546-b3eda72acd18": {
+                  "body": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": null,
                     "usedIn": "response",
-                    "uuid": "2649e317-39d8-4be5-a546-b3eda72acd18",
+                    "uuid": "body",
                     "key": null,
                     "name": null,
                     "description": null,
@@ -1180,14 +1180,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "9b6cc0eb-5874-4621-903d-65717afa5cdc": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "9b6cc0eb-5874-4621-903d-65717afa5cdc",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -1252,13 +1252,13 @@
       "name": null,
       "uuid": "/pets/{petId}",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -1394,13 +1394,13 @@
           },
           "id": "getPetById",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -1416,14 +1416,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "0b6d99d4-ea63-4cf0-813b-4e806a2d5c69": {
+              "petId-path": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
                 "usedIn": "request",
-                "uuid": "0b6d99d4-ea63-4cf0-813b-4e806a2d5c69",
+                "uuid": "petId-path",
                 "key": "petId",
                 "name": "petId",
                 "description": "ID of pet that needs to be fetched",
@@ -1494,14 +1494,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "d415c21a-49ec-4455-a12a-e5c9181adc6f": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "d415c21a-49ec-4455-a12a-e5c9181adc6f",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -1531,14 +1531,14 @@
                 },
                 "queries": {},
                 "body": {
-                  "69d27ea7-0239-48c6-a2ff-3e70961d4794": {
+                  "body": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": null,
                     "usedIn": "response",
-                    "uuid": "69d27ea7-0239-48c6-a2ff-3e70961d4794",
+                    "uuid": "body",
                     "key": null,
                     "name": null,
                     "description": null,
@@ -1584,14 +1584,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "d415c21a-49ec-4455-a12a-e5c9181adc6f": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "d415c21a-49ec-4455-a12a-e5c9181adc6f",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -1640,14 +1640,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "d415c21a-49ec-4455-a12a-e5c9181adc6f": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "d415c21a-49ec-4455-a12a-e5c9181adc6f",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -1707,13 +1707,13 @@
           },
           "id": "updatePetWithForm",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -1726,14 +1726,14 @@
               "version": "0.1.0"
             },
             "headers": {
-              "6f453849-617e-4dbf-b617-0d6b0dcc8c09": {
+              "Content-Type-header": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "headers",
                 "usedIn": "request",
-                "uuid": "6f453849-617e-4dbf-b617-0d6b0dcc8c09",
+                "uuid": "Content-Type-header",
                 "key": "Content-Type",
                 "name": "Content Type Header",
                 "description": "describes the media type of the request",
@@ -1762,14 +1762,14 @@
             },
             "queries": {},
             "body": {
-              "1c1ca8d4-2b2f-4088-b382-3a618eeab770": {
+              "name-formData": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "1c1ca8d4-2b2f-4088-b382-3a618eeab770",
+                "uuid": "name-formData",
                 "key": "name",
                 "name": "name",
                 "description": "Updated name of the pet",
@@ -1819,14 +1819,14 @@
                 ],
                 "interfaces": {}
               },
-              "a88be0c6-f0b7-4d57-98d2-d0362a273df2": {
+              "status-formData": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "a88be0c6-f0b7-4d57-98d2-d0362a273df2",
+                "uuid": "status-formData",
                 "key": "status",
                 "name": "status",
                 "description": "Updated status of the pet",
@@ -1878,14 +1878,14 @@
               }
             },
             "path": {
-              "78870370-dd79-4cbf-a0fd-72df95232740": {
+              "petId-path": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
                 "usedIn": "request",
-                "uuid": "78870370-dd79-4cbf-a0fd-72df95232740",
+                "uuid": "petId-path",
                 "key": "petId",
                 "name": "petId",
                 "description": "ID of pet that needs to be updated",
@@ -1956,14 +1956,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "bc6b484b-e5d2-4f06-a5e8-e4c73dc17a46": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "bc6b484b-e5d2-4f06-a5e8-e4c73dc17a46",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -2023,13 +2023,13 @@
           },
           "id": "deletePet",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -2042,14 +2042,14 @@
               "version": "0.1.0"
             },
             "headers": {
-              "2e89be46-e292-42db-a71e-0e3340e40d55": {
+              "api_key-header": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "headers",
                 "usedIn": "request",
-                "uuid": "2e89be46-e292-42db-a71e-0e3340e40d55",
+                "uuid": "api_key-header",
                 "key": "api_key",
                 "name": "api_key",
                 "description": null,
@@ -2077,14 +2077,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "77578676-c2da-4ad6-b802-c060467102c9": {
+              "petId-path": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
                 "usedIn": "request",
-                "uuid": "77578676-c2da-4ad6-b802-c060467102c9",
+                "uuid": "petId-path",
                 "key": "petId",
                 "name": "petId",
                 "description": "Pet id to delete",
@@ -2146,14 +2146,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "bd1fe9b6-952e-40ae-b6fe-9b574d1873b2": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "bd1fe9b6-952e-40ae-b6fe-9b574d1873b2",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -2218,13 +2218,13 @@
       "name": null,
       "uuid": "/stores/order",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -2293,13 +2293,13 @@
           },
           "id": "placeOrder",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -2324,14 +2324,14 @@
             },
             "queries": {},
             "body": {
-              "d961563d-c32d-4d45-bd34-fbac5dac0a1a": {
+              "body-body": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "d961563d-c32d-4d45-bd34-fbac5dac0a1a",
+                "uuid": "body-body",
                 "key": null,
                 "name": "body",
                 "description": "order placed for purchasing the pet",
@@ -2376,14 +2376,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "74b201fb-de12-4e66-93e3-fcc5a47e84aa": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "74b201fb-de12-4e66-93e3-fcc5a47e84aa",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -2413,14 +2413,14 @@
                 },
                 "queries": {},
                 "body": {
-                  "87938369-d934-4f98-8a17-2283aca55774": {
+                  "body": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": null,
                     "usedIn": "response",
-                    "uuid": "87938369-d934-4f98-8a17-2283aca55774",
+                    "uuid": "body",
                     "key": null,
                     "name": null,
                     "description": null,
@@ -2466,14 +2466,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "74b201fb-de12-4e66-93e3-fcc5a47e84aa": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "74b201fb-de12-4e66-93e3-fcc5a47e84aa",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -2538,13 +2538,13 @@
       "name": null,
       "uuid": "/stores/order/{orderId}",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -2680,13 +2680,13 @@
           },
           "id": "getOrderById",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -2702,14 +2702,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "bfa59815-c23c-47f3-9c39-3ad18ec6cd18": {
+              "orderId-path": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
                 "usedIn": "request",
-                "uuid": "bfa59815-c23c-47f3-9c39-3ad18ec6cd18",
+                "uuid": "orderId-path",
                 "key": "orderId",
                 "name": "orderId",
                 "description": "ID of pet that needs to be fetched",
@@ -2743,14 +2743,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "cecd98fa-ba20-424e-925f-950b9aa9edc8": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "cecd98fa-ba20-424e-925f-950b9aa9edc8",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -2780,14 +2780,14 @@
                 },
                 "queries": {},
                 "body": {
-                  "fafa4401-93b2-46a4-adbe-a6083741b568": {
+                  "body": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": null,
                     "usedIn": "response",
-                    "uuid": "fafa4401-93b2-46a4-adbe-a6083741b568",
+                    "uuid": "body",
                     "key": null,
                     "name": null,
                     "description": null,
@@ -2833,14 +2833,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "cecd98fa-ba20-424e-925f-950b9aa9edc8": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "cecd98fa-ba20-424e-925f-950b9aa9edc8",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -2889,14 +2889,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "cecd98fa-ba20-424e-925f-950b9aa9edc8": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "cecd98fa-ba20-424e-925f-950b9aa9edc8",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -2956,13 +2956,13 @@
           },
           "id": "deleteOrder",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -2988,14 +2988,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "708563a5-3768-4fd3-8f43-d10ac73e6014": {
+              "orderId-path": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
                 "usedIn": "request",
-                "uuid": "708563a5-3768-4fd3-8f43-d10ac73e6014",
+                "uuid": "orderId-path",
                 "key": "orderId",
                 "name": "orderId",
                 "description": "ID of the order that needs to be deleted",
@@ -3029,14 +3029,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "fbe075c1-fdc5-4101-9acf-7d7d141945e9": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "fbe075c1-fdc5-4101-9acf-7d7d141945e9",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -3085,14 +3085,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "fbe075c1-fdc5-4101-9acf-7d7d141945e9": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "fbe075c1-fdc5-4101-9acf-7d7d141945e9",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -3157,13 +3157,13 @@
       "name": null,
       "uuid": "/users",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -3232,13 +3232,13 @@
           },
           "id": "createUser",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -3263,14 +3263,14 @@
             },
             "queries": {},
             "body": {
-              "2e5ac796-6b08-4a08-8858-c508b9abe5d7": {
+              "body-body": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "2e5ac796-6b08-4a08-8858-c508b9abe5d7",
+                "uuid": "body-body",
                 "key": null,
                 "name": "body",
                 "description": "Created user object",
@@ -3315,14 +3315,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "5f9fe303-2d0c-42b3-8052-bcb6db83caab": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "5f9fe303-2d0c-42b3-8052-bcb6db83caab",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -3387,13 +3387,13 @@
       "name": null,
       "uuid": "/users/createWithArray",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -3462,13 +3462,13 @@
           },
           "id": "createUsersWithArrayInput",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -3493,14 +3493,14 @@
             },
             "queries": {},
             "body": {
-              "83a4c4cd-9288-43c6-8610-1ed3e53b33d1": {
+              "body-body": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "83a4c4cd-9288-43c6-8610-1ed3e53b33d1",
+                "uuid": "body-body",
                 "key": null,
                 "name": "body",
                 "description": "List of user object",
@@ -3548,14 +3548,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "9cebf28a-8eb5-45ef-be47-5531f1a70559": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "9cebf28a-8eb5-45ef-be47-5531f1a70559",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -3620,13 +3620,13 @@
       "name": null,
       "uuid": "/users/createWithList",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -3695,13 +3695,13 @@
           },
           "id": "createUsersWithListInput",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -3726,14 +3726,14 @@
             },
             "queries": {},
             "body": {
-              "a8d9236e-eb14-4aba-8e28-0c08badef265": {
+              "body-body": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "a8d9236e-eb14-4aba-8e28-0c08badef265",
+                "uuid": "body-body",
                 "key": null,
                 "name": "body",
                 "description": "List of user object",
@@ -3781,14 +3781,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "92f24b21-9bf4-43b0-9ff4-3156fa02c65a": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "92f24b21-9bf4-43b0-9ff4-3156fa02c65a",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -3853,13 +3853,13 @@
       "name": null,
       "uuid": "/users/login",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -3928,13 +3928,13 @@
           },
           "id": "loginUser",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -3948,14 +3948,14 @@
             },
             "headers": {},
             "queries": {
-              "9ced5862-5800-4a77-a1be-e0f54683a3ee": {
+              "username-query": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
                 "usedIn": "request",
-                "uuid": "9ced5862-5800-4a77-a1be-e0f54683a3ee",
+                "uuid": "username-query",
                 "key": "username",
                 "name": "username",
                 "description": "The user name for login",
@@ -3970,14 +3970,14 @@
                 "applicableContexts": [],
                 "interfaces": {}
               },
-              "125f5b82-49e0-4e82-9a78-16cccd36d76b": {
+              "password-query": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
                 "usedIn": "request",
-                "uuid": "125f5b82-49e0-4e82-9a78-16cccd36d76b",
+                "uuid": "password-query",
                 "key": "password",
                 "name": "password",
                 "description": "The password for login in clear text",
@@ -4013,14 +4013,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "1f7cb417-632c-465e-b423-e592ee1eefca": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "1f7cb417-632c-465e-b423-e592ee1eefca",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -4050,14 +4050,14 @@
                 },
                 "queries": {},
                 "body": {
-                  "70a0f89c-ea1a-4eeb-812b-24674fe45635": {
+                  "body": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": null,
                     "usedIn": "response",
-                    "uuid": "70a0f89c-ea1a-4eeb-812b-24674fe45635",
+                    "uuid": "body",
                     "key": null,
                     "name": null,
                     "description": null,
@@ -4103,14 +4103,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "1f7cb417-632c-465e-b423-e592ee1eefca": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "1f7cb417-632c-465e-b423-e592ee1eefca",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -4175,13 +4175,13 @@
       "name": null,
       "uuid": "/users/logout",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -4250,13 +4250,13 @@
           },
           "id": "logoutUser",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -4290,14 +4290,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "cfa63ee6-dc96-4b77-9a48-ef900d82250e": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "cfa63ee6-dc96-4b77-9a48-ef900d82250e",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -4362,13 +4362,13 @@
       "name": null,
       "uuid": "/users/{username}",
       "endpoints": {
-        "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+        "base": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "endpoint",
-          "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+          "uuid": "base",
           "overlay": null
         }
       },
@@ -4504,13 +4504,13 @@
           },
           "id": "getUserByName",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -4526,14 +4526,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "b2f15cd4-cfb4-4ea4-bc19-7bf3354bc424": {
+              "username-path": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
                 "usedIn": "request",
-                "uuid": "b2f15cd4-cfb4-4ea4-bc19-7bf3354bc424",
+                "uuid": "username-path",
                 "key": "username",
                 "name": "username",
                 "description": "The name that needs to be fetched. Use user1 for testing.",
@@ -4567,14 +4567,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -4604,14 +4604,14 @@
                 },
                 "queries": {},
                 "body": {
-                  "b414ab6d-560c-444a-8548-ffa5e5574fb1": {
+                  "body": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": null,
                     "usedIn": "response",
-                    "uuid": "b414ab6d-560c-444a-8548-ffa5e5574fb1",
+                    "uuid": "body",
                     "key": null,
                     "name": null,
                     "description": null,
@@ -4657,14 +4657,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -4713,14 +4713,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "4cfc154c-c85c-4b4f-b9ae-feb70a15ebbd",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -4780,13 +4780,13 @@
           },
           "id": "updateUser",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -4811,14 +4811,14 @@
             },
             "queries": {},
             "body": {
-              "4d8c93ee-feac-4071-b994-f619ed22d4b9": {
+              "body-body": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "body",
                 "usedIn": "request",
-                "uuid": "4d8c93ee-feac-4071-b994-f619ed22d4b9",
+                "uuid": "body-body",
                 "key": null,
                 "name": "body",
                 "description": "Updated user object",
@@ -4845,14 +4845,14 @@
               }
             },
             "path": {
-              "e34ce0a4-f713-403f-a301-df11e36e2c13": {
+              "username-path": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
                 "usedIn": "request",
-                "uuid": "e34ce0a4-f713-403f-a301-df11e36e2c13",
+                "uuid": "username-path",
                 "key": "username",
                 "name": "username",
                 "description": "name that need to be deleted",
@@ -4886,14 +4886,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "514a37e5-a540-45d6-a18d-569ef4ac2e20": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "514a37e5-a540-45d6-a18d-569ef4ac2e20",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -4942,14 +4942,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "514a37e5-a540-45d6-a18d-569ef4ac2e20": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "514a37e5-a540-45d6-a18d-569ef4ac2e20",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -5009,13 +5009,13 @@
           },
           "id": "deleteUser",
           "endpoints": {
-            "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+            "base": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "endpoint",
-              "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+              "uuid": "base",
               "overlay": null
             }
           },
@@ -5041,14 +5041,14 @@
             "queries": {},
             "body": {},
             "path": {
-              "676d7784-261a-42e2-ab10-d6e3cfdca8c1": {
+              "username-path": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "path",
                 "usedIn": "request",
-                "uuid": "676d7784-261a-42e2-ab10-d6e3cfdca8c1",
+                "uuid": "username-path",
                 "key": "username",
                 "name": "username",
                 "description": "The name that needs to be deleted",
@@ -5082,14 +5082,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "551357fc-0729-4458-bea7-a4693cf5248c": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "551357fc-0729-4458-bea7-a4693cf5248c",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -5138,14 +5138,14 @@
                   "version": "0.1.0"
                 },
                 "headers": {
-                  "551357fc-0729-4458-bea7-a4693cf5248c": {
+                  "Content-Type-header": {
                     "_model": {
                       "name": "parameter.core.models",
                       "version": "0.1.0"
                     },
                     "in": "headers",
                     "usedIn": "response",
-                    "uuid": "551357fc-0729-4458-bea7-a4693cf5248c",
+                    "uuid": "Content-Type-header",
                     "key": "Content-Type",
                     "name": "Content Type Header",
                     "description": "describes the media type of the response",
@@ -5208,7 +5208,7 @@
       "name": "group.models",
       "version": "0.1.0"
     },
-    "id": "650c4792-4121-4687-a89b-e8aea7228236",
+    "id": null,
     "name": null,
     "description": "All the requests",
     "children": {
@@ -5391,12 +5391,12 @@
       }
     },
     "endpoint": {
-      "c3694d5b-11da-4116-89f5-8a9790f8d9da": {
+      "base": {
         "_model": {
           "name": "url.models",
           "version": "0.1.0"
         },
-        "uuid": "c3694d5b-11da-4116-89f5-8a9790f8d9da",
+        "uuid": "base",
         "protocol": [
           "http:",
           "https:"
