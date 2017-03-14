@@ -705,7 +705,8 @@ methods.addEndpointOverlayFromOperation = (operation, value, key) => {
   const overlay = operation.schemes ? new URL({
     url: {
       protocol: List(operation.schemes.map(methods.addDotsToScheme))
-    }
+    },
+    variableDelimiters: List([ '{', '}' ])
   }) : null
   return new Reference({
     type: 'endpoint',

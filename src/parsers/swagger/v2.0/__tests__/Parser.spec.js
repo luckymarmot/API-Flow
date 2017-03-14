@@ -1591,7 +1591,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         overlay: new URL({
           url: {
             protocol: List([ 'http:', 'https:' ])
-          }
+          },
+          variableDelimiters: List([ '{', '}' ])
         })
       })
       const actual = __internals__.addEndpointOverlayFromOperation(operation, value, key)

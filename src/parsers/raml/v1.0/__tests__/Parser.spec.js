@@ -1791,7 +1791,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         ({ desc }) => desc
       )
       spyOn(__internals__, 'convertRAMLResourceBaseIntoResourceInstance').andCall(
-        (_, { underlay }) => underlay
+        (_, { underlay }) => ({ description: underlay })
       )
 
       spyOn(__internals__, 'extractInterfaceUUIDFromResourceName').andCall(v => v * 2)
@@ -1801,7 +1801,9 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       ]
       const expected = [
         { key: 246, value: new Interface({
-          name: 123, uuid: 246, description: 234, underlay: 345, level: 'resource'
+          name: 123, uuid: 246, description: 234,
+          underlay: new Resource({ description: 345 }),
+          level: 'resource'
         }) }
       ]
       const actual = inputs.map(input => __internals__.convertResourceBaseIntoInterfaceEntry(input))
@@ -1859,7 +1861,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         ({ desc }) => desc
       )
       spyOn(__internals__, 'convertRAMLMethodBaseIntoRequestInstance').andCall(
-        (_, { underlay }) => underlay
+        (_, { underlay }) => ({ description: underlay })
       )
 
       spyOn(__internals__, 'extractInterfaceUUIDFromMethodName').andCall(v => v * 2)
@@ -1869,7 +1871,9 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       ]
       const expected = [
         { key: 246, value: new Interface({
-          name: 123, uuid: 246, description: 234, underlay: 345, level: 'request'
+          name: 123, uuid: 246, description: 234,
+          underlay: new Request({ description: 345 }),
+          level: 'request'
         }) }
       ]
       const actual = inputs.map(input => __internals__.convertMethodBaseIntoInterfaceEntry(input))

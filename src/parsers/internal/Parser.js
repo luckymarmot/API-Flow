@@ -13,6 +13,7 @@ import License from '../../models/License'
 import Parameter from '../../models/Parameter'
 import ParameterContainer from '../../models/ParameterContainer'
 import Reference from '../../models/Reference'
+import Request from '../../models/Request'
 import Resource from '../../models/Resource'
 import Response from '../../models/Response'
 import Store from '../../models/Store'
@@ -26,7 +27,7 @@ const methods = {}
 
 export const __meta__ = {
   version: 'v1.0',
-  format: 'raml'
+  format: 'internal'
 }
 
 class InternalParser {
@@ -50,52 +51,6 @@ methods.detect = () => {}
 methods.getAPIName = () => {}
 
 methods.isParsable = () => {}
-
-const classMap = {
-  'api.core.models': methods.extractApi,
-  'basic.auth.models': methods.extractBasicAuth,
-  'digest.auth.models': methods.extractDigestAuth,
-  'ntlm.auth.models': methods.extractNTLMAuth,
-  'negotiate.auth.models': methods.extractNegotiateAuth,
-  'api-key.auth.models': methods.extractApiKeyAuth,
-  'oauth-1.auth.models': methods.extractOAuth1Auth,
-  'oauth-2.auth.models': methods.extractOAuth2Auth,
-  'aws-sig-4.auth.models': methods.extractAWSSig4Auth,
-  'hawk.auth.models': methods.extractHawkAuth,
-  'constraint.constraint.models': methods.extractConstraint,
-  'multiple-of.constraint.models': methods.extractMultipleOfConstraint,
-  'maximum.constraint.models': methods.extractMaximumConstraint,
-  'exclusive-maximum.constraint.models': methods.extractExclusiveMaximumConstraint,
-  'minimum.constraint.models': methods.extractMinimumConstraint,
-  'exclusive-minimum.constraint.models': methods.extractExclusiveMinimumConstraint,
-  'maximum-length.constraint.models': methods.extractMaximumLengthConstraint,
-  'minimum-length.constraint.models': methods.extractMinimumLengthConstraint,
-  'pattern.constraint.models': methods.extractPatternConstraint,
-  'maximum-items.constraint.models': methods.extractMaximumItemsConstraint,
-  'minimum-items.constraint.models': methods.extractMinimumItemsConstraint,
-  'unique-items.constraint.models': methods.extractUniqueItemsConstraint,
-  'maximum-properties.constraint.models': methods.extractMaximumPropertiesConstraint,
-  'minimum-properties.constraint.models': methods.extractMinimumPropertiesConstraint,
-  'enum.constraint.models': methods.extractEnumConstraint,
-  'json.constraint.models': methods.extractJSONSchemaConstraint,
-  'xml.constraint.models': methods.extractXMLSchemaConstraint,
-  'contact.utils.models': methods.extractContact,
-  'context.core.models': methods.extractContext,
-  'group.models': methods.extractGroup,
-  'info.utils.models': methods.extractInfo,
-  'interface.models': methods.extractInterface,
-  'license.utils.models': methods.extractLicense,
-  'parameter.core.models': methods.extractParameter,
-  'parameter-container.core.models': methods.extractParameterContainer,
-  'reference.models': methods.extractReference,
-  'request.models': methods.extractRequest,
-  'resource.models': methods.extractResource,
-  'response.core.models': methods.extractResponse,
-  'store.models': methods.extractStore,
-  'url.models': methods.extractURL,
-  'url-component.models': methods.extractURLComponent,
-  'variable.models': methods.extractVariable
-}
 
 methods.extractBasicAuth = (obj) => {
   return new Auth.Basic(obj)
@@ -226,12 +181,13 @@ methods.extractContext = (obj) => {
 }
 
 methods.extractGroup = (obj) => {
-  const { id, name } = obj || {}
+  const { id, name, description } = obj || {}
   const children = OrderedMap(obj.children || {}).map(methods.extract)
 
   const groupInstance = {
     id: id,
     name: name,
+    description: description,
     children: children
   }
 
@@ -379,7 +335,9 @@ methods.extractStore = (obj) => {
 }
 
 methods.extractURL = (obj) => {
-  const { uuid, slashes, auth, host, path, search, query, hash, secure, description } = obj || {}
+  const {
+    uuid, slashes, auth, host, path, search, query, hash, secure, description, href
+  } = obj || {}
   const protocol = List(obj.protocol || [])
   const port = methods.extract(obj.port)
   const hostname = methods.extract(obj.hostname)
@@ -388,7 +346,7 @@ methods.extractURL = (obj) => {
 
   const urlInstance = {
     uuid,
-    protocol, slashes, auth, host, port, hostname, path, pathname,
+    protocol, slashes, auth, host, port, hostname, path, pathname, href,
     search, query, hash, secure,
     variableDelimiters, description
   }
@@ -453,6 +411,52 @@ methods.traverse = (_obj) => {
   return obj
 }
 
+const classMap = {
+  'api.core.models': methods.extractApi,
+  'basic.auth.models': methods.extractBasicAuth,
+  'digest.auth.models': methods.extractDigestAuth,
+  'ntlm.auth.models': methods.extractNTLMAuth,
+  'negotiate.auth.models': methods.extractNegotiateAuth,
+  'api-key.auth.models': methods.extractApiKeyAuth,
+  'oauth-1.auth.models': methods.extractOAuth1Auth,
+  'oauth-2.auth.models': methods.extractOAuth2Auth,
+  'aws-sig-4.auth.models': methods.extractAWSSig4Auth,
+  'hawk.auth.models': methods.extractHawkAuth,
+  'constraint.constraint.models': methods.extractConstraint,
+  'multiple-of.constraint.models': methods.extractMultipleOfConstraint,
+  'maximum.constraint.models': methods.extractMaximumConstraint,
+  'exclusive-maximum.constraint.models': methods.extractExclusiveMaximumConstraint,
+  'minimum.constraint.models': methods.extractMinimumConstraint,
+  'exclusive-minimum.constraint.models': methods.extractExclusiveMinimumConstraint,
+  'maximum-length.constraint.models': methods.extractMaximumLengthConstraint,
+  'minimum-length.constraint.models': methods.extractMinimumLengthConstraint,
+  'pattern.constraint.models': methods.extractPatternConstraint,
+  'maximum-items.constraint.models': methods.extractMaximumItemsConstraint,
+  'minimum-items.constraint.models': methods.extractMinimumItemsConstraint,
+  'unique-items.constraint.models': methods.extractUniqueItemsConstraint,
+  'maximum-properties.constraint.models': methods.extractMaximumPropertiesConstraint,
+  'minimum-properties.constraint.models': methods.extractMinimumPropertiesConstraint,
+  'enum.constraint.models': methods.extractEnumConstraint,
+  'json.constraint.models': methods.extractJSONSchemaConstraint,
+  'xml.constraint.models': methods.extractXMLSchemaConstraint,
+  'contact.utils.models': methods.extractContact,
+  'context.core.models': methods.extractContext,
+  'group.models': methods.extractGroup,
+  'info.utils.models': methods.extractInfo,
+  'interface.models': methods.extractInterface,
+  'license.utils.models': methods.extractLicense,
+  'parameter.core.models': methods.extractParameter,
+  'parameter-container.core.models': methods.extractParameterContainer,
+  'reference.models': methods.extractReference,
+  'request.models': methods.extractRequest,
+  'resource.models': methods.extractResource,
+  'response.core.models': methods.extractResponse,
+  'store.models': methods.extractStore,
+  'url.models': methods.extractURL,
+  'url-component.models': methods.extractURLComponent,
+  'variable.models': methods.extractVariable
+}
+
 methods.extract = (obj) => {
   if (obj && obj._model && classMap[obj._model.name]) {
     obj._model = new ModelInfo(obj._model)
@@ -463,10 +467,10 @@ methods.extract = (obj) => {
   return _obj
 }
 
-methods.parse = ({ item }) => {
+methods.parse = ({ options, item }) => {
   const api = methods.extract(item)
 
-  return api
+  return { options, api }
 }
 
 export const __internals__ = methods

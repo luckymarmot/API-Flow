@@ -1500,7 +1500,8 @@ methods.convertResourceBaseIntoInterfaceEntry = (resourceBase) => {
   const name = methods.extractInterfaceNameFromResourceBase(resourceBase)
   const uuid = methods.extractInterfaceUUIDFromResourceName(name)
   const description = methods.extractInterfaceDescriptionFromResourceBase(resourceBase)
-  const underlay = methods.convertRAMLResourceBaseIntoResourceInstance(null, resourceBase)
+  const resourceInstance = methods.convertRAMLResourceBaseIntoResourceInstance(null, resourceBase)
+  const underlay = new Resource(resourceInstance)
 
   const interfaceInstance = { name, uuid, level: 'resource', description, underlay }
 
@@ -1538,7 +1539,8 @@ methods.convertMethodBaseIntoInterfaceEntry = (methodBase) => {
   const name = methods.extractInterfaceNameFromMethodBase(methodBase)
   const uuid = methods.extractInterfaceUUIDFromMethodName(name)
   const description = methods.extractInterfaceDescriptionFromMethodBase(methodBase)
-  const underlay = methods.convertRAMLMethodBaseIntoRequestInstance(null, methodBase)
+  const requestInstance = methods.convertRAMLMethodBaseIntoRequestInstance(null, methodBase)
+  const underlay = new Request(requestInstance)
 
   const interfaceInstance = { name, uuid, level: 'request', description, underlay }
 

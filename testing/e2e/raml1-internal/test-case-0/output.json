@@ -1,6 +1,6 @@
 {
   "_model": {
-    "name": "context.core.models",
+    "name": "api.core.models",
     "version": "0.1.0"
   },
   "resources": {
@@ -306,7 +306,7 @@
               "contexts": [
                 {
                   "_model": {
-                    "name": "body.core.models",
+                    "name": "context.core.models",
                     "version": "0.1.0"
                   },
                   "constraints": [
