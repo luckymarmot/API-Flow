@@ -47,7 +47,6 @@ methods.canImport = (context, items) => {
   })
 
   const primaryUri = ApiFlow.findPrimaryUri({ items: fixedItems })
-  console.log('got primaryUri', primaryUri)
   return primaryUri ? 1 : 0
 }
 
@@ -65,3 +64,5 @@ methods.import = (context, items) => {
   return ApiFlow.transform({ options, uri })
   // const statusMessage = methods.formatStatusMessage(parser, serializer)
 }
+
+export default SwaggerImporter

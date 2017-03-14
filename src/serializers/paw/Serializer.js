@@ -720,7 +720,8 @@ methods.getVariableArgumentsFromParameter = (parameter) => {
  * schema of the variable.
  */
 methods.convertParameterFromReference = (pawRequest, store, reference) => {
-  const { parameter, variable } = store.getIn([ 'parameter', reference.get('uuid') ]) || {}
+  // TODO: use const { parameter, variable } = store.getIn(...) when ready
+  const { parameter } = store.getIn([ 'parameter', reference.get('uuid') ]) || {}
   if (!parameter) {
     return { key: '', value: '' }
   }
@@ -915,6 +916,7 @@ methods.addEntryToRecordParameterArray = (kvList, { key, value }) => {
  * @param {PawRequest} pawRequest: the paw request to update
  * @param {Store} store: the store used to resolve potential references in the params
  * @param {Parameter|Reference} params: the parameters to add to the body
+ * @param {Context} context: the context in which the body params are set
  * @returns {PawRequest} the update paw request
  */
 methods.setFormDataBody = (pawRequest, store, params, context) => {

@@ -12,7 +12,9 @@ export default class SwaggerGenerator {
   static languageHighlighter = 'json'
   static fileExtension = 'json'
 
+  /* eslint-disable no-unused-vars */
   generate(context, reqs, opts) {
+    /* eslint-enable no-unused-vars */
     try {
       const options = { context, reqs, source: { format: 'paw', version: 'v3.0' }, target }
       const serialized = ApiFlow.serialize(ApiFlow.parse({ options }))

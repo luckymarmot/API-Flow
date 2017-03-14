@@ -543,9 +543,6 @@ methods.extractDataTypesFromApi = (coreInfoMap) => {
   return { key: 'types', value: types }
 }
 
-/**
- *
- */
 methods.extractTitleFromApi = (api) => {
   const title = api.getIn([ 'info', 'title' ]) || null
 
@@ -700,8 +697,8 @@ methods.extractMediaTypeFromApi = (api) => {
   return null
 }
 
-// TODO implement this
-methods.extractMethodBaseFromRequest = (request) => null
+// TODO implement this (args: request)
+methods.extractMethodBaseFromRequest = () => null
 
 methods.extractTraitsFromApi = (api) => {
   const itfs = api.getIn([ 'store', 'interface' ])
@@ -723,8 +720,8 @@ methods.extractTraitsFromApi = (api) => {
   return { key: 'traits', value: traitMap }
 }
 
-// TODO
-methods.extractResourceTypesFromApi = (api) => null
+// TODO implement this (args: api)
+methods.extractResourceTypesFromApi = () => null
 
 methods.extractSecuritySchemeFromBasicAuth = (auth) => {
   const securityScheme = {
@@ -921,8 +918,8 @@ methods.extractSecuritySchemesFromApi = (api) => {
   return { key: 'securitySchemes', value: securitySchemeMap }
 }
 
-// TODO
-methods.extractSecuredByFromApi = (api) => null
+// TODO implement this (args: api)
+methods.extractSecuredByFromApi = () => null
 
 methods.extractDisplayNameFromRequest = (request) => {
   const displayName = request.get('name') || null

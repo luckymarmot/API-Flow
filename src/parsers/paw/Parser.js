@@ -768,6 +768,7 @@ methods.extractResourceFromPawRequest = (context, reference, { request, pathComp
 
 /**
  * converts an array of host entry into a host Variable and an array of request entry
+ * @param {PawContext} context: the context in which to resolve environment variables
  * @param {string} defaultHost: the host string that we need to improve on
  * @param {Array<{ key: string, value: PawRequest, urlObject: object }>} hostEntries: the requests
  * associated with this host

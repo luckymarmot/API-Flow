@@ -95,6 +95,7 @@ methods.resolve = (items, item) => {
  * adds a $key field to a schema, that is the name of a RAML node
  * @param {Object} schema: the schema to update
  * @param {RAMLNode} node: the node to extract the name of
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the updated schema
  */
 methods.addKey = (schema, node, offsetKey) => {
@@ -171,6 +172,7 @@ methods.addExamples = (schema, node) => {
  * adds a descriptive fields from a RAML node to a schema ($key, title, description, x-examples)
  * @param {Object} $schema: the schema to update
  * @param {RAMLNode} node: the node to extract the information from
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the updated schema
  */
 methods.addDescriptiveFields = ($schema, node, offsetKey) => {
@@ -256,6 +258,7 @@ methods.convertXMLTypeDeclaration = (type) => {
 /**
  * converts an InPlaceTypeDeclaration into a list of schemas
  * @param {string} type: the inplace type declaration
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding schemas
  */
 methods.convertInPlaceTypeDeclaration = (type, offsetKey) => {
@@ -287,6 +290,7 @@ methods.convertAnyTypeDeclaration = () => {
 /**
  * convert a node into a list of schemas based on its type declaration
  * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding list of schemas
  */
 methods.convertTypeDeclaration = (node, offsetKey) => {
@@ -346,6 +350,7 @@ methods.addSimpleObjectFieldsToSchema = (schema, node) => {
  * converts a RAML node that represents a property in an object type node into a key value pair of
  * schema name and  schema with additional informations about dependencies and requirements.
  * @param {RAMLNode} prop: the node to to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Entry<string, Øbject>} the corresponding key value pair.
  */
 methods.convertPropertyIntoSchemaEntry = (prop, offsetKey) => {
@@ -425,6 +430,7 @@ methods.getOtherSchemasFromPropertiesSchemas = (propSchemas) => {
  * extracts the properties from a RAML node and converts each property into a schema, in an entry
  * formatted
  * @param {RAMLNode} node: the node to get the properties from
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Entry<string, Object>>} the corresponding array
  */
 methods.getPropertiesSchema = (node, offsetKey) => {
@@ -444,6 +450,7 @@ methods.getPropertiesSchema = (node, offsetKey) => {
  * adds the properties key to a schema, from a RAML node
  * @param {Object} schema: the schema to update
  * @param {RAMLNode} node: the node to get the properties from
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the updated schema
  */
 methods.addPropertiesToSchema = (schema, node, offsetKey) => {
@@ -485,6 +492,7 @@ methods.isImplicitArrayType = (type) => !!type.match(/\[\]$/)
 /**
  * converts a type into an array-typed schema
  * @param {string} type: the type to convert into a schema
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the corresponding schema
  */
 methods.getSchemaFromArrayType = (type, offsetKey) => {
@@ -499,6 +507,7 @@ methods.getSchemaFromArrayType = (type, offsetKey) => {
 /**
  * converts a potential implicit array type into an array-typed schema
  * @param {string} type: the type to convert into a schema
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object?} the corresponding schema, it is indeed an implicit array type
  */
 methods.getSchemaFromImplicitArrayType = (type, offsetKey) => {
@@ -518,6 +527,7 @@ methods.getSchemaFromImplicitArrayType = (type, offsetKey) => {
 /**
  * converts a potential union type into a schema
  * @param {string} type: the type to convert into a schema
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object?} the corresponding schema, it is indeed a union type
  */
 methods.getSchemaFromUnionType = (type, offsetKey) => {
@@ -534,6 +544,7 @@ methods.getSchemaFromUnionType = (type, offsetKey) => {
 /**
  * converts a reference type into a schema
  * @param {string} type: the type to convert into a schema
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the corresponding schema
  *
  * NOTE: What is the semantic difference between this method and @convertTypeDeclaration ?
@@ -573,6 +584,7 @@ methods.getSchemaFromNilType = (type) => {
 /**
  * converts a type into a schema
  * @param {string} _type: the type to convert into a schema
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object?} the corresponding schema
  */
 methods.getSchemaFromType = (_type, offsetKey) => {
@@ -590,6 +602,7 @@ methods.getSchemaFromType = (_type, offsetKey) => {
 /**
  * converts an array of types into an array of schemas
  * @param {Array<string>} types: the array of types to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.getSchemaListFromTypes = (types, offsetKey) => {
@@ -602,6 +615,7 @@ methods.getSchemaListFromTypes = (types, offsetKey) => {
 /**
  * converts a multiple inheritance object into a schema from an array of types
  * @param {Array<string>} types: the array of types of the multiple inheritance object
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the corresponding schema
  */
 methods.convertMultipleInheritanceObject = (types, offsetKey) => {
@@ -633,6 +647,7 @@ methods.convertMultipleInheritanceObject = (types, offsetKey) => {
 /**
  * converts an array of types into a schema
  * @param {Array<string>} types: the array of types
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the corresponding schema
  */
 methods.getSchemasFromTypes = (types, offsetKey) => {
@@ -644,6 +659,7 @@ methods.getSchemasFromTypes = (types, offsetKey) => {
  * adds inherited types of a RAML node to a schema
  * @param {Object} $schema: the schema to update
  * @param {RAMLNode} node: the raml node to get the types from
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the updated schema
  */
 methods.addInheritedTypes = ($schema, node, offsetKey) => {
@@ -657,6 +673,7 @@ methods.addInheritedTypes = ($schema, node, offsetKey) => {
 /**
  * converts an object type declaration node into an array of schemas
  * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertObjectTypeDeclaration = (node, offsetKey) => {
@@ -747,6 +764,7 @@ methods.getItemTypes = (node) => {
  * updates a schema with the items key from a RAML node
  * @param {Object} schema: the schema to update
  * @param {RAMLNode} node: the node to get the items data from
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Objet} the updated schema
  */
 methods.addItemFieldToSchema = (schema, node, offsetKey) => {
@@ -762,6 +780,7 @@ methods.addItemFieldToSchema = (schema, node, offsetKey) => {
 /**
  * converts an array type declaration node into an array of schemas
  * @param {RAMLNode} node: the node to convert into a schema
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertArrayTypeDeclaration = (node, offsetKey) => {
@@ -777,6 +796,7 @@ methods.convertArrayTypeDeclaration = (node, offsetKey) => {
 /**
  * convert a union type declaration node into an array of schemas
  * @param {RAMLNode} node: the node to convert into a schema
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertUnionTypeDeclaration = (node, offsetKey) => {
@@ -821,6 +841,7 @@ methods.addSimpleStringFieldsToSchema = (schema, node) => {
 /**
  * converts a string type declaration node into an array of schemas
  * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Object} the corresponding array of schemas
  */
 methods.convertStringTypeDeclaration = (node, offsetKey) => {
@@ -866,6 +887,7 @@ methods.addSimpleNumberFieldsToSchema = (schema, node) => {
 /**
  * converts a number type declaration node into an array of schemas
  * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertNumberTypeDeclaration = (node, offsetKey) => {
@@ -880,6 +902,7 @@ methods.convertNumberTypeDeclaration = (node, offsetKey) => {
 /**
  * converts a boolean type declaration node into an array of schemas
  * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertBooleanTypeDeclaration = (node, offsetKey) => {
@@ -892,7 +915,7 @@ methods.convertBooleanTypeDeclaration = (node, offsetKey) => {
 
 /**
  * converts a date-only type declaration node into an array of schemas
- * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertDateOnlyTypeDeclaration = (offsetKey) => {
@@ -914,7 +937,7 @@ methods.convertDateOnlyTypeDeclaration = (offsetKey) => {
 
 /**
  * converts a time-only type declaration node into an array of schemas
- * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertTimeOnlyTypeDeclaration = (offsetKey) => {
@@ -936,7 +959,7 @@ methods.convertTimeOnlyTypeDeclaration = (offsetKey) => {
 
 /**
  * converts a datetime-only type declaration node into an array of schemas
- * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertDateTimeOnlyTypeDeclaration = (offsetKey) => {
@@ -959,7 +982,7 @@ methods.convertDateTimeOnlyTypeDeclaration = (offsetKey) => {
 
 /**
  * converts a datetime type declaration node into an array of schemas
- * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertDateTimeTypeDeclaration = (offsetKey) => {
@@ -980,7 +1003,7 @@ methods.convertDateTimeTypeDeclaration = (offsetKey) => {
 
 /**
  * converts a file type declaration node into an array of schemas
- * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.convertFileTypeDeclaration = (offsetKey) => {
@@ -1003,6 +1026,7 @@ methods.convertFileTypeDeclaration = (offsetKey) => {
 /**
  * converts a node into an array of schemas
  * @param {RAMLNode} node: the node to convert
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @returns {Array<Object>} the corresponding array of schemas
  */
 methods.createSchema = (node, offsetKey) => {
@@ -1068,6 +1092,7 @@ methods.addSchemaToDefinitionsReducer = (defs, schema) => {
 
 /**
  * converts a type into schemas and add them to the definitions object
+ * @param {string?} offsetKey: the name of the library this node/schema belongs to, if any
  * @param {Object} definitions: the definitions object to update with the schemas
  * @param {RAMLNode} type: the node to extract the schemas from
  * @returns {Object} the updated definitions object
@@ -1080,6 +1105,7 @@ methods.addDefinitionsReducer = (offsetKey, definitions, type) => {
 /**
  * converts all types in a RAML Api into a definitions object
  * @param {RAMLApi} api: the api to get the types from
+ * @param {string?} offsetKey: the name of the library this api belongs to, if any
  * @returns {{ definitions: Object }} the corresponding definitions object, encapsulating all the
  * schemas present in the api
  */

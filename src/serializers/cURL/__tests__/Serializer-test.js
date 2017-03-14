@@ -40,803 +40,803 @@ import {
 export class TestCurlSerializer extends UnitTest {
 
     @targets('serialize')
-    testSerializeCallsFormatContent() {
-        const s = this.__init()
+  testSerializeCallsFormatContent() {
+    const s = this.__init()
 
-        s.spyOn('_formatContent', ()=> {
-            return ''
-        })
+    s.spyOn('_formatContent', ()=> {
+      return ''
+    })
 
-        s.serialize(new Context())
+    s.serialize(new Context())
 
-        this.assertEqual(s.spy._formatContent.count, 1)
-    }
+    this.assertEqual(s.spy._formatContent.count, 1)
+  }
 
     @targets('serialize')
-    testSerializeReturnsExpectedContent() {
-        const s = this.__init()
+  testSerializeReturnsExpectedContent() {
+    const s = this.__init()
 
-        s.spyOn('_formatContent', ()=> {
-            return 'test'
-        })
+    s.spyOn('_formatContent', ()=> {
+      return 'test'
+    })
 
-        const expected = 'test'
-        const result = s.serialize(new Context())
+    const expected = 'test'
+    const result = s.serialize(new Context())
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatContent')
-    testFormatContentCallsFormatInfo() {
-        const s = this.__init()
-
-        s.spyOn('_formatInfo', () => {
-            return [ '', '' ]
-        })
-
-        s.spyOn('_formatGroup', () => {
-            return ''
-        })
-
-        s._formatContent(new Context())
-
-        this.assertEqual(s.spy._formatInfo.count, 1)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatContent')
-    testFormatContentCallsFormatGroup() {
-        const s = this.__init()
+  testFormatContentCallsFormatInfo() {
+    const s = this.__init()
 
-        s.spyOn('_formatInfo', () => {
-            return [ '', '' ]
-        })
+    s.spyOn('_formatInfo', () => {
+      return [ '', '' ]
+    })
 
-        s.spyOn('_formatGroup', () => {
-            return ''
-        })
+    s.spyOn('_formatGroup', () => {
+      return ''
+    })
 
-        s._formatContent(new Context())
+    s._formatContent(new Context())
 
-        this.assertEqual(s.spy._formatGroup.count, 1)
-    }
-
-    @targets('_formatContent')
-    testFormatContentHasExpectedStructureWithNoInfo() {
-        const s = this.__init()
-
-        s.spyOn('_formatInfo', () => {
-            return [ '', '' ]
-        })
-
-        s.spyOn('_formatGroup', () => {
-            return '## Some data'
-        })
-
-        const expected = '## Some data'
-        const result = s._formatContent(new Context())
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(s.spy._formatInfo.count, 1)
+  }
 
     @targets('_formatContent')
-    testFormatContentHasExpectedStructureWithNoEndInfo() {
-        const s = this.__init()
+  testFormatContentCallsFormatGroup() {
+    const s = this.__init()
 
-        s.spyOn('_formatInfo', () => {
-            return [ '# API', '' ]
-        })
+    s.spyOn('_formatInfo', () => {
+      return [ '', '' ]
+    })
 
-        s.spyOn('_formatGroup', () => {
-            return '## group content'
-        })
+    s.spyOn('_formatGroup', () => {
+      return ''
+    })
 
-        const expected = '# API\n\n## group content'
-        const result = s._formatContent(new Context())
+    s._formatContent(new Context())
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatContent')
-    testFormatContentHasExpectedStructureWithNoStartInfo() {
-        const s = this.__init()
-
-        s.spyOn('_formatInfo', () => {
-            return [ '', '## Terms of Service' ]
-        })
-
-        s.spyOn('_formatGroup', () => {
-            return '## group content'
-        })
-
-        const expected = '## group content\n\n## Terms of Service'
-        const result = s._formatContent(new Context())
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(s.spy._formatGroup.count, 1)
+  }
 
     @targets('_formatContent')
-    testFormatContentHasExpectedStructureWithNoStartInfo() {
-        const s = this.__init()
+  testFormatContentHasExpectedStructureWithNoInfo() {
+    const s = this.__init()
 
-        s.spyOn('_formatInfo', () => {
-            return [ '# API', '## Terms of Service' ]
-        })
+    s.spyOn('_formatInfo', () => {
+      return [ '', '' ]
+    })
 
-        s.spyOn('_formatGroup', () => {
-            return ''
-        })
+    s.spyOn('_formatGroup', () => {
+      return '## Some data'
+    })
 
-        const expected = '# API\n\n## Terms of Service'
-        const result = s._formatContent(new Context())
+    const expected = '## Some data'
+    const result = s._formatContent(new Context())
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatContent')
+  testFormatContentHasExpectedStructureWithNoEndInfo() {
+    const s = this.__init()
+
+    s.spyOn('_formatInfo', () => {
+      return [ '# API', '' ]
+    })
+
+    s.spyOn('_formatGroup', () => {
+      return '## group content'
+    })
+
+    const expected = '# API\n\n## group content'
+    const result = s._formatContent(new Context())
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatContent')
+  testFormatContentHasExpectedStructureWithNoStartInfo() {
+    const s = this.__init()
+
+    s.spyOn('_formatInfo', () => {
+      return [ '', '## Terms of Service' ]
+    })
+
+    s.spyOn('_formatGroup', () => {
+      return '## group content'
+    })
+
+    const expected = '## group content\n\n## Terms of Service'
+    const result = s._formatContent(new Context())
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatContent')
+  testFormatContentHasExpectedStructureWithNoStartInfo() {
+    const s = this.__init()
+
+    s.spyOn('_formatInfo', () => {
+      return [ '# API', '## Terms of Service' ]
+    })
+
+    s.spyOn('_formatGroup', () => {
+      return ''
+    })
+
+    const expected = '# API\n\n## Terms of Service'
+    const result = s._formatContent(new Context())
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatInfo')
-    testFormatInfoWithNoInfo() {
-        const s = this.__init()
+  testFormatInfoWithNoInfo() {
+    const s = this.__init()
 
-        const input = new Context({
-            info: new Info()
-        })
+    const input = new Context({
+      info: new Info()
+    })
 
-        const expected = [ '# API', '' ]
-        const result = s._formatInfo(input)
+    const expected = [ '# API', '' ]
+    const result = s._formatInfo(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatInfo')
-    testFormatInfoWithSimpleInfo() {
-        const s = this.__init()
+  testFormatInfoWithSimpleInfo() {
+    const s = this.__init()
 
-        const input = new Context({
-            info: new Info({
-                title: 'Some API Title',
-                description: 'some API description'
-            })
-        })
+    const input = new Context({
+      info: new Info({
+        title: 'Some API Title',
+        description: 'some API description'
+      })
+    })
 
-        const expected = [
-            '# Some API Title\n\n' +
+    const expected = [
+      '# Some API Title\n\n' +
             '## Description\nsome API description',
-            ''
-        ]
-        const result = s._formatInfo(input)
+      ''
+    ]
+    const result = s._formatInfo(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatInfo')
-    testFormatInfoWithContactInfoCallsFormatContact() {
-        const s = this.__init()
-
-        s.spyOn('_formatContact', () => {
-            return '## Contact\n- **Name:** john doe'
-        })
-
-        const input = new Context({
-            info: new Info({
-                title: 'Some API Title',
-                description: 'some API description',
-                contact: new Contact()
-            })
-        })
-
-        const expected = [
-            '# Some API Title\n\n' +
-            '## Description\nsome API description',
-            '## Contact\n- **Name:** john doe'
-        ]
-        const result = s._formatInfo(input)
-
-        this.assertEqual(s.spy._formatContact.count, 1)
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatInfo')
-    testFormatInfoWithLicenseInfoCallsFormatLicense() {
-        const s = this.__init()
+  testFormatInfoWithContactInfoCallsFormatContact() {
+    const s = this.__init()
 
-        s.spyOn('_formatLicense', () => {
-            return '## License\n- **Name:** MIT'
-        })
+    s.spyOn('_formatContact', () => {
+      return '## Contact\n- **Name:** john doe'
+    })
 
-        const input = new Context({
-            info: new Info({
-                title: 'Some API Title',
-                description: 'some API description',
-                license: new License()
-            })
-        })
+    const input = new Context({
+      info: new Info({
+        title: 'Some API Title',
+        description: 'some API description',
+        contact: new Contact()
+      })
+    })
 
-        const expected = [
-            '# Some API Title\n\n' +
+    const expected = [
+      '# Some API Title\n\n' +
             '## Description\nsome API description',
-            '## License\n- **Name:** MIT'
-        ]
-        const result = s._formatInfo(input)
+      '## Contact\n- **Name:** john doe'
+    ]
+    const result = s._formatInfo(input)
 
-        this.assertEqual(s.spy._formatLicense.count, 1)
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(s.spy._formatContact.count, 1)
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatInfo')
+  testFormatInfoWithLicenseInfoCallsFormatLicense() {
+    const s = this.__init()
+
+    s.spyOn('_formatLicense', () => {
+      return '## License\n- **Name:** MIT'
+    })
+
+    const input = new Context({
+      info: new Info({
+        title: 'Some API Title',
+        description: 'some API description',
+        license: new License()
+      })
+    })
+
+    const expected = [
+      '# Some API Title\n\n' +
+            '## Description\nsome API description',
+      '## License\n- **Name:** MIT'
+    ]
+    const result = s._formatInfo(input)
+
+    this.assertEqual(s.spy._formatLicense.count, 1)
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatContact')
-    testFormatContactWithNoContent() {
-        const s = this.__init()
-        const input = new Contact()
+  testFormatContactWithNoContent() {
+    const s = this.__init()
+    const input = new Contact()
 
-        const expected = ''
-        const result = s._formatContact(input)
+    const expected = ''
+    const result = s._formatContact(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatContact')
-    testFormatContactWithAllContent() {
-        const s = this.__init()
-        const input = new Contact({
-            name: 'some name',
-            url: 'some url',
-            email: 'some email'
-        })
+  testFormatContactWithAllContent() {
+    const s = this.__init()
+    const input = new Contact({
+      name: 'some name',
+      url: 'some url',
+      email: 'some email'
+    })
 
-        const expected =
+    const expected =
             '## Contact\n' +
             '- **Name:** some name\n' +
             '- **URL:** some url\n' +
             '- **Email:** some email'
 
-        const result = s._formatContact(input)
+    const result = s._formatContact(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatLicense')
-    testFormatLicenseWithNoContent() {
-        const s = this.__init()
-        const input = new License()
-
-        const expected = ''
-        const result = s._formatLicense(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatLicense')
-    testFormatLicenseWithAllContent() {
-        const s = this.__init()
-        const input = new License({
-            name: 'some name',
-            url: 'some url'
-        })
+  testFormatLicenseWithNoContent() {
+    const s = this.__init()
+    const input = new License()
 
-        const expected =
+    const expected = ''
+    const result = s._formatLicense(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatLicense')
+  testFormatLicenseWithAllContent() {
+    const s = this.__init()
+    const input = new License({
+      name: 'some name',
+      url: 'some url'
+    })
+
+    const expected =
             '## License\n' +
             '- **Name:** some name\n' +
             '- **URL:** some url'
 
-        const result = s._formatLicense(input)
+    const result = s._formatLicense(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatGroup')
-    testFormatGroupWithNullGroup() {
-        const s = this.__init()
-
-        const input = null
-
-        const expected = ''
-        const result = s._formatGroup(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatGroup')
-    testFormatGroupWithRequestCallsFormatRequestForEachRequest() {
-        const s = this.__init()
+  testFormatGroupWithNullGroup() {
+    const s = this.__init()
 
-        s.spyOn('_formatRequest', () => {
-            return ''
-        })
+    const input = null
 
-        const input = new Group({
-            children: new Immutable.OrderedMap({
-                12: new Group({
-                    children: new Immutable.OrderedMap({
-                        90: new Request(),
-                        42: new Request()
-                    })
-                }),
-                36: new Group({
-                    children: new Immutable.OrderedMap({
-                        72: new Request(),
-                        92: new Request()
-                    })
-                })
-            })
-        })
+    const expected = ''
+    const result = s._formatGroup(input)
 
-        s._formatGroup(input)
-
-        this.assertEqual(s.spy._formatRequest.count, 4)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatGroup')
-    testFormatGroupReturnsExpectedContent() {
-        const s = this.__init()
+  testFormatGroupWithRequestCallsFormatRequestForEachRequest() {
+    const s = this.__init()
 
-        let count = 0
-        s.spyOn('_formatRequest', () => {
-            count += 1
-            return '### Request content #' + count
+    s.spyOn('_formatRequest', () => {
+      return ''
+    })
+
+    const input = new Group({
+      children: new Immutable.OrderedMap({
+        '12': new Group({
+          children: new Immutable.OrderedMap({
+            '90': new Request(),
+            '42': new Request()
+          })
+        }),
+        '36': new Group({
+          children: new Immutable.OrderedMap({
+            '72': new Request(),
+            '92': new Request()
+          })
         })
+      })
+    })
 
-        const input = new Group({
-            children: new Immutable.OrderedMap({
-                12: new Group({
-                    children: new Immutable.OrderedMap({
-                        90: new Request(),
-                        42: new Request()
-                    })
-                }),
-                36: new Group({
-                    children: new Immutable.OrderedMap({
-                        72: new Request(),
-                        92: new Request()
-                    })
-                })
-            })
+    s._formatGroup(input)
+
+    this.assertEqual(s.spy._formatRequest.count, 4)
+  }
+
+    @targets('_formatGroup')
+  testFormatGroupReturnsExpectedContent() {
+    const s = this.__init()
+
+    let count = 0
+    s.spyOn('_formatRequest', () => {
+      count += 1
+      return '### Request content #' + count
+    })
+
+    const input = new Group({
+      children: new Immutable.OrderedMap({
+        '12': new Group({
+          children: new Immutable.OrderedMap({
+            '90': new Request(),
+            '42': new Request()
+          })
+        }),
+        '36': new Group({
+          children: new Immutable.OrderedMap({
+            '72': new Request(),
+            '92': new Request()
+          })
         })
+      })
+    })
 
-        const expected =
+    const expected =
             '## Requests\n\n' +
             '### Request content #1\n\n' +
             '### Request content #2\n\n' +
             '### Request content #3\n\n' +
             '### Request content #4'
-        const result = s._formatGroup(input)
+    const result = s._formatGroup(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatRequest')
-    testFormatRequestCallsFormatName() {
-        const s = this.__init()
-
-        s.spyOn('_formatName', () => {
-            return 'some name'
-        })
-
-        s.spyOn('_formatDescription', () => {
-            return 'some description'
-        })
-
-        s.spyOn('_formatCurlCommand', () => {
-            return 'some curl command'
-        })
-
-        const input = new Request()
-
-        s._formatRequest(input)
-
-        this.assertEqual(s.spy._formatName.count, 1)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatRequest')
-    testFormatRequestCallsFormatDescription() {
-        const s = this.__init()
+  testFormatRequestCallsFormatName() {
+    const s = this.__init()
 
-        s.spyOn('_formatName', () => {
-            return 'some name'
-        })
+    s.spyOn('_formatName', () => {
+      return 'some name'
+    })
 
-        s.spyOn('_formatDescription', () => {
-            return 'some description'
-        })
+    s.spyOn('_formatDescription', () => {
+      return 'some description'
+    })
 
-        s.spyOn('_formatCurlCommand', () => {
-            return 'some curl command'
-        })
+    s.spyOn('_formatCurlCommand', () => {
+      return 'some curl command'
+    })
 
-        const input = new Request()
+    const input = new Request()
 
-        s._formatRequest(input)
+    s._formatRequest(input)
 
-        this.assertEqual(s.spy._formatDescription.count, 1)
-    }
-
-    @targets('_formatRequest')
-    testFormatRequestCallsFormatCurlCommand() {
-        const s = this.__init()
-
-        s.spyOn('_formatName', () => {
-            return 'some name'
-        })
-
-
-        s.spyOn('_formatDescription', () => {
-            return 'some description'
-        })
-
-        s.spyOn('_formatCurlCommand', () => {
-            return 'some curl command'
-        })
-
-        const input = new Request()
-
-        s._formatRequest(input)
-
-        this.assertEqual(s.spy._formatCurlCommand.count, 1)
-    }
+    this.assertEqual(s.spy._formatName.count, 1)
+  }
 
     @targets('_formatRequest')
-    testFormatRequestCallsFormatParameterDescription() {
-        const s = this.__init()
+  testFormatRequestCallsFormatDescription() {
+    const s = this.__init()
 
-        s.spyOn('_formatName', () => {
-            return 'some name'
-        })
+    s.spyOn('_formatName', () => {
+      return 'some name'
+    })
 
-        s.spyOn('_formatDescription', () => {
-            return 'some description'
-        })
+    s.spyOn('_formatDescription', () => {
+      return 'some description'
+    })
 
-        s.spyOn('_formatCurlCommand', () => {
-            return 'some curl command'
-        })
+    s.spyOn('_formatCurlCommand', () => {
+      return 'some curl command'
+    })
 
-        s.spyOn('_formatParameterDescriptions', () => {
-            return 'some parameters'
-        })
+    const input = new Request()
 
-        s.spyOn('_formatAuthDescription', () => {
-            return 'some auths'
-        })
+    s._formatRequest(input)
 
-        s.spyOn('_formatResponses', () => {
-            return 'some responses'
-        })
-
-        const input = new Request()
-
-        s._formatRequest(input)
-
-        this.assertEqual(s.spy._formatParameterDescriptions.count, 1)
-    }
+    this.assertEqual(s.spy._formatDescription.count, 1)
+  }
 
     @targets('_formatRequest')
-    testFormatRequestCallsFormatAuthDescription() {
-        const s = this.__init()
+  testFormatRequestCallsFormatCurlCommand() {
+    const s = this.__init()
 
-        s.spyOn('_formatName', () => {
-            return 'some name'
-        })
+    s.spyOn('_formatName', () => {
+      return 'some name'
+    })
 
-        s.spyOn('_formatDescription', () => {
-            return 'some description'
-        })
 
-        s.spyOn('_formatCurlCommand', () => {
-            return 'some curl command'
-        })
+    s.spyOn('_formatDescription', () => {
+      return 'some description'
+    })
 
-        s.spyOn('_formatParameterDescriptions', () => {
-            return 'some parameters'
-        })
+    s.spyOn('_formatCurlCommand', () => {
+      return 'some curl command'
+    })
 
-        s.spyOn('_formatAuthDescription', () => {
-            return 'some auths'
-        })
+    const input = new Request()
 
-        s.spyOn('_formatResponses', () => {
-            return 'some responses'
-        })
+    s._formatRequest(input)
 
-        const input = new Request()
-
-        s._formatRequest(input)
-
-        this.assertEqual(s.spy._formatAuthDescription.count, 1)
-    }
+    this.assertEqual(s.spy._formatCurlCommand.count, 1)
+  }
 
     @targets('_formatRequest')
-    testFormatRequestCallsFormatResponses() {
-        const s = this.__init()
+  testFormatRequestCallsFormatParameterDescription() {
+    const s = this.__init()
 
-        s.spyOn('_formatName', () => {
-            return 'some name'
-        })
+    s.spyOn('_formatName', () => {
+      return 'some name'
+    })
 
-        s.spyOn('_formatDescription', () => {
-            return 'some description'
-        })
+    s.spyOn('_formatDescription', () => {
+      return 'some description'
+    })
 
-        s.spyOn('_formatCurlCommand', () => {
-            return 'some curl command'
-        })
+    s.spyOn('_formatCurlCommand', () => {
+      return 'some curl command'
+    })
 
-        s.spyOn('_formatParameterDescriptions', () => {
-            return 'some parameters'
-        })
+    s.spyOn('_formatParameterDescriptions', () => {
+      return 'some parameters'
+    })
 
-        s.spyOn('_formatAuthDescription', () => {
-            return 'some auths'
-        })
+    s.spyOn('_formatAuthDescription', () => {
+      return 'some auths'
+    })
 
-        s.spyOn('_formatResponses', () => {
-            return 'some responses'
-        })
+    s.spyOn('_formatResponses', () => {
+      return 'some responses'
+    })
 
-        const input = new Request()
+    const input = new Request()
 
-        s._formatRequest(input)
+    s._formatRequest(input)
 
-        this.assertEqual(s.spy._formatResponses.count, 1)
-    }
+    this.assertEqual(s.spy._formatParameterDescriptions.count, 1)
+  }
 
     @targets('_formatRequest')
-    testFormatRequestReturnsExpectedContent() {
-        const s = this.__init()
+  testFormatRequestCallsFormatAuthDescription() {
+    const s = this.__init()
 
-        s.spyOn('_formatName', () => {
-            return 'some name'
-        })
+    s.spyOn('_formatName', () => {
+      return 'some name'
+    })
 
-        s.spyOn('_formatDescription', () => {
-            return 'some description'
-        })
+    s.spyOn('_formatDescription', () => {
+      return 'some description'
+    })
 
-        s.spyOn('_formatCurlCommand', () => {
-            return 'some curl command'
-        })
+    s.spyOn('_formatCurlCommand', () => {
+      return 'some curl command'
+    })
 
-        s.spyOn('_formatParameterDescriptions', () => {
-            return 'some parameters'
-        })
+    s.spyOn('_formatParameterDescriptions', () => {
+      return 'some parameters'
+    })
 
-        s.spyOn('_formatAuthDescription', () => {
-            return 'some auths'
-        })
+    s.spyOn('_formatAuthDescription', () => {
+      return 'some auths'
+    })
 
-        s.spyOn('_formatResponses', () => {
-            return 'some responses'
-        })
+    s.spyOn('_formatResponses', () => {
+      return 'some responses'
+    })
 
-        const input = new Request()
+    const input = new Request()
 
-        const expected =
+    s._formatRequest(input)
+
+    this.assertEqual(s.spy._formatAuthDescription.count, 1)
+  }
+
+    @targets('_formatRequest')
+  testFormatRequestCallsFormatResponses() {
+    const s = this.__init()
+
+    s.spyOn('_formatName', () => {
+      return 'some name'
+    })
+
+    s.spyOn('_formatDescription', () => {
+      return 'some description'
+    })
+
+    s.spyOn('_formatCurlCommand', () => {
+      return 'some curl command'
+    })
+
+    s.spyOn('_formatParameterDescriptions', () => {
+      return 'some parameters'
+    })
+
+    s.spyOn('_formatAuthDescription', () => {
+      return 'some auths'
+    })
+
+    s.spyOn('_formatResponses', () => {
+      return 'some responses'
+    })
+
+    const input = new Request()
+
+    s._formatRequest(input)
+
+    this.assertEqual(s.spy._formatResponses.count, 1)
+  }
+
+    @targets('_formatRequest')
+  testFormatRequestReturnsExpectedContent() {
+    const s = this.__init()
+
+    s.spyOn('_formatName', () => {
+      return 'some name'
+    })
+
+    s.spyOn('_formatDescription', () => {
+      return 'some description'
+    })
+
+    s.spyOn('_formatCurlCommand', () => {
+      return 'some curl command'
+    })
+
+    s.spyOn('_formatParameterDescriptions', () => {
+      return 'some parameters'
+    })
+
+    s.spyOn('_formatAuthDescription', () => {
+      return 'some auths'
+    })
+
+    s.spyOn('_formatResponses', () => {
+      return 'some responses'
+    })
+
+    const input = new Request()
+
+    const expected =
             'some name\n\n' +
             'some description\n\n' +
             'some curl command\n\n' +
             'some parameters\n\n' +
             'some auths\n\n' +
             'some responses'
-        const result = s._formatRequest(input)
+    const result = s._formatRequest(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatName')
-    testFormatNameCallsFormatURLBlock() {
-        const s = this.__init()
-
-        s.spyOn('_formatURLBlock', () => {
-            return ''
-        })
-
-        const input = new Request()
-
-        s._formatName(input)
-
-        this.assertEqual(s.spy._formatURLBlock.count, 1)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatName')
-    testFormatNameReturnsExpectedContentFromEmptyRequest() {
-        const s = this.__init()
+  testFormatNameCallsFormatURLBlock() {
+    const s = this.__init()
 
-        s.spyOn('_formatURLBlock', () => {
-            return ''
-        })
+    s.spyOn('_formatURLBlock', () => {
+      return ''
+    })
 
-        const input = new Request()
+    const input = new Request()
 
-        const expected = '### **GET** - ?'
-        const result = s._formatName(input)
+    s._formatName(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatName')
-    testFormatNameWithURL() {
-        const s = this.__init()
-
-        const input = new Request({
-            url: new URL('http://echo.luckymarmot.com/headers')
-        })
-
-        const expected = '### **GET** - /headers'
-        const result = s._formatName(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(s.spy._formatURLBlock.count, 1)
+  }
 
     @targets('_formatName')
-    testFormatNameWithURLAndMethod() {
-        const s = this.__init()
+  testFormatNameReturnsExpectedContentFromEmptyRequest() {
+    const s = this.__init()
 
-        const input = new Request({
-            method: 'post',
-            url: new URL('http://echo.luckymarmot.com/headers')
-        })
+    s.spyOn('_formatURLBlock', () => {
+      return ''
+    })
 
-        const expected = '### **POST** - /headers'
-        const result = s._formatName(input)
+    const input = new Request()
 
-        this.assertEqual(expected, result)
-    }
+    const expected = '### **GET** - ?'
+    const result = s._formatName(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatName')
+  testFormatNameWithURL() {
+    const s = this.__init()
+
+    const input = new Request({
+      url: new URL('http://echo.luckymarmot.com/headers')
+    })
+
+    const expected = '### **GET** - /headers'
+    const result = s._formatName(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatName')
+  testFormatNameWithURLAndMethod() {
+    const s = this.__init()
+
+    const input = new Request({
+      method: 'post',
+      url: new URL('http://echo.luckymarmot.com/headers')
+    })
+
+    const expected = '### **POST** - /headers'
+    const result = s._formatName(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatDescription')
-    testFormatDescriptionWithNoDescription() {
-        const s = this.__init()
+  testFormatDescriptionWithNoDescription() {
+    const s = this.__init()
 
-        const input = new Request()
+    const input = new Request()
 
-        const expected = ''
-        const result = s._formatDescription(input)
+    const expected = ''
+    const result = s._formatDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatDescription')
-    testFormatDescriptionWithDescription() {
-        const s = this.__init()
+  testFormatDescriptionWithDescription() {
+    const s = this.__init()
 
-        const input = new Request({
-            description: 'a simple description'
-        })
+    const input = new Request({
+      description: 'a simple description'
+    })
 
-        const expected = '#### Description\na simple description'
-        const result = s._formatDescription(input)
+    const expected = '#### Description\na simple description'
+    const result = s._formatDescription(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatCurlCommand')
-    testFormatCurlCommandCallsFormatURL() {
-        const s = this.__init()
-
-        s.spyOn('_formatURL', () => {
-            return 'a simple url'
-        })
-
-        s.spyOn('_formatHeaders', () => {
-            return 'some headers'
-        })
-
-        s.spyOn('_formatBody', () => {
-            return 'some body'
-        })
-
-        s.spyOn('_formatAuths', () => {
-            return 'some auths'
-        })
-
-        const input = new Request()
-
-        s._formatCurlCommand(input)
-
-        this.assertEqual(s.spy._formatURL.count, 1)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatCurlCommand')
-    testFormatCurlCommandCallsFormatHeaders() {
-        const s = this.__init()
+  testFormatCurlCommandCallsFormatURL() {
+    const s = this.__init()
 
-        s.spyOn('_formatURL', () => {
-            return 'a simple url'
-        })
+    s.spyOn('_formatURL', () => {
+      return 'a simple url'
+    })
 
-        s.spyOn('_formatHeaders', () => {
-            return 'some headers'
-        })
+    s.spyOn('_formatHeaders', () => {
+      return 'some headers'
+    })
 
-        s.spyOn('_formatBody', () => {
-            return 'some body'
-        })
+    s.spyOn('_formatBody', () => {
+      return 'some body'
+    })
 
-        s.spyOn('_formatAuths', () => {
-            return 'some auths'
-        })
+    s.spyOn('_formatAuths', () => {
+      return 'some auths'
+    })
 
-        const input = new Request()
+    const input = new Request()
 
-        s._formatCurlCommand(input)
+    s._formatCurlCommand(input)
 
-        this.assertEqual(s.spy._formatHeaders.count, 1)
-    }
-
-    @targets('_formatCurlCommand')
-    testFormatCurlCommandCallsFormatBody() {
-        const s = this.__init()
-
-        s.spyOn('_formatURL', () => {
-            return 'a simple url'
-        })
-
-        s.spyOn('_formatHeaders', () => {
-            return 'some headers'
-        })
-
-        s.spyOn('_formatBody', () => {
-            return 'some body'
-        })
-
-        s.spyOn('_formatAuths', () => {
-            return 'some auths'
-        })
-
-        const input = new Request()
-
-        s._formatCurlCommand(input)
-
-        this.assertEqual(s.spy._formatBody.count, 1)
-    }
+    this.assertEqual(s.spy._formatURL.count, 1)
+  }
 
     @targets('_formatCurlCommand')
-    testFormatCurlCommandCallsFormatAuths() {
-        const s = this.__init()
+  testFormatCurlCommandCallsFormatHeaders() {
+    const s = this.__init()
 
-        s.spyOn('_formatURL', () => {
-            return 'a simple url'
-        })
+    s.spyOn('_formatURL', () => {
+      return 'a simple url'
+    })
 
-        s.spyOn('_formatHeaders', () => {
-            return 'some headers'
-        })
+    s.spyOn('_formatHeaders', () => {
+      return 'some headers'
+    })
 
-        s.spyOn('_formatBody', () => {
-            return 'some body'
-        })
+    s.spyOn('_formatBody', () => {
+      return 'some body'
+    })
 
-        s.spyOn('_formatAuths', () => {
-            return 'some auths'
-        })
+    s.spyOn('_formatAuths', () => {
+      return 'some auths'
+    })
 
-        const input = new Request()
+    const input = new Request()
 
-        s._formatCurlCommand(input)
+    s._formatCurlCommand(input)
 
-        this.assertEqual(s.spy._formatAuths.count, 1)
-    }
+    this.assertEqual(s.spy._formatHeaders.count, 1)
+  }
 
     @targets('_formatCurlCommand')
-    testFormatCurlCommandReturnsExpectedCommand() {
-        const s = this.__init()
+  testFormatCurlCommandCallsFormatBody() {
+    const s = this.__init()
 
-        s.spyOn('_formatURL', () => {
-            return 'http://httpbin.org/post'
-        })
+    s.spyOn('_formatURL', () => {
+      return 'a simple url'
+    })
 
-        s.spyOn('_formatHeaders', () => {
-            return '-H "Content-Type: application/x-www-form-urlencoded" \\'
-        })
+    s.spyOn('_formatHeaders', () => {
+      return 'some headers'
+    })
 
-        s.spyOn('_formatBody', () => {
-            return '--data-raw "user=john" \\'
-        })
+    s.spyOn('_formatBody', () => {
+      return 'some body'
+    })
 
-        s.spyOn('_formatAuths', () => {
-            return '-u "john:pass" \\'
-        })
+    s.spyOn('_formatAuths', () => {
+      return 'some auths'
+    })
 
-        const input = new Request({
-            method: 'post'
-        })
+    const input = new Request()
 
-        const expected =
+    s._formatCurlCommand(input)
+
+    this.assertEqual(s.spy._formatBody.count, 1)
+  }
+
+    @targets('_formatCurlCommand')
+  testFormatCurlCommandCallsFormatAuths() {
+    const s = this.__init()
+
+    s.spyOn('_formatURL', () => {
+      return 'a simple url'
+    })
+
+    s.spyOn('_formatHeaders', () => {
+      return 'some headers'
+    })
+
+    s.spyOn('_formatBody', () => {
+      return 'some body'
+    })
+
+    s.spyOn('_formatAuths', () => {
+      return 'some auths'
+    })
+
+    const input = new Request()
+
+    s._formatCurlCommand(input)
+
+    this.assertEqual(s.spy._formatAuths.count, 1)
+  }
+
+    @targets('_formatCurlCommand')
+  testFormatCurlCommandReturnsExpectedCommand() {
+    const s = this.__init()
+
+    s.spyOn('_formatURL', () => {
+      return 'http://httpbin.org/post'
+    })
+
+    s.spyOn('_formatHeaders', () => {
+      return '-H "Content-Type: application/x-www-form-urlencoded" \\'
+    })
+
+    s.spyOn('_formatBody', () => {
+      return '--data-raw "user=john" \\'
+    })
+
+    s.spyOn('_formatAuths', () => {
+      return '-u "john:pass" \\'
+    })
+
+    const input = new Request({
+      method: 'post'
+    })
+
+    const expected =
             '#### CURL\n\n' +
             '```sh\n' +
             'curl -X POST http://httpbin.org/post \\\n' +
@@ -845,1229 +845,1229 @@ export class TestCurlSerializer extends UnitTest {
             '-u "john:pass"\n' +
             '```'
 
-        const result = s._formatCurlCommand(input)
+    const result = s._formatCurlCommand(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatURL')
-    testFormatURLWithEmptyRequest() {
-        const s = this.__init()
-
-        const input = new Request()
-
-        const expected = '""'
-        const result = s._formatURL(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatURL')
-    testFormatURLWithURL() {
-        const s = this.__init()
+  testFormatURLWithEmptyRequest() {
+    const s = this.__init()
 
-        const expected = 'http://echo.luckymarmot.com/some/path'
+    const input = new Request()
 
-        const input = new Request({
-            url: new URL(expected)
-        })
+    const expected = '""'
+    const result = s._formatURL(input)
 
-        const result = s._formatURL(input)
+    this.assertEqual(expected, result)
+  }
 
-        this.assertEqual('"' + expected + '"', result)
-    }
+    @targets('_formatURL')
+  testFormatURLWithURL() {
+    const s = this.__init()
 
-    @targets('_formatHeaders')
-    testFormatHeadersWithEmptyContainer() {
-        const s = this.__init()
+    const expected = 'http://echo.luckymarmot.com/some/path'
 
-        const input = new ParameterContainer()
+    const input = new Request({
+      url: new URL(expected)
+    })
 
-        const expected = ''
-        const result = s._formatHeaders(input)
+    const result = s._formatURL(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatHeaders')
-    testFormatHeadersCallsFormatHeaderForEachHeader() {
-        const s = this.__init()
-
-        s.spyOn('_formatHeader', () => {
-            return ''
-        })
-
-        const input = new ParameterContainer({
-            headers: new Immutable.List([
-                new Parameter(),
-                new Parameter()
-            ])
-        })
-
-        s._formatHeaders(input, '')
-
-        this.assertEqual(s.spy._formatHeader.count, 2)
-    }
+    this.assertEqual('"' + expected + '"', result)
+  }
 
     @targets('_formatHeaders')
-    testFormatHeadersAppliesOffsetForEachHeader() {
-        const s = this.__init()
+  testFormatHeadersWithEmptyContainer() {
+    const s = this.__init()
 
-        s.spyOn('_formatHeader', () => {
-            return 'offset header'
-        })
+    const input = new ParameterContainer()
 
-        const input = new ParameterContainer({
-            headers: new Immutable.List([
-                new Parameter(),
-                new Parameter()
-            ])
-        })
+    const expected = ''
+    const result = s._formatHeaders(input)
 
-        const expected =
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatHeaders')
+  testFormatHeadersCallsFormatHeaderForEachHeader() {
+    const s = this.__init()
+
+    s.spyOn('_formatHeader', () => {
+      return ''
+    })
+
+    const input = new ParameterContainer({
+      headers: new Immutable.List([
+        new Parameter(),
+        new Parameter()
+      ])
+    })
+
+    s._formatHeaders(input, '')
+
+    this.assertEqual(s.spy._formatHeader.count, 2)
+  }
+
+    @targets('_formatHeaders')
+  testFormatHeadersAppliesOffsetForEachHeader() {
+    const s = this.__init()
+
+    s.spyOn('_formatHeader', () => {
+      return 'offset header'
+    })
+
+    const input = new ParameterContainer({
+      headers: new Immutable.List([
+        new Parameter(),
+        new Parameter()
+      ])
+    })
+
+    const expected =
             '  offset header\n' +
             '  offset header'
 
-        const result = s._formatHeaders(input, '  ')
+    const result = s._formatHeaders(input, '  ')
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatHeader')
-    testFormatHeaderWithSimpleParam() {
-        const s = this.__init()
-
-        const input = new Parameter({
-            key: 'Content-Type',
-            type: 'string',
-            value: 'application/json'
-        })
-
-        const expected = '-H "Content-Type: application/json" \\'
-        const result = s._formatHeader(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatHeader')
-    testFormatHeaderWithNoValueParam() {
-        const s = this.__init()
+  testFormatHeaderWithSimpleParam() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'Content-Type',
-            type: 'string'
-        })
+    const input = new Parameter({
+      key: 'Content-Type',
+      type: 'string',
+      value: 'application/json'
+    })
 
-        const expected = '-H "Content-Type: $Content-Type" \\'
-        const result = s._formatHeader(input)
+    const expected = '-H "Content-Type: application/json" \\'
+    const result = s._formatHeader(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatHeader')
-    testFormatHeaderWithWeirdParam() {
-        const s = this.__init()
-
-        const input = new Parameter({
-            type: 'string'
-        })
-
-        const expected = '-H ": $unnamed" \\'
-        const result = s._formatHeader(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatHeader')
-    testFormatHeaderWithSequenceParam() {
-        const s = this.__init()
+  testFormatHeaderWithNoValueParam() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'Content-Type',
-            type: 'string',
-            format: 'sequence',
-            value: new Immutable.List([
-                new Parameter({
-                    type: 'string',
-                    value: 'application/',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            'application/'
-                        ])
-                    ])
-                }),
-                new Parameter({
-                    key: 'ctype',
-                    type: 'string',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            'json'
-                        ])
-                    ])
-                })
+    const input = new Parameter({
+      key: 'Content-Type',
+      type: 'string'
+    })
+
+    const expected = '-H "Content-Type: $Content-Type" \\'
+    const result = s._formatHeader(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatHeader')
+  testFormatHeaderWithWeirdParam() {
+    const s = this.__init()
+
+    const input = new Parameter({
+      type: 'string'
+    })
+
+    const expected = '-H ": $unnamed" \\'
+    const result = s._formatHeader(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatHeader')
+  testFormatHeaderWithSequenceParam() {
+    const s = this.__init()
+
+    const input = new Parameter({
+      key: 'Content-Type',
+      type: 'string',
+      format: 'sequence',
+      value: new Immutable.List([
+        new Parameter({
+          type: 'string',
+          value: 'application/',
+          internals: new Immutable.List([
+            new Constraint.Enum([
+              'application/'
             ])
+          ])
+        }),
+        new Parameter({
+          key: 'ctype',
+          type: 'string',
+          internals: new Immutable.List([
+            new Constraint.Enum([
+              'json'
+            ])
+          ])
         })
+      ])
+    })
 
-        const expected = '-H "Content-Type: application/$ctype" \\'
-        const result = s._formatHeader(input)
+    const expected = '-H "Content-Type: application/$ctype" \\'
+    const result = s._formatHeader(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatBody')
-    testFormatBodyWithEmptyContainer() {
-        const s = this.__init()
+  testFormatBodyWithEmptyContainer() {
+    const s = this.__init()
 
-        const input = new ParameterContainer()
+    const input = new ParameterContainer()
 
-        const expected = ''
-        const result = s._formatBody(input)
+    const expected = ''
+    const result = s._formatBody(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatBody')
-    testFormatBodyWithCallsFormatBodyParamForEachParam() {
-        const s = this.__init()
+  testFormatBodyWithCallsFormatBodyParamForEachParam() {
+    const s = this.__init()
 
-        s.spyOn('_formatBodyParam', () => {
-            return 'some param'
-        })
+    s.spyOn('_formatBodyParam', () => {
+      return 'some param'
+    })
 
-        const input = new ParameterContainer({
-            body: new Immutable.List([
-                new Parameter(),
-                new Parameter()
-            ])
-        })
+    const input = new ParameterContainer({
+      body: new Immutable.List([
+        new Parameter(),
+        new Parameter()
+      ])
+    })
 
-        s._formatBody(input)
+    s._formatBody(input)
 
-        this.assertEqual(s.spy._formatBodyParam.count, 2)
-    }
-
-    @targets('_formatBodyParam')
-    testFormatBodyParamWithSimpleParam() {
-        const s = this.__init()
-
-        const input = new Parameter({
-            key: 'userId',
-            type: 'string',
-            value: '102951209'
-        })
-
-        const option = '--data-raw'
-
-        const expected = '--data-raw "userId"="102951209" \\'
-        const result = s._formatBodyParam(option, input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(s.spy._formatBodyParam.count, 2)
+  }
 
     @targets('_formatBodyParam')
-    testFormatBodyParamWithNoValueParam() {
-        const s = this.__init()
+  testFormatBodyParamWithSimpleParam() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'userId',
-            type: 'string'
-        })
+    const input = new Parameter({
+      key: 'userId',
+      type: 'string',
+      value: '102951209'
+    })
 
-        const option = '--data-raw'
+    const option = '--data-raw'
 
-        const expected = '--data-raw "userId"="$userId" \\'
-        const result = s._formatBodyParam(option, input)
+    const expected = '--data-raw "userId"="102951209" \\'
+    const result = s._formatBodyParam(option, input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatBodyParam')
-    testFormatBodyParamWithWeirdParam() {
-        const s = this.__init()
-
-        const input = new Parameter({
-            type: 'string'
-        })
-
-        const option = '-F'
-
-        const expected = '-F "$unnamed" \\'
-        const result = s._formatBodyParam(option, input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatBodyParam')
-    testFormatBodyParamWithSequenceParam() {
-        const s = this.__init()
+  testFormatBodyParamWithNoValueParam() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'user-group',
-            type: 'string',
-            format: 'sequence',
-            value: new Immutable.List([
-                new Parameter({
-                    key: 'userId',
-                    type: 'string',
-                    value: '102591',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            '102591'
-                        ])
-                    ])
-                }),
-                new Parameter({
-                    type: 'string',
-                    value: '-',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            '-'
-                        ])
-                    ])
-                }),
-                new Parameter({
-                    key: 'groupId',
-                    type: 'string',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            '12341'
-                        ])
-                    ])
-                })
+    const input = new Parameter({
+      key: 'userId',
+      type: 'string'
+    })
+
+    const option = '--data-raw'
+
+    const expected = '--data-raw "userId"="$userId" \\'
+    const result = s._formatBodyParam(option, input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatBodyParam')
+  testFormatBodyParamWithWeirdParam() {
+    const s = this.__init()
+
+    const input = new Parameter({
+      type: 'string'
+    })
+
+    const option = '-F'
+
+    const expected = '-F "$unnamed" \\'
+    const result = s._formatBodyParam(option, input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatBodyParam')
+  testFormatBodyParamWithSequenceParam() {
+    const s = this.__init()
+
+    const input = new Parameter({
+      key: 'user-group',
+      type: 'string',
+      format: 'sequence',
+      value: new Immutable.List([
+        new Parameter({
+          key: 'userId',
+          type: 'string',
+          value: '102591',
+          internals: new Immutable.List([
+            new Constraint.Enum([
+              '102591'
             ])
-        })
-
-        const option = '-F'
-
-        const expected = '-F "user-group"="102591-$groupId" \\'
-        const result = s._formatBodyParam(option, input)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatAuths')
-    testFormatAuthsWithNoAuths() {
-        const s = this.__init()
-
-        const input = new Request()
-
-        const expected = ''
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatAuths')
-    testFormatAuthsWithNullAuth() {
-        const s = this.__init()
-
-        const input = new Request({
-            auths: new Immutable.List([ null ])
-        })
-
-        const expected = ''
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatAuths')
-    testFormatAuthsWithBasicAuth() {
-        const s = this.__init()
-
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.Basic({
-                    username: 'john',
-                    password: 'pass'
-                })
+          ])
+        }),
+        new Parameter({
+          type: 'string',
+          value: '-',
+          internals: new Immutable.List([
+            new Constraint.Enum([
+              '-'
             ])
+          ])
+        }),
+        new Parameter({
+          key: 'groupId',
+          type: 'string',
+          internals: new Immutable.List([
+            new Constraint.Enum([
+              '12341'
+            ])
+          ])
         })
+      ])
+    })
 
-        const expected = '-u "john":"pass" \\'
-        const result = s._formatAuths(input)
+    const option = '-F'
 
-        this.assertEqual(expected, result)
-    }
+    const expected = '-F "user-group"="102591-$groupId" \\'
+    const result = s._formatBodyParam(option, input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithDigestAuth() {
-        const s = this.__init()
+  testFormatAuthsWithNoAuths() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.Digest({
-                    username: 'john',
-                    password: 'pass'
-                })
-            ])
-        })
+    const input = new Request()
 
-        const expected = '--digest -u "john":"pass" \\'
-        const result = s._formatAuths(input)
+    const expected = ''
+    const result = s._formatAuths(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithNTLMAuth() {
-        const s = this.__init()
+  testFormatAuthsWithNullAuth() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.NTLM({
-                    username: 'john',
-                    password: 'pass'
-                })
-            ])
-        })
+    const input = new Request({
+      auths: new Immutable.List([ null ])
+    })
 
-        const expected = '--ntlm -u "john":"pass" \\'
-        const result = s._formatAuths(input)
+    const expected = ''
+    const result = s._formatAuths(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithNegotiateAuth() {
-        const s = this.__init()
+  testFormatAuthsWithBasicAuth() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.Negotiate({
-                    username: 'john',
-                    password: 'pass'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.Basic({
+          username: 'john',
+          password: 'pass'
         })
+      ])
+    })
 
-        const expected = '--negotiate -u "john":"pass" \\'
-        const result = s._formatAuths(input)
+    const expected = '-u "john":"pass" \\'
+    const result = s._formatAuths(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithApiKeyAuth() {
-        const s = this.__init()
+  testFormatAuthsWithDigestAuth() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.ApiKey({
-                    in: 'header',
-                    name: 'Api-Key',
-                    key: '10259713958721398'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.Digest({
+          username: 'john',
+          password: 'pass'
         })
+      ])
+    })
 
-        const expected = '-H "Api-Key: 10259713958721398" \\'
-        const result = s._formatAuths(input)
+    const expected = '--digest -u "john":"pass" \\'
+    const result = s._formatAuths(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatAuths')
+  testFormatAuthsWithNTLMAuth() {
+    const s = this.__init()
+
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.NTLM({
+          username: 'john',
+          password: 'pass'
+        })
+      ])
+    })
+
+    const expected = '--ntlm -u "john":"pass" \\'
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatAuths')
+  testFormatAuthsWithNegotiateAuth() {
+    const s = this.__init()
+
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.Negotiate({
+          username: 'john',
+          password: 'pass'
+        })
+      ])
+    })
+
+    const expected = '--negotiate -u "john":"pass" \\'
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatAuths')
+  testFormatAuthsWithApiKeyAuth() {
+    const s = this.__init()
+
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.ApiKey({
+          in: 'header',
+          name: 'Api-Key',
+          key: '10259713958721398'
+        })
+      ])
+    })
+
+    const expected = '-H "Api-Key: 10259713958721398" \\'
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_escape')
-    testEscape() {
-        const s = this.__init()
+  testEscape() {
+    const s = this.__init()
 
-        const input =
+    const input =
             'a very \\complex $string with "all kinds of" ' +
             'escapable characters'
 
-        const expected =
+    const expected =
             'a very \\complex \$string with \"all kinds of\" ' +
             'escapable characters'
 
-        const result = s._escape(input)
+    const result = s._escape(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatURLBlock')
-    testFormatURLBlockWithEmptyURL() {
-        const s = this.__init()
-
-        const input = new URL()
-        const name = 'pathname'
-
-        const expected = ''
-        const result = s._formatURLBlock(input, name)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatURLBlock')
-    testFormatURLBlockWithSimpleURLDoesNotCallFormatParam() {
-        const s = this.__init()
+  testFormatURLBlockWithEmptyURL() {
+    const s = this.__init()
 
-        const input = new URL('http://echo.luckymarmot.com/headers')
-        const name = 'pathname'
+    const input = new URL()
+    const name = 'pathname'
 
-        const expected = '/headers'
-        const result = s._formatURLBlock(input, name)
+    const expected = ''
+    const result = s._formatURLBlock(input, name)
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatParam.count, 0)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatURLBlock')
-    testFormatURLBlockWithSequenceParamInURLCallsFormatParam() {
-        const s = this.__init()
+  testFormatURLBlockWithSimpleURLDoesNotCallFormatParam() {
+    const s = this.__init()
 
-        s.spyOn('_formatParam', () => {
-            return [ null, 'formatted param' ]
-        })
+    const input = new URL('http://echo.luckymarmot.com/headers')
+    const name = 'pathname'
 
-        const input = new URL({
-            pathname: new Parameter({
-                key: 'pathname',
-                type: 'string',
-                format: 'sequence',
-                value: new Immutable.List([
-                    new Parameter({
-                        type: 'string',
-                        value: '/users/',
-                        internals: new Immutable.List([
-                            new Constraint.Enum([
-                                '/users/'
-                            ])
-                        ])
-                    }),
-                    new Parameter({
-                        key: 'userId',
-                        name: 'userId',
-                        type: 'string',
-                        internals: new Immutable.List([
-                            new Constraint.Pattern('/[0-9a-f]{16}/')
-                        ])
-                    })
-                ])
-            })
-        })
-        const name = 'pathname'
+    const expected = '/headers'
+    const result = s._formatURLBlock(input, name)
 
-        const expected = 'formatted param'
-        const result = s._formatURLBlock(input, name)
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatParam.count, 0)
+  }
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatParam.count, 1)
-    }
+    @targets('_formatURLBlock')
+  testFormatURLBlockWithSequenceParamInURLCallsFormatParam() {
+    const s = this.__init()
 
-    @targets('_formatQueries')
-    testFormatQueriesWithNoQueryParam() {
-        const s = this.__init()
+    s.spyOn('_formatParam', () => {
+      return [ null, 'formatted param' ]
+    })
 
-        s.spyOn('_formatParam', () => {
-            return [ 'key', 'value' ]
-        })
+    const input = new URL({
+      pathname: new Parameter({
+        key: 'pathname',
+        type: 'string',
+        format: 'sequence',
+        value: new Immutable.List([
+          new Parameter({
+            type: 'string',
+            value: '/users/',
+            internals: new Immutable.List([
+              new Constraint.Enum([
+                '/users/'
+              ])
+            ])
+          }),
+          new Parameter({
+            key: 'userId',
+            name: 'userId',
+            type: 'string',
+            internals: new Immutable.List([
+              new Constraint.Pattern('/[0-9a-f]{16}/')
+            ])
+          })
+        ])
+      })
+    })
+    const name = 'pathname'
 
-        const input = new Request({
-            parameters: new ParameterContainer()
-        })
+    const expected = 'formatted param'
+    const result = s._formatURLBlock(input, name)
 
-        const expected = ''
-        const result = s._formatQueries(input)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatParam.count, 0)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatParam.count, 1)
+  }
 
     @targets('_formatQueries')
-    testFormatQueriesCallsFormatParamForEachQueryParam() {
-        const s = this.__init()
+  testFormatQueriesWithNoQueryParam() {
+    const s = this.__init()
 
-        s.spyOn('_formatParam', () => {
-            return [ 'key', 'value' ]
-        })
+    s.spyOn('_formatParam', () => {
+      return [ 'key', 'value' ]
+    })
 
-        const input = new Request({
-            parameters: new ParameterContainer({
-                queries: new Immutable.List([
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter()
-                ])
-            })
-        })
+    const input = new Request({
+      parameters: new ParameterContainer()
+    })
 
-        s._formatQueries(input)
+    const expected = ''
+    const result = s._formatQueries(input)
 
-        this.assertEqual(s.spy._formatParam.count, 3)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatParam.count, 0)
+  }
 
     @targets('_formatQueries')
-    testFormatQueriesReturnsExpectedContentForEachQueryParam() {
-        const s = this.__init()
+  testFormatQueriesCallsFormatParamForEachQueryParam() {
+    const s = this.__init()
 
-        const values = [
+    s.spyOn('_formatParam', () => {
+      return [ 'key', 'value' ]
+    })
+
+    const input = new Request({
+      parameters: new ParameterContainer({
+        queries: new Immutable.List([
+          new Parameter(),
+          new Parameter(),
+          new Parameter()
+        ])
+      })
+    })
+
+    s._formatQueries(input)
+
+    this.assertEqual(s.spy._formatParam.count, 3)
+  }
+
+    @targets('_formatQueries')
+  testFormatQueriesReturnsExpectedContentForEachQueryParam() {
+    const s = this.__init()
+
+    const values = [
             [ null, 'value' ],
             [ null, '$value' ],
             [ 'key', 'value' ],
             [ 'key', '$value' ],
             [ 'spa ced', 'val ue' ],
             [ 'spa ced', '$val ue' ]
-        ]
+    ]
 
-        s.spyOn('_formatParam', () => {
-            return values.shift()
-        })
+    s.spyOn('_formatParam', () => {
+      return values.shift()
+    })
 
-        const input = new Request({
-            parameters: new ParameterContainer({
-                queries: new Immutable.List([
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter()
-                ])
-            })
-        })
+    const input = new Request({
+      parameters: new ParameterContainer({
+        queries: new Immutable.List([
+          new Parameter(),
+          new Parameter(),
+          new Parameter(),
+          new Parameter(),
+          new Parameter(),
+          new Parameter()
+        ])
+      })
+    })
 
-        const expected =
+    const expected =
             '?value&$value&key=value&key=$value&spa%20ced=val%20ue' +
             '&spa%20ced=$val%20ue'
-        const result = s._formatQueries(input)
+    const result = s._formatQueries(input)
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatParam.count, 6)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatParam.count, 6)
+  }
 
     @targets('_formatQueries')
-    testFormatQueriesSplitsOverMultipleLinesIfTooLong() {
-        const s = this.__init()
+  testFormatQueriesSplitsOverMultipleLinesIfTooLong() {
+    const s = this.__init()
 
-        const values = [
+    const values = [
             [ 'first', '$superLongNamedValueThatIsAboutFiftyCharactersLong' ],
             [ 'sec', '$fitsOn1stLine' ],
             [ 'third', '$movedToSecondLine' ],
             [ 'fourth', '$secondLineToo' ],
             [ 'fifth', '$finalValueOfTheSecondLine' ],
             [ 'sixth', '$isOnThirdLine' ]
-        ]
+    ]
 
-        s.spyOn('_formatParam', () => {
-            return values.shift()
-        })
+    s.spyOn('_formatParam', () => {
+      return values.shift()
+    })
 
-        const input = new Request({
-            parameters: new ParameterContainer({
-                queries: new Immutable.List([
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter()
-                ])
-            })
-        })
+    const input = new Request({
+      parameters: new ParameterContainer({
+        queries: new Immutable.List([
+          new Parameter(),
+          new Parameter(),
+          new Parameter(),
+          new Parameter(),
+          new Parameter(),
+          new Parameter()
+        ])
+      })
+    })
 
-        const expected =
+    const expected =
             '?first=$superLongNamedValueThatIsAboutFiftyCharactersLong' +
             '&sec=$fitsOn1stLine\\\n' +
             '&third=$movedToSecondLine' +
             '&fourth=$secondLineToo' +
             '&fifth=$finalValueOfTheSecondLine\\\n' +
             '&sixth=$isOnThirdLine'
-        const result = s._formatQueries(input)
+    const result = s._formatQueries(input)
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatParam.count, 6)
-    }
-
-    @targets('_formatParam')
-    testFormatParamReturnsExpectedContentWithNullParam() {
-        const s = this.__init()
-
-        const param = null
-
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatParam(param)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatParam.count, 6)
+  }
 
     @targets('_formatParam')
-    testFormatParamCallsFormatReferenceParamIfTypeIsReference() {
-        const s = this.__init()
+  testFormatParamReturnsExpectedContentWithNullParam() {
+    const s = this.__init()
 
-        s.spyOn('_formatReferenceParam', () => {
-            return [ null, 'reference' ]
-        })
+    const param = null
 
-        s.spyOn('_formatArrayParam', () => {
-            return [ null, 'array' ]
-        })
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatParam(param)
 
-        s.spyOn('_formatMultiParam', () => {
-            return [ null, 'multi' ]
-        })
-
-        s.spyOn('_formatSequenceParam', () => {
-            return [ null, 'sequence' ]
-        })
-
-        s.spyOn('_formatSimpleParam', () => {
-            return [ null, 'simple' ]
-        })
-
-        const param = new Parameter({
-            type: 'reference'
-        })
-
-        const expected = [ null, 'reference' ]
-        const result = s._formatParam(param)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatReferenceParam.count, 1)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatParam')
-    testFormatParamCallsFormatArrayParamIfTypeIsArray() {
-        const s = this.__init()
+  testFormatParamCallsFormatReferenceParamIfTypeIsReference() {
+    const s = this.__init()
 
-        s.spyOn('_formatReferenceParam', () => {
-            return [ null, 'reference' ]
-        })
+    s.spyOn('_formatReferenceParam', () => {
+      return [ null, 'reference' ]
+    })
 
-        s.spyOn('_formatArrayParam', () => {
-            return [ null, 'array' ]
-        })
+    s.spyOn('_formatArrayParam', () => {
+      return [ null, 'array' ]
+    })
 
-        s.spyOn('_formatMultiParam', () => {
-            return [ null, 'multi' ]
-        })
+    s.spyOn('_formatMultiParam', () => {
+      return [ null, 'multi' ]
+    })
 
-        s.spyOn('_formatSequenceParam', () => {
-            return [ null, 'sequence' ]
-        })
+    s.spyOn('_formatSequenceParam', () => {
+      return [ null, 'sequence' ]
+    })
 
-        s.spyOn('_formatSimpleParam', () => {
-            return [ null, 'simple' ]
-        })
+    s.spyOn('_formatSimpleParam', () => {
+      return [ null, 'simple' ]
+    })
 
-        const param = new Parameter({
-            type: 'array'
-        })
+    const param = new Parameter({
+      type: 'reference'
+    })
 
-        const expected = [ null, 'array' ]
-        const result = s._formatParam(param)
+    const expected = [ null, 'reference' ]
+    const result = s._formatParam(param)
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatArrayParam.count, 1)
-    }
-
-    @targets('_formatParam')
-    testFormatParamCallsFormatMultiParamIfTypeIsMulti() {
-        const s = this.__init()
-
-        s.spyOn('_formatReferenceParam', () => {
-            return [ null, 'reference' ]
-        })
-
-        s.spyOn('_formatArrayParam', () => {
-            return [ null, 'array' ]
-        })
-
-        s.spyOn('_formatMultiParam', () => {
-            return [ null, 'multi' ]
-        })
-
-        s.spyOn('_formatSequenceParam', () => {
-            return [ null, 'sequence' ]
-        })
-
-        s.spyOn('_formatSimpleParam', () => {
-            return [ null, 'simple' ]
-        })
-
-        const param = new Parameter({
-            type: 'multi'
-        })
-
-        const expected = [ null, 'multi' ]
-        const result = s._formatParam(param)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatMultiParam.count, 1)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatReferenceParam.count, 1)
+  }
 
     @targets('_formatParam')
-    testFormatParamCallsFormatSequenceParamIfFormatIsSequence() {
-        const s = this.__init()
+  testFormatParamCallsFormatArrayParamIfTypeIsArray() {
+    const s = this.__init()
 
-        s.spyOn('_formatReferenceParam', () => {
-            return [ null, 'reference' ]
-        })
+    s.spyOn('_formatReferenceParam', () => {
+      return [ null, 'reference' ]
+    })
 
-        s.spyOn('_formatArrayParam', () => {
-            return [ null, 'array' ]
-        })
+    s.spyOn('_formatArrayParam', () => {
+      return [ null, 'array' ]
+    })
 
-        s.spyOn('_formatMultiParam', () => {
-            return [ null, 'multi' ]
-        })
+    s.spyOn('_formatMultiParam', () => {
+      return [ null, 'multi' ]
+    })
 
-        s.spyOn('_formatSequenceParam', () => {
-            return [ null, 'sequence' ]
-        })
+    s.spyOn('_formatSequenceParam', () => {
+      return [ null, 'sequence' ]
+    })
 
-        s.spyOn('_formatSimpleParam', () => {
-            return [ null, 'simple' ]
-        })
+    s.spyOn('_formatSimpleParam', () => {
+      return [ null, 'simple' ]
+    })
 
-        const param = new Parameter({
-            type: 'string',
-            format: 'sequence'
-        })
+    const param = new Parameter({
+      type: 'array'
+    })
 
-        const expected = [ null, 'sequence' ]
-        const result = s._formatParam(param)
+    const expected = [ null, 'array' ]
+    const result = s._formatParam(param)
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatSequenceParam.count, 1)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatArrayParam.count, 1)
+  }
 
     @targets('_formatParam')
-    testFormatParamCallsFormatSimpleParamIfTypeIsSimple() {
-        const s = this.__init()
+  testFormatParamCallsFormatMultiParamIfTypeIsMulti() {
+    const s = this.__init()
 
-        s.spyOn('_formatReferenceParam', () => {
-            return [ null, 'reference' ]
-        })
+    s.spyOn('_formatReferenceParam', () => {
+      return [ null, 'reference' ]
+    })
 
-        s.spyOn('_formatArrayParam', () => {
-            return [ null, 'array' ]
-        })
+    s.spyOn('_formatArrayParam', () => {
+      return [ null, 'array' ]
+    })
 
-        s.spyOn('_formatMultiParam', () => {
-            return [ null, 'multi' ]
-        })
+    s.spyOn('_formatMultiParam', () => {
+      return [ null, 'multi' ]
+    })
 
-        s.spyOn('_formatSequenceParam', () => {
-            return [ null, 'sequence' ]
-        })
+    s.spyOn('_formatSequenceParam', () => {
+      return [ null, 'sequence' ]
+    })
 
-        s.spyOn('_formatSimpleParam', () => {
-            return [ null, 'simple' ]
-        })
+    s.spyOn('_formatSimpleParam', () => {
+      return [ null, 'simple' ]
+    })
 
-        const param = new Parameter({
-            type: 'string'
-        })
+    const param = new Parameter({
+      type: 'multi'
+    })
 
-        const expected = [ null, 'simple' ]
-        const result = s._formatParam(param)
+    const expected = [ null, 'multi' ]
+    const result = s._formatParam(param)
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatSimpleParam.count, 1)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatMultiParam.count, 1)
+  }
+
+    @targets('_formatParam')
+  testFormatParamCallsFormatSequenceParamIfFormatIsSequence() {
+    const s = this.__init()
+
+    s.spyOn('_formatReferenceParam', () => {
+      return [ null, 'reference' ]
+    })
+
+    s.spyOn('_formatArrayParam', () => {
+      return [ null, 'array' ]
+    })
+
+    s.spyOn('_formatMultiParam', () => {
+      return [ null, 'multi' ]
+    })
+
+    s.spyOn('_formatSequenceParam', () => {
+      return [ null, 'sequence' ]
+    })
+
+    s.spyOn('_formatSimpleParam', () => {
+      return [ null, 'simple' ]
+    })
+
+    const param = new Parameter({
+      type: 'string',
+      format: 'sequence'
+    })
+
+    const expected = [ null, 'sequence' ]
+    const result = s._formatParam(param)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatSequenceParam.count, 1)
+  }
+
+    @targets('_formatParam')
+  testFormatParamCallsFormatSimpleParamIfTypeIsSimple() {
+    const s = this.__init()
+
+    s.spyOn('_formatReferenceParam', () => {
+      return [ null, 'reference' ]
+    })
+
+    s.spyOn('_formatArrayParam', () => {
+      return [ null, 'array' ]
+    })
+
+    s.spyOn('_formatMultiParam', () => {
+      return [ null, 'multi' ]
+    })
+
+    s.spyOn('_formatSequenceParam', () => {
+      return [ null, 'sequence' ]
+    })
+
+    s.spyOn('_formatSimpleParam', () => {
+      return [ null, 'simple' ]
+    })
+
+    const param = new Parameter({
+      type: 'string'
+    })
+
+    const expected = [ null, 'simple' ]
+    const result = s._formatParam(param)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatSimpleParam.count, 1)
+  }
 
     @targets('_formatReferenceParam')
-    testFormatReferenceParamWithNullParameter() {
-        const s = this.__init()
+  testFormatReferenceParamWithNullParameter() {
+    const s = this.__init()
 
-        const input = null
+    const input = null
 
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatReferenceParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatReferenceParam(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatReferenceParam')
-    testFormatReferenceParamWithEmptyParameter() {
-        const s = this.__init()
-
-        const input = new Parameter()
-
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatReferenceParam(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReferenceParam')
-    testFormatReferenceParamWithUnnamedParameter() {
-        const s = this.__init()
+  testFormatReferenceParamWithEmptyParameter() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            type: 'reference',
-            value: 'some reference'
-        })
+    const input = new Parameter()
 
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatReferenceParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatReferenceParam(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReferenceParam')
-    testFormatReferenceParamWithNamedParameterButNoKey() {
-        const s = this.__init()
+  testFormatReferenceParamWithUnnamedParameter() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            name: 'named'
-        })
+    const input = new Parameter({
+      type: 'reference',
+      value: 'some reference'
+    })
 
-        const expected = [ null, '$named' ]
-        const result = s._formatReferenceParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatReferenceParam(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReferenceParam')
-    testFormatReferenceParamWithSimpleParameter() {
-        const s = this.__init()
+  testFormatReferenceParamWithNamedParameterButNoKey() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'key',
-            name: 'named'
-        })
+    const input = new Parameter({
+      name: 'named'
+    })
 
-        const expected = [ 'key', '$key' ]
-        const result = s._formatReferenceParam(input)
+    const expected = [ null, '$named' ]
+    const result = s._formatReferenceParam(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatReferenceParam')
+  testFormatReferenceParamWithSimpleParameter() {
+    const s = this.__init()
+
+    const input = new Parameter({
+      key: 'key',
+      name: 'named'
+    })
+
+    const expected = [ 'key', '$key' ]
+    const result = s._formatReferenceParam(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatArrayParam')
-    testFormatArrayParamWithNullParameter() {
-        const s = this.__init()
+  testFormatArrayParamWithNullParameter() {
+    const s = this.__init()
 
-        const input = null
+    const input = null
 
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatArrayParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatArrayParam(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatArrayParam')
-    testFormatArrayParamWithEmptyParameter() {
-        const s = this.__init()
-
-        const input = new Parameter()
-
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatArrayParam(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatArrayParam')
-    testFormatArrayParamWithUnnamedParameter() {
-        const s = this.__init()
+  testFormatArrayParamWithEmptyParameter() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            value: new Parameter(),
-            type: 'array'
-        })
+    const input = new Parameter()
 
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatArrayParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatArrayParam(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatArrayParam')
-    testFormatArrayParamWithSimpleParameter() {
-        const s = this.__init()
+  testFormatArrayParamWithUnnamedParameter() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'key',
-            name: 'named',
-            value: new Parameter(),
-            type: 'array'
-        })
+    const input = new Parameter({
+      value: new Parameter(),
+      type: 'array'
+    })
 
-        const expected = [ 'key', '$key' ]
-        const result = s._formatArrayParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatArrayParam(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
-    @targets('_formatMultiParam')
-    testFormatMultiParamWithNullParameter() {
-        const s = this.__init()
+    @targets('_formatArrayParam')
+  testFormatArrayParamWithSimpleParameter() {
+    const s = this.__init()
 
-        const input = null
+    const input = new Parameter({
+      key: 'key',
+      name: 'named',
+      value: new Parameter(),
+      type: 'array'
+    })
 
-        const expected = [ null, '(  )' ]
-        const result = s._formatMultiParam(input)
+    const expected = [ 'key', '$key' ]
+    const result = s._formatArrayParam(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatMultiParam')
-    testFormatMultiParamWithEmptyParameter() {
-        const s = this.__init()
-
-        const input = new Parameter()
-
-        const expected = [ null, '(  )' ]
-        const result = s._formatMultiParam(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatMultiParam')
-    testFormatMultiParamWithSimpleParameterCallsFormatParamForEachSubParam() {
-        const s = this.__init()
+  testFormatMultiParamWithNullParameter() {
+    const s = this.__init()
 
-        s.spyOn('_formatParam', () => {
-            return [ 'k', 'v' ]
-        })
+    const input = null
 
-        const input = new Parameter({
-            key: 'body',
-            name: 'named',
-            value: new Immutable.List([
-                new Parameter(),
-                new Parameter()
-            ])
-        })
+    const expected = [ null, '(  )' ]
+    const result = s._formatMultiParam(input)
 
-        const expected = [ 'body', '( k=v OR k=v )' ]
-        const result = s._formatMultiParam(input)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatParam.count, 2)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatMultiParam')
-    testFormatMultiParamDropsBodyKeys() {
-        const s = this.__init()
+  testFormatMultiParamWithEmptyParameter() {
+    const s = this.__init()
 
-        s.spyOn('_formatParam', () => {
-            return [ 'k', 'v' ]
-        })
+    const input = new Parameter()
 
-        const input = new Parameter({
-            key: 'body',
-            name: 'named',
-            value: new Immutable.List([
-                new Parameter(),
-                new Parameter()
-            ])
-        })
+    const expected = [ null, '(  )' ]
+    const result = s._formatMultiParam(input)
 
-        const expected = [ null, '( k=v OR k=v )' ]
-        const result = s._formatMultiParam(input, '=', true)
+    this.assertEqual(expected, result)
+  }
 
-        this.assertEqual(expected, result)
-    }
+    @targets('_formatMultiParam')
+  testFormatMultiParamWithSimpleParameterCallsFormatParamForEachSubParam() {
+    const s = this.__init()
+
+    s.spyOn('_formatParam', () => {
+      return [ 'k', 'v' ]
+    })
+
+    const input = new Parameter({
+      key: 'body',
+      name: 'named',
+      value: new Immutable.List([
+        new Parameter(),
+        new Parameter()
+      ])
+    })
+
+    const expected = [ 'body', '( k=v OR k=v )' ]
+    const result = s._formatMultiParam(input)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatParam.count, 2)
+  }
+
+    @targets('_formatMultiParam')
+  testFormatMultiParamDropsBodyKeys() {
+    const s = this.__init()
+
+    s.spyOn('_formatParam', () => {
+      return [ 'k', 'v' ]
+    })
+
+    const input = new Parameter({
+      key: 'body',
+      name: 'named',
+      value: new Immutable.List([
+        new Parameter(),
+        new Parameter()
+      ])
+    })
+
+    const expected = [ null, '( k=v OR k=v )' ]
+    const result = s._formatMultiParam(input, '=', true)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatSequenceParam')
-    testFormatSequenceParamWithNullParameter() {
-        const s = this.__init()
+  testFormatSequenceParamWithNullParameter() {
+    const s = this.__init()
 
-        s.spyOn('_formatParam', () => {
-            return [ 'k', 'v' ]
-        })
+    s.spyOn('_formatParam', () => {
+      return [ 'k', 'v' ]
+    })
 
-        const input = null
+    const input = null
 
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatSequenceParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatSequenceParam(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatSequenceParam')
-    testFormatSequenceParamWithEmptyParameter() {
-        const s = this.__init()
-
-        s.spyOn('_formatParam', () => {
-            return [ 'k', 'v' ]
-        })
-
-        const input = new Parameter()
-
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatSequenceParam(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatSequenceParam')
-    testFormatSequenceParamWithSimpleParameterCallsFormatParameterForEachSub() {
-        const s = this.__init()
+  testFormatSequenceParamWithEmptyParameter() {
+    const s = this.__init()
 
-        s.spyOn('_formatParam', () => {
-            return [ 'k', 'v' ]
-        })
+    s.spyOn('_formatParam', () => {
+      return [ 'k', 'v' ]
+    })
 
-        const input = new Parameter({
-            key: 'key',
-            name: 'named',
-            type: 'string',
-            format: 'sequence',
-            value: new Immutable.List([
-                new Parameter(),
-                new Parameter(),
-                new Parameter()
-            ])
-        })
+    const input = new Parameter()
 
-        const expected = [ 'key', 'vvv' ]
-        const result = s._formatSequenceParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatSequenceParam(input)
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatParam.count, 3)
-    }
+    this.assertEqual(expected, result)
+  }
 
-    @targets('_formatSimpleParam')
-    testFormatSimpleParamWithNullParameter() {
-        const s = this.__init()
+    @targets('_formatSequenceParam')
+  testFormatSequenceParamWithSimpleParameterCallsFormatParameterForEachSub() {
+    const s = this.__init()
 
-        const input = null
+    s.spyOn('_formatParam', () => {
+      return [ 'k', 'v' ]
+    })
 
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatSimpleParam(input)
+    const input = new Parameter({
+      key: 'key',
+      name: 'named',
+      type: 'string',
+      format: 'sequence',
+      value: new Immutable.List([
+        new Parameter(),
+        new Parameter(),
+        new Parameter()
+      ])
+    })
 
-        this.assertEqual(expected, result)
-    }
+    const expected = [ 'key', 'vvv' ]
+    const result = s._formatSequenceParam(input)
 
-    @targets('_formatSimpleParam')
-    testFormatSimpleParamWithEmptyParameter() {
-        const s = this.__init()
-
-        const input = new Parameter()
-
-        const expected = [ null, '$unnamed' ]
-        const result = s._formatSimpleParam(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatParam.count, 3)
+  }
 
     @targets('_formatSimpleParam')
-    testFormatSimpleParamWithNamedOnlyParameter() {
-        const s = this.__init()
+  testFormatSimpleParamWithNullParameter() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'key'
-        })
+    const input = null
 
-        const expected = [ 'key', '$key' ]
-        const result = s._formatSimpleParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatSimpleParam(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatSimpleParam')
-    testFormatSimpleParamWithSimpleValueParameter() {
-        const s = this.__init()
+  testFormatSimpleParamWithEmptyParameter() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'key',
-            value: 'aSimpleValue'
-        })
+    const input = new Parameter()
 
-        const expected = [ 'key', 'aSimpleValue' ]
-        const result = s._formatSimpleParam(input)
+    const expected = [ null, '$unnamed' ]
+    const result = s._formatSimpleParam(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatSimpleParam')
-    testFormatSimpleParamWithComplexValueParameter() {
-        const s = this.__init()
+  testFormatSimpleParamWithNamedOnlyParameter() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'key',
-            value: {
-                complex: 'value'
-            }
-        })
+    const input = new Parameter({
+      key: 'key'
+    })
 
-        const expected = [ 'key', '{"complex":"value"}' ]
-        const result = s._formatSimpleParam(input)
+    const expected = [ 'key', '$key' ]
+    const result = s._formatSimpleParam(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatSimpleParam')
+  testFormatSimpleParamWithSimpleValueParameter() {
+    const s = this.__init()
+
+    const input = new Parameter({
+      key: 'key',
+      value: 'aSimpleValue'
+    })
+
+    const expected = [ 'key', 'aSimpleValue' ]
+    const result = s._formatSimpleParam(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatSimpleParam')
+  testFormatSimpleParamWithComplexValueParameter() {
+    const s = this.__init()
+
+    const input = new Parameter({
+      key: 'key',
+      value: {
+        complex: 'value'
+      }
+    })
+
+    const expected = [ 'key', '{"complex":"value"}' ]
+    const result = s._formatSimpleParam(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatParameterDescriptions')
-    testFormatParameterDescriptionsWithEmptyParameterContainer() {
-        const s = this.__init()
+  testFormatParameterDescriptionsWithEmptyParameterContainer() {
+    const s = this.__init()
 
-        const input = new Request()
+    const input = new Request()
 
-        const expected = ''
-        const result = s._formatParameterDescriptions(input)
+    const expected = ''
+    const result = s._formatParameterDescriptions(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatParameterDescriptions')
-    testFormatParameterDescriptionsCallsFormatParamDescriptionForEachParam() {
-        const s = this.__init()
-
-        s.spyOn('_formatParamDescription', () => {
-            return '#### param description'
-        })
-
-        const input = new Request({
-            parameters: new ParameterContainer({
-                headers: new Immutable.List([
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter()
-                ]),
-                queries: new Immutable.List([
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter()
-                ]),
-                body: new Immutable.List([
-                    new Parameter()
-                ]),
-                path: new Immutable.List([
-                    new Parameter(),
-                    new Parameter()
-                ])
-            })
-        })
-
-        s._formatParameterDescriptions(input)
-
-        this.assertEqual(s.spy._formatParamDescription.count, 9)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatParameterDescriptions')
-    testFormatParameterDescriptionsReturnsExpectedContent() {
-        const s = this.__init()
+  testFormatParameterDescriptionsCallsFormatParamDescriptionForEachParam() {
+    const s = this.__init()
 
-        s.spyOn('_formatParamDescription', () => {
-            return '##### param description'
-        })
+    s.spyOn('_formatParamDescription', () => {
+      return '#### param description'
+    })
 
-        const input = new Request({
-            parameters: new ParameterContainer({
-                headers: new Immutable.List([
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter()
-                ]),
-                queries: new Immutable.List([
-                    new Parameter(),
-                    new Parameter(),
-                    new Parameter()
-                ]),
-                body: new Immutable.List([
-                    new Parameter()
-                ]),
-                path: new Immutable.List([
-                    new Parameter(),
-                    new Parameter()
-                ])
-            })
-        })
+    const input = new Request({
+      parameters: new ParameterContainer({
+        headers: new Immutable.List([
+          new Parameter(),
+          new Parameter(),
+          new Parameter()
+        ]),
+        queries: new Immutable.List([
+          new Parameter(),
+          new Parameter(),
+          new Parameter()
+        ]),
+        body: new Immutable.List([
+          new Parameter()
+        ]),
+        path: new Immutable.List([
+          new Parameter(),
+          new Parameter()
+        ])
+      })
+    })
 
-        const expected =
+    s._formatParameterDescriptions(input)
+
+    this.assertEqual(s.spy._formatParamDescription.count, 9)
+  }
+
+    @targets('_formatParameterDescriptions')
+  testFormatParameterDescriptionsReturnsExpectedContent() {
+    const s = this.__init()
+
+    s.spyOn('_formatParamDescription', () => {
+      return '##### param description'
+    })
+
+    const input = new Request({
+      parameters: new ParameterContainer({
+        headers: new Immutable.List([
+          new Parameter(),
+          new Parameter(),
+          new Parameter()
+        ]),
+        queries: new Immutable.List([
+          new Parameter(),
+          new Parameter(),
+          new Parameter()
+        ]),
+        body: new Immutable.List([
+          new Parameter()
+        ]),
+        path: new Immutable.List([
+          new Parameter(),
+          new Parameter()
+        ])
+      })
+    })
+
+    const expected =
             '#### Path Parameters\n\n' +
             '##### param description\n' +
             '##### param description\n\n' +
@@ -2081,657 +2081,657 @@ export class TestCurlSerializer extends UnitTest {
             '##### param description\n\n' +
             '#### Body Parameters\n\n' +
             '##### param description'
-        const result = s._formatParameterDescriptions(input)
+    const result = s._formatParameterDescriptions(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatParamDescription')
-    testFormatParamDescription() {
-        const s = this.__init()
+  testFormatParamDescription() {
+    const s = this.__init()
 
-        const input = new Parameter({
-            key: 'key',
-            type: 'integer'
-        })
+    const input = new Parameter({
+      key: 'key',
+      type: 'integer'
+    })
 
-        const expected = '- **key** should respect the following schema:\n\n' +
+    const expected = '- **key** should respect the following schema:\n\n' +
             '```\n' +
             JSON.stringify({ type: 'integer' }, null, '  ') + '\n' +
             '```'
-        const result = s._formatParamDescription(input)
+    const result = s._formatParamDescription(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithEmptyRequest() {
-        const s = this.__init()
-
-        const input = new Request()
-
-        const expected = ''
-        const result = s._formatAuthDescription(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithNullAuthentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithEmptyRequest() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([ null ])
-        })
+    const input = new Request()
 
-        const expected = '#### Security\n\n' +
+    const expected = ''
+    const result = s._formatAuthDescription(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatAuthDescription')
+  testFormatAuthDescriptionWithNullAuthentication() {
+    const s = this.__init()
+
+    const input = new Request({
+      auths: new Immutable.List([ null ])
+    })
+
+    const expected = '#### Security\n\n' +
             '- No Authentication'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithBasicAuthentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithBasicAuthentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.Basic({
-                    username: 'user',
-                    password: 'pass'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.Basic({
+          username: 'user',
+          password: 'pass'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- Basic Authentication' +
             '\n  - **username**: user' +
             '\n  - **password**: pass'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithDigestAuthentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithDigestAuthentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.Digest({
-                    username: 'user',
-                    password: 'pass'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.Digest({
+          username: 'user',
+          password: 'pass'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- Digest Authentication' +
             '\n  - **username**: user' +
             '\n  - **password**: pass'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithNTLMAuthentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithNTLMAuthentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.NTLM({
-                    username: 'user',
-                    password: 'pass'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.NTLM({
+          username: 'user',
+          password: 'pass'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- NTLM Authentication' +
             '\n  - **username**: user' +
             '\n  - **password**: pass'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithNegotiateAuthentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithNegotiateAuthentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.Negotiate({
-                    username: 'user',
-                    password: 'pass'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.Negotiate({
+          username: 'user',
+          password: 'pass'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- Negotiate Authentication' +
             '\n  - **username**: user' +
             '\n  - **password**: pass'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithApiKeyAuthentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithApiKeyAuthentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.ApiKey({
-                    in: 'header',
-                    name: 'Api-Key',
-                    key: '1234567890'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.ApiKey({
+          in: 'header',
+          name: 'Api-Key',
+          key: '1234567890'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- API Key Authentication' +
             '\n  - **location**: header' +
             '\n  - **name**: Api-Key' +
             '\n  - **key**: 1234567890'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithOAuth1Authentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithOAuth1Authentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.OAuth1({
-                    tokenCredentialsUri: 'some.uri.com/oauth1',
-                    requestTokenUri: 'other.uri.com/oauth1',
-                    authorizationUri: 'auth.uri.com/oauth1'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.OAuth1({
+          tokenCredentialsUri: 'some.uri.com/oauth1',
+          requestTokenUri: 'other.uri.com/oauth1',
+          authorizationUri: 'auth.uri.com/oauth1'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- OAuth1 Authentication' +
             '\n  - **tokenCredentialsUri**: some.uri.com/oauth1' +
             '\n  - **requestTokenUri**: other.uri.com/oauth1' +
             '\n  - **authorizationUri**: auth.uri.com/oauth1'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithOAuth2Authentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithOAuth2Authentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.OAuth2({
-                    flow: 'implicit',
-                    tokenUrl: 'other.uri.com/oauth1',
-                    authorizationUrl: 'auth.uri.com/oauth1',
-                    scopes: new Immutable.List([ 'read:any', 'write:self' ])
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.OAuth2({
+          flow: 'implicit',
+          tokenUrl: 'other.uri.com/oauth1',
+          authorizationUrl: 'auth.uri.com/oauth1',
+          scopes: new Immutable.List([ 'read:any', 'write:self' ])
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- OAuth2 Authentication' +
             '\n  - **flow**: implicit' +
             '\n  - **authorizationUrl**: auth.uri.com/oauth1' +
             '\n  - **tokenUrl**: other.uri.com/oauth1' +
             '\n  - **scopes**: List [ "read:any", "write:self" ]'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithHawkAuthentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithHawkAuthentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.Hawk({
-                    id: '0987654321',
-                    algorithm: 'SHA1',
-                    key: '1234567890'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.Hawk({
+          id: '0987654321',
+          algorithm: 'SHA1',
+          key: '1234567890'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- Hawk Authentication' +
             '\n  - **id**: 0987654321' +
             '\n  - **key**: 1234567890' +
             '\n  - **algorithm**: SHA1'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithAWSSig4Authentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithAWSSig4Authentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.AWSSig4({
-                    key: '0987654321',
-                    secret: '1234567890',
-                    region: 'us-east-1',
-                    service: 'execute'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.AWSSig4({
+          key: '0987654321',
+          secret: '1234567890',
+          region: 'us-east-1',
+          service: 'execute'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- AWS Signature 4 Authentication' +
             '\n  - **key**: 0987654321' +
             '\n  - **secret**: 1234567890' +
             '\n  - **region**: us-east-1' +
             '\n  - **service**: execute'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuthDescription')
-    testFormatAuthDescriptionWithAWSSig4Authentication() {
-        const s = this.__init()
+  testFormatAuthDescriptionWithAWSSig4Authentication() {
+    const s = this.__init()
 
-        const input = new Request({
-            auths: new Immutable.List([
-                new Auth.AWSSig4({
-                    key: '0987654321',
-                    secret: '1234567890',
-                    region: 'us-east-1',
-                    service: 'execute'
-                })
-            ])
+    const input = new Request({
+      auths: new Immutable.List([
+        new Auth.AWSSig4({
+          key: '0987654321',
+          secret: '1234567890',
+          region: 'us-east-1',
+          service: 'execute'
         })
+      ])
+    })
 
-        const expected = '#### Security\n\n' +
+    const expected = '#### Security\n\n' +
             '- AWS Signature 4 Authentication' +
             '\n  - **key**: 0987654321' +
             '\n  - **secret**: 1234567890' +
             '\n  - **region**: us-east-1' +
             '\n  - **service**: execute'
-        const result = s._formatAuthDescription(input)
+    const result = s._formatAuthDescription(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatResponses')
-    testFormatResponsesWithEmptyRequest() {
-        const s = this.__init()
-
-        const input = new Request()
-
-        const expected = ''
-        const result = s._formatResponses(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatResponses')
-    testFormatResponsesCallsFormatResponseForEachResponse() {
-        const s = this.__init()
+  testFormatResponsesWithEmptyRequest() {
+    const s = this.__init()
 
-        s.spyOn('_formatResponse', () => {
-            return '#### response'
-        })
+    const input = new Request()
 
-        const input = new Request({
-            responses: new Immutable.List([
-                new Response(),
-                new Response(),
-                new Response()
-            ])
-        })
+    const expected = ''
+    const result = s._formatResponses(input)
 
-        s._formatResponses(input)
-
-        this.assertEqual(s.spy._formatResponse.count, 3)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatResponses')
-    testFormatResponsesReturnsExpectedContent() {
-        const s = this.__init()
+  testFormatResponsesCallsFormatResponseForEachResponse() {
+    const s = this.__init()
 
-        s.spyOn('_formatResponse', () => {
-            return '##### response'
-        })
+    s.spyOn('_formatResponse', () => {
+      return '#### response'
+    })
 
-        const input = new Request({
-            responses: new Immutable.List([
-                new Response(),
-                new Response(),
-                new Response()
-            ])
-        })
+    const input = new Request({
+      responses: new Immutable.List([
+        new Response(),
+        new Response(),
+        new Response()
+      ])
+    })
 
-        const expected = '#### Responses\n\n' +
+    s._formatResponses(input)
+
+    this.assertEqual(s.spy._formatResponse.count, 3)
+  }
+
+    @targets('_formatResponses')
+  testFormatResponsesReturnsExpectedContent() {
+    const s = this.__init()
+
+    s.spyOn('_formatResponse', () => {
+      return '##### response'
+    })
+
+    const input = new Request({
+      responses: new Immutable.List([
+        new Response(),
+        new Response(),
+        new Response()
+      ])
+    })
+
+    const expected = '#### Responses\n\n' +
             '##### response\n\n' +
             '##### response\n\n' +
             '##### response'
-        const result = s._formatResponses(input)
+    const result = s._formatResponses(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatResponse')
-    testFormatResponseCallsFormatParameterDescriptions() {
-        const s = this.__init()
-
-        s.spyOn('_formatParameterDescriptions', () => {
-            return 'parameters'
-        })
-
-        const input = new Response()
-
-        s._formatResponse(input)
-
-        this.assertEqual(s.spy._formatParameterDescriptions.count, 1)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatResponse')
-    testFormatResponseReturnsExpectedContent() {
-        const s = this.__init()
+  testFormatResponseCallsFormatParameterDescriptions() {
+    const s = this.__init()
 
-        s.spyOn('_formatParameterDescriptions', () => {
-            return '##### parameters'
-        })
+    s.spyOn('_formatParameterDescriptions', () => {
+      return 'parameters'
+    })
 
-        const input = new Response({
-            code: 200,
-            description: 'a simple description'
-        })
+    const input = new Response()
 
-        const expected =
+    s._formatResponse(input)
+
+    this.assertEqual(s.spy._formatParameterDescriptions.count, 1)
+  }
+
+    @targets('_formatResponse')
+  testFormatResponseReturnsExpectedContent() {
+    const s = this.__init()
+
+    s.spyOn('_formatParameterDescriptions', () => {
+      return '##### parameters'
+    })
+
+    const input = new Response({
+      code: 200,
+      description: 'a simple description'
+    })
+
+    const expected =
             '##### Code' +
             '\n\n- **200**: a simple description' +
             '\n\n##### parameters'
-        const result = s._formatResponse(input)
+    const result = s._formatResponse(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatReferences')
-    testFormatReferencesWithNoReference() {
-        const s = this.__init()
-
-        const input = new Immutable.OrderedMap()
-
-        const expected = ''
-        const result = s._formatReferences(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReferences')
-    testFormatReferencesCallsFormatReferenceContainerForEachContainer() {
-        const s = this.__init()
+  testFormatReferencesWithNoReference() {
+    const s = this.__init()
 
-        s.spyOn('_formatReferenceContainer', () => {
-            return '### Container'
-        })
+    const input = new Immutable.OrderedMap()
 
-        const input = new Immutable.OrderedMap({
-            postman: new ReferenceContainer(),
-            paw: new ReferenceContainer(),
-            schemas: new ReferenceContainer()
-        })
+    const expected = ''
+    const result = s._formatReferences(input)
 
-        s._formatReferences(input)
-
-        this.assertEqual(s.spy._formatReferenceContainer.count, 3)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReferences')
-    testFormatReferencesReturnsExpectedContent() {
-        const s = this.__init()
+  testFormatReferencesCallsFormatReferenceContainerForEachContainer() {
+    const s = this.__init()
 
-        s.spyOn('_formatReferenceContainer', () => {
-            return '### Container'
-        })
+    s.spyOn('_formatReferenceContainer', () => {
+      return '### Container'
+    })
 
-        const input = new Immutable.OrderedMap({
-            postman: new ReferenceContainer(),
-            paw: new ReferenceContainer(),
-            schemas: new ReferenceContainer()
-        })
+    const input = new Immutable.OrderedMap({
+      postman: new ReferenceContainer(),
+      paw: new ReferenceContainer(),
+      schemas: new ReferenceContainer()
+    })
 
-        const expected = '## References' +
+    s._formatReferences(input)
+
+    this.assertEqual(s.spy._formatReferenceContainer.count, 3)
+  }
+
+    @targets('_formatReferences')
+  testFormatReferencesReturnsExpectedContent() {
+    const s = this.__init()
+
+    s.spyOn('_formatReferenceContainer', () => {
+      return '### Container'
+    })
+
+    const input = new Immutable.OrderedMap({
+      postman: new ReferenceContainer(),
+      paw: new ReferenceContainer(),
+      schemas: new ReferenceContainer()
+    })
+
+    const expected = '## References' +
             '\n\n### Container' +
             '\n\n### Container' +
             '\n\n### Container'
-        const result = s._formatReferences(input)
+    const result = s._formatReferences(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatReferenceContainer')
-    testFormatReferenceContainerWithEmptyContainer() {
-        const s = this.__init()
-
-        const input = new ReferenceContainer()
-
-        const expected = ''
-        const result = s._formatReferenceContainer(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReferenceContainer')
-    testFormatReferenceContainerCallsFormatReferenceForEachReference() {
-        const s = this.__init()
+  testFormatReferenceContainerWithEmptyContainer() {
+    const s = this.__init()
 
-        s.spyOn('_formatReference', () => {
-            return '#### Reference'
-        })
+    const input = new ReferenceContainer()
 
-        const input = (new ReferenceContainer())
+    const expected = ''
+    const result = s._formatReferenceContainer(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatReferenceContainer')
+  testFormatReferenceContainerCallsFormatReferenceForEachReference() {
+    const s = this.__init()
+
+    s.spyOn('_formatReference', () => {
+      return '#### Reference'
+    })
+
+    const input = (new ReferenceContainer())
             .create(new Immutable.List([
-                new JSONSchemaReference({
-                    uri: '#/definitions/User'
-                }),
-                new JSONSchemaReference({
-                    uri: '#/definitions/Pet'
-                }),
-                new JSONSchemaReference({
-                    uri: '#/definitions/Location'
-                })
+              new JSONSchemaReference({
+                uri: '#/definitions/User'
+              }),
+              new JSONSchemaReference({
+                uri: '#/definitions/Pet'
+              }),
+              new JSONSchemaReference({
+                uri: '#/definitions/Location'
+              })
             ]))
 
-        s._formatReferenceContainer(input)
+    s._formatReferenceContainer(input)
 
-        this.assertEqual(s.spy._formatReference.count, 3)
-    }
+    this.assertEqual(s.spy._formatReference.count, 3)
+  }
 
     @targets('_formatReferenceContainer')
-    testFormatReferenceContainerReturnsExpectedContent() {
-        const s = this.__init()
+  testFormatReferenceContainerReturnsExpectedContent() {
+    const s = this.__init()
 
-        s.spyOn('_formatReference', () => {
-            return '#### Reference'
-        })
+    s.spyOn('_formatReference', () => {
+      return '#### Reference'
+    })
 
-        const input = (new ReferenceContainer({
-            name: 'Schemas'
-        }))
+    const input = (new ReferenceContainer({
+      name: 'Schemas'
+    }))
             .create(new Immutable.List([
-                new JSONSchemaReference({
-                    uri: '#/definitions/User'
-                }),
-                new JSONSchemaReference({
-                    uri: '#/definitions/Pet'
-                }),
-                new JSONSchemaReference({
-                    uri: '#/definitions/Location'
-                })
+              new JSONSchemaReference({
+                uri: '#/definitions/User'
+              }),
+              new JSONSchemaReference({
+                uri: '#/definitions/Pet'
+              }),
+              new JSONSchemaReference({
+                uri: '#/definitions/Location'
+              })
             ]))
 
-        const expected = '### Schemas' +
+    const expected = '### Schemas' +
             '\n\n#### Reference' +
             '\n\n#### Reference' +
             '\n\n#### Reference'
-        const result = s._formatReferenceContainer(input)
+    const result = s._formatReferenceContainer(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReference')
-    testFormatReferenceWithSimpleReference() {
-        const s = this.__init()
+  testFormatReferenceWithSimpleReference() {
+    const s = this.__init()
 
-        const input = new Reference({
-            uri: 'someFile#/definitions/User',
-            relative: '#/definitions/User',
-            value: 'a simple value'
-        })
+    const input = new Reference({
+      uri: 'someFile#/definitions/User',
+      relative: '#/definitions/User',
+      value: 'a simple value'
+    })
 
-        const expected = '#### #/definitions/User' +
+    const expected = '#### #/definitions/User' +
             '\n```' +
             '\na simple value' +
             '\n```'
-        const result = s._formatReference(input)
+    const result = s._formatReference(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReference')
-    testFormatReferenceWithJSONSchemaReference() {
-        const s = this.__init()
+  testFormatReferenceWithJSONSchemaReference() {
+    const s = this.__init()
 
-        const input = new JSONSchemaReference({
-            uri: 'someFile#/definitions/User',
-            relative: '#/definitions/User',
-            value: {
-                test: '42',
-                $ref: new JSONSchemaReference({
-                    uri: 'someFile#/definitions/Pet',
-                    relative: '#/definitions/Pet'
-                })
-            }
+    const input = new JSONSchemaReference({
+      uri: 'someFile#/definitions/User',
+      relative: '#/definitions/User',
+      value: {
+        test: '42',
+        $ref: new JSONSchemaReference({
+          uri: 'someFile#/definitions/Pet',
+          relative: '#/definitions/Pet'
         })
+      }
+    })
 
-        const expected = '#### #/definitions/User' +
+    const expected = '#### #/definitions/User' +
             '\n```' +
             '\n' + JSON.stringify({
-                test: '42',
-                $ref: '#/definitions/Pet'
+              test: '42',
+              $ref: '#/definitions/Pet'
             }, null, '  ') +
             '\n```'
-        const result = s._formatReference(input)
+    const result = s._formatReference(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatReference')
-    testFormatReferenceWithLateResolutionReference() {
-        const s = this.__init()
+  testFormatReferenceWithLateResolutionReference() {
+    const s = this.__init()
 
-        const input = new LateResolutionReference({
-            uri: 'someFile#/x-postman/{{userId}}',
-            relative: '#/x-postman/{{userId}}',
-            value: 'simple'
-        })
+    const input = new LateResolutionReference({
+      uri: 'someFile#/x-postman/{{userId}}',
+      relative: '#/x-postman/{{userId}}',
+      value: 'simple'
+    })
 
-        const expected = '#### #/x-postman/{{userId}}' +
+    const expected = '#### #/x-postman/{{userId}}' +
             '\nReplace `{{.*}}` by the corresponding ' +
             'reference in this doc.' +
             '\n```' +
             '\n' + 'simple' +
             '\n```'
-        const result = s._formatReference(input)
+    const result = s._formatReference(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatHostParams')
-    testFormatHostParamsWithSimpleHost() {
-        const s = this.__init()
-
-        const req = new Request({
-            url: new URL({
-                host: 'simplehost.com'
-            })
-        })
-
-        const expected = []
-        const result = s._formatHostParams(req)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatHostParams')
-    testFormatHostParamsWithSequenceHostCallsFormatParamDescription() {
-        const s = this.__init()
+  testFormatHostParamsWithSimpleHost() {
+    const s = this.__init()
 
-        s.spyOn('_formatParamDescription', () => {
-            return 12
-        })
+    const req = new Request({
+      url: new URL({
+        host: 'simplehost.com'
+      })
+    })
 
-        const req = new Request({
-            url: new URL({
-                host: new Parameter({
-                    key: 'host',
-                    name: 'host',
-                    type: 'string',
-                    format: 'sequence',
-                    value: new Immutable.List([
-                        new Parameter({
-                            type: 'string',
-                            value: 'echo.paw.',
-                            internals: new Immutable.List([
-                                new Constraint.Enum([
-                                    'echo.paw.'
-                                ])
-                            ])
-                        }),
-                        new Parameter({
-                            key: 'tld',
-                            name: 'tld',
-                            type: 'string',
-                            internals: new Immutable.List([
-                                new Constraint.Enum([
-                                    'cloud', 'io', 'com'
-                                ])
-                            ])
-                        })
-                    ])
-                })
+    const expected = []
+    const result = s._formatHostParams(req)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatHostParams')
+  testFormatHostParamsWithSequenceHostCallsFormatParamDescription() {
+    const s = this.__init()
+
+    s.spyOn('_formatParamDescription', () => {
+      return 12
+    })
+
+    const req = new Request({
+      url: new URL({
+        host: new Parameter({
+          key: 'host',
+          name: 'host',
+          type: 'string',
+          format: 'sequence',
+          value: new Immutable.List([
+            new Parameter({
+              type: 'string',
+              value: 'echo.paw.',
+              internals: new Immutable.List([
+                new Constraint.Enum([
+                  'echo.paw.'
+                ])
+              ])
+            }),
+            new Parameter({
+              key: 'tld',
+              name: 'tld',
+              type: 'string',
+              internals: new Immutable.List([
+                new Constraint.Enum([
+                  'cloud', 'io', 'com'
+                ])
+              ])
             })
+          ])
         })
+      })
+    })
 
-        const expected = [ 12 ]
-        const result = s._formatHostParams(req)
+    const expected = [ 12 ]
+    const result = s._formatHostParams(req)
 
-        this.assertEqual(s.spy._formatParamDescription.count, 1)
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(s.spy._formatParamDescription.count, 1)
+    this.assertEqual(expected, result)
+  }
 
     @targets('validate')
-    _testValidate() {
+  _testValidate() {
         // TODO
-    }
+  }
 
     //
     // helpers
     //
 
-    __init(prefix = '') {
-        let serializer = new CurlSerializer()
-        let mockedSerializer = new ClassMock(serializer, prefix)
+  __init(prefix = '') {
+    const serializer = new CurlSerializer()
+    const mockedSerializer = new ClassMock(serializer, prefix)
 
-        return mockedSerializer
-    }
+    return mockedSerializer
+  }
 }

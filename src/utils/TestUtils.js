@@ -8,241 +8,241 @@ class UnitTest {
      *  Override setUpClass
      *  @return {NULL} NULL
      */
-    setUpClass() {}
+  setUpClass() {}
 
     /**
      *  Override tearDownClass
      *  @return {NULL} NULL
      */
-    tearDownClass() {}
+  tearDownClass() {}
 
     /**
      *  Override setUp
      *  @return {NULL} NULL
      */
-    setUp() {}
+  setUp() {}
 
 
     /**
      *  tearDown
      * @return {NULL} NULL
      */
-    tearDown() {}
+  tearDown() {}
 
 
-    _getTests() {
-        const prototype = Object.getPrototypeOf(this)
-        let tests = {}
+  _getTests() {
+    const prototype = Object.getPrototypeOf(this)
+    const tests = {}
 
-        for (let fname of Object.getOwnPropertyNames(prototype)) {
-            if (fname.indexOf('test') === 0) {
-                const newFnName = this._parseFnName(fname)
+    for (const fname of Object.getOwnPropertyNames(prototype)) {
+      if (fname.indexOf('test') === 0) {
+        const newFnName = this._parseFnName(fname)
 
-                tests[newFnName] = ::Object.getPrototypeOf(this)[fname]
-            }
-        }
-
-        return tests
+        tests[newFnName] = ::Object.getPrototypeOf(this)[fname]
+      }
     }
 
-    _getSkippedTests() {
-        const prototype = Object.getPrototypeOf(this)
-        let tests = {}
+    return tests
+  }
 
-        for (let fname of Object.getOwnPropertyNames(prototype)) {
-            if (fname.indexOf('_test') === 0) {
-                const newFnName = this._parseSkippedFnName(fname)
+  _getSkippedTests() {
+    const prototype = Object.getPrototypeOf(this)
+    const tests = {}
 
-                tests[newFnName] = ::Object.getPrototypeOf(this)[fname]
-            }
-        }
+    for (const fname of Object.getOwnPropertyNames(prototype)) {
+      if (fname.indexOf('_test') === 0) {
+        const newFnName = this._parseSkippedFnName(fname)
 
-        return tests
+        tests[newFnName] = ::Object.getPrototypeOf(this)[fname]
+      }
     }
 
-    _parseFnName(name) {
-        return name.replace(/^test/, '')
-    }
+    return tests
+  }
 
-    _parseSkippedFnName(name) {
-        return name.replace(/^_test/, '')
-    }
+  _parseFnName(name) {
+    return name.replace(/^test/, '')
+  }
 
-    assert(value) {
-        assert(value)
-    }
+  _parseSkippedFnName(name) {
+    return name.replace(/^_test/, '')
+  }
 
-    assertTrue(value, message) {
-        let warn = (message ? message + '\n' : '') + '\n'
-        assert.isTrue(value, warn)
-    }
+  assert(value) {
+    assert(value)
+  }
 
-    assertFalse(value) {
-        assert.isFalse(value)
-    }
+  assertTrue(value, message) {
+    const warn = (message ? message + '\n' : '') + '\n'
+    assert.isTrue(value, warn)
+  }
 
-    assertEqual(a, b, message) {
-        let A = Immutable.fromJS(a)
-        let B = Immutable.fromJS(b)
-        let comparison = Immutable.is(A, B)
-        let warn = (message ? message + '\n' : '') + `\n${A} \n!== \n${B}`
-        assert.isTrue(comparison, warn)
-    }
+  assertFalse(value) {
+    assert.isFalse(value)
+  }
 
-    assertJSONEqual(a, b, message) {
-        let A = JSON.stringify(a, null, '  ')
-        let B = JSON.stringify(b, null, '  ')
-        this.assertEqual(A, B, message)
-    }
+  assertEqual(a, b, message) {
+    const A = Immutable.fromJS(a)
+    const B = Immutable.fromJS(b)
+    const comparison = Immutable.is(A, B)
+    const warn = (message ? message + '\n' : '') + `\n${A} \n!== \n${B}`
+    assert.isTrue(comparison, warn)
+  }
 
-    assertNotEqual(a, b, message) {
-        let A = Immutable.fromJS(a)
-        let B = Immutable.fromJS(b)
-        let comparison = Immutable.is(A, B)
-        let warn = (message ? message + '\n' : '') + `\n${A} \n!== \n${B}`
-        assert.isFalse(comparison, warn)
-    }
+  assertJSONEqual(a, b, message) {
+    const A = JSON.stringify(a, null, '  ')
+    const B = JSON.stringify(b, null, '  ')
+    this.assertEqual(A, B, message)
+  }
 
-    assertEqualElements(a, b) {
-        assert.isTrue(Immutable.is(
+  assertNotEqual(a, b, message) {
+    const A = Immutable.fromJS(a)
+    const B = Immutable.fromJS(b)
+    const comparison = Immutable.is(A, B)
+    const warn = (message ? message + '\n' : '') + `\n${A} \n!== \n${B}`
+    assert.isFalse(comparison, warn)
+  }
+
+  assertEqualElements(a, b) {
+    assert.isTrue(Immutable.is(
             Immutable.Set(Immutable.fromJS(a)),
                 Immutable.Set(Immutable.fromJS(b))),
                     `${a} !== ${b}`)
-    }
+  }
 
-    assertNotNull(value) {
-        this.assertTrue(value !== null)
-    }
+  assertNotNull(value) {
+    this.assertTrue(value !== null)
+  }
 
-    assertNull(value) {
-        this.assertTrue(value === null)
-    }
+  assertNull(value) {
+    this.assertTrue(value === null)
+  }
 
-    assertIsInstanceOf(value, cls) {
-        assert.isTrue(value instanceof cls, `${value} !instanceof ${cls}`)
-    }
+  assertIsInstanceOf(value, cls) {
+    assert.isTrue(value instanceof cls, `${value} !instanceof ${cls}`)
+  }
 }
 
 function registerTest(Class) {
-    const test = new Class()
-    const tests = test._getTests()
-    const skipped = test._getSkippedTests()
+  const test = new Class()
+  const tests = test._getTests()
+  const skipped = test._getSkippedTests()
 
-    function skip(_skipped) {
-        return () => {
-            for (let _skip of _skipped) {
-                it(_skip, () => {})
-            }
-        }
+  function skip(_skipped) {
+    return () => {
+      for (const _skip of _skipped) {
+        it(_skip, () => {})
+      }
     }
+  }
 
-    describe(Class.name.replace(/Test$/, ''), () => {
-        before(test.setUpClass.bind(test))
-        after(test.tearDownClass.bind(test))
-        beforeEach(test.setUp.bind(test))
-        afterEach(test.tearDown.bind(test))
+  describe(Class.name.replace(/Test$/, ''), () => {
+    before(test.setUpClass.bind(test))
+    after(test.tearDownClass.bind(test))
+    beforeEach(test.setUp.bind(test))
+    afterEach(test.tearDown.bind(test))
 
-        for (let fname of Object.keys(tests)) {
-            if (typeof tests[fname] === 'function') {
-                it(fname, tests[fname].bind(test))
-            }
-            else {
-                describe.skip(fname, skip(tests[fname]))
-            }
-        }
-    })
+    for (const fname of Object.keys(tests)) {
+      if (typeof tests[fname] === 'function') {
+        it(fname, tests[fname].bind(test))
+      }
+      else {
+        describe.skip(fname, skip(tests[fname]))
+      }
+    }
+  })
 
-    describe.skip(Class.name.replace(/Test$/, ''), () => {
-        for (let fname of Object.keys(skipped)) {
-            if (typeof skipped[fname] === 'function') {
-                it(fname, skipped[fname].bind(test))
-            }
-            else {
-                describe(fname, skip(skipped[fname]))
-            }
-        }
-    })
+  describe.skip(Class.name.replace(/Test$/, ''), () => {
+    for (const fname of Object.keys(skipped)) {
+      if (typeof skipped[fname] === 'function') {
+        it(fname, skipped[fname].bind(test))
+      }
+      else {
+        describe(fname, skip(skipped[fname]))
+      }
+    }
+  })
 }
 
 function targets(name) {
-    return function(target, key, descriptor) {
-        if (!target.constructor.__targets) {
-            target.constructor.__targets = {}
-        }
-        if (!target.constructor.__targets[name]) {
-            target.constructor.__targets[name] = []
-        }
-        target.constructor.__targets[name].push(key)
-        return descriptor
+  return function(target, key, descriptor) {
+    if (!target.constructor.__targets) {
+      target.constructor.__targets = {}
     }
+    if (!target.constructor.__targets[name]) {
+      target.constructor.__targets[name] = []
+    }
+    target.constructor.__targets[name].push(key)
+    return descriptor
+  }
 }
 
 function against(Against, ignores = [ 'constructor' ]) {
-    return function(Class) {
-        Class.__against = Against
-        Class.prototype.testAllMethodsAreTested = () => {
-            const names = Object.getOwnPropertyNames(
+  return function(Class) {
+    Class.__against = Against
+    Class.prototype.testAllMethodsAreTested = () => {
+      const names = Object.getOwnPropertyNames(
                 Object.getPrototypeOf(new Against())
             )
 
-            let missingTests = []
-            for (let name of names) {
-                if (
+      const missingTests = []
+      for (const name of names) {
+        if (
                     ignores.indexOf(name) < 0 &&
                     (
                         typeof Class.__targets === 'undefined' ||
                         typeof Class.__targets[name] === 'undefined'
                     )
                 ) {
-                    missingTests.push(name)
-                }
-            }
+          missingTests.push(name)
+        }
+      }
 
-            let superfluousTests = []
-            for (let target of Object.keys(Class.__targets)) {
-                if (names.indexOf(target) < 0) {
-                    superfluousTests.push(Class.__targets[target])
-                }
-            }
+      const superfluousTests = []
+      for (const target of Object.keys(Class.__targets)) {
+        if (names.indexOf(target) < 0) {
+          superfluousTests.push(Class.__targets[target])
+        }
+      }
 
-            const test = new Class()
-            test.assertEqual(missingTests, [], 'Some methods are not tested')
-            test.assertEqual(superfluousTests, [],
+      const test = new Class()
+      test.assertEqual(missingTests, [], 'Some methods are not tested')
+      test.assertEqual(superfluousTests, [],
                 'some non-existing methods are being tested'
             )
-        }
-        return Class
     }
+    return Class
+  }
 }
 
 class MockedFunction {
-    constructor() {
-        this.calls = []
-        this.returnValue = null
-    }
+  constructor() {
+    this.calls = []
+    this.returnValue = null
+  }
 
-    setReturnValue(value) {
-        this.returnValue = value
-    }
+  setReturnValue(value) {
+    this.returnValue = value
+  }
 
-    func() {
-        this.calls.push(arguments)
-        return this.returnValue
-    }
+  func() {
+    this.calls.push(arguments)
+    return this.returnValue
+  }
 
-    getCallBack = ()=> {
-        return ::this.func
-    };
+  getCallBack = ()=> {
+    return ::this.func
+  };
 }
 
 function mockFunction(target, key, descriptor) {
-    const fn = descriptor.value
-    descriptor.value = function() {
-        const mockedFunction = new MockedFunction()
-        return fn.apply(this,
+  const fn = descriptor.value
+  descriptor.value = function() {
+    const mockedFunction = new MockedFunction()
+    return fn.apply(this,
           Immutable.List(arguments).push(mockedFunction).toJS())
-    }
-    return descriptor
+  }
+  return descriptor
 }
 
 export { UnitTest, registerTest, targets, against, mockFunction }

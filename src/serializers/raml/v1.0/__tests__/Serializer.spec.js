@@ -1,6 +1,6 @@
 /* eslint-disable max-nested-callbacks */
 import expect, { spyOn, restoreSpies } from 'expect'
-import { Record, OrderedMap, List } from 'immutable'
+import { OrderedMap, List } from 'immutable'
 
 import { convertEntryListInMap } from '../../../../utils/fp-utils'
 

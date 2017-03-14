@@ -153,7 +153,7 @@ methods.groupByFormatAndVersion = (acc, toGroup) => {
 /**
  * infers the version of the format that should be used for the items
  * @param {string} format: the format of the items
- * @param {Array<Item>} items: the items to use to find the version of the format
+ * @param {Item} item: the item to use to find the version of the format
  * @returns {{format: string, version: string?}} the infered format and version
  */
 methods.inferVersion = (format, item) => {
@@ -171,7 +171,7 @@ methods.inferVersion = (format, item) => {
 
 /**
  * infers the format and version that should be used for the items
- * @param {Array<Item>} items: the items to use to find the version of the format
+ * @param {Item} item: the items to use to find the version of the format
  * @returns {{format: string?, version: string?}} the infered format and version
  */
 methods.inferBestFormatAndBestVersion = (item) => {

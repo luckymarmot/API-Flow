@@ -58,7 +58,7 @@ export default class FlowWorker extends BaseFlow {
   }
 
   extractActionAndQuery(data) {
-    let { action, ...parameters } = data
+    const { action, ...parameters } = data
 
     const extractorMap = {
       transform: ::this.extractTransformQuery,
@@ -74,7 +74,7 @@ export default class FlowWorker extends BaseFlow {
       }
     }
 
-    let { query, ...extraneous } = extractor(parameters)
+    const { query, ...extraneous } = extractor(parameters)
 
     if (!query) {
       return {
@@ -97,7 +97,7 @@ export default class FlowWorker extends BaseFlow {
       }
     }
 
-    let {
+    const {
             content,
             mode,
             source,
@@ -128,7 +128,7 @@ export default class FlowWorker extends BaseFlow {
   }
 
   extractDetectFormatQuery(parameters) {
-    let { content, ...extraneous } = parameters
+    const { content, ...extraneous } = parameters
     return {
       query: [ content ],
       extraneous
@@ -136,7 +136,7 @@ export default class FlowWorker extends BaseFlow {
   }
 
   extractDetectNameQuery(parameters) {
-    let { content, ...extraneous } = parameters
+    const { content, ...extraneous } = parameters
     return {
       query: [ content ],
       extraneous
@@ -191,7 +191,7 @@ export default class FlowWorker extends BaseFlow {
 
   onMessage(msg) {
     if (msg) {
-      let {
+      const {
                 action,
                 query,
                 extraneous
