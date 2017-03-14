@@ -9,7 +9,7 @@ import Store from './Store'
  * Used for internal serialization and deserialization
  */
 const modelInstance = {
-  name: 'context.core.models',
+  name: 'api.core.models',
   version: '0.1.0'
 }
 const model = new Model(modelInstance)

@@ -8,7 +8,7 @@ import ParameterContainer from './ParameterContainer'
  * Used for internal serialization and deserialization
  */
 const modelInstance = {
-  name: 'body.core.models',
+  name: 'context.core.models',
   version: '0.1.0'
 }
 const model = new Model(modelInstance)
