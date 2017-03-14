@@ -67,7 +67,7 @@
     "compile-node": "TARGET=node ./node_modules/webpack/bin/webpack.js",
     "compile-web": "TARGET=web ./node_modules/webpack/bin/webpack.js",
     "compile-worker": "TARGET=webworker ./node_modules/webpack/bin/webpack.js",
-    "test": "$npm_package_options_mocha \"src/**/__tests__/*-test.js\"",
+    "test": "$npm_package_options_mocha \"src/**/__tests__/*.spec.js\"",
     "validate": "node validate.js",
     "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
   },
