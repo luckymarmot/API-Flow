@@ -45,7 +45,7 @@ const fixDiff = (actual, index) => {
 }
 
 describe('internal -> swagger v2', () => {
-  for (let index = 0; index < 1; index += 1) {
+  for (let index = 0; index < 2; index += 1) {
     it('should match expected output for test case #' + index, (done) => {
       const output = fs.readFileSync(
         resolve(__dirname, './test-case-' + index + '/output.json'),

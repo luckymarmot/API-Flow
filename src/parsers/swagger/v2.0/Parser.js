@@ -879,9 +879,27 @@ methods.getRequestsForResource = (store, security, resourceObject) => {
   return operations
 }
 
+methods.updatePathWithParametersFromOperations = (store, path, { key, value }) => {
+  const container = methods.getParameterContainerForOperation(store, value, key)
+  const pathParams = container.get('path')
+
+  if (!pathParams.size || path.getIn([ 'pathname', 'parameter', 'superType' ]) !== 'sequence') {
+    return path
+  }
+
+  const $value = path.getIn([ 'pathname', 'parameter', 'value' ]).map(param => {
+    return pathParams
+      .filter(pathParam => pathParam.get('key') === param.get('key'))
+      .valueSeq()
+      .get(0) || param
+  })
+
+  return path.setIn([ 'pathname', 'parameter', 'value' ], $value)
+}
+
 /**
  * converts a Swagger Resource Object into a Resource Record.
- * @param {Store} store: the store from whicb to get the possibly shared resources relevant to this
+ * @param {Store} store: the store from which to get the possibly shared resources relevant to this
  * Resource.
  * @param {Array<SwaggerSecurityRequirementObject>} security: the global security requirements
  * @param {SwaggerPathObject} paths: the paths of a swagger object.
@@ -894,6 +912,8 @@ methods.getRequestsForResource = (store, security, resourceObject) => {
  */
 methods.getResource = (store, security, paths, path) => {
   const resourceObject = paths[path]
+  const $methods = methods.getMethodsFromResourceObject(resourceObject)
+
   const operations = methods.getRequestsForResource(store, security, resourceObject)
   const endpoints = methods.createReferencesForEndpoints(store)
   const $path = new URL({
@@ -901,8 +921,10 @@ methods.getResource = (store, security, paths, path) => {
     variableDelimiters: List([ '{', '}' ])
   })
 
+  const updatedPath = methods.updatePathWithParametersFromOperations(store, $path, $methods[0])
+
   const resourceInstance = {
-    path: $path,
+    path: updatedPath,
     endpoints,
     uuid: path,
     methods: Map(operations)

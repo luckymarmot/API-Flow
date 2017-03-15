@@ -56,7 +56,7 @@ methods.load = ({ options, uri }) => {
         httpResolver
       }
     ).then(ramlApi => {
-      return { options, item: ramlApi }
+      return { options, item: ramlApi.expand() }
     })
   }
   return raml.loadApi(uri, { fsResolver, httpResolver }).then(ramlApi => {

@@ -696,13 +696,16 @@ methods.getCommonFieldsFromParameter = (parameter) => {
     maxItems, minItems, uniqueItems
   } = schema
 
-  return {
-    type,
+  const commonFields = {
+    type: type !== 'object' ? type : 'string',
+    'x-real-type': type === 'object' ? type : undefined,
     maximum, minimum, exclusiveMinimum, exclusiveMaximum, multipleOf,
     maxLength, minLength, pattern,
     maxItems, minItems, uniqueItems,
     default: schema.default, enum: schema.enum
   }
+
+  return commonFields
 }
 
 /**
@@ -829,7 +832,7 @@ methods.isUseableAsTag = (itf) => {
  */
 methods.convertInterfaceToTagObject = (itf) => {
   const keyMap = {
-    name: 'name',
+    name: 'uuid',
     description: 'description'
   }
 
@@ -1032,9 +1035,11 @@ methods.getParametersFromRequest = (store, request) => {
   const queries = methods.convertParameterMapToParameterObjectArray(
     request.getIn([ 'parameters', 'queries' ])
   )
+  /*
   const path = methods.convertParameterMapToParameterObjectArray(
     request.getIn([ 'parameters', 'path' ])
   )
+  */
   const body = methods.convertParameterMapToParameterObjectArray(
     request.getIn([ 'parameters', 'body' ])
   )
@@ -1043,7 +1048,7 @@ methods.getParametersFromRequest = (store, request) => {
   // drops additional body params if there are more than one
   const bodyParam = body.filter((param) => param.in === 'body').slice(0, 1)
 
-  return [].concat(headers, queries, path, formData, bodyParam)
+  return [].concat(headers, queries, formData, bodyParam)
 }
 
 /**
@@ -1271,6 +1276,26 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
   return { key, value }
 }
 
+methods.addPathParametersToOperation = (pathParam, operation) => {
+  if (!pathParam || pathParam.get('superType') !== 'sequence') {
+    return operation
+  }
+
+  const params = (pathParam.get('value') || List())
+    .filter(param => param.get('key'))
+    .map(methods.convertReferenceOrParameterToParameterObject)
+    .map(({ value }) => {
+      value.required = true
+      return value
+    })
+    .toJS()
+
+  operation.value = operation.value || {}
+  operation.value.parameters = (operation.value.parameters || []).concat(params)
+
+  return operation
+}
+
 /**
  * converts a Resource into a Path Item object
  * @param {Store} store: the store used to resolve shared objecst.
@@ -1287,13 +1312,16 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
  */
 methods.convertResourceToPathItemObject = (store, globalContentTypes, resource) => {
   const key = methods.getPathFromResource(resource)
+  const pathParam = resource.getIn([ 'path', 'pathname', 'parameter' ])
 
   const convertRequest = currify(methods.convertRequestToOperationObject, store, globalContentTypes)
   const applyTags = currify(methods.addTagsToOperation, resource)
+  const applyPathParams = currify(methods.addPathParametersToOperation, pathParam)
 
   const value = resource.get('methods')
     .map(convertRequest)
     .map(applyTags)
+    .map(applyPathParams)
     .valueSeq()
     .reduce(convertEntryListInMap, {})
 

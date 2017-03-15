@@ -3060,7 +3060,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
 
       const expected = [
         { key: 'trait_123', value: new Reference({ type: 'interface', uuid: 'trait_123' }) },
-        { key: 'trait_234', value: new Reference({ type: 'interface', uuid: 'trait_234' }) }
+        { key: 'trait_Api.234', value: new Reference({ type: 'interface', uuid: 'trait_Api.234' }) }
       ]
       const actual = inputs.map(input => __internals__.convertRAMLTraitRefIntoReferenceEntry(input))
       expect(actual).toEqual(expected)

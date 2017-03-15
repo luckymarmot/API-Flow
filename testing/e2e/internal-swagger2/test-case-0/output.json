@@ -222,15 +222,6 @@
           "application/json",
           "application/xml"
         ],
-        "parameters": [
-          {
-            "type": "integer",
-            "name": "petId",
-            "description": "ID of pet that needs to be fetched",
-            "required": true,
-            "in": "path"
-          }
-        ],
         "responses": {
           "200": {
             "description": "successful operation",
@@ -255,6 +246,15 @@
               "read_pets"
             ]
           }
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "petId",
+            "description": "ID of pet that needs to be fetched",
+            "required": true,
+            "in": "path"
+          }
         ]
       },
       "post": {
@@ -273,13 +273,6 @@
         "parameters": [
           {
             "type": "string",
-            "name": "petId",
-            "description": "ID of pet that needs to be updated",
-            "required": true,
-            "in": "path"
-          },
-          {
-            "type": "string",
             "name": "name",
             "description": "Updated name of the pet",
             "required": true,
@@ -291,6 +284,13 @@
             "description": "Updated status of the pet",
             "required": true,
             "in": "formData"
+          },
+          {
+            "type": "integer",
+            "name": "petId",
+            "description": "ID of pet that needs to be fetched",
+            "required": true,
+            "in": "path"
           }
         ],
         "responses": {
@@ -330,7 +330,7 @@
           {
             "type": "integer",
             "name": "petId",
-            "description": "Pet id to delete",
+            "description": "ID of pet that needs to be fetched",
             "required": true,
             "in": "path"
           }
@@ -397,15 +397,6 @@
           "application/json",
           "application/xml"
         ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "orderId",
-            "description": "ID of pet that needs to be fetched",
-            "required": true,
-            "in": "path"
-          }
-        ],
         "responses": {
           "200": {
             "description": "successful operation",
@@ -419,7 +410,16 @@
           "404": {
             "description": "Order not found"
           }
-        }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "name": "orderId",
+            "description": "ID of pet that needs to be fetched",
+            "required": true,
+            "in": "path"
+          }
+        ]
       },
       "delete": {
         "summary": "Delete purchase order by ID",
@@ -432,15 +432,6 @@
           "application/json",
           "application/xml"
         ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "orderId",
-            "description": "ID of the order that needs to be deleted",
-            "required": true,
-            "in": "path"
-          }
-        ],
         "responses": {
           "400": {
             "description": "Invalid ID supplied"
@@ -448,7 +439,16 @@
           "404": {
             "description": "Order not found"
           }
-        }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "name": "orderId",
+            "description": "ID of pet that needs to be fetched",
+            "required": true,
+            "in": "path"
+          }
+        ]
       }
     },
     "/users": {
@@ -614,15 +614,6 @@
           "application/json",
           "application/xml"
         ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "username",
-            "description": "The name that needs to be fetched. Use user1 for testing.",
-            "required": true,
-            "in": "path"
-          }
-        ],
         "responses": {
           "200": {
             "description": "successful operation",
@@ -636,7 +627,16 @@
           "404": {
             "description": "User not found"
           }
-        }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "name": "username",
+            "description": "The name that needs to be fetched. Use user1 for testing.",
+            "required": true,
+            "in": "path"
+          }
+        ]
       },
       "put": {
         "summary": "Updated user",
@@ -651,13 +651,6 @@
         ],
         "parameters": [
           {
-            "type": "string",
-            "name": "username",
-            "description": "name that need to be deleted",
-            "required": true,
-            "in": "path"
-          },
-          {
             "description": "Updated user object",
             "required": false,
             "schema": {
@@ -665,6 +658,13 @@
             },
             "in": "body",
             "name": "body"
+          },
+          {
+            "type": "string",
+            "name": "username",
+            "description": "The name that needs to be fetched. Use user1 for testing.",
+            "required": true,
+            "in": "path"
           }
         ],
         "responses": {
@@ -687,15 +687,6 @@
           "application/json",
           "application/xml"
         ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "username",
-            "description": "The name that needs to be deleted",
-            "required": true,
-            "in": "path"
-          }
-        ],
         "responses": {
           "400": {
             "description": "Invalid username supplied"
@@ -703,7 +694,16 @@
           "404": {
             "description": "User not found"
           }
-        }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "name": "username",
+            "description": "The name that needs to be fetched. Use user1 for testing.",
+            "required": true,
+            "in": "path"
+          }
+        ]
       }
     }
   },

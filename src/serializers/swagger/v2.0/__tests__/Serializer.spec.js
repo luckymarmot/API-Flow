@@ -906,6 +906,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         ])
       })
 
+      /* eslint-disable no-undefined */
       const expected = {
         type: 'string',
         minimum: 12,
@@ -920,8 +921,10 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         maxItems: 6,
         uniqueItems: true,
         enum: [ 1, 2, 3, 4 ],
-        default: 'test'
+        default: 'test',
+        'x-real-type': undefined
       }
+      /* eslint-enable no-undefined */
 
       const actual = __internals__.getCommonFieldsFromParameter(input)
       expect(actual).toEqual(expected)
@@ -1067,6 +1070,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
     it('should work', () => {
       const input = new Interface({
         name: 'someItf',
+        uuid: 'someItf',
         description: 'some desc'
       })
 
@@ -1087,16 +1091,19 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
           interface: new OrderedMap({
             a: new Interface({
               name: 'user',
+              uuid: 'user',
               level: 'request',
               description: 'a user related request'
             }),
             b: new Interface({
               name: 'pet',
+              uuid: 'pet',
               level: 'resource',
               description: 'a pet related request'
             }),
             c: new Interface({
               name: 'high-security',
+              uuid: 'high-security',
               level: 'auth',
               description: 'a security related auth'
             })
@@ -1348,10 +1355,10 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         parameters: new ParameterContainer()
       })
 
-      const expected = [ test, test, test, test ]
+      const expected = [ test, test, test ]
       const actual = __internals__.getParametersFromRequest(store, request)
 
-      expect(__internals__.convertParameterMapToParameterObjectArray.calls.length).toEqual(4)
+      expect(__internals__.convertParameterMapToParameterObjectArray.calls.length).toEqual(3)
       expect(actual).toEqual(expected)
     })
 
@@ -1361,7 +1368,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const test = [ { a: 123, in: 'body' }, { b: 321, in: 'body' } ]
       spyOn(__internals__, 'convertParameterMapToParameterObjectArray').andCall(() => {
         calls += 1
-        if (calls === 4) {
+        if (calls === 3) {
           return test
         }
         return buffer
@@ -1372,7 +1379,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         parameters: new ParameterContainer()
       })
 
-      const expected = [ buffer, buffer, buffer, { a: 123, in: 'body' } ]
+      const expected = [ buffer, buffer, { a: 123, in: 'body' } ]
       const actual = __internals__.getParametersFromRequest(store, request)
 
       expect(actual).toEqual(expected)
@@ -1678,6 +1685,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   describe('@convertResourceToPathItemObject', () => {
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'getPathFromResource').andReturn('/some/path')
+      spyOn(__internals__, 'addPathParametersToOperation').andCall((r, v) => v)
 
       const store = new Store()
       const globalInfo = {}

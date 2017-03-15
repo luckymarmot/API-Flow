@@ -1943,7 +1943,7 @@ methods.convertUriParametersAndResourceIntoPath = (uriParameters, resource) => {
 methods.extractInterfacesFromResource = (resource) => {
   const type = resource.type()
   if (type) {
-    const name = type.name() ? type.name().split('.').slice(-1).join() : null
+    const name = type.name() || null
     const uuid = name ? 'resourceType_' + name : null
     if (uuid) {
       return OrderedMap({
@@ -2446,8 +2446,7 @@ methods.extractResponsesFromRequest = (request) => {
  * @returns {Entry<string, Reference>} the corresponding Reference, as an Entry
  */
 methods.convertRAMLTraitRefIntoReferenceEntry = (trait) => {
-  // FIXME: we have to implement this behavior because of a bug in the official RAML parser
-  const name = trait.name().split('.').slice(-1).join()
+  const name = trait.name()
   const uuid = 'trait_' + name
 
   const referenceInstance = {

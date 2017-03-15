@@ -1850,6 +1850,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     it('should work if underlying methods work', () => {
       spyOn(__internals__, 'getRequestsForResource').andReturn({ a: 123 })
       spyOn(__internals__, 'createReferencesForEndpoints').andReturn(321)
+      spyOn(__internals__, 'updatePathWithParametersFromOperations').andCall((s, p) => p)
 
       const store = new Store()
       const security = null
