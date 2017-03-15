@@ -140,16 +140,16 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
     it('should work', () => {
       const inputs = [
         {},
-        { swagger: 'v1.2' },
-        { swagger: 'v2', info: {}, paths: {} },
-        { swagger: 'v2', info: {}, paths: { '/a': 1, '/b': 2, '/c': 3 } },
+        { swagger: '1.2' },
+        { swagger: '2.0', info: {}, paths: {} },
+        { swagger: '2.0', info: {}, paths: { '/a': 1, '/b': 2, '/c': 3 } },
         {
-          swagger: 'v2', info: {},
+          swagger: '2.0', info: {},
           paths: { '/a': 1, '/b': 2, '/c': 3 },
           host: 'd', schemes: 'e'
         },
         {
-          swagger: 'v2', info: {},
+          swagger: '2.0', info: {},
           paths: { '/a': 1, '/b': 2, '/c': 3 },
           host: 'd', schemes: 'e',
           securityDefinitions: 'f', definitions: 'g', parameters: 'h'
@@ -196,7 +196,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
     it('should work', () => {
       const input = JSON.stringify({
-        swagger: 'v2',
+        swagger: '2.0',
         info: { title: 'some swagger file' },
         paths: {
           '/root': {
@@ -216,7 +216,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
   describe('@getSwaggerFormatObject', () => {
     it('should work', () => {
-      const expected = 'v2'
+      const expected = '2.0'
       const actual = __internals__.getSwaggerFormatObject()
 
       expect(actual).toEqual(expected)
@@ -587,6 +587,8 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         key: 123,
         value: 321
       })
+
+      const store = new Store()
       const response = new Response({
         parameters: new ParameterContainer({
           headers: new OrderedMap({
@@ -597,7 +599,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       })
 
       const expected = { '123': 321 }
-      const actual = __internals__.getHeadersFromResponse(response)
+      const actual = __internals__.getHeadersFromResponse(store, response)
 
       expect(actual).toEqual(expected)
     })
@@ -630,6 +632,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
   describe('@convertResponseRecordToResponseObject', () => {
     it('should work', () => {
+      const store = new Store()
       const entry = {
         key: 123,
         value: new Response({
@@ -666,7 +669,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         value: expectedValue
       }
 
-      const actual = __internals__.convertResponseRecordToResponseObject(entry)
+      const actual = __internals__.convertResponseRecordToResponseObject(store, entry)
 
       /* the objects are not really equal, as the actual object has many undefined fields, like
       * maximum
@@ -812,6 +815,8 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         key,
         value: {
           in: 'body',
+          required: false,
+          name: 'body',
           schema: {
             type: 'string',
             enum: [ 'test', 'fake' ]
@@ -1019,6 +1024,8 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
   describe('@getParameterDefinitions', () => {
     it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'isConsumesHeader').andReturn(false)
+      spyOn(__internals__, 'isProducesHeader').andReturn(false)
       spyOn(__internals__, 'convertParameterToParameterObject').andReturn({
         key: 123,
         value: 321
@@ -1221,31 +1228,51 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   describe('@getProducesEntry', () => {
     it('should return undefined if no global or local produces', () => {
       spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([])
+      const store = new Store()
+      const request = new Request()
       const globalProduces = undefined
-      const container = new ParameterContainer()
 
-      const actual = __internals__.getProducesEntry(globalProduces, container)
+      const actual = __internals__.getProducesEntry(store, request, globalProduces)
 
       expect(actual).toNotExist()
     })
 
     it('should return undefined if local produces equals global one', () => {
       spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([ 'a', 'b' ])
-      const globalProduces = [ 'a', 'b' ]
-      const container = new ParameterContainer()
+      const store = new Store()
+      const request = new Request({
+        responses: OrderedMap({
+          '200': new Response({
+            parameters: new ParameterContainer({
+              headers: OrderedMap({ a: 'a', b: 'b' })
+            })
+          })
+        })
+      })
 
-      const actual = __internals__.getProducesEntry(globalProduces, container)
+      const globalProduces = [ 'a', 'b' ]
+
+      const actual = __internals__.getProducesEntry(store, request, globalProduces)
 
       expect(actual).toNotExist()
     })
 
     it('should return local if different from global', () => {
       spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([ 'c', 'b' ])
+      const store = new Store()
+      const request = new Request({
+        responses: OrderedMap({
+          '200': new Response({
+            parameters: new ParameterContainer({
+              headers: OrderedMap({ c: 'c', d: 'd' })
+            })
+          })
+        })
+      })
       const globalProduces = [ 'a', 'b' ]
-      const container = new ParameterContainer()
 
       const expected = [ 'c', 'b' ]
-      const actual = __internals__.getProducesEntry(globalProduces, container)
+      const actual = __internals__.getProducesEntry(store, request, globalProduces)
 
       expect(actual).toEqual(expected)
     })
@@ -1316,12 +1343,13 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const test = { default: 123, in: 'formData' }
       spyOn(__internals__, 'convertParameterMapToParameterObjectArray').andReturn([ test ])
 
+      const store = new Store()
       const request = new Request({
         parameters: new ParameterContainer()
       })
 
       const expected = [ test, test, test, test ]
-      const actual = __internals__.getParametersFromRequest(request)
+      const actual = __internals__.getParametersFromRequest(store, request)
 
       expect(__internals__.convertParameterMapToParameterObjectArray.calls.length).toEqual(4)
       expect(actual).toEqual(expected)
@@ -1339,12 +1367,13 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         return buffer
       })
 
+      const store = new Store()
       const request = new Request({
         parameters: new ParameterContainer()
       })
 
       const expected = [ buffer, buffer, buffer, { a: 123, in: 'body' } ]
-      const actual = __internals__.getParametersFromRequest(request)
+      const actual = __internals__.getParametersFromRequest(store, request)
 
       expect(actual).toEqual(expected)
     })
@@ -1369,22 +1398,28 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   describe('@convertReferenceOrResponseRecordToResponseObject', () => {
     it('should call convertReferenceToResponseObject if input is reference', () => {
       spyOn(__internals__, 'convertReferenceToResponseObject').andReturn(123)
+      const store = new Store()
       const input = new Reference()
       const key = 'abc'
       const expected = 123
-      const actual = __internals__.convertReferenceOrResponseRecordToResponseObject(input, key)
+      const actual = __internals__.convertReferenceOrResponseRecordToResponseObject(
+        store, input, key
+      )
       expect(__internals__.convertReferenceToResponseObject).toHaveBeenCalledWith(input, key)
       expect(actual).toEqual(expected)
     })
 
     it('should call convertResponseRecordToResponseObject if input is response', () => {
       spyOn(__internals__, 'convertResponseRecordToResponseObject').andReturn(123)
+      const store = new Store()
       const input = new Response()
       const key = 'abc'
       const expected = 123
-      const actual = __internals__.convertReferenceOrResponseRecordToResponseObject(input, key)
+      const actual = __internals__.convertReferenceOrResponseRecordToResponseObject(
+        store, input, key
+      )
       expect(__internals__.convertResponseRecordToResponseObject)
-        .toHaveBeenCalledWith({ value: input, key })
+        .toHaveBeenCalledWith(store, { value: input, key })
       expect(actual).toEqual(expected)
     })
   })
@@ -1394,6 +1429,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       spyOn(__internals__, 'convertReferenceOrResponseRecordToResponseObject')
         .andReturn({ key: 'abc', value: 123 })
 
+      const store = new Store()
       const request = new Request({
         responses: new OrderedMap({
           a: 234,
@@ -1402,7 +1438,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       })
 
       const expected = { abc: 123 }
-      const actual = __internals__.getResponsesFromRequest(request)
+      const actual = __internals__.getResponsesFromRequest(store, request)
 
       expect(actual).toEqual(expected)
     })

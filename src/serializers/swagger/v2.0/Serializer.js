@@ -34,7 +34,7 @@ import Reference from '../../../models/Reference'
 import Auth from '../../../models/Auth'
 import Parameter from '../../../models/Parameter'
 
-import { currify, entries, convertEntryListInMap } from '../../../utils/fp-utils'
+import { currify, entries, convertEntryListInMap, flatten } from '../../../utils/fp-utils'
 
 const __meta__ = {
   format: 'swagger',
@@ -47,7 +47,7 @@ const methods = {}
 methods.getKeysFromRecord = (keyMap, record) => {
   return entries(keyMap)
     .map(({ key, value }) => ({ key, value: record.get(value) }))
-    .filter(({ value }) => !!value)
+    .filter(({ value }) => typeof value !== 'undefined' && value !== null)
     .reduce(convertEntryListInMap, {})
 }
 
@@ -109,7 +109,7 @@ methods.getQualityScore = ({
   parameters
 }) => {
   let score = 0
-  if (swagger !== 'v2' || !info || !paths) {
+  if (swagger !== '2.0' || !info || !paths) {
     return score
   }
   const pathKeys = Object.keys(paths)
@@ -143,7 +143,7 @@ methods.validate = (content) => {
  * @returns {string} the expected format object
  */
 methods.getSwaggerFormatObject = () => {
-  return 'v2'
+  return '2.0'
 }
 
 /**
@@ -391,14 +391,28 @@ methods.getDefinitions = (api) => {
 
 /**
  * extracts the headers of a response, and converts them into HeaderObjects.
+ * @param {Store} store: the store to use to resolve references
  * @param {Response} response: the response to get the headers of.
  * @returns {SwaggerHeadersObject} the object holding all headers of the response
  *
  * TODO: take contexts into account.
+ * TODO: filter out content-type param
  */
-methods.getHeadersFromResponse = (response) => {
+methods.getHeadersFromResponse = (store, response) => {
   const headers = response.getIn([ 'parameters', 'headers' ])
-    .map(methods.convertParameterToHeaderObject)
+    .map((param) => {
+      let resolved = param
+      if (param instanceof Reference) {
+        resolved = store.getIn([ 'parameter', param.get('uuid') ])
+      }
+
+      if (!resolved || resolved.get('key') === 'Content-Type') {
+        return null
+      }
+
+      return methods.convertParameterToHeaderObject(resolved)
+    })
+    .filter(v => !!v)
     .reduce(convertEntryListInMap, {})
 
   if (Object.keys(headers).length === 0) {
@@ -426,12 +440,13 @@ methods.getSchemaFromResponse = (response) => {
 
 /**
  * converts a response record into a response object.
+ * @param {Store} store: the store to use to resolve references
  * @param {string} key: the key of the response record in its container (either a store, or a
  * request)
  * @param {Response} value: the response record to convert into a response object
  * @returns {SwaggerResponseObject} the corresponding swagger response object.
  */
-methods.convertResponseRecordToResponseObject = ({ key, value }) => {
+methods.convertResponseRecordToResponseObject = (store, { key, value }) => {
   const response = {}
 
   if (value.get('description')) {
@@ -441,7 +456,7 @@ methods.convertResponseRecordToResponseObject = ({ key, value }) => {
     response.description = 'no description was provided for this response'
   }
 
-  response.headers = methods.getHeadersFromResponse(value)
+  response.headers = methods.getHeadersFromResponse(store, value)
   response.schema = methods.getSchemaFromResponse(value)
 
   return {
@@ -456,9 +471,15 @@ methods.convertResponseRecordToResponseObject = ({ key, value }) => {
  * @returns {SwaggerResponseDefinitionsObject} the corresponding response definitions object.
  */
 methods.getResponseDefinitions = (api) => {
-  const responses = api.getIn([ 'store', 'response' ])
+  const store = api.get('store')
+
+  const convertResponseRecordToResponseObject = currify(
+    methods.convertResponseRecordToResponseObject, store
+  )
+
+  const responses = store.get('response')
     .map((value, key) => ({ key, value }))
-    .map(methods.convertResponseRecordToResponseObject)
+    .map(convertResponseRecordToResponseObject)
     .reduce(convertEntryListInMap, {})
 
   if (Object.keys(responses).length === 0) {
@@ -588,7 +609,6 @@ methods.getSecurityDefinitions = (api) => {
  */
 methods.convertParameterToSchemaParameter = (parameter, key) => {
   const keyMap = {
-    name: 'key',
     description: 'description',
     required: 'required'
   }
@@ -596,6 +616,8 @@ methods.convertParameterToSchemaParameter = (parameter, key) => {
   const param = methods.getKeysFromRecord(keyMap, parameter)
   param.schema = parameter.getJSONSchema(false)
   param.in = 'body'
+
+  param.name = parameter.get('key') || parameter.get('name') || 'body'
 
   return { key, value: param }
 }
@@ -691,6 +713,10 @@ methods.getCommonFieldsFromParameter = (parameter) => {
  * NOTE: this methods adds no fields to the common fields generated from the parameter.
  */
 methods.convertParameterToItemsObject = (parameter) => {
+  if (parameter instanceof Reference) {
+    return { value: '#/parameters/' + parameter.get('uuid') }
+  }
+
   const value = methods.getCommonFieldsFromParameter(parameter)
 
   return { value }
@@ -738,7 +764,7 @@ methods.convertParameterToStandardParameterObject = (parameter, key) => {
 
   value.name = parameter.get('key') || undefined
   value.description = parameter.get('description') || undefined
-  value.required = parameter.get('required') || undefined
+  value.required = parameter.get('required') !== 'null' ? parameter.get('required') : undefined
   value.in = methods.getParamLocation(parameter)
 
   if (value.type === 'array') {
@@ -774,6 +800,7 @@ methods.convertParameterToParameterObject = (parameter, key) => {
  */
 methods.getParameterDefinitions = (api) => {
   const parameterDefinitions = api.getIn([ 'store', 'parameter' ])
+    .filter(param => !methods.isConsumesHeader(param) && !methods.isProducesHeader(param))
     .map(methods.convertParameterToParameterObject)
     .filter(value => !!value)
     .reduce(convertEntryListInMap, {})
@@ -908,7 +935,7 @@ methods.getConsumesEntry = (globalConsumes, container) => {
   const consumes = methods.getContentTypeFromFilteredParams(headers, methods.isConsumesHeader)
 
   if (consumes.length && !methods.equalSet(consumes, globalConsumes)) {
-    return consumes
+    return Array.from(new Set(consumes))
   }
 
   return undefined
@@ -917,17 +944,20 @@ methods.getConsumesEntry = (globalConsumes, container) => {
 /**
  * extracts the produces entry of an operation. Returns nothing if the produces field is not defined
  * or if it is identical to the globally defined produces field
+ * @param {Store} store: the store to use to resolve references
+ * @param {Request} request: the request from which to get the responses and their respective
+ * headers, which potentially include Content-Type headers.
  * @param {Array<string>} globalProduces: the globally defined produces field.
- * @param {ParameterContainer} container: the parameter container that holds the headers of this
- * response, which potentially include a Content-Type header.
  * @returns {Array<string>?} the corresponding produces field
  */
-methods.getProducesEntry = (globalProduces, container) => {
-  const headers = container.get('headers')
-  const produces = methods.getContentTypeFromFilteredParams(headers, methods.isProducesHeader)
+methods.getProducesEntry = (store, request, globalProduces) => {
+  const produces = request.get('responses')
+    .map(response => response.get('parameters').resolve(store).get('headers'))
+    .map(headers => methods.getContentTypeFromFilteredParams(headers, methods.isProducesHeader))
+    .reduce(flatten, [])
 
   if (produces.length && !methods.equalSet(produces, globalProduces)) {
-    return produces
+    return Array.from(new Set(produces))
   }
 
   return undefined
@@ -978,6 +1008,7 @@ methods.convertParameterMapToParameterObjectArray = (params) => {
 
 /**
  * extracts parameters from a request.
+ * @param {Store} store: the store to use to resolve references
  * @param {Request} request: the request to get the parameters from.
  * @returns {Array<SwaggerParameterObject|SwaggerReferenceObject>} the corresponding parameter or
  * reference objects.
@@ -987,9 +1018,16 @@ methods.convertParameterMapToParameterObjectArray = (params) => {
  *
  * TODO: this needs improvements
  */
-methods.getParametersFromRequest = (request) => {
+methods.getParametersFromRequest = (store, request) => {
   const headers = methods.convertParameterMapToParameterObjectArray(
-    request.getIn([ 'parameters', 'headers' ])
+    request.getIn([ 'parameters', 'headers' ]).filter(param => {
+      let resolved = param
+      if (param instanceof Reference) {
+        resolved = store.getIn([ 'parameter', param.get('uuid') ])
+      }
+
+      return !methods.isConsumesHeader(resolved)
+    })
   )
   const queries = methods.convertParameterMapToParameterObjectArray(
     request.getIn([ 'parameters', 'queries' ])
@@ -1029,6 +1067,7 @@ methods.convertReferenceToResponseObject = (reference, key) => {
 
 /**
  * converts a reference or response record into a swagger response object
+ * @param {Store} store: the store to use to resolve references
  * @param {Response|Reference} response: the response or reference to convert
  * @param {string} key: the key of the response in the container that holds it.
  * @returns {Entry<string, SwaggerResponseObject|SwaggerReferenceObject>} the corresponding response
@@ -1037,22 +1076,26 @@ methods.convertReferenceToResponseObject = (reference, key) => {
  * NOTE: This method has parameter as [value, key] instead of {key, value} because it is invoked
  * on an Immutable structure.
  */
-methods.convertReferenceOrResponseRecordToResponseObject = (response, key) => {
+methods.convertReferenceOrResponseRecordToResponseObject = (store, response, key) => {
   if (response instanceof Reference) {
     return methods.convertReferenceToResponseObject(response, key)
   }
-  return methods.convertResponseRecordToResponseObject({ value: response, key })
+  return methods.convertResponseRecordToResponseObject(store, { value: response, key })
 }
 
 /**
  * extracts reponses from a request.
+ * @param {Store} store: the store to use to resolve references
  * @param {Request} request: the request to get the responses from
  * @returns {Map<string, SwaggerResponseObject|SwaggerReferenceObject>} the corresponding object
  * that holds all the responses or references to globally defined responses.
  */
-methods.getResponsesFromRequest = (request) => {
+methods.getResponsesFromRequest = (store, request) => {
+  const convertReferenceOrResponseRecordToResponseObject = currify(
+    methods.convertReferenceOrResponseRecordToResponseObject, store
+  )
   const responses = request.get('responses')
-    .map(methods.convertReferenceOrResponseRecordToResponseObject)
+    .map(convertReferenceOrResponseRecordToResponseObject)
     .valueSeq()
     .reduce(convertEntryListInMap, {})
 
@@ -1193,8 +1236,8 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
 
   const resolvedContainer = request.get('parameters').resolve(store)
   const $consumes = methods.getConsumesEntry(consumes, resolvedContainer)
-  const $produces = methods.getProducesEntry(produces, resolvedContainer)
-  const parameters = methods.getParametersFromRequest(request)
+  const $produces = methods.getProducesEntry(store, request, produces)
+  const parameters = methods.getParametersFromRequest(store, request)
   const schemes = methods.getSchemesFromRequestEndpointOverlay(request)
   const security = methods.getSecurityRequirementsFromRequest(store, request)
 
@@ -1214,7 +1257,7 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
     operation.parameters = parameters
   }
 
-  operation.responses = methods.getResponsesFromRequest(request)
+  operation.responses = methods.getResponsesFromRequest(store, request)
 
   if (schemes) {
     operation.schemes = schemes

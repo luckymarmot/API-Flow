@@ -241,6 +241,15 @@ methods.extractParameter = (obj) => {
     value = List(obj.value || []).map(methods.extract)
   }
 
+  if (type === 'array') {
+    if (Array.isArray(value)) {
+      value = List(obj.value || []).map(methods.extract)
+    }
+    else {
+      value = methods.extract(obj.value)
+    }
+  }
+
   return new Parameter({
     in: location,
     default: defaultValue,

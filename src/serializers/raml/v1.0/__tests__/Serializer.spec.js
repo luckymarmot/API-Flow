@@ -1301,7 +1301,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       ]
       const expected = [
         null,
-        { a: 123, key: 234, type: 'string', 'x-title': 234 },
+        { a: 123, key: 234, 'x-title': 234 },
         { a: 123, key: 345, type: 'string', enum: [ 'abc', 'def' ], 'x-title': 345 }
       ]
       const actual = inputs.map(input => __internals__.convertParameterIntoNamedParameter(...input))

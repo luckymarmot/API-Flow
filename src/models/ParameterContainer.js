@@ -151,13 +151,15 @@ methods.resolve = (container, store) => {
   const body = resolveBlock(container.get('body'))
   const path = resolveBlock(container.get('path'))
 
-  return container.withMutations((_container) => {
+  const resolved = container.withMutations((_container) => {
     _container
-      .set('headers', headers)
-      .set('queries', queries)
-      .set('body', body)
-      .set('path', path)
+    .set('headers', headers)
+    .set('queries', queries)
+    .set('body', body)
+    .set('path', path)
   })
+
+  return resolved
 }
 
 export const __internals__ = methods

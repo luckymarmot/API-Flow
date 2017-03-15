@@ -75,7 +75,7 @@ const methods = {}
  * The Parameter Record
  */
 export class Parameter extends Record(ParameterSpec) {
-  getJSONSchema(useFaker = true, replaceRefs = true) {
+  getJSONSchema(useFaker = false, replaceRefs = false) {
     return methods.getJSONSchema(this, useFaker, replaceRefs)
   }
 
@@ -122,7 +122,11 @@ methods.addConstraintsToSchema = (param, schema) => {
  * @returns {string} the infered type
  */
 methods.inferType = (type) => {
-  if (!type || typeof type !== 'string') {
+  if (!type) {
+    return null
+  }
+
+  if (typeof type !== 'string') {
     return 'string'
   }
 
@@ -134,7 +138,7 @@ methods.inferType = (type) => {
     return 'string'
   }
 
-  return type || 'string'
+  return type || null
 }
 
 /**
@@ -152,6 +156,10 @@ methods.addTypeFromParameterToSchema = (param, schema) => {
 
   if (types.indexOf(type) === -1) {
     type = methods.inferType(type)
+
+    if (!type) {
+      return schema
+    }
   }
 
   schema.type = type
@@ -441,13 +449,13 @@ methods.isSimpleParameter = (
   }
 
   // if no type is provided assume simple
-  const type = param.get('type') || 'string'
+  const type = param.get('type') || null
 
   const types = [
     'integer', 'number', 'string', 'object', 'boolean', 'null'
   ]
 
-  if (types.indexOf(type) === -1) {
+  if (type && types.indexOf(type) === -1) {
     return false
   }
 

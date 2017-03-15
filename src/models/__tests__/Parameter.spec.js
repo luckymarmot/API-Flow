@@ -69,7 +69,7 @@ describe('models/Parameter.js', () => {
           const actual = param.getJSONSchema()
 
           expect(actual).toEqual(expected)
-          expect(__internals__.getJSONSchema).toHaveBeenCalledWith(param, true, true)
+          expect(__internals__.getJSONSchema.calls[0].arguments).toEqual([ param, false, false ])
         })
 
         it('should call __internals__.getJSONSchema with correct arguments', () => {
@@ -255,9 +255,9 @@ describe('models/Parameter.js', () => {
       expect(actual).toEqual(expected)
     })
 
-    it('should return string if no type provided', () => {
+    it('should return null if no type provided', () => {
       const type = null
-      const expected = 'string'
+      const expected = null
       const actual = __internals__.inferType(type)
 
       expect(actual).toEqual(expected)
@@ -986,7 +986,7 @@ describe('models/Parameter.js', () => {
       expect(actual).toEqual(expected)
     })
 
-    it('should replace $ref by default and type=string', () => {
+    it('should replace $ref by default', () => {
       const input = {
         type: 'integer',
         $ref: '#/definitions/UserId'
