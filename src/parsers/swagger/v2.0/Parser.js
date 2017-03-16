@@ -703,11 +703,8 @@ methods.getInterfacesFromTags = (tags = []) => {
  */
 methods.addEndpointOverlayFromOperation = (operation, value, key) => {
   const overlay = operation.schemes ? new URL({
-    url: {
-      protocol: List(operation.schemes.map(methods.addDotsToScheme))
-    },
     variableDelimiters: List([ '{', '}' ])
-  }) : null
+  }).set('protocol', List(operation.schemes.map(methods.addDotsToScheme))) : null
   return new Reference({
     type: 'endpoint',
     uuid: key,
