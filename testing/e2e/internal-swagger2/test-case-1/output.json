@@ -17,6 +17,7 @@
   "paths": {
     "/api": {
       "get": {
+        "description": "This was loaded from api-library",
         "parameters": [
           {
             "type": "string",
@@ -31,9 +32,6 @@
             "description": "no response description was provided for this operation"
           }
         },
-        "schemes": [
-          "http"
-        ],
         "security": [
           {
             "ApiLib.basic_api": []
@@ -41,15 +39,15 @@
         ]
       },
       "post": {
+        "description": "This is an awesome description",
         "tags": [
-          "trait_described"
+          "trait_ApiLib.described"
         ],
         "parameters": [
           {
             "required": false,
             "schema": {
-              "$ref": "#/definitions/ApiLib.RamlDataType",
-              "type": "string"
+              "$ref": "#/definitions/ApiLib.RamlDataType"
             },
             "in": "body",
             "name": "body"
@@ -59,10 +57,7 @@
           "default": {
             "description": "no response description was provided for this operation"
           }
-        },
-        "schemes": [
-          "http"
-        ]
+        }
       }
     },
     "/entry": {
@@ -74,23 +69,40 @@
           "200": {
             "description": "no description was provided for this response",
             "schema": {
-              "$ref": "#/definitions/AnotherEntry",
-              "type": "string"
+              "$ref": "#/definitions/AnotherEntry"
             }
           }
-        },
-        "schemes": [
-          "http"
-        ]
+        }
+      },
+      "get": {
+        "description": "returns a list of entry",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "no description was provided for this response",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
       }
     },
     "/songs": {
       "get": {
+        "description": "This was loaded from songs-library",
         "parameters": [
           {
             "type": "string",
             "name": "genre",
             "description": "filter the songs by genre",
+            "required": false,
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "access_token",
             "required": false,
             "in": "query"
           }
@@ -100,9 +112,6 @@
             "description": "no response description was provided for this operation"
           }
         },
-        "schemes": [
-          "http"
-        ],
         "security": [
           {
             "oauth_2_0": []
@@ -110,14 +119,19 @@
         ]
       },
       "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "name": "access_token",
+            "required": false,
+            "in": "query"
+          }
+        ],
         "responses": {
           "default": {
             "description": "no response description was provided for this operation"
           }
-        },
-        "schemes": [
-          "http"
-        ]
+        }
       }
     },
     "/songs/{songId}": {
@@ -130,14 +144,10 @@
           "200": {
             "description": "no description was provided for this response",
             "schema": {
-              "$ref": "#/definitions/SongsLib.Song",
-              "type": "string"
+              "$ref": "#/definitions/SongsLib.Song"
             }
           }
         },
-        "schemes": [
-          "http"
-        ],
         "parameters": [
           {
             "type": "string",
@@ -742,16 +752,16 @@
   },
   "tags": [
     {
-      "name": "resourceType_collectionfromSongsLib"
+      "name": "resourceType_SongsLib.collectionfromSongsLib"
     },
     {
-      "name": "resourceType_collectionFromApiLib"
+      "name": "resourceType_ApiLib.collectionFromApiLib"
     },
     {
       "name": "resourceType_collection"
     },
     {
-      "name": "trait_described"
+      "name": "trait_ApiLib.described"
     },
     {
       "name": "trait_secured",

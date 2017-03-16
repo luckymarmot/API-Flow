@@ -100,13 +100,19 @@
                   "version": "0.1.0"
                 },
                 "protocol": [
-                  [
-                    "https:"
-                  ]
+                  "https:"
                 ],
+                "slashes": true,
+                "auth": null,
+                "host": null,
                 "port": null,
                 "hostname": null,
+                "href": null,
+                "path": null,
                 "pathname": null,
+                "query": null,
+                "search": null,
+                "hash": null,
                 "variableDelimiters": [
                   "{",
                   "}"

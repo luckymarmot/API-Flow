@@ -4,13 +4,13 @@
     "version": "0.1.0"
   },
   "resources": {
-    "https://{sub}.paw.cloud/helloworld": {
+    "http://{environment}.musicapi.com/{version}/api": {
       "_model": {
         "name": "resource.models",
         "version": "0.1.0"
       },
-      "name": "/helloworld",
-      "uuid": "https://{sub}.paw.cloud/helloworld",
+      "name": "/api",
+      "uuid": "http://{environment}.musicapi.com/{version}/api",
       "endpoints": {
         "base": {
           "_model": {
@@ -42,7 +42,7 @@
             "version": "0.1.0"
           },
           "componentName": "pathname",
-          "string": "/helloworld",
+          "string": "/api",
           "parameter": {
             "_model": {
               "name": "parameter.core.models",
@@ -57,7 +57,7 @@
             "examples": [],
             "type": "string",
             "format": null,
-            "default": "/helloworld",
+            "default": "/api",
             "required": false,
             "superType": null,
             "value": null,
@@ -92,55 +92,42 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "https:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
-          "description": null,
+          "description": "This was loaded from api-library",
           "method": "get",
           "parameters": {
             "_model": {
               "name": "parameter-container.core.models",
               "version": "0.1.0"
             },
-            "headers": {},
+            "headers": {
+              "Content-Type": {
+                "_model": {
+                  "name": "reference.models",
+                  "version": "0.1.0"
+                },
+                "type": "parameter",
+                "uuid": "globalMediaType",
+                "overlay": null
+              }
+            },
             "queries": {
-              "toto": {
+              "queryString": {
                 "_model": {
                   "name": "parameter.core.models",
                   "version": "0.1.0"
                 },
                 "in": "queries",
                 "usedIn": "request",
-                "uuid": "toto",
-                "key": "toto",
-                "name": "toto",
+                "uuid": "queryString",
+                "key": "queryString",
+                "name": "queryString",
                 "description": null,
                 "examples": [],
-                "type": "string",
+                "type": "object",
                 "format": null,
                 "default": null,
                 "required": false,
@@ -154,11 +141,15 @@
                     },
                     "name": "json",
                     "value": {
-                      "type": "string",
-                      "enum": [
-                        "123",
-                        "234"
-                      ]
+                      "type": "object",
+                      "properties": {
+                        "start": {
+                          "type": "number"
+                        },
+                        "page-size": {
+                          "type": "number"
+                        }
+                      }
                     }
                   }
                 ],
@@ -170,7 +161,568 @@
             "path": {}
           },
           "contexts": [],
-          "auths": [],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "ApiLib.basic_api",
+              "overlay": null
+            }
+          ],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "post": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": "This is an awesome description",
+          "method": "post",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {
+              "Content-Type": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "headers",
+                "usedIn": "request",
+                "uuid": null,
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "enum.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "enum",
+                    "value": [
+                      "application/json"
+                    ]
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "queries": {},
+            "body": {
+              "application/json": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "body",
+                "usedIn": "request",
+                "uuid": "application/json",
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": null,
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "$ref": "#/definitions/ApiLib.RamlDataType"
+                    }
+                  }
+                ],
+                "applicableContexts": [
+                  {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": null,
+                    "usedIn": "request",
+                    "uuid": null,
+                    "key": "Content-Type",
+                    "name": "Content-Type",
+                    "description": null,
+                    "examples": [],
+                    "type": "string",
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "enum.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "enum",
+                        "value": [
+                          "application/json"
+                        ]
+                      }
+                    ],
+                    "applicableContexts": [],
+                    "interfaces": {}
+                  }
+                ],
+                "interfaces": {}
+              }
+            },
+            "path": {}
+          },
+          "contexts": [
+            {
+              "_model": {
+                "name": "context.core.models",
+                "version": "0.1.0"
+              },
+              "constraints": [
+                {
+                  "_model": {
+                    "name": "parameter.core.models",
+                    "version": "0.1.0"
+                  },
+                  "in": "headers",
+                  "usedIn": "request",
+                  "uuid": null,
+                  "key": "Content-Type",
+                  "name": "Content-Type",
+                  "description": null,
+                  "examples": [],
+                  "type": null,
+                  "format": null,
+                  "default": "application/json",
+                  "required": false,
+                  "superType": null,
+                  "value": null,
+                  "constraints": [],
+                  "applicableContexts": [],
+                  "interfaces": {}
+                }
+              ],
+              "type": null,
+              "implements": {}
+            }
+          ],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "custom_scheme",
+              "overlay": null
+            }
+          ],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {
+            "trait_ApiLib.described": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "interface",
+              "uuid": "trait_ApiLib.described",
+              "overlay": null
+            }
+          }
+        }
+      },
+      "description": null,
+      "interfaces": {
+        "resourceType_ApiLib.collectionFromApiLib": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "interface",
+          "uuid": "resourceType_ApiLib.collectionFromApiLib",
+          "overlay": null
+        }
+      }
+    },
+    "http://{environment}.musicapi.com/{version}/entry": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": "/entry",
+      "uuid": "http://{environment}.musicapi.com/{version}/entry",
+      "endpoints": {
+        "base": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "base",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "uuid": null,
+        "protocol": [],
+        "slashes": true,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": null,
+        "path": null,
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/entry",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/entry",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "secure": false,
+        "variableDelimiters": [],
+        "description": null
+      },
+      "methods": {
+        "post": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": null,
+          "method": "post",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {
+              "Content-Type": {
+                "_model": {
+                  "name": "reference.models",
+                  "version": "0.1.0"
+                },
+                "type": "parameter",
+                "uuid": "globalMediaType",
+                "overlay": null
+              }
+            },
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "custom_scheme",
+              "overlay": null
+            }
+          ],
+          "responses": {
+            "200": {
+              "_model": {
+                "name": "response.core.models",
+                "version": "0.1.0"
+              },
+              "code": "200",
+              "description": null,
+              "examples": null,
+              "parameters": {
+                "_model": {
+                  "name": "parameter-container.core.models",
+                  "version": "0.1.0"
+                },
+                "headers": {
+                  "Content-Type": {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "headers",
+                    "usedIn": "response",
+                    "uuid": null,
+                    "key": "Content-Type",
+                    "name": "Content-Type",
+                    "description": null,
+                    "examples": [],
+                    "type": "string",
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "enum.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "enum",
+                        "value": [
+                          "application/json"
+                        ]
+                      }
+                    ],
+                    "applicableContexts": [],
+                    "interfaces": {}
+                  }
+                },
+                "queries": {},
+                "body": {
+                  "application/json": {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "body",
+                    "usedIn": "response",
+                    "uuid": "application/json",
+                    "key": null,
+                    "name": null,
+                    "description": null,
+                    "examples": [],
+                    "type": null,
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "json.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "json",
+                        "value": {
+                          "$ref": "#/definitions/AnotherEntry"
+                        }
+                      }
+                    ],
+                    "applicableContexts": [
+                      {
+                        "_model": {
+                          "name": "parameter.core.models",
+                          "version": "0.1.0"
+                        },
+                        "in": null,
+                        "usedIn": "request",
+                        "uuid": null,
+                        "key": "Content-Type",
+                        "name": "Content-Type",
+                        "description": null,
+                        "examples": [],
+                        "type": "string",
+                        "format": null,
+                        "default": null,
+                        "required": false,
+                        "superType": null,
+                        "value": null,
+                        "constraints": [
+                          {
+                            "_model": {
+                              "name": "enum.constraint.models",
+                              "version": "0.1.0"
+                            },
+                            "name": "enum",
+                            "value": [
+                              "application/json"
+                            ]
+                          }
+                        ],
+                        "applicableContexts": [],
+                        "interfaces": {}
+                      }
+                    ],
+                    "interfaces": {}
+                  }
+                },
+                "path": {}
+              },
+              "contexts": [
+                {
+                  "_model": {
+                    "name": "context.core.models",
+                    "version": "0.1.0"
+                  },
+                  "constraints": [
+                    {
+                      "_model": {
+                        "name": "parameter.core.models",
+                        "version": "0.1.0"
+                      },
+                      "in": "headers",
+                      "usedIn": "request",
+                      "uuid": null,
+                      "key": "Content-Type",
+                      "name": "Content-Type",
+                      "description": null,
+                      "examples": [],
+                      "type": null,
+                      "format": null,
+                      "default": "application/json",
+                      "required": false,
+                      "superType": null,
+                      "value": null,
+                      "constraints": [],
+                      "applicableContexts": [],
+                      "interfaces": {}
+                    }
+                  ],
+                  "type": null,
+                  "implements": {}
+                }
+              ],
+              "interfaces": {}
+            }
+          },
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "get": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": "returns a list of entry",
+          "method": "get",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {
+              "Content-Type": {
+                "_model": {
+                  "name": "reference.models",
+                  "version": "0.1.0"
+                },
+                "type": "parameter",
+                "uuid": "globalMediaType",
+                "overlay": null
+              }
+            },
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "custom_scheme",
+              "overlay": null
+            }
+          ],
           "responses": {
             "200": {
               "_model": {
@@ -248,18 +800,7 @@
                         },
                         "name": "json",
                         "value": {
-                          "title": "Hello world Response",
-                          "type": "object",
-                          "properties": {
-                            "message": {
-                              "type": "string"
-                            }
-                          },
-                          "x-examples": [
-                            {
-                              "message": "Hello world"
-                            }
-                          ]
+                          "type": "object"
                         }
                       }
                     ],
@@ -346,6 +887,794 @@
         }
       },
       "description": null,
+      "interfaces": {
+        "resourceType_collection": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "interface",
+          "uuid": "resourceType_collection",
+          "overlay": null
+        }
+      }
+    },
+    "http://{environment}.musicapi.com/{version}/songs": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": "/songs",
+      "uuid": "http://{environment}.musicapi.com/{version}/songs",
+      "endpoints": {
+        "base": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "base",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "uuid": null,
+        "protocol": [],
+        "slashes": true,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": null,
+        "path": null,
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/songs",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/songs",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "secure": false,
+        "variableDelimiters": [],
+        "description": null
+      },
+      "methods": {
+        "get": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": "This was loaded from songs-library",
+          "method": "get",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {
+              "Content-Type": {
+                "_model": {
+                  "name": "reference.models",
+                  "version": "0.1.0"
+                },
+                "type": "parameter",
+                "uuid": "globalMediaType",
+                "overlay": null
+              }
+            },
+            "queries": {
+              "genre": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "queries",
+                "usedIn": "request",
+                "uuid": "genre",
+                "key": "genre",
+                "name": "genre",
+                "description": "filter the songs by genre",
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "string",
+                      "description": "filter the songs by genre"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              "access_token": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "queries",
+                "usedIn": "request",
+                "uuid": "access_token",
+                "key": "access_token",
+                "name": "access_token",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "oauth_2_0",
+              "overlay": null
+            },
+            null
+          ],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "post": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": null,
+          "method": "post",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {
+              "Content-Type": {
+                "_model": {
+                  "name": "reference.models",
+                  "version": "0.1.0"
+                },
+                "type": "parameter",
+                "uuid": "globalMediaType",
+                "overlay": null
+              }
+            },
+            "queries": {
+              "access_token": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "queries",
+                "usedIn": "request",
+                "uuid": "access_token",
+                "key": "access_token",
+                "name": "access_token",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "custom_scheme",
+              "overlay": null
+            }
+          ],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": "Access to all songs inside the music world library.",
+      "interfaces": {
+        "resourceType_SongsLib.collectionfromSongsLib": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "interface",
+          "uuid": "resourceType_SongsLib.collectionfromSongsLib",
+          "overlay": null
+        }
+      }
+    },
+    "http://{environment}.musicapi.com/{version}/songs/{songId}": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": "/songs/{songId}",
+      "uuid": "http://{environment}.musicapi.com/{version}/songs/{songId}",
+      "endpoints": {
+        "base": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "base",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "uuid": null,
+        "protocol": [],
+        "slashes": true,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": null,
+        "path": null,
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/songs/{songId}",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": null,
+            "required": false,
+            "superType": "sequence",
+            "value": [
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "/songs/",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "path",
+                "usedIn": "request",
+                "uuid": null,
+                "key": "songId",
+                "name": "songId",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            ],
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{",
+            "}"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "secure": false,
+        "variableDelimiters": [],
+        "description": null
+      },
+      "methods": {
+        "get": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": null,
+          "method": "get",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {
+              "Content-Type": {
+                "_model": {
+                  "name": "reference.models",
+                  "version": "0.1.0"
+                },
+                "type": "parameter",
+                "uuid": "globalMediaType",
+                "overlay": null
+              }
+            },
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "custom_scheme",
+              "overlay": null
+            }
+          ],
+          "responses": {
+            "200": {
+              "_model": {
+                "name": "response.core.models",
+                "version": "0.1.0"
+              },
+              "code": "200",
+              "description": null,
+              "examples": null,
+              "parameters": {
+                "_model": {
+                  "name": "parameter-container.core.models",
+                  "version": "0.1.0"
+                },
+                "headers": {
+                  "Content-Type": {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "headers",
+                    "usedIn": "response",
+                    "uuid": null,
+                    "key": "Content-Type",
+                    "name": "Content-Type",
+                    "description": null,
+                    "examples": [],
+                    "type": "string",
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "enum.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "enum",
+                        "value": [
+                          "application/json",
+                          "application/xml"
+                        ]
+                      }
+                    ],
+                    "applicableContexts": [],
+                    "interfaces": {}
+                  }
+                },
+                "queries": {},
+                "body": {
+                  "application/json": {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "body",
+                    "usedIn": "response",
+                    "uuid": "application/json",
+                    "key": null,
+                    "name": null,
+                    "description": null,
+                    "examples": [],
+                    "type": null,
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "json.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "json",
+                        "value": {
+                          "$ref": "#/definitions/SongsLib.Song"
+                        }
+                      }
+                    ],
+                    "applicableContexts": [
+                      {
+                        "_model": {
+                          "name": "parameter.core.models",
+                          "version": "0.1.0"
+                        },
+                        "in": null,
+                        "usedIn": "request",
+                        "uuid": null,
+                        "key": "Content-Type",
+                        "name": "Content-Type",
+                        "description": null,
+                        "examples": [],
+                        "type": "string",
+                        "format": null,
+                        "default": null,
+                        "required": false,
+                        "superType": null,
+                        "value": null,
+                        "constraints": [
+                          {
+                            "_model": {
+                              "name": "enum.constraint.models",
+                              "version": "0.1.0"
+                            },
+                            "name": "enum",
+                            "value": [
+                              "application/json"
+                            ]
+                          }
+                        ],
+                        "applicableContexts": [],
+                        "interfaces": {}
+                      }
+                    ],
+                    "interfaces": {}
+                  },
+                  "application/xml": {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "body",
+                    "usedIn": "response",
+                    "uuid": "application/xml",
+                    "key": null,
+                    "name": null,
+                    "description": null,
+                    "examples": [],
+                    "type": null,
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "json.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "json",
+                        "value": {
+                          "x-xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n  elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n  <xs:element name=\"song\">\n    <xs:complexType>\n      <xs:sequence>\n        <xs:element name=\"title\" type=\"xs:string\" />\n        <xs:element name=\"artist\" type=\"xs:string\" />\n      </xs:sequence>\n    </xs:complexType>\n  </xs:element>\n</xs:schema>\n",
+                          "x-examples": [
+                            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<song>\n  <title>str1234</title>\n  <artist>str1234</artist>\n</song>\n"
+                          ]
+                        }
+                      }
+                    ],
+                    "applicableContexts": [
+                      {
+                        "_model": {
+                          "name": "parameter.core.models",
+                          "version": "0.1.0"
+                        },
+                        "in": null,
+                        "usedIn": "request",
+                        "uuid": null,
+                        "key": "Content-Type",
+                        "name": "Content-Type",
+                        "description": null,
+                        "examples": [],
+                        "type": "string",
+                        "format": null,
+                        "default": null,
+                        "required": false,
+                        "superType": null,
+                        "value": null,
+                        "constraints": [
+                          {
+                            "_model": {
+                              "name": "enum.constraint.models",
+                              "version": "0.1.0"
+                            },
+                            "name": "enum",
+                            "value": [
+                              "application/xml"
+                            ]
+                          }
+                        ],
+                        "applicableContexts": [],
+                        "interfaces": {}
+                      }
+                    ],
+                    "interfaces": {}
+                  }
+                },
+                "path": {}
+              },
+              "contexts": [
+                {
+                  "_model": {
+                    "name": "context.core.models",
+                    "version": "0.1.0"
+                  },
+                  "constraints": [
+                    {
+                      "_model": {
+                        "name": "parameter.core.models",
+                        "version": "0.1.0"
+                      },
+                      "in": "headers",
+                      "usedIn": "request",
+                      "uuid": null,
+                      "key": "Content-Type",
+                      "name": "Content-Type",
+                      "description": null,
+                      "examples": [],
+                      "type": null,
+                      "format": null,
+                      "default": "application/json",
+                      "required": false,
+                      "superType": null,
+                      "value": null,
+                      "constraints": [],
+                      "applicableContexts": [],
+                      "interfaces": {}
+                    }
+                  ],
+                  "type": null,
+                  "implements": {}
+                },
+                {
+                  "_model": {
+                    "name": "context.core.models",
+                    "version": "0.1.0"
+                  },
+                  "constraints": [
+                    {
+                      "_model": {
+                        "name": "parameter.core.models",
+                        "version": "0.1.0"
+                      },
+                      "in": "headers",
+                      "usedIn": "request",
+                      "uuid": null,
+                      "key": "Content-Type",
+                      "name": "Content-Type",
+                      "description": null,
+                      "examples": [],
+                      "type": null,
+                      "format": null,
+                      "default": "application/xml",
+                      "required": false,
+                      "superType": null,
+                      "value": null,
+                      "constraints": [],
+                      "applicableContexts": [],
+                      "interfaces": {}
+                    }
+                  ],
+                  "type": null,
+                  "implements": {}
+                }
+              ],
+              "interfaces": {}
+            }
+          },
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": null,
       "interfaces": {}
     }
   },
@@ -358,16 +1687,52 @@
     "name": null,
     "description": null,
     "children": {
-      "/helloworld": {
+      "/api": {
         "_model": {
           "name": "group.models",
           "version": "0.1.0"
         },
-        "id": "/helloworld",
-        "name": "/helloworld",
+        "id": "/api",
+        "name": "/api",
         "description": null,
         "children": {
-          "https://{sub}.paw.cloud/helloworld": "https://{sub}.paw.cloud/helloworld"
+          "http://{environment}.musicapi.com/{version}/api": "http://{environment}.musicapi.com/{version}/api"
+        }
+      },
+      "/entry": {
+        "_model": {
+          "name": "group.models",
+          "version": "0.1.0"
+        },
+        "id": "/entry",
+        "name": "/entry",
+        "description": null,
+        "children": {
+          "http://{environment}.musicapi.com/{version}/entry": "http://{environment}.musicapi.com/{version}/entry"
+        }
+      },
+      "/songs": {
+        "_model": {
+          "name": "group.models",
+          "version": "0.1.0"
+        },
+        "id": "/songs",
+        "name": "/songs",
+        "description": null,
+        "children": {
+          "/songs/{songId}": {
+            "_model": {
+              "name": "group.models",
+              "version": "0.1.0"
+            },
+            "id": "/songs/{songId}",
+            "name": "/{songId}",
+            "description": null,
+            "children": {
+              "http://{environment}.musicapi.com/{version}/songs/{songId}": "http://{environment}.musicapi.com/{version}/songs/{songId}"
+            }
+          },
+          "http://{environment}.musicapi.com/{version}/songs": "http://{environment}.musicapi.com/{version}/songs"
         }
       }
     }
@@ -378,7 +1743,828 @@
       "version": "0.1.0"
     },
     "variable": {},
-    "constraint": {},
+    "constraint": {
+      "Entry": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Song"
+          }
+        }
+      },
+      "Song": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "artist": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AnotherEntry": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "$ref": "#/definitions/Entry",
+          "description": "# This is in Markdown\nThis is to see what the representation of this ~~Markdown~~ string is.\n## SubTitle\nThis is just another entry to **simulate** that you can add facets also on JSON\nschema defined types. Although you can only add documentation-based facets.\n"
+        }
+      },
+      "SpecialEntry": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "pattern": "^.{12}$"
+        }
+      },
+      "Toy": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "minProperties": 2,
+          "maxProperties": 8,
+          "discriminator": "name",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "soft": {
+              "type": "boolean",
+              "x-examples": [
+                true
+              ]
+            },
+            "squiky": {
+              "type": "boolean"
+            },
+            "heavy": {
+              "type": "boolean"
+            },
+            "clean": {
+              "type": "boolean"
+            },
+            "purchaseDate": {
+              "type": "string",
+              "$ref": "#/definitions/$DateOnly"
+            },
+            "more": {
+              "type": "string",
+              "$ref": "#/definitions/$DateTime"
+            },
+            "final": {
+              "type": "string",
+              "$ref": "#/definitions/$DateTimeOnly"
+            }
+          },
+          "required": [
+            "name",
+            "soft",
+            "squiky",
+            "heavy",
+            "clean",
+            "purchaseDate",
+            "more",
+            "final"
+          ]
+        }
+      },
+      "$DateOnly": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+          "description": "full-date as defined in RFC#3339"
+        }
+      },
+      "$DateTime": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "description": "datetime"
+        }
+      },
+      "$DateTimeOnly": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$",
+          "description": "full-time as defined in RFC#3339"
+        }
+      },
+      "Ball": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/Toy"
+            }
+          ],
+          "discriminatorValue": "ball",
+          "properties": {
+            "bouncinessFactor": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "bouncinessFactor"
+          ]
+        }
+      },
+      "Rope": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/Toy"
+            }
+          ],
+          "discriminatorValue": "rope",
+          "properties": {
+            "length": {
+              "type": "integer",
+              "enum": [
+                "10",
+                "20",
+                "50",
+                "100"
+              ],
+              "x-examples": [
+                10
+              ]
+            }
+          },
+          "required": [
+            "length"
+          ]
+        }
+      },
+      "CommonToy": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Ball"
+            },
+            {
+              "$ref": "#/definitions/Rope"
+            }
+          ]
+        }
+      },
+      "Treat": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "tastiness": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "name",
+            "tastiness"
+          ]
+        }
+      },
+      "Pet": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "claws": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "color": {
+              "type": "string",
+              "minLength": 7,
+              "maxLength": 7,
+              "pattern": "^#[0-9a-f]{6}$"
+            },
+            "size": {
+              "type": "number",
+              "multipleOf": 5
+            },
+            "weigth": {
+              "type": "number"
+            },
+            "mostActiveAt": {
+              "type": "string",
+              "$ref": "#/definitions/$TimeOnly"
+            },
+            "owner": {
+              "$ref": "#/definitions/User"
+            },
+            "toys": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Toy"
+              }
+            }
+          },
+          "required": [
+            "claws",
+            "color",
+            "size",
+            "weigth",
+            "mostActiveAt",
+            "owner",
+            "toys"
+          ]
+        }
+      },
+      "$TimeOnly": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "pattern": "^([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$",
+          "description": "full-time as defined in RFC#3339"
+        }
+      },
+      "Resident": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "address": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "address"
+          ]
+        }
+      },
+      "Wild": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "location"
+          ]
+        }
+      },
+      "FarmPet": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/Pet"
+            },
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Resident"
+                },
+                {
+                  "$ref": "#/definitions/Wild"
+                }
+              ]
+            }
+          ],
+          "title": "Farm Pet"
+        }
+      },
+      "ToyBox": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "array",
+          "uniqueItems": false,
+          "minItems": 1,
+          "maxItems": 15,
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Toy"
+              },
+              {
+                "$ref": "#/definitions/Treat"
+              }
+            ]
+          }
+        }
+      },
+      "BigToyBox": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/ToyBox"
+            }
+          ],
+          "maxItems": 100
+        }
+      },
+      "Photo": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "$ref": "#/definitions/$File"
+        }
+      },
+      "$File": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "description": "file",
+          "pattern": "^[^\u0000]*\u0000$"
+        }
+      },
+      "Album": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Photo"
+          }
+        }
+      },
+      "Weird": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {}
+      },
+      "Habitats": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Resident"
+              },
+              {
+                "$ref": "#/definitions/Wild"
+              }
+            ]
+          }
+        }
+      },
+      "SeparateKinds": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Resident"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Wild"
+              }
+            }
+          ]
+        }
+      },
+      "User": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "firstname": {
+              "type": "string"
+            },
+            "lastname": {
+              "type": "string",
+              "x-examples": [
+                "Doe"
+              ]
+            },
+            "pets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FarmPet"
+              }
+            },
+            "box": {
+              "$ref": "#/definitions/ToyBox"
+            },
+            "albums": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Album"
+              }
+            }
+          },
+          "required": [
+            "firstname"
+          ],
+          "x-examples": [
+            {
+              "firstname": "John"
+            }
+          ]
+        }
+      },
+      "SongsLib.Song": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "length": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "title",
+            "length"
+          ],
+          "x-examples": [
+            {
+              "title": "My Song",
+              "length": 12
+            },
+            {
+              "title": "Last",
+              "length": 3
+            }
+          ]
+        }
+      },
+      "SongsLib.Album": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "songs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SongsLib.Song"
+              }
+            }
+          },
+          "required": [
+            "title",
+            "songs"
+          ]
+        }
+      },
+      "SongsLib.Musician": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "discography": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/SongsLib.Song"
+                  },
+                  {
+                    "$ref": "#/definitions/SongsLib.Album"
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "name",
+            "discography"
+          ]
+        }
+      },
+      "ApiLib.RamlDataType": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "propString": {
+              "type": "string"
+            },
+            "propStringArray1": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "ideas": {
+              "type": "array"
+            },
+            "extIdeas": {
+              "properties": {
+                "createdBy": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "createdBy"
+              ]
+            },
+            "feedback": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "pattern": "[a-zA-Z\\s]*",
+              "x-examples": [
+                "very well made"
+              ]
+            },
+            "propNumber": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 32,
+              "multipleOf": 2
+            },
+            "propInteger": {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 5,
+              "multipleOf": 1
+            },
+            "propBoolean": {
+              "type": "boolean"
+            },
+            "propDate": {
+              "type": "string",
+              "$ref": "#/definitions/ApiLib.$DateOnly",
+              "x-examples": [
+                "2015-05-23"
+              ]
+            },
+            "userPicture": {
+              "type": "string",
+              "$ref": "#/definitions/ApiLib.$File"
+            },
+            "NilValue": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "comment": {
+                  "$ref": "#/definitions/ApiLib.string?"
+                }
+              },
+              "required": [
+                "name",
+                "comment"
+              ]
+            },
+            "CatOrDog": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ApiLib.Cat"
+                },
+                {
+                  "$ref": "#/definitions/ApiLib.Dog"
+                }
+              ]
+            },
+            "CatAndDog": {
+              "$ref": "#/definitions/ApiLib.Dog"
+            },
+            "PossibleMeetingDate": {
+              "type": "string",
+              "$ref": "#/definitions/ApiLib.$DateOnly"
+            }
+          },
+          "required": [
+            "propString",
+            "propStringArray1",
+            "ideas",
+            "extIdeas",
+            "feedback",
+            "propNumber",
+            "propInteger",
+            "propBoolean",
+            "propDate",
+            "userPicture",
+            "NilValue",
+            "CatOrDog",
+            "CatAndDog",
+            "CatAndDog",
+            "PossibleMeetingDate"
+          ]
+        }
+      },
+      "ApiLib.$DateOnly": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+          "description": "full-date as defined in RFC#3339"
+        }
+      },
+      "ApiLib.$File": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "description": "file",
+          "pattern": "^[^\u0000]*\u0000$"
+        }
+      },
+      "ApiLib.Cat": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "color"
+          ]
+        }
+      },
+      "ApiLib.Dog": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "fangs": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "fangs"
+          ]
+        }
+      },
+      "ApiLib.CustomDate": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "type": "string",
+          "$ref": "#/definitions/ApiLib.$DateOnly"
+        }
+      }
+    },
     "endpoint": {
       "base": {
         "_model": {
@@ -386,12 +2572,12 @@
           "version": "0.1.0"
         },
         "protocol": [
-          "https:",
-          "http:"
+          "http:",
+          "https:"
         ],
         "slashes": true,
         "auth": null,
-        "host": "{sub}.paw.cloud",
+        "host": "{environment}.musicapi.com",
         "port": null,
         "hostname": {
           "_model": {
@@ -399,7 +2585,7 @@
             "version": "0.1.0"
           },
           "componentName": "hostname",
-          "string": "{sub}.paw.cloud",
+          "string": "{environment}.musicapi.com",
           "parameter": {
             "_model": {
               "name": "parameter.core.models",
@@ -447,9 +2633,9 @@
                 },
                 "in": "hostname",
                 "usedIn": "request",
-                "uuid": "sub",
-                "key": "sub",
-                "name": "sub",
+                "uuid": "environment",
+                "key": "environment",
+                "name": "environment",
                 "description": null,
                 "examples": [],
                 "type": "string",
@@ -468,8 +2654,10 @@
                     "value": {
                       "type": "string",
                       "enum": [
-                        "echo",
-                        "app"
+                        "stg",
+                        "dev",
+                        "test",
+                        "prod"
                       ]
                     }
                   }
@@ -491,7 +2679,7 @@
                 "examples": [],
                 "type": "string",
                 "format": null,
-                "default": ".paw.cloud",
+                "default": ".musicapi.com",
                 "required": false,
                 "superType": null,
                 "value": null,
@@ -509,15 +2697,15 @@
             "}"
           ]
         },
-        "href": "https://{sub}.paw.cloud/",
-        "path": "/",
+        "href": "http://{environment}.musicapi.com/{version}",
+        "path": "/{version}",
         "pathname": {
           "_model": {
             "name": "url-component.models",
             "version": "0.1.0"
           },
           "componentName": "pathname",
-          "string": "/",
+          "string": "/{version}",
           "parameter": {
             "_model": {
               "name": "parameter.core.models",
@@ -532,10 +2720,91 @@
             "examples": [],
             "type": "string",
             "format": null,
-            "default": "/",
+            "default": null,
             "required": false,
-            "superType": null,
-            "value": null,
+            "superType": "sequence",
+            "value": [
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "/",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "pathname",
+                "usedIn": "request",
+                "uuid": "version",
+                "key": "version",
+                "name": "version",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "string",
+                      "enum": [
+                        "v1"
+                      ]
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            ],
             "constraints": [],
             "applicableContexts": [],
             "interfaces": {}
@@ -554,21 +2823,596 @@
         ]
       }
     },
-    "parameter": {},
+    "parameter": {
+      "globalMediaType": {
+        "_model": {
+          "name": "parameter.core.models",
+          "version": "0.1.0"
+        },
+        "in": "headers",
+        "usedIn": "request",
+        "uuid": null,
+        "key": "Content-Type",
+        "name": "Content-Type",
+        "description": null,
+        "examples": [],
+        "type": "string",
+        "format": null,
+        "default": null,
+        "required": false,
+        "superType": null,
+        "value": null,
+        "constraints": [
+          {
+            "_model": {
+              "name": "enum.constraint.models",
+              "version": "0.1.0"
+            },
+            "name": "enum",
+            "value": [
+              "application/json"
+            ]
+          }
+        ],
+        "applicableContexts": [],
+        "interfaces": {}
+      }
+    },
     "response": {},
-    "auth": {},
-    "interface": {}
+    "auth": {
+      "oauth_1_0": {
+        "_model": {
+          "name": "oauth-1.auth.models",
+          "version": "0.1.0"
+        },
+        "description": "OAuth 1.0 continues to be supported for all API requests, but OAuth 2.0 is now preferred.\n",
+        "authName": "oauth_1_0",
+        "callback": null,
+        "consumerSecret": null,
+        "tokenSecret": null,
+        "consumerKey": null,
+        "algorithm": null,
+        "nonce": null,
+        "additionalParameters": null,
+        "timestamp": null,
+        "token": null,
+        "version": null,
+        "signature": "HMAC-SHA1",
+        "tokenCredentialsUri": "https://api.mysampleapi.com/1/oauth/access_token",
+        "requestTokenUri": "https://api.mysampleapi.com/1/oauth/request_token",
+        "authorizationUri": "https://api.mysampleapi.com/1/oauth/authorize"
+      },
+      "oauth_2_0": {
+        "_model": {
+          "name": "oauth-2.auth.models",
+          "version": "0.1.0"
+        },
+        "description": "Dropbox supports OAuth 2.0 for authenticating all API requests.\n",
+        "authName": "oauth_2_0",
+        "flow": "accessCode",
+        "authorizationUrl": "https://www.dropbox.com/1/oauth2/authorize",
+        "tokenUrl": "https://api.dropbox.com/1/oauth2/token",
+        "scopes": []
+      },
+      "ApiLib.basic_api": {
+        "_model": {
+          "name": "basic.auth.models",
+          "version": "0.1.0"
+        },
+        "description": "This is our super secure api auth",
+        "authName": "basic_api",
+        "username": null,
+        "password": null,
+        "raw": null,
+        "interfaces": {}
+      }
+    },
+    "interface": {
+      "resourceType_SongsLib.collectionfromSongsLib": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "SongsLib.collectionfromSongsLib",
+        "uuid": "resourceType_SongsLib.collectionfromSongsLib",
+        "level": "resource",
+        "required": false,
+        "description": null,
+        "underlay": {
+          "_model": {
+            "name": "resource.models",
+            "version": "0.1.0"
+          },
+          "name": null,
+          "uuid": null,
+          "endpoints": {},
+          "path": null,
+          "methods": {
+            "get": {
+              "_model": {
+                "name": "request.models",
+                "version": "0.1.0"
+              },
+              "id": null,
+              "endpoints": {
+                "base": {
+                  "_model": {
+                    "name": "reference.models",
+                    "version": "0.1.0"
+                  },
+                  "type": "endpoint",
+                  "uuid": "base",
+                  "overlay": null
+                }
+              },
+              "name": null,
+              "description": "This was loaded from songs-library",
+              "method": "get",
+              "parameters": {
+                "_model": {
+                  "name": "parameter-container.core.models",
+                  "version": "0.1.0"
+                },
+                "headers": {},
+                "queries": {},
+                "body": {},
+                "path": {}
+              },
+              "contexts": [],
+              "auths": [],
+              "responses": {},
+              "timeout": null,
+              "tags": [],
+              "interfaces": {}
+            }
+          },
+          "description": null,
+          "interfaces": {}
+        }
+      },
+      "resourceType_ApiLib.collectionFromApiLib": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "ApiLib.collectionFromApiLib",
+        "uuid": "resourceType_ApiLib.collectionFromApiLib",
+        "level": "resource",
+        "required": false,
+        "description": null,
+        "underlay": {
+          "_model": {
+            "name": "resource.models",
+            "version": "0.1.0"
+          },
+          "name": null,
+          "uuid": null,
+          "endpoints": {},
+          "path": null,
+          "methods": {
+            "get": {
+              "_model": {
+                "name": "request.models",
+                "version": "0.1.0"
+              },
+              "id": null,
+              "endpoints": {
+                "base": {
+                  "_model": {
+                    "name": "reference.models",
+                    "version": "0.1.0"
+                  },
+                  "type": "endpoint",
+                  "uuid": "base",
+                  "overlay": null
+                }
+              },
+              "name": null,
+              "description": "This was loaded from api-library",
+              "method": "get",
+              "parameters": {
+                "_model": {
+                  "name": "parameter-container.core.models",
+                  "version": "0.1.0"
+                },
+                "headers": {},
+                "queries": {},
+                "body": {},
+                "path": {}
+              },
+              "contexts": [],
+              "auths": [],
+              "responses": {},
+              "timeout": null,
+              "tags": [],
+              "interfaces": {}
+            }
+          },
+          "description": null,
+          "interfaces": {}
+        }
+      },
+      "resourceType_collection": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "collection",
+        "uuid": "resourceType_collection",
+        "level": "resource",
+        "required": false,
+        "description": null,
+        "underlay": {
+          "_model": {
+            "name": "resource.models",
+            "version": "0.1.0"
+          },
+          "name": null,
+          "uuid": null,
+          "endpoints": {},
+          "path": null,
+          "methods": {
+            "get": {
+              "_model": {
+                "name": "request.models",
+                "version": "0.1.0"
+              },
+              "id": null,
+              "endpoints": {
+                "base": {
+                  "_model": {
+                    "name": "reference.models",
+                    "version": "0.1.0"
+                  },
+                  "type": "endpoint",
+                  "uuid": "base",
+                  "overlay": null
+                }
+              },
+              "name": null,
+              "description": "returns a list of <<resourcePathName|!singularize>>",
+              "method": "get",
+              "parameters": {
+                "_model": {
+                  "name": "parameter-container.core.models",
+                  "version": "0.1.0"
+                },
+                "headers": {},
+                "queries": {},
+                "body": {},
+                "path": {}
+              },
+              "contexts": [],
+              "auths": [
+                {
+                  "_model": {
+                    "name": "reference.models",
+                    "version": "0.1.0"
+                  },
+                  "type": "auth",
+                  "uuid": "custom_scheme",
+                  "overlay": null
+                }
+              ],
+              "responses": {
+                "200": {
+                  "_model": {
+                    "name": "response.core.models",
+                    "version": "0.1.0"
+                  },
+                  "code": "200",
+                  "description": null,
+                  "examples": null,
+                  "parameters": {
+                    "_model": {
+                      "name": "parameter-container.core.models",
+                      "version": "0.1.0"
+                    },
+                    "headers": {
+                      "Content-Type": {
+                        "_model": {
+                          "name": "parameter.core.models",
+                          "version": "0.1.0"
+                        },
+                        "in": "headers",
+                        "usedIn": "response",
+                        "uuid": null,
+                        "key": "Content-Type",
+                        "name": "Content-Type",
+                        "description": null,
+                        "examples": [],
+                        "type": "string",
+                        "format": null,
+                        "default": null,
+                        "required": false,
+                        "superType": null,
+                        "value": null,
+                        "constraints": [
+                          {
+                            "_model": {
+                              "name": "enum.constraint.models",
+                              "version": "0.1.0"
+                            },
+                            "name": "enum",
+                            "value": [
+                              "application/json"
+                            ]
+                          }
+                        ],
+                        "applicableContexts": [],
+                        "interfaces": {}
+                      }
+                    },
+                    "queries": {},
+                    "body": {
+                      "application/json": {
+                        "_model": {
+                          "name": "parameter.core.models",
+                          "version": "0.1.0"
+                        },
+                        "in": "body",
+                        "usedIn": "response",
+                        "uuid": "application/json",
+                        "key": null,
+                        "name": null,
+                        "description": null,
+                        "examples": [],
+                        "type": "object",
+                        "format": null,
+                        "default": null,
+                        "required": false,
+                        "superType": null,
+                        "value": null,
+                        "constraints": [
+                          {
+                            "_model": {
+                              "name": "json.constraint.models",
+                              "version": "0.1.0"
+                            },
+                            "name": "json",
+                            "value": {
+                              "type": "object"
+                            }
+                          }
+                        ],
+                        "applicableContexts": [
+                          {
+                            "_model": {
+                              "name": "parameter.core.models",
+                              "version": "0.1.0"
+                            },
+                            "in": null,
+                            "usedIn": "request",
+                            "uuid": null,
+                            "key": "Content-Type",
+                            "name": "Content-Type",
+                            "description": null,
+                            "examples": [],
+                            "type": "string",
+                            "format": null,
+                            "default": null,
+                            "required": false,
+                            "superType": null,
+                            "value": null,
+                            "constraints": [
+                              {
+                                "_model": {
+                                  "name": "enum.constraint.models",
+                                  "version": "0.1.0"
+                                },
+                                "name": "enum",
+                                "value": [
+                                  "application/json"
+                                ]
+                              }
+                            ],
+                            "applicableContexts": [],
+                            "interfaces": {}
+                          }
+                        ],
+                        "interfaces": {}
+                      }
+                    },
+                    "path": {}
+                  },
+                  "contexts": [
+                    {
+                      "_model": {
+                        "name": "context.core.models",
+                        "version": "0.1.0"
+                      },
+                      "constraints": [
+                        {
+                          "_model": {
+                            "name": "parameter.core.models",
+                            "version": "0.1.0"
+                          },
+                          "in": "headers",
+                          "usedIn": "request",
+                          "uuid": null,
+                          "key": "Content-Type",
+                          "name": "Content-Type",
+                          "description": null,
+                          "examples": [],
+                          "type": null,
+                          "format": null,
+                          "default": "application/json",
+                          "required": false,
+                          "superType": null,
+                          "value": null,
+                          "constraints": [],
+                          "applicableContexts": [],
+                          "interfaces": {}
+                        }
+                      ],
+                      "type": null,
+                      "implements": {}
+                    }
+                  ],
+                  "interfaces": {}
+                }
+              },
+              "timeout": null,
+              "tags": [],
+              "interfaces": {}
+            }
+          },
+          "description": null,
+          "interfaces": {}
+        }
+      },
+      "trait_ApiLib.described": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "ApiLib.described",
+        "uuid": "trait_ApiLib.described",
+        "level": "request",
+        "required": false,
+        "description": null,
+        "underlay": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": "This is an awesome description",
+          "method": null,
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "trait_secured": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "secured",
+        "uuid": "trait_secured",
+        "level": "request",
+        "required": false,
+        "description": "This trait can be used to apply an access token query parameter\nto any resources or HTTP methods.\n",
+        "underlay": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": null,
+          "method": null,
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {
+              "access_token": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "queries",
+                "usedIn": "request",
+                "uuid": "access_token",
+                "key": "access_token",
+                "name": "access_token",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "custom_scheme",
+              "overlay": null
+            }
+          ],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      }
+    }
   },
   "info": {
     "_model": {
       "name": "info.utils.models",
       "version": "0.1.0"
     },
-    "title": "Hello world",
-    "description": null,
+    "title": "World Music API",
+    "description": "This is an example of a music API.",
     "tos": null,
     "contact": null,
     "license": null,
-    "version": null
+    "version": "v1"
   }
 }

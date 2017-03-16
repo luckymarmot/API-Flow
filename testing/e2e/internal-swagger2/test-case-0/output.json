@@ -59,9 +59,7 @@
           }
         },
         "schemes": [
-          [
-            "https:"
-          ]
+          "https"
         ],
         "security": [
           {

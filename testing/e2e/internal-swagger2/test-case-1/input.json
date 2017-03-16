@@ -92,34 +92,11 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
-          "description": null,
+          "description": "This was loaded from api-library",
           "method": "get",
           "parameters": {
             "_model": {
@@ -214,34 +191,11 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
-          "description": null,
+          "description": "This is an awesome description",
           "method": "post",
           "parameters": {
             "_model": {
@@ -297,7 +251,7 @@
                 "name": null,
                 "description": null,
                 "examples": [],
-                "type": "string",
+                "type": null,
                 "format": null,
                 "default": null,
                 "required": false,
@@ -404,13 +358,13 @@
           "timeout": null,
           "tags": [],
           "interfaces": {
-            "trait_described": {
+            "trait_ApiLib.described": {
               "_model": {
                 "name": "reference.models",
                 "version": "0.1.0"
               },
               "type": "interface",
-              "uuid": "trait_described",
+              "uuid": "trait_ApiLib.described",
               "overlay": null
             }
           }
@@ -418,13 +372,13 @@
       },
       "description": null,
       "interfaces": {
-        "resourceType_collectionFromApiLib": {
+        "resourceType_ApiLib.collectionFromApiLib": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "interface",
-          "uuid": "resourceType_collectionFromApiLib",
+          "uuid": "resourceType_ApiLib.collectionFromApiLib",
           "overlay": null
         }
       }
@@ -517,30 +471,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -641,7 +572,7 @@
                     "name": null,
                     "description": null,
                     "examples": [],
-                    "type": "string",
+                    "type": null,
                     "format": null,
                     "default": null,
                     "required": false,
@@ -656,6 +587,220 @@
                         "name": "json",
                         "value": {
                           "$ref": "#/definitions/AnotherEntry"
+                        }
+                      }
+                    ],
+                    "applicableContexts": [
+                      {
+                        "_model": {
+                          "name": "parameter.core.models",
+                          "version": "0.1.0"
+                        },
+                        "in": null,
+                        "usedIn": "request",
+                        "uuid": null,
+                        "key": "Content-Type",
+                        "name": "Content-Type",
+                        "description": null,
+                        "examples": [],
+                        "type": "string",
+                        "format": null,
+                        "default": null,
+                        "required": false,
+                        "superType": null,
+                        "value": null,
+                        "constraints": [
+                          {
+                            "_model": {
+                              "name": "enum.constraint.models",
+                              "version": "0.1.0"
+                            },
+                            "name": "enum",
+                            "value": [
+                              "application/json"
+                            ]
+                          }
+                        ],
+                        "applicableContexts": [],
+                        "interfaces": {}
+                      }
+                    ],
+                    "interfaces": {}
+                  }
+                },
+                "path": {}
+              },
+              "contexts": [
+                {
+                  "_model": {
+                    "name": "context.core.models",
+                    "version": "0.1.0"
+                  },
+                  "constraints": [
+                    {
+                      "_model": {
+                        "name": "parameter.core.models",
+                        "version": "0.1.0"
+                      },
+                      "in": "headers",
+                      "usedIn": "request",
+                      "uuid": null,
+                      "key": "Content-Type",
+                      "name": "Content-Type",
+                      "description": null,
+                      "examples": [],
+                      "type": null,
+                      "format": null,
+                      "default": "application/json",
+                      "required": false,
+                      "superType": null,
+                      "value": null,
+                      "constraints": [],
+                      "applicableContexts": [],
+                      "interfaces": {}
+                    }
+                  ],
+                  "type": null,
+                  "implements": {}
+                }
+              ],
+              "interfaces": {}
+            }
+          },
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "get": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "base": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "base",
+              "overlay": null
+            }
+          },
+          "name": null,
+          "description": "returns a list of entry",
+          "method": "get",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {
+              "Content-Type": {
+                "_model": {
+                  "name": "reference.models",
+                  "version": "0.1.0"
+                },
+                "type": "parameter",
+                "uuid": "globalMediaType",
+                "overlay": null
+              }
+            },
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [
+            {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "auth",
+              "uuid": "custom_scheme",
+              "overlay": null
+            }
+          ],
+          "responses": {
+            "200": {
+              "_model": {
+                "name": "response.core.models",
+                "version": "0.1.0"
+              },
+              "code": "200",
+              "description": null,
+              "examples": null,
+              "parameters": {
+                "_model": {
+                  "name": "parameter-container.core.models",
+                  "version": "0.1.0"
+                },
+                "headers": {
+                  "Content-Type": {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "headers",
+                    "usedIn": "response",
+                    "uuid": null,
+                    "key": "Content-Type",
+                    "name": "Content-Type",
+                    "description": null,
+                    "examples": [],
+                    "type": "string",
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "enum.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "enum",
+                        "value": [
+                          "application/json"
+                        ]
+                      }
+                    ],
+                    "applicableContexts": [],
+                    "interfaces": {}
+                  }
+                },
+                "queries": {},
+                "body": {
+                  "application/json": {
+                    "_model": {
+                      "name": "parameter.core.models",
+                      "version": "0.1.0"
+                    },
+                    "in": "body",
+                    "usedIn": "response",
+                    "uuid": "application/json",
+                    "key": null,
+                    "name": null,
+                    "description": null,
+                    "examples": [],
+                    "type": "object",
+                    "format": null,
+                    "default": null,
+                    "required": false,
+                    "superType": null,
+                    "value": null,
+                    "constraints": [
+                      {
+                        "_model": {
+                          "name": "json.constraint.models",
+                          "version": "0.1.0"
+                        },
+                        "name": "json",
+                        "value": {
+                          "type": "object"
                         }
                       }
                     ],
@@ -842,34 +987,11 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
-          "description": null,
+          "description": "This was loaded from songs-library",
           "method": "get",
           "parameters": {
             "_model": {
@@ -921,6 +1043,39 @@
                 ],
                 "applicableContexts": [],
                 "interfaces": {}
+              },
+              "access_token": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "queries",
+                "usedIn": "request",
+                "uuid": "access_token",
+                "key": "access_token",
+                "name": "access_token",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
               }
             },
             "body": {},
@@ -958,30 +1113,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -1003,7 +1135,41 @@
                 "overlay": null
               }
             },
-            "queries": {},
+            "queries": {
+              "access_token": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": "queries",
+                "usedIn": "request",
+                "uuid": "access_token",
+                "key": "access_token",
+                "name": "access_token",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
             "body": {},
             "path": {}
           },
@@ -1027,13 +1193,13 @@
       },
       "description": "Access to all songs inside the music world library.",
       "interfaces": {
-        "resourceType_collectionfromSongsLib": {
+        "resourceType_SongsLib.collectionfromSongsLib": {
           "_model": {
             "name": "reference.models",
             "version": "0.1.0"
           },
           "type": "interface",
-          "uuid": "resourceType_collectionfromSongsLib",
+          "uuid": "resourceType_SongsLib.collectionfromSongsLib",
           "overlay": null
         }
       }
@@ -1204,30 +1370,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -1329,7 +1472,7 @@
                     "name": null,
                     "description": null,
                     "examples": [],
-                    "type": "string",
+                    "type": null,
                     "format": null,
                     "default": null,
                     "required": false,
@@ -1396,7 +1539,7 @@
                     "name": null,
                     "description": null,
                     "examples": [],
-                    "type": "string",
+                    "type": null,
                     "format": null,
                     "default": null,
                     "required": false,
@@ -2765,13 +2908,13 @@
       }
     },
     "interface": {
-      "resourceType_collectionfromSongsLib": {
+      "resourceType_SongsLib.collectionfromSongsLib": {
         "_model": {
           "name": "interface.models",
           "version": "0.1.0"
         },
-        "name": "collectionfromSongsLib",
-        "uuid": "resourceType_collectionfromSongsLib",
+        "name": "SongsLib.collectionfromSongsLib",
+        "uuid": "resourceType_SongsLib.collectionfromSongsLib",
         "level": "resource",
         "required": false,
         "description": null,
@@ -2827,13 +2970,13 @@
           "interfaces": {}
         }
       },
-      "resourceType_collectionFromApiLib": {
+      "resourceType_ApiLib.collectionFromApiLib": {
         "_model": {
           "name": "interface.models",
           "version": "0.1.0"
         },
-        "name": "collectionFromApiLib",
-        "uuid": "resourceType_collectionFromApiLib",
+        "name": "ApiLib.collectionFromApiLib",
+        "uuid": "resourceType_ApiLib.collectionFromApiLib",
         "level": "resource",
         "required": false,
         "description": null,
@@ -3118,13 +3261,13 @@
           "interfaces": {}
         }
       },
-      "trait_described": {
+      "trait_ApiLib.described": {
         "_model": {
           "name": "interface.models",
           "version": "0.1.0"
         },
-        "name": "described",
-        "uuid": "trait_described",
+        "name": "ApiLib.described",
+        "uuid": "trait_ApiLib.described",
         "level": "request",
         "required": false,
         "description": null,
