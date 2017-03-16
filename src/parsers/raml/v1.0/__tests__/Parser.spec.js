@@ -2420,7 +2420,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
           uuid: 678,
           in: 123,
           description: null,
-          type: 'string',
+          type: null,
           constraints: List([
             new Constraint.JSONSchema({})
           ]),
@@ -2432,7 +2432,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
           uuid: 678,
           in: 123,
           description: 456,
-          type: 'string',
+          type: null,
           constraints: List([
             new Constraint.JSONSchema({ description: 456 })
           ]),

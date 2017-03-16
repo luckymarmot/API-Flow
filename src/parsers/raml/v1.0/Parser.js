@@ -2009,7 +2009,7 @@ methods.createParameterFromSchemaAndNameAndContexts = (location, contexts, name,
     uuid: uuid,
     in: location,
     description: schema.description || null,
-    type: schema.type || 'string',
+    type: schema.type || null,
     constraints: List([
       new Constraint.JSONSchema(schema)
     ]),
