@@ -92,30 +92,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "https:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,

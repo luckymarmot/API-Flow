@@ -1930,7 +1930,10 @@ methods.convertUriParametersAndResourceIntoPath = (uriParameters, resource) => {
     return methods.createPathnameEndpointFromParameter(resourceUri, finalComponent)
   }
 
-  const param = methods.createPathnameParameterFromSequenceAndFinalParam(sequence, finalComponent)
+  const param = methods.createPathnameParameterFromSequenceAndFinalParam(
+    sequence,
+    finalComponent.set('key', null).set('name', null)
+  )
   return methods.createPathnameEndpointFromParameter(resourceUri, param)
 }
 
@@ -2472,10 +2475,21 @@ methods.extractInterfacesFromRequest = (request) => {
   return OrderedMap(interfaces)
 }
 
-methods.areProtocolsEquals = (first, second) => {
-  return first && second &&
-    first.length && first.length === second.length &&
-    first.reduce((acc, v, i) => acc && v === second[i], true)
+methods.areProtocolsEquals = (first, baseUri) => {
+  if (!first || !baseUri || first.length !== 1) {
+    return false
+  }
+
+  const uri = baseUri.value()
+
+  if (!uri) {
+    return false
+  }
+
+  const protocol = uri.split('://')[0]
+
+  return first[0].toLowerCase() === protocol.toLowerCase() ||
+    (first[0].toLowerCase() === protocol.toLowerCase() + ':')
 }
 
 /**
@@ -2487,7 +2501,7 @@ methods.areProtocolsEquals = (first, second) => {
  */
 methods.convertRAMLMethodBaseIntoRequestInstance = (api, methodBase) => {
   const overlay = methodBase.protocols() && api &&
-    !methods.areProtocolsEquals(methodBase.protocols(), api.protocols()) ?
+    !methods.areProtocolsEquals(methodBase.protocols(), api.baseUri()) ?
     new URL().set('protocol', List(methodBase.protocols().map(protocol => {
       if (protocol[protocol.length - 1] !== ':') {
         return protocol.toLowerCase() + ':'

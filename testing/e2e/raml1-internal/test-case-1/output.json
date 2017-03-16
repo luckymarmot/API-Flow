@@ -92,30 +92,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -214,30 +191,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -517,30 +471,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -754,30 +685,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -1079,30 +987,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -1228,30 +1113,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,
@@ -1462,8 +1324,8 @@
                 "in": null,
                 "usedIn": "request",
                 "uuid": null,
-                "key": "pathname",
-                "name": "pathname",
+                "key": null,
+                "name": null,
                 "description": null,
                 "examples": [],
                 "type": "string",
@@ -1508,30 +1370,7 @@
               },
               "type": "endpoint",
               "uuid": "base",
-              "overlay": {
-                "_model": {
-                  "name": "url.models",
-                  "version": "0.1.0"
-                },
-                "uuid": null,
-                "protocol": [
-                  "http:"
-                ],
-                "slashes": true,
-                "auth": null,
-                "host": null,
-                "port": null,
-                "hostname": null,
-                "href": null,
-                "path": null,
-                "pathname": null,
-                "query": null,
-                "search": null,
-                "hash": null,
-                "secure": false,
-                "variableDelimiters": [],
-                "description": null
-              }
+              "overlay": null
             }
           },
           "name": null,

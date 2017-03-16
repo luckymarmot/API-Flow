@@ -2316,7 +2316,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         return acc
       })
 
-      spyOn(__internals__, 'createSimplePathnameParameter').andCall(s => s + '_' + s)
+      spyOn(__internals__, 'createSimplePathnameParameter').andCall(s => OrderedMap({ [s]: s }))
 
       spyOn(__internals__, 'createPathnameEndpointFromParameter').andCall((r, c) => ({
         uri: r, comp: c
@@ -2332,9 +2332,9 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         [ [ 123, 234, 345 ], { completeRelativeUri: () => 'def' } ]
       ]
       const expected = [
-        { uri: 'abc', comp: 'abc_abc' },
-        { uri: 'abc', comp: 'abc_abc' },
-        { uri: 'def', comp: [ 247, 469, 691, '_' ] }
+        { uri: 'abc', comp: OrderedMap({ abc: 'abc' }) },
+        { uri: 'abc', comp: OrderedMap({ abc: 'abc' }) },
+        { uri: 'def', comp: [ 247, 469, 691, OrderedMap({ '': '', key: null, name: null }) ] }
       ]
 
       const actual = inputs.map(
@@ -3101,27 +3101,27 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       spyOn(__internals__, 'extractInterfacesFromRequest').andCall(({ itfs }) => itfs)
 
       const inputs = [
-        [ { a: 123, protocols: () => null }, {
+        [ { a: 123, baseUri: () => null }, {
           protocols: () => null,
           displayName: () => null,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ],
-        [ { a: 123, protocols: () => null }, {
+        [ { a: 123, baseUri: () => null }, {
           protocols: () => [ '234', '345' ],
           displayName: () => null,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ],
-        [ { a: 123, protocols: () => [ '234', '345' ] }, {
+        [ { a: 123, baseUri: () => [ '234', '345' ] }, {
           protocols: () => [ '234', '345' ],
           displayName: () => null,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ],
-        [ { a: 123, protocols: () => null }, {
+        [ { a: 123, baseUri: () => null }, {
           protocols: () => null,
           displayName: () => 456,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ],
-        [ { a: 123, protocols: () => null }, {
+        [ { a: 123, baseUri: () => null }, {
           protocols: () => [ '234', '345' ],
           displayName: () => 456,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
