@@ -518,17 +518,21 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
   describe('@addPropertiesProp', () => {
     it('should work', () => {
-      spyOn(__internals__, 'convertSchemaToDataType').andCall(v => v + 1)
+      spyOn(__internals__, 'convertSchemaToDataType').andCall(({ v }) => {
+        return { v: v + 1 }
+      })
 
       const inputs = [
         [ { a: 123 }, {} ],
         [ { a: 123 }, { properties: {} } ],
-        [ { a: 123 }, { properties: { b: 234, c: 345 } } ]
+        [ { a: 123 }, { properties: { b: { v: 234 }, c: { v: 345 } } } ],
+        [ { a: 123 }, { properties: { b: { v: 234 }, c: { v: 345 } }, required: [ 'c' ] } ]
       ]
       const expected = [
         { a: 123 },
         { a: 123 },
-        { a: 123, properties: { b: 235, c: 346 } }
+        { a: 123, properties: { b: { v: 235, required: false }, c: { v: 346, required: false } } },
+        { a: 123, properties: { b: { v: 235, required: false }, c: { v: 346 } } }
       ]
       const actual = inputs.map(input => __internals__.addPropertiesProp(...input))
       expect(actual).toEqual(expected)
@@ -840,7 +844,9 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         ]
       ]
       const expected = [
-        { key: 'Pet', value: { type: 'object', properties: { home: { type: 'Home' } } } },
+        {
+          key: 'Pet',
+          value: { type: 'object', properties: { home: { type: 'Home', required: false } } } },
         { key: 'Car', value: JSON.stringify({
           type: 'object',
           properties: {
@@ -858,7 +864,8 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           type: 'object',
           properties: {
             home: {
-              type: 'Home'
+              type: 'Home',
+              required: false
             }
           }
         } },
@@ -1058,12 +1065,15 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           type: 'object',
           properties: {
             address: {
+              required: false,
               type: 'string'
             },
             postalCode: {
+              required: false,
               type: 'integer'
             },
             surface: {
+              required: false,
               type: 'number'
             }
           }
@@ -1072,9 +1082,10 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           type: 'object',
           properties: {
             home: {
+              required: false,
               type: 'Home'
             },
-            race: { type: 'string', enum: [ 'cat', 'dog' ] }
+            race: { type: 'string', enum: [ 'cat', 'dog' ], required: false }
           }
         },
         Car: JSON.stringify({
@@ -1468,7 +1479,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
   describe('@extractTraitsFromApi', () => {
     it('should work', () => {
-      spyOn(__internals__, 'extractMethodBaseFromRequest').andCall((u) => {
+      spyOn(__internals__, 'extractMethodBaseFromRequest').andCall((m, c, u) => {
         if (!u) {
           return null
         }
@@ -1476,25 +1487,27 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         return u.get('description')
       })
 
+      spyOn(__internals__, 'extractTraitsFromParameters').andReturn([])
+
       const inputs = [
-        new Api(),
-        new Api({ store: new Store() }),
-        new Api({ store: new Store({ interface: OrderedMap() }) }),
-        new Api({ store: new Store({ interface: OrderedMap({
+        [ { m: 123 }, { c: 234 }, new Api() ],
+        [ { m: 123 }, { c: 234 }, new Api({ store: new Store() }) ],
+        [ { m: 123 }, { c: 234 }, new Api({ store: new Store({ interface: OrderedMap() }) }) ],
+        [ { m: 123 }, { c: 234 }, new Api({ store: new Store({ interface: OrderedMap({
           a: new Interface({ level: 'resource', uuid: 'a', underlay: new Resource() })
-        }) }) }),
-        new Api({ store: new Store({ interface: OrderedMap({
+        }) }) }) ],
+        [ { m: 123 }, { c: 234 }, new Api({ store: new Store({ interface: OrderedMap({
           a: new Interface({ level: 'resource', uuid: 'a', underlay: new Resource() }),
           b: new Interface({ level: 'request', uuid: 'b', underlay: null })
-        }) }) }),
-        new Api({ store: new Store({ interface: OrderedMap({
+        }) }) }) ],
+        [ { m: 123 }, { c: 234 }, new Api({ store: new Store({ interface: OrderedMap({
           a: new Interface({ level: 'resource', uuid: 'a', underlay: new Resource() }),
           b: new Interface({ level: 'request', uuid: 'b', underlay: null }),
           c: new Interface({ level: 'request', uuid: 'c', underlay: new Request({
             description: 123
           }) })
-        }) }) }),
-        new Api({ store: new Store({ interface: OrderedMap({
+        }) }) }) ],
+        [ { m: 123 }, { c: 234 }, new Api({ store: new Store({ interface: OrderedMap({
           a: new Interface({ level: 'resource', uuid: 'a', underlay: new Resource() }),
           b: new Interface({ level: 'request', uuid: 'b', underlay: null }),
           c: new Interface({ level: 'request', uuid: 'c', underlay: new Request({
@@ -1503,7 +1516,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           d: new Interface({ level: 'request', uuid: 'd', underlay: new Request({
             description: 234
           }) })
-        }) }) })
+        }) }) }) ]
       ]
       const expected = [
         null,
@@ -1514,7 +1527,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         { key: 'traits', value: { c: 123 } },
         { key: 'traits', value: { c: 123, d: 234 } }
       ]
-      const actual = inputs.map(input => __internals__.extractTraitsFromApi(input))
+      const actual = inputs.map(input => __internals__.extractTraitsFromApi(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -1691,7 +1704,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           settings: {
             authorizationUri: null,
             accessTokenUri: null,
-            authorizationGrants: null
+            authorizationGrants: []
           }
         } },
         { key: 'oauth_2', value: {
@@ -1700,7 +1713,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           settings: {
             authorizationUri: null,
             accessTokenUri: null,
-            authorizationGrants: null
+            authorizationGrants: []
           }
         } },
         { key: 'oauth_2', value: {
@@ -1709,7 +1722,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           settings: {
             authorizationUri: null,
             accessTokenUri: null,
-            authorizationGrants: 'authorization_code'
+            authorizationGrants: [ 'authorization_code' ]
           }
         } },
         { key: 'oauth_2', value: {
@@ -1718,7 +1731,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           settings: {
             authorizationUri: null,
             accessTokenUri: null,
-            authorizationGrants: 'implicit'
+            authorizationGrants: [ 'implicit' ]
           }
         } },
         { key: 'oauth_2', value: {
@@ -1727,7 +1740,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           settings: {
             authorizationUri: null,
             accessTokenUri: null,
-            authorizationGrants: 'client_credentials'
+            authorizationGrants: [ 'client_credentials' ]
           }
         } },
         { key: 'oauth_2', value: {
@@ -1736,7 +1749,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           settings: {
             authorizationUri: null,
             accessTokenUri: null,
-            authorizationGrants: 'password'
+            authorizationGrants: [ 'password' ]
           }
         } },
         { key: 'oauth_2', value: {
@@ -1745,7 +1758,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           settings: {
             authorizationUri: 'https://oauth.example.com/portal',
             accessTokenUri: 'https://oauth.example.com/renew',
-            authorizationGrants: 'implicit'
+            authorizationGrants: [ 'implicit' ]
           }
         } }
       ]
@@ -2433,15 +2446,15 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
   describe('@extractIsFromRequest', () => {
     it('should work', () => {
       const inputs = [
-        new Request(),
-        new Request({ interfaces: OrderedMap() }),
-        new Request({ interfaces: OrderedMap({
+        [ { m: 123 }, new Request() ],
+        [ { m: 123 }, new Request({ interfaces: OrderedMap() }) ],
+        [ { m: 123 }, new Request({ interfaces: OrderedMap({
           a: new Reference({ uuid: 123 })
-        }) }),
-        new Request({ interfaces: OrderedMap({
+        }) }) ],
+        [ { m: 123 }, new Request({ interfaces: OrderedMap({
           a: new Reference({ uuid: 123 }),
           b: new Interface({ uuid: 234 })
-        }) })
+        }) }) ]
       ]
       const expected = [
         null,
@@ -2449,7 +2462,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         { key: 'is', value: [ 123 ] },
         { key: 'is', value: [ 123, 234 ] }
       ]
-      const actual = inputs.map(input => __internals__.extractIsFromRequest(input))
+      const actual = inputs.map(input => __internals__.extractIsFromRequest(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -2604,7 +2617,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         return r[key] ? { key, value: r[key] } : null
       })
 
-      spyOn(__internals__, 'extractIsFromRequest').andCall((r) => {
+      spyOn(__internals__, 'extractIsFromRequest').andCall((_, r) => {
         const key = 'is'
         return r[key] ? { key, value: r[key] } : null
       })
@@ -2635,8 +2648,9 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       })
 
       const inputs = [
-        [ {}, {} ],
+        [ {}, {}, {} ],
         [
+          {},
           { queryParameters: 678, headers: 789, body: 890, responses: 901 },
           { displayName: 123, description: 234, protocols: 345, is: 456, securedBy: 567 }
         ]
@@ -2655,13 +2669,13 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
   describe('@extractMethodEntryFromRequest', () => {
     it('should work', () => {
-      spyOn(__internals__, 'extractMethodFromRequest').andCall((c, r) => {
+      spyOn(__internals__, 'extractMethodFromRequest').andCall((m, c, r) => {
         return r.get('method') ? c : null
       })
 
       const inputs = [
-        [ 123, new Request() ],
-        [ 123, new Request({ method: 234 }) ]
+        [ {}, 123, new Request() ],
+        [ {}, 123, new Request({ method: 234 }) ]
       ]
       const expected = [
         null,
@@ -2674,14 +2688,14 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
   describe('@extractMethodsFromResource', () => {
     it('should work', () => {
-      spyOn(__internals__, 'extractMethodEntryFromRequest').andCall((c, r) => {
+      spyOn(__internals__, 'extractMethodEntryFromRequest').andCall((m, c, r) => {
         return r % 2 === 0 ? { key: r, value: c } : null
       })
 
       const inputs = [
-        [ 123, new Resource() ],
-        [ 123, new Resource({ methods: OrderedMap() }) ],
-        [ 123, new Resource({ methods: OrderedMap({
+        [ {}, 123, new Resource() ],
+        [ {}, 123, new Resource({ methods: OrderedMap() }) ],
+        [ {}, 123, new Resource({ methods: OrderedMap({
           get: 234,
           post: 345,
           delete: 456
@@ -2770,14 +2784,14 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         return r[key] ? { key, value: r[key] } : null
       })
 
-      spyOn(__internals__, 'extractMethodsFromResource').andCall((r) => {
+      spyOn(__internals__, 'extractMethodsFromResource').andCall((m, c) => {
         const key = 'get'
-        return r[key] ? [ { key, value: r[key] } ] : []
+        return c[key] ? [ { key, value: c[key] } ] : []
       })
 
       const inputs = [
-        [ {}, {} ],
-        [ { get: 123 }, { displayName: 234, description: 345, type: 456 } ]
+        [ {}, {}, {} ],
+        [ {}, { get: 123 }, { displayName: 234, description: 345, type: 456 } ]
       ]
       const expected = [
         {},
@@ -2790,15 +2804,17 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
   describe('@nestResources', () => {
     it('should work', () => {
-      spyOn(__internals__, 'extractResourceFromResourceRecord').andCall((c, r) => {
+      spyOn(__internals__, 'extractResourceFromResourceRecord').andCall((m, c, r) => {
         return { [r]: c }
       })
 
       const inputs = [
-        [ 123, [] ],
-        [ 123, [ { key: [ 'paths' ], value: 234 } ] ],
-        [ 123, [ { key: [ 'paths', '{pathId}' ], value: 345 } ] ],
-        [ 123, [ { key: [ 'paths' ], value: 234 }, { key: [ 'paths', '{pathId}' ], value: 345 } ] ]
+        [ {}, 123, [] ],
+        [ {}, 123, [ { key: [ 'paths' ], value: 234 } ] ],
+        [ {}, 123, [ { key: [ 'paths', '{pathId}' ], value: 345 } ] ],
+        [ {}, 123, [
+          { key: [ 'paths' ], value: 234 }, { key: [ 'paths', '{pathId}' ], value: 345 }
+        ] ]
       ]
       const expected = [
         {},
@@ -2813,7 +2829,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
   describe('@extractResourcesFromApi', () => {
     it('should work', () => {
-      spyOn(__internals__, 'nestResources').andCall((c, array) => {
+      spyOn(__internals__, 'nestResources').andCall((m, c, array) => {
         return array
           .map(({ key }) => ({
             key: '/' + key.join('/'),
@@ -2823,9 +2839,9 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       })
 
       const inputs = [
-        [ 123, new Api() ],
-        [ 123, new Api({ resources: OrderedMap() }) ],
-        [ 123, new Api({ resources: OrderedMap({
+        [ {}, 123, new Api() ],
+        [ {}, 123, new Api({ resources: OrderedMap() }) ],
+        [ {}, 123, new Api({ resources: OrderedMap({
           a: new Resource({
             path: new URL({ url: '/paths/{{pathId}}', variableDelimiters: List([ '{{', '}}' ]) })
           }),
@@ -2848,6 +2864,11 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
     it('should work', () => {
       spyOn(__internals__, 'extractCoreInformationMapFromApi').andCall(a => {
         const key = 'coreInfo'
+        return a[key] ? a[key] : null
+      })
+
+      spyOn(__internals__, 'extractMediaTypeUUIDfromApi').andCall(a => {
+        const key = 'mediaTypeUUID'
         return a[key] ? a[key] : null
       })
 
@@ -2890,12 +2911,12 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         return c ? { key: 'types', value: c * 2 } : null
       })
 
-      spyOn(__internals__, 'extractTraitsFromApi').andCall(a => {
+      spyOn(__internals__, 'extractTraitsFromApi').andCall((m, c, a) => {
         const key = 'traits'
         return a[key] ? { key, value: a[key] + 1 } : null
       })
 
-      spyOn(__internals__, 'extractResourceTypesFromApi').andCall(a => {
+      spyOn(__internals__, 'extractResourceTypesFromApi').andCall((m, c, a) => {
         const key = 'resourceTypes'
         return a[key] ? { key, value: a[key] + 1 } : null
       })
@@ -2910,7 +2931,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         return a[key] ? { key, value: a[key] + 1 } : null
       })
 
-      spyOn(__internals__, 'extractResourcesFromApi').andCall((c, a) => {
+      spyOn(__internals__, 'extractResourcesFromApi').andCall((m, c, a) => {
         const key = 'resources'
         return a[key] ? [ { key, value: a[key] + c } ] : []
       })

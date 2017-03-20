@@ -1,0 +1,437 @@
+#%RAML 1.0
+title: World Music API
+description: This is an example of a music API.
+version: v1
+baseUri: 'http://{environment}.musicapi.com/{version}'
+baseUriParameters:
+  environment:
+    type: string
+    enum:
+      - stg
+      - dev
+      - test
+      - prod
+protocols:
+  - HTTP
+  - HTTPS
+mediaType:
+  - application/json
+types:
+  Entry:
+    type: 'Song[]'
+  Song:
+    type: object
+    properties:
+      title:
+        type: string
+        required: false
+      artist:
+        type: string
+        required: false
+  AnotherEntry:
+    type: Entry
+    description: >
+      # This is in Markdown
+
+      This is to see what the representation of this ~~Markdown~~ string is.
+
+      ## SubTitle
+
+      This is just another entry to **simulate** that you can add facets also on
+      JSON
+
+      schema defined types. Although you can only add documentation-based
+      facets.
+  SpecialEntry:
+    type: string
+    pattern: '^.{12}$'
+  Toy:
+    type: object
+    minProperties: 2
+    maxProperties: 8
+    discriminator: name
+    properties:
+      name:
+        type: string
+      soft:
+        type: boolean
+      squiky:
+        type: boolean
+      heavy:
+        type: boolean
+      clean:
+        type: boolean
+      purchaseDate:
+        type: $DateOnly
+      more:
+        type: $DateTime
+      final:
+        type: $DateTimeOnly
+  $DateOnly:
+    type: string
+    pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
+    description: 'full-date as defined in RFC#3339'
+  $DateTime:
+    type: string
+    description: datetime
+  $DateTimeOnly:
+    type: string
+    pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$'
+    description: 'full-time as defined in RFC#3339'
+  Ball:
+    type: Toy
+    discriminatorValue: ball
+    properties:
+      bouncinessFactor:
+        type: number
+        minimum: 0
+  Rope:
+    type: Toy
+    discriminatorValue: rope
+    properties:
+      length:
+        type: integer
+        enum:
+          - '10'
+          - '20'
+          - '50'
+          - '100'
+  CommonToy:
+    type: 'Ball | Rope'
+  Treat:
+    type: object
+    properties:
+      name:
+        type: string
+      tastiness:
+        type: number
+        minimum: 0
+        maximum: 1
+  Pet:
+    type: object
+    properties:
+      claws:
+        type: number
+        minimum: 0
+        maximum: 4
+      color:
+        type: string
+        minLength: 7
+        maxLength: 7
+        pattern: '^#[0-9a-f]{6}$'
+      size:
+        type: number
+        multipleOf: 5
+      weigth:
+        type: number
+      mostActiveAt:
+        type: $TimeOnly
+      owner:
+        type: User
+      toys:
+        type: 'Toy[]'
+  $TimeOnly:
+    type: string
+    pattern: '^([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$'
+    description: 'full-time as defined in RFC#3339'
+  Resident:
+    type: object
+    properties:
+      address:
+        type: string
+  Wild:
+    type: object
+    properties:
+      location:
+        type: string
+  FarmPet:
+    type:
+      - Pet
+      - 'Resident | Wild'
+  ToyBox:
+    type: '(Toy | Treat)[]'
+    uniqueItems: false
+    minItems: 1
+    maxItems: 15
+  BigToyBox:
+    type: ToyBox
+    maxItems: 100
+  Photo:
+    type: $File
+  $File:
+    type: string
+    description: file
+    pattern: "^[^\0]*\0$"
+  Album:
+    type: 'Photo[]'
+  Weird:
+    type: any
+  Habitats:
+    type: '(Resident | Wild)[]'
+  SeparateKinds:
+    type: 'Resident[] | Wild[]'
+  User:
+    type: object
+    properties:
+      firstname:
+        type: string
+      lastname:
+        type: string
+        required: false
+      pets:
+        type: 'FarmPet[]'
+        required: false
+      box:
+        type: ToyBox
+        required: false
+      albums:
+        type: 'Album[]'
+        required: false
+  SongsLib.Song:
+    type: object
+    properties:
+      title:
+        type: string
+      length:
+        type: number
+  SongsLib.Album:
+    type: object
+    properties:
+      title:
+        type: string
+      songs:
+        type: 'SongsLib.Song[]'
+  SongsLib.Musician:
+    type: object
+    properties:
+      name:
+        type: string
+      discography:
+        type: '(SongsLib.Song | SongsLib.Album)[]'
+  ApiLib.RamlDataType:
+    type: object
+    properties:
+      propString:
+        type: string
+      propStringArray1:
+        type: 'string[]'
+      ideas:
+        type: array
+      extIdeas:
+        type: object
+        properties:
+          createdBy:
+            type: string
+      feedback:
+        type: string
+        minLength: 1
+        maxLength: 255
+        pattern: "[a-zA-Z\\s]*"
+      propNumber:
+        type: number
+        minimum: 0
+        maximum: 32
+        multipleOf: 2
+      propInteger:
+        type: integer
+        minimum: 3
+        maximum: 5
+        multipleOf: 1
+      propBoolean:
+        type: boolean
+      propDate:
+        type: ApiLib.$DateOnly
+      userPicture:
+        type: ApiLib.$File
+      NilValue:
+        type: object
+        properties:
+          name:
+            type: string
+          comment:
+            type: ApiLib.string?
+      CatOrDog:
+        type: 'ApiLib.Cat | ApiLib.Dog'
+      CatAndDog:
+        type: ApiLib.Dog
+      PossibleMeetingDate:
+        type: ApiLib.$DateOnly
+  ApiLib.$DateOnly:
+    type: string
+    pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
+    description: 'full-date as defined in RFC#3339'
+  ApiLib.$File:
+    type: string
+    description: file
+    pattern: "^[^\0]*\0$"
+  ApiLib.Cat:
+    type: object
+    properties:
+      name:
+        type: string
+      color:
+        type: string
+  ApiLib.Dog:
+    type: object
+    properties:
+      name:
+        type: string
+      fangs:
+        type: string
+  ApiLib.CustomDate:
+    type: ApiLib.$DateOnly
+traits:
+  trait_ApiLib.described:
+    description: This is an awesome description
+  trait_secured:
+    queryParameters:
+      access_token:
+        type: string
+    securedBy:
+      - custom_scheme
+resourceTypes:
+  resourceType_SongsLib.collectionfromSongsLib:
+    get:
+      description: This was loaded from songs-library
+  resourceType_ApiLib.collectionFromApiLib:
+    get:
+      description: This was loaded from api-library
+  resourceType_collection:
+    get:
+      description: 'returns a list of <<resourcePathName|!singularize>>'
+      securedBy:
+        - custom_scheme
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+          body:
+            application/json:
+              type: object
+securitySchemes:
+  oauth_1_0:
+    type: OAuth 1.0
+    description: >
+      OAuth 1.0 continues to be supported for all API requests, but OAuth 2.0 is
+      now preferred.
+    settings:
+      requestTokenUri: 'https://api.mysampleapi.com/1/oauth/request_token'
+      authorizationUri: 'https://api.mysampleapi.com/1/oauth/authorize'
+      tokenCredentialsUri: 'https://api.mysampleapi.com/1/oauth/access_token'
+      signatures:
+        - HMAC-SHA1
+  oauth_2_0:
+    type: OAuth 2.0
+    description: |
+      Dropbox supports OAuth 2.0 for authenticating all API requests.
+    settings:
+      authorizationUri: 'https://www.dropbox.com/1/oauth2/authorize'
+      accessTokenUri: 'https://api.dropbox.com/1/oauth2/token'
+      authorizationGrants:
+        - authorization_code
+  basic_api:
+    type: Basic Authentication
+    description: This is our super secure api auth
+/api:
+  displayName: /api
+  type: resourceType_ApiLib.collectionFromApiLib
+  get:
+    description: This was loaded from api-library
+    queryParameters:
+      queryString:
+        type: object
+        properties:
+          start:
+            type: number
+            required: false
+          page-size:
+            type: number
+            required: false
+    securedBy:
+      - ApiLib.basic_api
+  post:
+    description: This is an awesome description
+    headers:
+      Content-Type:
+        type: string
+        enum:
+          - application/json
+    body:
+      application/json:
+        type: ApiLib.RamlDataType
+    is:
+      - trait_ApiLib.described
+    securedBy:
+      - custom_scheme
+/entry:
+  displayName: /entry
+  type: resourceType_collection
+  post:
+    securedBy:
+      - custom_scheme
+    responses:
+      '200':
+        headers:
+          Content-Type:
+            type: string
+            enum:
+              - application/json
+        body:
+          application/json:
+            type: AnotherEntry
+  get:
+    description: returns a list of entry
+    securedBy:
+      - custom_scheme
+    responses:
+      '200':
+        headers:
+          Content-Type:
+            type: string
+            enum:
+              - application/json
+        body:
+          application/json:
+            type: object
+/songs:
+  displayName: /songs
+  description: Access to all songs inside the music world library.
+  type: resourceType_SongsLib.collectionfromSongsLib
+  get:
+    description: This was loaded from songs-library
+    queryParameters:
+      genre:
+        type: string
+        description: filter the songs by genre
+      access_token:
+        type: string
+    securedBy:
+      - oauth_2_0
+      - null
+  post:
+    queryParameters:
+      access_token:
+        type: string
+    securedBy:
+      - custom_scheme
+  '/{songId}':
+    displayName: '/songs/{songId}'
+    get:
+      securedBy:
+        - custom_scheme
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+          body:
+            application/json:
+              type: SongsLib.Song
+            application/xml:
+              type: any

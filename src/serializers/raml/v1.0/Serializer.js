@@ -383,6 +383,10 @@ methods.addPropertiesProp = (dataType, schema) => {
       return { key: prop, value: methods.convertSchemaToDataType(schema.properties[prop]) }
     })
     .reduce(($data, { key, value }) => {
+      if ((schema.required || []).indexOf(key) < 0) {
+        value.required = false
+      }
+
       $data[key] = value
       return $data
     }, {})
@@ -473,10 +477,13 @@ methods.areSchemaAndDepsConvertible = (coreInfoMap, name, optionalCoreInfo) => {
     return false
   }
 
-
   return deps
     .map(dep => dep.split('/')[2])
     .map(depName => {
+      if (typeof coreInfoMap.get(depName) === 'undefined') {
+        return true
+      }
+
       if (coreInfoMap.get(depName).marked) {
         return coreInfoMap.get(depName).convertible
       }
@@ -640,6 +647,7 @@ methods.extractBaseUriParametersFromApi = (coreInfoMap, api) => {
     .filter(v => !!v)
     .reduce(flatten, [])
     .map((param) => methods.convertParameterIntoNamedParameter(coreInfoMap, param))
+    .filter(({ key }) => key.toLowerCase() !== 'version')
 
   if (!params.length) {
     return null
@@ -674,6 +682,19 @@ methods.extractProtocolsFromApi = (api) => {
   return { key: 'protocols', value: validProtocols }
 }
 
+methods.extractMediaTypeUUIDfromApi = (api) => {
+  const params = api.getIn([ 'store', 'parameter' ])
+  const contentTypeParams = params
+    .filter(param => param.get('key') === 'Content-Type' && param.get('usedIn') === 'request')
+
+  if (contentTypeParams.size !== 1) {
+    return null
+  }
+
+  const uuid = contentTypeParams.map((_, key) => key).valueSeq().get(0)
+  return uuid
+}
+
 methods.extractMediaTypeFromApi = (api) => {
   const params = api.getIn([ 'store', 'parameter' ])
   const contentTypeParams = params
@@ -691,29 +712,97 @@ methods.extractMediaTypeFromApi = (api) => {
 
   const enumValue = contentTypeParam.getJSONSchema().enum
   if (enumValue) {
-    return { key: 'mediaType', value: enumValue }
+    return { key: 'mediaType', value: [].concat(enumValue) }
   }
 
   return null
 }
 
-// TODO implement this (args: request)
-methods.extractMethodBaseFromRequest = () => null
+methods.extractMethodBaseFromRequest = (mediaTypeUUID, coreInfoMap, request) => {
+  const kvs = [
+    methods.extractDisplayNameFromRequest(request),
+    methods.extractDescriptionFromRequest(request),
+    methods.extractQueryParametersFromRequest(coreInfoMap, request),
+    methods.extractHeadersFromRequest(coreInfoMap, request),
+    methods.extractBodyFromRequest(coreInfoMap, request),
+    methods.extractProtocolsFromRequest(request),
+    methods.extractIsFromRequest(mediaTypeUUID, request),
+    methods.extractSecuredByFromRequest(request),
+    methods.extractResponsesFromRequest(coreInfoMap, request)
+  ].filter(v => !!v)
 
-methods.extractTraitsFromApi = (api) => {
+  if (!kvs.length) {
+    return null
+  }
+
+  return kvs.reduce(convertEntryListInMap, {})
+}
+
+methods.extractTraitsFromInterfaces = (mediaTypeUUID, coreInfoMap, api) => {
   const itfs = api.getIn([ 'store', 'interface' ])
     .filter(itf => itf.get('level') === 'request' && itf.get('underlay'))
 
   const traits = itfs
     .map(itf => ({
       key: itf.get('uuid'),
-      value: methods.extractMethodBaseFromRequest(itf.get('underlay'))
+      value: methods.extractMethodBaseFromRequest(mediaTypeUUID, coreInfoMap, itf.get('underlay'))
     }))
     .filter(({ value }) => !!value)
 
-  if (!traits.size) {
+  return traits.valueSeq().toJS()
+}
+
+methods.extractMethodBaseFromParameter = (coreInfoMap, parameter) => {
+  const location = parameter.get('in')
+  const locationMap = {
+    headers: 'headers',
+    queries: 'queryParameters'
+  }
+
+  const kv = methods.convertParameterIntoNamedParameter(coreInfoMap, parameter)
+
+  if (!kv) {
     return null
   }
+
+  if (locationMap[location]) {
+    return { [locationMap[location]]: { [kv.key]: kv.value } }
+  }
+
+  if (location === 'body') {
+    const contentType = '*/*'
+    if (kv.key) {
+      return { body: { [contentType]: { [kv.key]: kv.value } } }
+    }
+
+    return { body: { [contentType]: kv.value } }
+  }
+
+  return null
+}
+
+methods.extractTraitsFromParameters = (mediaTypeUUID, coreInfoMap, api) => {
+  const params = api.getIn([ 'store', 'parameter' ])
+  const traits = params
+    .filter((_, key) => key !== mediaTypeUUID)
+    .map((param, key) => ({
+      key,
+      value: methods.extractMethodBaseFromParameter(coreInfoMap, param)
+    }))
+    .filter(({ key, value }) => !!key && !!value)
+
+  return traits.valueSeq().toJS()
+}
+
+methods.extractTraitsFromApi = (mediaTypeUUID, coreInfoMap, api) => {
+  const itfsTraits = methods.extractTraitsFromInterfaces(mediaTypeUUID, coreInfoMap, api) || []
+  const paramTraits = methods.extractTraitsFromParameters(mediaTypeUUID, coreInfoMap, api) || []
+
+  if (!itfsTraits.length && !paramTraits.length) {
+    return null
+  }
+
+  const traits = [].concat(itfsTraits || [], paramTraits || [])
 
   const traitMap = traits.reduce(convertEntryListInMap, {})
 
@@ -721,7 +810,36 @@ methods.extractTraitsFromApi = (api) => {
 }
 
 // TODO implement this (args: api)
-methods.extractResourceTypesFromApi = () => null
+methods.extractResourceTypesFromApi = (mediaTypeUUID, coreInfoMap, api) => {
+  const resourceTypeItfs = api.getIn([ 'store', 'interface' ])
+    .filter(itf => itf.get('level') === 'resource')
+
+  if (!resourceTypeItfs.size) {
+    return null
+  }
+
+  const resourceTypes = resourceTypeItfs
+    .map(itf => {
+      if (!itf.get('underlay')) {
+        /* eslint-disable no-undefined */
+        return {
+          key: itf.get('uuid'),
+          value: undefined
+        }
+        /* eslint-enable no-undefined */
+      }
+
+      return {
+        key: itf.get('uuid'),
+        value: methods.extractResourceFromResourceRecord(
+          mediaTypeUUID, coreInfoMap, itf.get('underlay')
+        )
+      }
+    })
+    .reduce(convertEntryListInMap, {})
+
+  return { key: 'resourceTypes', value: resourceTypes }
+}
 
 methods.extractSecuritySchemeFromBasicAuth = (auth) => {
   const securityScheme = {
@@ -804,6 +922,13 @@ methods.extractSecuritySchemeFromOAuth1Auth = (auth) => {
     tokenCredentialsUri: auth.get('tokenCredentialsUri') || null
   }
 
+  if (
+    auth.get('signature') &&
+    [ 'HMAC-SHA1', 'RSA-SHA1', 'PLAINTEXT' ].indexOf(auth.get('signature').toUpperCase()) >= 0
+  ) {
+    securityScheme.settings.signatures = [ auth.get('signature').toUpperCase() ]
+  }
+
   return { key: auth.get('authName'), value: securityScheme }
 }
 
@@ -828,7 +953,7 @@ methods.extractSecuritySchemeFromOAuth2Auth = (auth) => {
   securityScheme.settings = {
     authorizationUri: auth.get('authorizationUrl') || null,
     accessTokenUri: auth.get('tokenUrl') || null,
-    authorizationGrants: grantMap[auth.get('flow')] || null
+    authorizationGrants: grantMap[auth.get('flow')] ? [ grantMap[auth.get('flow')] ] : []
   }
 
   return { key: auth.get('authName'), value: securityScheme }
@@ -943,7 +1068,10 @@ methods.extractDescriptionFromRequest = (request) => {
 
 methods.extractQueryParametersFromRequest = (coreInfoMap, request) => {
   const params = request.getIn([ 'parameters', 'queries' ])
-    .map((param) => methods.convertParameterIntoNamedParameter(coreInfoMap, param))
+    .filter(param => !(param instanceof Reference))
+    .map((param) => {
+      return methods.convertParameterIntoNamedParameter(coreInfoMap, param)
+    })
     .valueSeq()
 
   if (!params.size) {
@@ -957,7 +1085,10 @@ methods.extractQueryParametersFromRequest = (coreInfoMap, request) => {
 
 methods.extractHeadersFromRequest = (coreInfoMap, request) => {
   const params = request.getIn([ 'parameters', 'headers' ])
-    .map((param) => methods.convertParameterIntoNamedParameter(coreInfoMap, param))
+    .filter(param => !(param instanceof Reference))
+    .map((param) => {
+      return methods.convertParameterIntoNamedParameter(coreInfoMap, param)
+    })
     .valueSeq()
 
   if (!params.size) {
@@ -1046,9 +1177,14 @@ methods.extractBodyParamsFromRequestForContext = (coreInfoMap, paramContainer, c
     .map(param => {
       return methods.convertParameterIntoNamedParameter(coreInfoMap, param)
     })
+    .valueSeq()
 
   if (!bodyParams.size) {
     return null
+  }
+
+  if (bodyParams.size === 1 && bodyParams.get(0).key === null) {
+    return { key: contentType, value: bodyParams.get(0).value }
   }
 
   return { key: contentType, value: bodyParams.reduce(convertEntryListInMap, {}) }
@@ -1062,6 +1198,10 @@ methods.extractBodyParamsFromRequestWithContexts = (coreInfoMap, contexts, param
 
   if (!bodies.size) {
     return null
+  }
+
+  if (bodies.size === 1 && bodies.get(0).key === null) {
+    return { key: 'body', value: bodies.get(0).value }
   }
 
   return { key: 'body', value: bodies.reduce(convertEntryListInMap, {}) }
@@ -1109,24 +1249,55 @@ methods.extractProtocolsFromRequest = (request) => {
   return { key: 'protocols', value: protocols.toJS() }
 }
 
-methods.extractIsFromRequest = (request) => {
+methods.extractTraitsFromRequestParameters = (mediaTypeUUID, request) => {
+  const paramContainer = request.get('parameters')
+
+  const headerTraits = paramContainer.get('headers')
+    .filter(param => param instanceof Reference && param.get('uuid') !== mediaTypeUUID)
+    .map(param => param.get('uuid'))
+    .valueSeq()
+    .toJS()
+
+  const queryParamTraits = paramContainer.get('queries')
+    .filter(param => param instanceof Reference)
+    .map(param => param.get('uuid'))
+    .valueSeq()
+    .toJS()
+
+  const bodyTraits = paramContainer.get('body')
+    .filter(param => param instanceof Reference)
+    .map(param => param.get('uuid'))
+    .valueSeq()
+    .toJS()
+
+  return [].concat(headerTraits, queryParamTraits, bodyTraits)
+}
+
+methods.extractIsFromRequest = (mediaTypeUUID, request) => {
   const traits = request
     .get('interfaces')
     .map(itf => itf.get('uuid'))
     .valueSeq()
 
-  if (!traits.size) {
+  const paramTraits = methods.extractTraitsFromRequestParameters(mediaTypeUUID, request)
+
+  if (!traits.size && !paramTraits.length) {
     return null
   }
 
-  return { key: 'is', value: traits.toJS() }
+  return { key: 'is', value: [].concat(traits.toJS(), paramTraits) }
 }
 
 // TODO deal with overlay
 methods.extractSecuredByFromRequest = (request) => {
   const auths = request.get('auths')
-    .filter(auth => auth instanceof Reference)
-    .map(authRef => authRef.get('uuid'))
+    .filter(auth => auth instanceof Reference || auth === null)
+    .map(authRef => {
+      if (authRef === null) {
+        return authRef
+      }
+      return authRef.get('uuid')
+    })
     .valueSeq()
 
   if (!auths.size) {
@@ -1185,29 +1356,14 @@ methods.extractResponsesFromRequest = (coreInfoMap, request) => {
   return { key: 'responses', value: responses.reduce(convertEntryListInMap, {}) }
 }
 
-methods.extractMethodFromRequest = (coreInfoMap, request) => {
-  const kvs = [
-    methods.extractDisplayNameFromRequest(request),
-    methods.extractDescriptionFromRequest(request),
-    methods.extractQueryParametersFromRequest(coreInfoMap, request),
-    methods.extractHeadersFromRequest(coreInfoMap, request),
-    methods.extractBodyFromRequest(coreInfoMap, request),
-    methods.extractProtocolsFromRequest(request),
-    methods.extractIsFromRequest(request),
-    methods.extractSecuredByFromRequest(request),
-    methods.extractResponsesFromRequest(coreInfoMap, request)
-  ].filter(v => !!v)
-
-  if (!kvs.length) {
-    return null
-  }
-
-  return kvs.reduce(convertEntryListInMap, {})
+methods.extractMethodFromRequest = (mediaTypeUUID, coreInfoMap, request) => {
+  const methodBase = methods.extractMethodBaseFromRequest(mediaTypeUUID, coreInfoMap, request)
+  return methodBase
 }
 
-methods.extractMethodEntryFromRequest = (coreInfoMap, request) => {
+methods.extractMethodEntryFromRequest = (mediaTypeUUID, coreInfoMap, request) => {
   const key = request.get('method')
-  const value = methods.extractMethodFromRequest(coreInfoMap, request)
+  const value = methods.extractMethodFromRequest(mediaTypeUUID, coreInfoMap, request)
 
   if (!value) {
     return null
@@ -1216,9 +1372,9 @@ methods.extractMethodEntryFromRequest = (coreInfoMap, request) => {
   return { key, value }
 }
 
-methods.extractMethodsFromResource = (coreInfoMap, resource) => {
+methods.extractMethodsFromResource = (mediaTypeUUID, coreInfoMap, resource) => {
   const requests = resource.get('methods')
-    .map((request) => methods.extractMethodEntryFromRequest(coreInfoMap, request))
+    .map((request) => methods.extractMethodEntryFromRequest(mediaTypeUUID, coreInfoMap, request))
     .filter(v => !!v)
 
   if (!requests.size) {
@@ -1264,23 +1420,23 @@ methods.extractTypeFromResource = (resource) => {
   return { key: 'type', value: type }
 }
 
-methods.extractResourceFromResourceRecord = (coreInfoMap, resource) => {
+methods.extractResourceFromResourceRecord = (mediaTypeUUID, coreInfoMap, resource) => {
   const kvs = [
     methods.extractDisplayNameFromResource(resource),
     methods.extractDescriptionFromResource(resource),
     methods.extractTypeFromResource(resource),
-    ...methods.extractMethodsFromResource(coreInfoMap, resource)
+    ...methods.extractMethodsFromResource(mediaTypeUUID, coreInfoMap, resource)
   ].filter(v => !!v)
 
   return kvs.reduce(convertEntryListInMap, {})
 }
 
-methods.nestResources = (coreInfoMap, resources) => {
+methods.nestResources = (mediaTypeUUID, coreInfoMap, resources) => {
   let nested = {}
   const subResources = {}
   for (const resource of resources) {
     if (!resource.key.length) {
-      nested = methods.extractResourceFromResourceRecord(coreInfoMap, resource.value)
+      nested = methods.extractResourceFromResourceRecord(mediaTypeUUID, coreInfoMap, resource.value)
     }
     else {
       const relativeUri = '/' + (resource.key.shift() || '')
@@ -1292,7 +1448,9 @@ methods.nestResources = (coreInfoMap, resources) => {
   const relativeUris = Object.keys(subResources)
   for (const relativeUri of relativeUris) {
     if (subResources.hasOwnProperty(relativeUri)) {
-      nested[relativeUri] = methods.nestResources(coreInfoMap, subResources[relativeUri])
+      nested[relativeUri] = methods.nestResources(
+        mediaTypeUUID, coreInfoMap, subResources[relativeUri]
+      )
     }
   }
 
@@ -1300,7 +1458,7 @@ methods.nestResources = (coreInfoMap, resources) => {
 }
 
 // TODO write extractResourceFromResourceRecord
-methods.extractResourcesFromApi = (coreInfoMap, api) => {
+methods.extractResourcesFromApi = (mediaTypeUUID, coreInfoMap, api) => {
   const resourceKVs = api.get('resources')
     .map(resource => {
       return {
@@ -1311,12 +1469,14 @@ methods.extractResourcesFromApi = (coreInfoMap, api) => {
     .valueSeq()
     .toJS()
 
-  const nested = methods.nestResources(coreInfoMap, resourceKVs)
+  const nested = methods.nestResources(mediaTypeUUID, coreInfoMap, resourceKVs)
   return entries(nested)
 }
 
 methods.createRAMLJSONModel = (api) => {
   const coreInfoMap = methods.extractCoreInformationMapFromApi(api)
+  const mediaTypeUUID = methods.extractMediaTypeUUIDfromApi(api)
+
   const kvs = [
     methods.extractTitleFromApi(api),
     methods.extractDescriptionFromApi(api),
@@ -1326,11 +1486,11 @@ methods.createRAMLJSONModel = (api) => {
     methods.extractProtocolsFromApi(api),
     methods.extractMediaTypeFromApi(api),
     methods.extractDataTypesFromApi(coreInfoMap),
-    methods.extractTraitsFromApi(api),
-    methods.extractResourceTypesFromApi(api),
+    methods.extractTraitsFromApi(mediaTypeUUID, coreInfoMap, api),
+    methods.extractResourceTypesFromApi(mediaTypeUUID, coreInfoMap, api),
     methods.extractSecuritySchemesFromApi(api),
     methods.extractSecuredByFromApi(api),
-    ...methods.extractResourcesFromApi(coreInfoMap, api)
+    ...methods.extractResourcesFromApi(mediaTypeUUID, coreInfoMap, api)
   ].filter(v => !!v)
 
   return kvs.reduce(convertEntryListInMap, {})
@@ -1338,7 +1498,7 @@ methods.createRAMLJSONModel = (api) => {
 
 methods.serialize = ({ api }) => {
   const model = methods.createRAMLJSONModel(api)
-  const serialized = yaml.safeDump(model)
+  const serialized = '#%RAML 1.0\n' + yaml.safeDump(model)
   return serialized
 }
 
