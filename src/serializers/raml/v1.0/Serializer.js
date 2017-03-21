@@ -740,13 +740,22 @@ methods.extractMethodBaseFromRequest = (mediaTypeUUID, coreInfoMap, request) => 
 
 methods.extractTraitsFromInterfaces = (mediaTypeUUID, coreInfoMap, api) => {
   const itfs = api.getIn([ 'store', 'interface' ])
-    .filter(itf => itf.get('level') === 'request' && itf.get('underlay'))
+    .filter(itf => itf.get('level') === 'request')
 
   const traits = itfs
-    .map(itf => ({
-      key: itf.get('uuid'),
-      value: methods.extractMethodBaseFromRequest(mediaTypeUUID, coreInfoMap, itf.get('underlay'))
-    }))
+    .map(itf => {
+      if (!itf.get('underlay')) {
+        return {
+          key: itf.get('uuid'),
+          value: {}
+        }
+      }
+
+      return {
+        key: itf.get('uuid'),
+        value: methods.extractMethodBaseFromRequest(mediaTypeUUID, coreInfoMap, itf.get('underlay'))
+      }
+    })
     .filter(({ value }) => !!value)
 
   return traits.valueSeq().toJS()
@@ -1352,7 +1361,8 @@ methods.extractResponseFromResponseRecord = (coreInfoMap, response) => {
 methods.extractResponsesFromRequest = (coreInfoMap, request) => {
   const responses = request.get('responses')
     .map(response => {
-      const key = response.get('code')
+      const code = response.get('code')
+      const key = parseInt(code, 10) ? code : '200'
       const value = methods.extractResponseFromResponseRecord(coreInfoMap, response)
 
       if (!value) {
@@ -1528,9 +1538,14 @@ methods.createRAMLJSONModel = (api) => {
   return kvs.reduce(convertEntryListInMap, {})
 }
 
+methods.fixResponseCodes = (rawRaml) => {
+  return rawRaml.replace(/^(\s*)'([0-9]{3})':$/gm, '$1$2:')
+}
+
 methods.serialize = ({ api }) => {
   const model = methods.createRAMLJSONModel(api)
-  const serialized = '#%RAML 1.0\n' + yaml.safeDump(JSON.parse(JSON.stringify(model)))
+  const raw = '#%RAML 1.0\n' + yaml.safeDump(JSON.parse(JSON.stringify(model)))
+  const serialized = methods.fixResponseCodes(raw)
   return serialized
 }
 

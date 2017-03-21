@@ -25,7 +25,7 @@ import Resource from '../../../models/Resource'
 import Response from '../../../models/Response'
 import Request from '../../../models/Request'
 
-import { currify, entries, convertEntryListInMap } from '../../../utils/fp-utils'
+import { currify, entries, convertEntryListInMap, flatten } from '../../../utils/fp-utils'
 
 export const __errors__ = {
   InvalidJSONorYAML: class InvalidJSONorYAMLError extends SyntaxError {},
@@ -1550,6 +1550,33 @@ methods.getSharedConstraints = ({ definitions = {} } = {}) => {
     .reduce(convertEntryListInMap, {})
 }
 
+methods.getTagInterfaces = (swagger) => {
+  const pathnames = Object.keys(swagger.paths || {})
+  const tags = pathnames
+    .map(path => {
+      const resource = swagger.paths[path]
+      return methods.getMethodsFromResourceObject(resource)
+        .map(({ value: operation }) => {
+          return operation.tags || []
+        })
+        .reduce(flatten, [])
+    })
+    .reduce(flatten, [])
+
+  const tagSet = Array.from(new Set(tags))
+
+  return tagSet
+    .map(tag => ({
+      key: tag,
+      value: new Interface({
+        name: tag,
+        uuid: tag,
+        level: 'request'
+      })
+    }))
+    .reduce(convertEntryListInMap, {})
+}
+
 /**
  * creates a store holding shared objects.
  * @param {SwaggerObject} swagger: the swagger file to extract the shared object from.
@@ -1562,8 +1589,9 @@ methods.getSimpleStore = (swagger = {}) => {
   const sharedResponses = methods.getSharedResponses(swagger)
   const authInterfaces = methods.getSharedAuthInterfaces(swagger)
   const sharedAuths = methods.getSharedAuths(authInterfaces, swagger)
+  const tagInterfaces = methods.getTagInterfaces(swagger)
 
-  const interfaces = { ...parameterInterfaces, ...authInterfaces }
+  const interfaces = { ...parameterInterfaces, ...authInterfaces, ...tagInterfaces }
   return new Store({
     endpoint: new OrderedMap(sharedEndpoints),
     constraint: new OrderedMap(sharedConstraints),

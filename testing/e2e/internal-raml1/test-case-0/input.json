@@ -1912,40 +1912,7 @@
               }
             }
           },
-          "contexts": [
-            {
-              "_model": {
-                "name": "context.core.models",
-                "version": "0.1.0"
-              },
-              "constraints": [
-                {
-                  "_model": {
-                    "name": "parameter.core.models",
-                    "version": "0.1.0"
-                  },
-                  "in": "headers",
-                  "usedIn": "request",
-                  "uuid": null,
-                  "key": "Content-Type",
-                  "name": "Content-Type",
-                  "description": null,
-                  "examples": [],
-                  "type": null,
-                  "format": null,
-                  "default": "application/x-www-form-urlencoded",
-                  "required": false,
-                  "superType": null,
-                  "value": null,
-                  "constraints": [],
-                  "applicableContexts": [],
-                  "interfaces": {}
-                }
-              ],
-              "type": null,
-              "implements": {}
-            }
-          ],
+          "contexts": [],
           "auths": [
             {
               "_model": {
@@ -5674,6 +5641,42 @@
         "level": "response",
         "required": false,
         "description": "defines the common media type of responses in the API.",
+        "underlay": null
+      },
+      "pet": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "pet",
+        "uuid": "pet",
+        "level": "request",
+        "required": false,
+        "description": null,
+        "underlay": null
+      },
+      "store": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "store",
+        "uuid": "store",
+        "level": "request",
+        "required": false,
+        "description": null,
+        "underlay": null
+      },
+      "user": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "user",
+        "uuid": "user",
+        "level": "request",
+        "required": false,
+        "description": null,
         "underlay": null
       }
     }

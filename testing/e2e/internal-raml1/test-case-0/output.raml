@@ -115,6 +115,10 @@ types:
         type: boolean
         required: false
 traits:
+  apiRequestMediaType: {}
+  pet: {}
+  store: {}
+  user: {}
   globalProduces:
     headers:
       Content-Type:
@@ -161,7 +165,7 @@ securitySchemes:
             - write_pets
             - read_pets
     responses:
-      '405':
+      405:
         description: Invalid input
         headers:
           Content-Type:
@@ -187,11 +191,11 @@ securitySchemes:
             - write_pets
             - read_pets
     responses:
-      '400':
+      400:
         description: Invalid ID supplied
-      '404':
+      404:
         description: Pet not found
-      '405':
+      405:
         description: Validation exception
   /findByStatus:
     get:
@@ -208,7 +212,7 @@ securitySchemes:
               - write_pets
               - read_pets
       responses:
-        '200':
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -218,7 +222,7 @@ securitySchemes:
                 - application/xml
           body:
             type: 'Pet[]'
-        '400':
+        400:
           description: Invalid status value
           headers:
             Content-Type:
@@ -241,7 +245,7 @@ securitySchemes:
               - write_pets
               - read_pets
       responses:
-        '200':
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -251,7 +255,7 @@ securitySchemes:
                 - application/xml
           body:
             type: 'Pet[]'
-        '400':
+        400:
           description: Invalid tag value
           headers:
             Content-Type:
@@ -275,7 +279,7 @@ securitySchemes:
               - write_pets
               - read_pets
       responses:
-        '200':
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -285,7 +289,7 @@ securitySchemes:
                 - application/xml
           body:
             type: Pet
-        '400':
+        400:
           description: Invalid ID supplied
           headers:
             Content-Type:
@@ -293,7 +297,7 @@ securitySchemes:
               enum:
                 - application/json
                 - application/xml
-        '404':
+        404:
           description: Pet not found
           headers:
             Content-Type:
@@ -309,7 +313,7 @@ securitySchemes:
           enum:
             - application/x-www-form-urlencoded
       body:
-        application/x-www-form-urlencoded:
+        properties:
           name:
             type: string
           status:
@@ -323,7 +327,7 @@ securitySchemes:
               - write_pets
               - read_pets
       responses:
-        '405':
+        405:
           description: Invalid input
           headers:
             Content-Type:
@@ -344,7 +348,7 @@ securitySchemes:
               - write_pets
               - read_pets
       responses:
-        '400':
+        400:
           description: Invalid pet value
           headers:
             Content-Type:
@@ -361,7 +365,7 @@ securitySchemes:
       is:
         - store
       responses:
-        '200':
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -371,7 +375,7 @@ securitySchemes:
                 - application/xml
           body:
             type: Order
-        '400':
+        400:
           description: Invalid Order
           headers:
             Content-Type:
@@ -389,7 +393,7 @@ securitySchemes:
         is:
           - store
         responses:
-          '200':
+          200:
             description: successful operation
             headers:
               Content-Type:
@@ -399,7 +403,7 @@ securitySchemes:
                   - application/xml
             body:
               type: Order
-          '400':
+          400:
             description: Invalid ID supplied
             headers:
               Content-Type:
@@ -407,7 +411,7 @@ securitySchemes:
                 enum:
                   - application/json
                   - application/xml
-          '404':
+          404:
             description: Order not found
             headers:
               Content-Type:
@@ -421,7 +425,7 @@ securitySchemes:
         is:
           - store
         responses:
-          '400':
+          400:
             description: Invalid ID supplied
             headers:
               Content-Type:
@@ -429,7 +433,7 @@ securitySchemes:
                 enum:
                   - application/json
                   - application/xml
-          '404':
+          404:
             description: Order not found
             headers:
               Content-Type:
@@ -446,7 +450,7 @@ securitySchemes:
     is:
       - user
     responses:
-      default:
+      200:
         description: successful operation
         headers:
           Content-Type:
@@ -462,7 +466,7 @@ securitySchemes:
       is:
         - user
       responses:
-        default:
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -478,7 +482,7 @@ securitySchemes:
       is:
         - user
       responses:
-        default:
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -497,7 +501,7 @@ securitySchemes:
       is:
         - user
       responses:
-        '200':
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -507,7 +511,7 @@ securitySchemes:
                 - application/xml
           body:
             type: string
-        '400':
+        400:
           description: Invalid username/password supplied
           headers:
             Content-Type:
@@ -521,7 +525,7 @@ securitySchemes:
       is:
         - user
       responses:
-        default:
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -538,7 +542,7 @@ securitySchemes:
       is:
         - user
       responses:
-        '200':
+        200:
           description: successful operation
           headers:
             Content-Type:
@@ -548,7 +552,7 @@ securitySchemes:
                 - application/xml
           body:
             type: User
-        '400':
+        400:
           description: Invalid username supplied
           headers:
             Content-Type:
@@ -556,7 +560,7 @@ securitySchemes:
               enum:
                 - application/json
                 - application/xml
-        '404':
+        404:
           description: User not found
           headers:
             Content-Type:
@@ -572,7 +576,7 @@ securitySchemes:
       is:
         - user
       responses:
-        '400':
+        400:
           description: Invalid user supplied
           headers:
             Content-Type:
@@ -580,7 +584,7 @@ securitySchemes:
               enum:
                 - application/json
                 - application/xml
-        '404':
+        404:
           description: User not found
           headers:
             Content-Type:
@@ -594,7 +598,7 @@ securitySchemes:
       is:
         - user
       responses:
-        '400':
+        400:
           description: Invalid username supplied
           headers:
             Content-Type:
@@ -602,7 +606,7 @@ securitySchemes:
               enum:
                 - application/json
                 - application/xml
-        '404':
+        404:
           description: User not found
           headers:
             Content-Type:

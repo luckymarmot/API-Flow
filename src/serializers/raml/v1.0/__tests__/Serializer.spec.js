@@ -1523,9 +1523,9 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         null,
         null,
         null,
-        null,
-        { key: 'traits', value: { c: 123 } },
-        { key: 'traits', value: { c: 123, d: 234 } }
+        { key: 'traits', value: { b: {} } },
+        { key: 'traits', value: { b: {}, c: 123 } },
+        { key: 'traits', value: { b: {}, c: 123, d: 234 } }
       ]
       const actual = inputs.map(input => __internals__.extractTraitsFromApi(...input))
       expect(actual).toEqual(expected)

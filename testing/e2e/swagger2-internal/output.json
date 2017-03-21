@@ -5642,6 +5642,42 @@
         "required": false,
         "description": "defines the common media type of responses in the API.",
         "underlay": null
+      },
+      "pet": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "pet",
+        "uuid": "pet",
+        "level": "request",
+        "required": false,
+        "description": null,
+        "underlay": null
+      },
+      "store": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "store",
+        "uuid": "store",
+        "level": "request",
+        "required": false,
+        "description": null,
+        "underlay": null
+      },
+      "user": {
+        "_model": {
+          "name": "interface.models",
+          "version": "0.1.0"
+        },
+        "name": "user",
+        "uuid": "user",
+        "level": "request",
+        "required": false,
+        "description": null,
+        "underlay": null
       }
     }
   },
