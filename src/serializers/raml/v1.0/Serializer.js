@@ -770,12 +770,11 @@ methods.extractMethodBaseFromParameter = (coreInfoMap, parameter) => {
   }
 
   if (location === 'body') {
-    const contentType = '*/*'
     if (kv.key) {
-      return { body: { [contentType]: { [kv.key]: kv.value } } }
+      return { key: 'body', value: { [kv.key]: kv.value } }
     }
 
-    return { body: { [contentType]: kv.value } }
+    return { key: 'body', value: kv.value }
   }
 
   return null
@@ -956,6 +955,10 @@ methods.extractSecuritySchemeFromOAuth2Auth = (auth) => {
     authorizationGrants: grantMap[auth.get('flow')] ? [ grantMap[auth.get('flow')] ] : []
   }
 
+  if (auth.get('scopes') && auth.get('scopes').size) {
+    securityScheme.settings.scopes = auth.get('scopes').map(({ key }) => key).toJS()
+  }
+
   return { key: auth.get('authName'), value: securityScheme }
 }
 
@@ -1120,15 +1123,14 @@ methods.getBodyContextsFromRequest = (request) => {
 }
 
 methods.extractSingleParameterFromRequestWithNoContext = (coreInfoMap, bodyParams) => {
-  const contentType = '*/*'
   const value = methods.convertParameterIntoNamedParameter(
     coreInfoMap, bodyParams.valueSeq().get(0)
-  )
-  return { body: { [contentType]: value } }
+  ).value
+
+  return { key: 'body', value }
 }
 
 methods.extractMultipleParametersFromRequestWithNoContext = (coreInfoMap, bodyParams) => {
-  const contentType = '*/*'
   const propsEntries = bodyParams.map(
     (param) => methods.convertParameterIntoNamedParameter(coreInfoMap, param)
   )
@@ -1140,7 +1142,7 @@ methods.extractMultipleParametersFromRequestWithNoContext = (coreInfoMap, bodyPa
   const properties = propsEntries.reduce(convertEntryListInMap, {})
   const value = { properties }
 
-  return { body: { [contentType]: value } }
+  return { key: 'body', value }
 }
 
 methods.extractBodyParamsFromRequestWithNoContext = (coreInfoMap, paramContainer) => {
@@ -1420,11 +1422,29 @@ methods.extractTypeFromResource = (resource) => {
   return { key: 'type', value: type }
 }
 
+methods.extractUriParametersFromResource = (coreInfoMap, resource) => {
+  const pathParam = resource.getIn([ 'path', 'pathname', 'parameter' ])
+
+  if (!pathParam || pathParam.get('superType') !== 'sequence') {
+    return null
+  }
+
+  const sequence = pathParam.get('value') || List()
+
+  const uriParams = sequence
+    .filter(param => !!param.get('key'))
+    .map(param => methods.convertParameterIntoNamedParameter(coreInfoMap, param))
+    .reduce(convertEntryListInMap, {})
+
+  return { key: 'uriParameters', value: uriParams }
+}
+
 methods.extractResourceFromResourceRecord = (mediaTypeUUID, coreInfoMap, resource) => {
   const kvs = [
     methods.extractDisplayNameFromResource(resource),
     methods.extractDescriptionFromResource(resource),
     methods.extractTypeFromResource(resource),
+    methods.extractUriParametersFromResource(coreInfoMap, resource),
     ...methods.extractMethodsFromResource(mediaTypeUUID, coreInfoMap, resource)
   ].filter(v => !!v)
 
@@ -1498,7 +1518,7 @@ methods.createRAMLJSONModel = (api) => {
 
 methods.serialize = ({ api }) => {
   const model = methods.createRAMLJSONModel(api)
-  const serialized = '#%RAML 1.0\n' + yaml.safeDump(model)
+  const serialized = '#%RAML 1.0\n' + yaml.safeDump(JSON.parse(JSON.stringify(model)))
   return serialized
 }
 

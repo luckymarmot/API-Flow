@@ -419,6 +419,9 @@ securitySchemes:
       - custom_scheme
   '/{songId}':
     displayName: '/songs/{songId}'
+    uriParameters:
+      songId:
+        type: string
     get:
       securedBy:
         - custom_scheme

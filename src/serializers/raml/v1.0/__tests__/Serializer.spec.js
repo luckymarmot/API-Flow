@@ -2122,13 +2122,15 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
   describe('@extractSingleParameterFromRequestWithNoContext', () => {
     it('should work', () => {
-      spyOn(__internals__, 'convertParameterIntoNamedParameter').andCall(({ a }, v) => a * v)
+      spyOn(__internals__, 'convertParameterIntoNamedParameter').andCall(
+        ({ a }, v) => ({ value: a * v })
+      )
 
       const inputs = [
         [ { a: 123 }, OrderedMap({ b: 234 }) ]
       ]
       const expected = [
-        { body: { '*/*': 123 * 234 } }
+        { key: 'body', value: 123 * 234 }
       ]
       const actual = inputs.map(
         input => __internals__.extractSingleParameterFromRequestWithNoContext(...input)
@@ -2150,7 +2152,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
       const expected = [
         null,
-        { body: { '*/*': { properties: { '234': 123, '345': 123 } } } }
+        { key: 'body', value: { properties: { '234': 123, '345': 123 } } }
       ]
 
       const actual = inputs.map(
@@ -2784,6 +2786,11 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         return r[key] ? { key, value: r[key] } : null
       })
 
+      spyOn(__internals__, 'extractUriParametersFromResource').andCall((c, r) => {
+        const key = 'uriParameters'
+        return r[key] ? { key, value: r[key] } : null
+      })
+
       spyOn(__internals__, 'extractMethodsFromResource').andCall((m, c) => {
         const key = 'get'
         return c[key] ? [ { key, value: c[key] } ] : []
@@ -2791,11 +2798,11 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
       const inputs = [
         [ {}, {}, {} ],
-        [ {}, { get: 123 }, { displayName: 234, description: 345, type: 456 } ]
+        [ {}, { get: 123 }, { displayName: 234, description: 345, type: 456, uriParameters: 567 } ]
       ]
       const expected = [
         {},
-        { get: 123, displayName: 234, description: 345, type: 456 }
+        { get: 123, displayName: 234, description: 345, type: 456, uriParameters: 567 }
       ]
       const actual = inputs.map(input => __internals__.extractResourceFromResourceRecord(...input))
       expect(actual).toEqual(expected)

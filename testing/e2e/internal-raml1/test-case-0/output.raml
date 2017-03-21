@@ -1,0 +1,591 @@
+#%RAML 1.0
+title: Swagger Petstore
+description: >
+  This is a sample server Petstore server.
+
+
+
+  [Learn about Swagger](http://swagger.wordnik.com) or join the IRC channel
+  `#swagger` on irc.freenode.net.
+
+
+
+  For this sample, you can use the api key `special-key` to test the
+  authorization filters
+version: 1.0.0
+baseUri: 'https://petstore.swagger.wordnik.com/v2'
+protocols:
+  - HTTP
+  - HTTPS
+mediaType:
+  - application/json
+types:
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        required: false
+      username:
+        type: string
+        required: false
+      firstName:
+        type: string
+        required: false
+      pet:
+        type: Pet
+        required: false
+      lastName:
+        type: string
+        required: false
+      email:
+        type: string
+        required: false
+      password:
+        type: string
+        required: false
+      phone:
+        type: string
+        required: false
+      userStatus:
+        type: integer
+        description: User Status
+        required: false
+  Category:
+    type: object
+    properties:
+      id:
+        type: integer
+        required: false
+      name:
+        type: string
+        required: false
+  Pet:
+    type: object
+    properties:
+      id:
+        type: integer
+        required: false
+      category:
+        type: Category
+        required: false
+      name:
+        type: string
+      owner:
+        type: User
+        required: false
+      photoUrls:
+        type: 'string[]'
+      tags:
+        type: 'Tag[]'
+        required: false
+      status:
+        type: string
+        description: pet status in the store
+        required: false
+  Tag:
+    type: object
+    properties:
+      id:
+        type: integer
+        required: false
+      name:
+        type: string
+        required: false
+  Order:
+    type: object
+    properties:
+      id:
+        type: integer
+        required: false
+      petId:
+        type: integer
+        required: false
+      quantity:
+        type: integer
+        required: false
+      shipDate:
+        type: string
+        required: false
+      status:
+        type: string
+        description: Order Status
+        required: false
+      complete:
+        type: boolean
+        required: false
+traits:
+  globalProduces:
+    headers:
+      Content-Type:
+        type: string
+        enum:
+          - application/xml
+securitySchemes:
+  api_key:
+    type: Pass Through
+    describedBy:
+      headers:
+        api_key:
+          type: string
+  petstore_auth:
+    type: OAuth 2.0
+    description: the authentication method for the Petstore API
+    settings:
+      authorizationUri: 'http://petstore.swagger.wordnik.com/api/oauth/dialog'
+      accessTokenUri: null
+      authorizationGrants:
+        - implicit
+      scopes:
+        - write_pets
+        - read_pets
+/pets:
+  post:
+    displayName: Add a new pet to the store
+    description: This is a fairly long description about the API request /pets with Method POST
+    headers:
+      Content-Type:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+    body:
+      type: Pet
+    protocols:
+      - HTTPS
+    is:
+      - pet
+    securedBy:
+      - petstore_auth
+    responses:
+      '405':
+        description: Invalid input
+        headers:
+          Content-Type:
+            type: string
+            enum:
+              - application/json
+              - application/xml
+  put:
+    displayName: Update an existing pet
+    headers:
+      Content-Type:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+    body:
+      type: Pet
+    is:
+      - pet
+    securedBy:
+      - petstore_auth
+    responses:
+      '400':
+        description: Invalid ID supplied
+      '404':
+        description: Pet not found
+      '405':
+        description: Validation exception
+  /findByStatus:
+    get:
+      displayName: Finds Pets by status
+      description: Multiple status values can be provided with comma seperated strings
+      queryParameters:
+        status:
+          type: 'string[]'
+      is:
+        - pet
+      securedBy:
+        - petstore_auth
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+          body:
+            type: 'Pet[]'
+        '400':
+          description: Invalid status value
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+  /findByTags:
+    get:
+      displayName: Finds Pets by tags
+      description: 'Muliple tags can be provided with comma seperated strings. Use tag1, tag2, tag3 for testing.'
+      queryParameters:
+        tags:
+          type: 'string[]'
+      is:
+        - pet
+      securedBy:
+        - petstore_auth
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+          body:
+            type: 'Pet[]'
+        '400':
+          description: Invalid tag value
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+  '/{petId}':
+    uriParameters:
+      petId:
+        type: integer
+    get:
+      displayName: Find pet by ID
+      description: 'Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error conditions'
+      is:
+        - pet
+      securedBy:
+        - api_key
+        - petstore_auth
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+          body:
+            type: Pet
+        '400':
+          description: Invalid ID supplied
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+        '404':
+          description: Pet not found
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+    post:
+      displayName: Updates a pet in the store with form data
+      headers:
+        Content-Type:
+          type: string
+          enum:
+            - application/x-www-form-urlencoded
+      body:
+        application/x-www-form-urlencoded:
+          name:
+            type: string
+          status:
+            type: string
+      is:
+        - pet
+      securedBy:
+        - api_key
+        - petstore_auth
+      responses:
+        '405':
+          description: Invalid input
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+    delete:
+      displayName: Deletes a pet
+      headers:
+        api_key:
+          type: string
+      is:
+        - pet
+      securedBy:
+        - petstore_auth
+      responses:
+        '400':
+          description: Invalid pet value
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+/stores:
+  /order:
+    post:
+      displayName: Place an order for a pet
+      body:
+        type: Order
+      is:
+        - store
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+          body:
+            type: Order
+        '400':
+          description: Invalid Order
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+    '/{orderId}':
+      uriParameters:
+        orderId:
+          type: string
+      get:
+        displayName: Find purchase order by ID
+        description: 'For valid response try integer IDs with value <= 5 or > 10. Other values will generated exceptions'
+        is:
+          - store
+        responses:
+          '200':
+            description: successful operation
+            headers:
+              Content-Type:
+                type: string
+                enum:
+                  - application/json
+                  - application/xml
+            body:
+              type: Order
+          '400':
+            description: Invalid ID supplied
+            headers:
+              Content-Type:
+                type: string
+                enum:
+                  - application/json
+                  - application/xml
+          '404':
+            description: Order not found
+            headers:
+              Content-Type:
+                type: string
+                enum:
+                  - application/json
+                  - application/xml
+      delete:
+        displayName: Delete purchase order by ID
+        description: For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors
+        is:
+          - store
+        responses:
+          '400':
+            description: Invalid ID supplied
+            headers:
+              Content-Type:
+                type: string
+                enum:
+                  - application/json
+                  - application/xml
+          '404':
+            description: Order not found
+            headers:
+              Content-Type:
+                type: string
+                enum:
+                  - application/json
+                  - application/xml
+/users:
+  post:
+    displayName: Create user
+    description: This can only be done by the logged in user.
+    body:
+      type: User
+    is:
+      - user
+    responses:
+      default:
+        description: successful operation
+        headers:
+          Content-Type:
+            type: string
+            enum:
+              - application/json
+              - application/xml
+  /createWithArray:
+    post:
+      displayName: Creates list of users with given input array
+      body:
+        type: 'User[]'
+      is:
+        - user
+      responses:
+        default:
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+  /createWithList:
+    post:
+      displayName: Creates list of users with given input array
+      body:
+        type: 'User[]'
+      is:
+        - user
+      responses:
+        default:
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+  /login:
+    get:
+      displayName: Logs user into the system
+      queryParameters:
+        username:
+          type: string
+        password:
+          type: string
+      is:
+        - user
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+          body:
+            type: string
+        '400':
+          description: Invalid username/password supplied
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+  /logout:
+    get:
+      displayName: Logs out current logged in user session
+      is:
+        - user
+      responses:
+        default:
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+  '/{username}':
+    uriParameters:
+      username:
+        type: string
+    get:
+      displayName: Get user by user name
+      is:
+        - user
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+          body:
+            type: User
+        '400':
+          description: Invalid username supplied
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+        '404':
+          description: User not found
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+    put:
+      displayName: Updated user
+      description: This can only be done by the logged in user.
+      body:
+        type: User
+      is:
+        - user
+      responses:
+        '400':
+          description: Invalid user supplied
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+        '404':
+          description: User not found
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+    delete:
+      displayName: Delete user
+      description: This can only be done by the logged in user.
+      is:
+        - user
+      responses:
+        '400':
+          description: Invalid username supplied
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
+        '404':
+          description: User not found
+          headers:
+            Content-Type:
+              type: string
+              enum:
+                - application/json
+                - application/xml
