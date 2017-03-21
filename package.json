@@ -10,8 +10,11 @@
     "raml",
     "grape"
   ],
-  "version": "0.0.22",
-  "main": "lib/api-flow.js",
+  "bin": {
+    "api-flow": "./bin/api-flow.js"
+  },
+  "version": "0.1.0",
+  "main": "./dist/node/api-flow.js",
   "license": "MIT",
   "homepage": "https://github.com/luckymarmot/API-Flow",
   "dependencies": {

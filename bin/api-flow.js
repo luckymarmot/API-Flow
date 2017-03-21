@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 /* eslint-disable */
 var FlowCLI = require('../dist/node/api-flow.js').default;
 
