@@ -1298,7 +1298,19 @@ methods.extractSecuredByFromRequest = (request) => {
       if (authRef === null) {
         return authRef
       }
-      return authRef.get('uuid')
+
+      const authRefName = authRef.get('uuid')
+      if (!authRef.get('overlay') || !(authRef.get('overlay') instanceof Auth.OAuth2)) {
+        return authRefName
+      }
+
+      return {
+        [authRefName]: {
+          scopes: authRef.getIn([ 'overlay', 'scopes' ])
+            .map(({ key }) => key)
+            .toJS()
+        }
+      }
     })
     .valueSeq()
 

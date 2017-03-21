@@ -156,7 +156,10 @@ securitySchemes:
     is:
       - pet
     securedBy:
-      - petstore_auth
+      - petstore_auth:
+          scopes:
+            - write_pets
+            - read_pets
     responses:
       '405':
         description: Invalid input
@@ -179,7 +182,10 @@ securitySchemes:
     is:
       - pet
     securedBy:
-      - petstore_auth
+      - petstore_auth:
+          scopes:
+            - write_pets
+            - read_pets
     responses:
       '400':
         description: Invalid ID supplied
@@ -197,7 +203,10 @@ securitySchemes:
       is:
         - pet
       securedBy:
-        - petstore_auth
+        - petstore_auth:
+            scopes:
+              - write_pets
+              - read_pets
       responses:
         '200':
           description: successful operation
@@ -227,7 +236,10 @@ securitySchemes:
       is:
         - pet
       securedBy:
-        - petstore_auth
+        - petstore_auth:
+            scopes:
+              - write_pets
+              - read_pets
       responses:
         '200':
           description: successful operation
@@ -258,7 +270,10 @@ securitySchemes:
         - pet
       securedBy:
         - api_key
-        - petstore_auth
+        - petstore_auth:
+            scopes:
+              - write_pets
+              - read_pets
       responses:
         '200':
           description: successful operation
@@ -303,7 +318,10 @@ securitySchemes:
         - pet
       securedBy:
         - api_key
-        - petstore_auth
+        - petstore_auth:
+            scopes:
+              - write_pets
+              - read_pets
       responses:
         '405':
           description: Invalid input
@@ -321,7 +339,10 @@ securitySchemes:
       is:
         - pet
       securedBy:
-        - petstore_auth
+        - petstore_auth:
+            scopes:
+              - write_pets
+              - read_pets
       responses:
         '400':
           description: Invalid pet value
