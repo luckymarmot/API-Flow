@@ -48,8 +48,6 @@ crashlytics.properties
 crashlytics-build.properties
 
 # Build
-bin/
-dist/
 releases/
 resources/
 node_modules/
