@@ -3287,6 +3287,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       spyOn(__internals__, 'convertRAMLResourceBaseIntoResourceInstance').andReturn(
         { description: 'base', path: 'ignored', name: 'also ignored' }
       )
+      spyOn(__internals__, 'getNameFromResource').andReturn('someName')
 
       const inputs = [
         [ { a: 123 }, { uriParameters: 456, resource: {
@@ -3299,7 +3300,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
 
       const expected = [
         new Resource({
-          name: 234,
+          name: 'someName',
           uuid: 345,
           path: 456,
           description: 'base',
@@ -3311,7 +3312,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
           })
         }),
         new Resource({
-          name: null,
+          name: 'someName',
           uuid: null,
           path: 567,
           description: 'base',

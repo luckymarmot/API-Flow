@@ -9,7 +9,7 @@
         "name": "resource.models",
         "version": "0.1.0"
       },
-      "name": "/api",
+      "name": null,
       "uuid": "http://{environment}.musicapi.com/{version}/api",
       "endpoints": {
         "base": {
@@ -388,7 +388,7 @@
         "name": "resource.models",
         "version": "0.1.0"
       },
-      "name": "/entry",
+      "name": null,
       "uuid": "http://{environment}.musicapi.com/{version}/entry",
       "endpoints": {
         "base": {
@@ -904,7 +904,7 @@
         "name": "resource.models",
         "version": "0.1.0"
       },
-      "name": "/songs",
+      "name": "Songs",
       "uuid": "http://{environment}.musicapi.com/{version}/songs",
       "endpoints": {
         "base": {
@@ -1209,7 +1209,7 @@
         "name": "resource.models",
         "version": "0.1.0"
       },
-      "name": "/songs/{songId}",
+      "name": null,
       "uuid": "http://{environment}.musicapi.com/{version}/songs/{songId}",
       "endpoints": {
         "base": {

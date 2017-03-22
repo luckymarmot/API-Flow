@@ -9,7 +9,7 @@
         "name": "resource.models",
         "version": "0.1.0"
       },
-      "name": "/helloworld",
+      "name": null,
       "uuid": "https://{sub}.paw.cloud/helloworld",
       "endpoints": {
         "base": {

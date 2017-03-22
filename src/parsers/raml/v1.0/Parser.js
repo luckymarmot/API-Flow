@@ -2591,6 +2591,17 @@ methods.convertRAMLResourceBaseIntoResourceInstance = (api, resource) => {
   return resourceInstance
 }
 
+methods.getNameFromResource = (resource) => {
+  const displayName = resource.displayName()
+  const relativeUri = resource.relativeUri()
+
+  if (relativeUri && displayName === relativeUri.value()) {
+    return null
+  }
+
+  return displayName || null
+}
+
 /**
  * converts a RAML resource into a Resource record
  * @param {RAMLApi} api: the api from which to get the global contentType, if needed
@@ -2610,9 +2621,10 @@ methods.convertRAMLResourceIntoResource = (api, { uriParameters, resource }) => 
   })
 
   const baseInstance = methods.convertRAMLResourceBaseIntoResourceInstance(api, resource)
+  const name = methods.getNameFromResource(resource)
 
   const resourceInstance = Object.assign({}, baseInstance, {
-    name: resource.completeRelativeUri(),
+    name: name,
     uuid: resource.absoluteUri(),
     path: path,
     endpoints: endpoints
