@@ -56,6 +56,10 @@ methods.extractBasicAuth = (obj) => {
   return new Auth.Basic(obj)
 }
 
+methods.extractCustomAuth = (obj) => {
+  return new Auth.Custom(obj)
+}
+
 methods.extractDigestAuth = (obj) => {
   return new Auth.Digest(obj)
 }
@@ -423,6 +427,7 @@ methods.traverse = (_obj) => {
 const classMap = {
   'api.core.models': methods.extractApi,
   'basic.auth.models': methods.extractBasicAuth,
+  'custom.auth.models': methods.extractCustomAuth,
   'digest.auth.models': methods.extractDigestAuth,
   'ntlm.auth.models': methods.extractNTLMAuth,
   'negotiate.auth.models': methods.extractNegotiateAuth,
