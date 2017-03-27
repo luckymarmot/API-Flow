@@ -1392,6 +1392,14 @@ methods.convertRAMLAuthIntoDigestAuthEntry = (scheme) => {
   return { key: authName, value: new Auth.Digest(authInstance) }
 }
 
+methods.convertRAMLAuthIntoCustomAuthEntry = (scheme) => {
+  const authName = methods.extractAuthNameFromAuthScheme(scheme)
+  const description = methods.extractDescription(scheme)
+
+  const authInstance = { authName, description }
+  return { key: authName, value: new Auth.Custom(authInstance) }
+}
+
 /**
  * converts a RAML Security Scheme into an Auth Record
  * @param {RAMLSecurityScheme} scheme: the security scheme to convert
@@ -1418,6 +1426,10 @@ methods.convertRAMLAuthIntoAuthEntry = (scheme) => {
 
   if (kind === 'DigestSecurityScheme') {
     return methods.convertRAMLAuthIntoDigestAuthEntry(scheme)
+  }
+
+  if (kind === 'AbstractSecurityScheme') {
+    return methods.convertRAMLAuthIntoCustomAuthEntry(scheme)
   }
 
   return null
