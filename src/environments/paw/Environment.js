@@ -20,9 +20,13 @@ methods.fsResolve = (uri) => {
     return Promise.resolve(cache[cleanUri])
   }
 
+  if (cache['file://' + cleanUri]) {
+    return Promise.resolve(cache['file://' + cleanUri])
+  }
+
   const msg = 'Sandbox error: include ' +
     cleanUri +
-    'in your import by dragging it along with the main file.'
+    ' in your import by dragging it along with the main file.'
 
   return Promise.reject(new Error(msg))
 }
