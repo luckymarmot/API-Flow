@@ -7,6 +7,7 @@ import OAuth1Auth from './auths/OAuth1'
 import OAuth2Auth from './auths/OAuth2'
 import AWSSig4Auth from './auths/AWSSig4'
 import HawkAuth from './auths/Hawk'
+import CustomAuth from './auths/Custom'
 
 const Auth = {
   Basic: BasicAuth,
@@ -17,7 +18,8 @@ const Auth = {
   OAuth1: OAuth1Auth,
   OAuth2: OAuth2Auth,
   AWSSig4: AWSSig4Auth,
-  Hawk: HawkAuth
+  Hawk: HawkAuth,
+  Custom: CustomAuth
 }
 
 export default Auth
