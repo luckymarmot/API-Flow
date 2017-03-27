@@ -1498,6 +1498,16 @@ methods.extractAuthsFromRequest = (context, request, _authDS) => {
   return methods.extractAuthFromAuthString(authDS)
 }
 
+/**
+ * converts an array of PawRequests into Resources
+ * @param {PawContext} context: the context to use to resolve environment variables
+ * @param {Array<PawRequest>} reqs: the array of requests to convert into resources
+ * @returns {{
+ *   resources: Object<string, Resources>,
+ *   variables: Array<Entry<string, Variable>>,
+ *   endpoints: Array<Entry<string, URL>>
+ * }} the corresponding resource map, and the associated variables and endpoints
+ */
 methods.extractResources = (context, reqs) => {
   const hosts = methods.extractCommonHostsFromRequests(reqs)
   const convertHostIntoResources = currify(methods.convertHostIntoResources, context)
@@ -1513,6 +1523,14 @@ methods.extractResources = (context, reqs) => {
   return { resources: resourceMap, variables, endpoints }
 }
 
+/**
+ * creates a Store from variables, endpoints, and auths
+ * @param {PawContext} context: the context to use to resolve environment variables
+ * @param {Array<Entry<string, Variable>>} variables: the variables to save in the store
+ * @param {Array<Entry<string, URL>>} endpoints: the endpoints to save in the store
+ * @param {Array<PawRequest>} reqs: the array of paw requests to use to extract shared auth methods
+ * @returns {Store} the corresponding store
+ */
 methods.extractStore = (context, variables, endpoints, reqs) => {
   const auths = reqs
     .filter(request => request.getHeaderByName('Authorization', true))
