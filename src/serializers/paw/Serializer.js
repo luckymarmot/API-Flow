@@ -73,6 +73,11 @@ methods.createMultipartBodyDV = (keyValues) => {
   )
 }
 
+/**
+ * creates a multiselector DynamicValue.
+ * @param {Array<RecordParameter>} choices: the list of key-value pairs that store in the body dv.
+ * @returns {DynamicValue} the corresponding dynamic value
+ */
 methods.createMultiSelectorDv = (choices) => {
   return new DynamicValue('me.elliotchance.MultiSelectorDynamicValue', {
     choices,
@@ -629,6 +634,13 @@ methods.convertEndpointOrReferenceIntoDS = (store, endpoint) => {
   return methods.createEndpointDynamicString(endpoint)
 }
 
+/**
+ * converts an array of DynamicStrings representing endpoints into a Variable (selects the 1st as
+ * default value)
+ * @param {PawRequest} pawRequest: the paw request to which the possible variables should be bound.
+ * @param {Array<DynamicString>} endpoints: the array of endpoints that this request can use
+ * @returns {DynamicValue<PawRequestVariable>} the corresponding DynamicValue
+ */
 methods.convertEndpointsDSArrayIntoVariableDV = (pawRequest, endpoints) => {
   if (endpoints.length === 1) {
     return endpoints[0]
