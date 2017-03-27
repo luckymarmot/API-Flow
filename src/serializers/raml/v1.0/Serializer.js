@@ -299,6 +299,11 @@ methods.convertSchemaAnyOfIntoTypes = (anyOf) => {
   return [ anyOfType ]
 }
 
+/**
+ * extracts the types out of a schema
+ * @param {JSONSchema} schema: the schema to get the types of
+ * @returns {Array<string>} the corresponding types
+ */
 methods.getTypes = (schema) => {
   const baseType = methods.getType(schema)
 
@@ -321,6 +326,12 @@ methods.getTypes = (schema) => {
   return types
 }
 
+/**
+ * applies simple common properties from the schema to the dataType, if they exists
+ * @param {RamlDataType} dataType: the dataType to update with common properties
+ * @param {JSONSchema} schema: the schema to get the common properties from
+ * @returns {RamlDataType} the updated RAML dataType
+ */
 methods.applyCommonProps = (dataType, schema) => {
   const commonProps = [
     'minProperties',
@@ -351,6 +362,12 @@ methods.applyCommonProps = (dataType, schema) => {
     }, dataType)
 }
 
+/**
+ * adds the `items` properties to a RAML dataType if the schema has one.
+ * @param {RamlDataType} dataType: the dataType to update
+ * @param {JSONSchema} schema: the schema to extract the items properties from
+ * @returns {RamlDataType} the updated RAML dataType
+ */
 methods.addItemsProp = (dataType, schema) => {
   if (!schema.items || dataType.type.indexOf('array') < 0) {
     return dataType
@@ -367,6 +384,12 @@ methods.addItemsProp = (dataType, schema) => {
   return dataType
 }
 
+/**
+ * adds the `propertes` properties to a RAML dataType if the schema has one.
+ * @param {RamlDataType} dataType: the dataType to update
+ * @param {JSONSchema} schema: the schema to extract the `properties` properties from
+ * @returns {RamlDataType} the updated RAML dataType
+ */
 methods.addPropertiesProp = (dataType, schema) => {
   if (!schema.properties) {
     return dataType
@@ -394,6 +417,11 @@ methods.addPropertiesProp = (dataType, schema) => {
   return dataType
 }
 
+/**
+ * converts a schema into a RAML dataType
+ * @param {JSONSchema} schema: the schema to convert
+ * @returns {RamlDataType} the corresponding RAML dataType
+ */
 methods.convertSchemaToDataType = (schema) => {
   let dataType = {}
 
@@ -414,6 +442,16 @@ methods.convertSchemaToDataType = (schema) => {
   return dataType
 }
 
+/**
+ * dumps all dependencies of a schema in the `definitions` field of the schema, and stringifies it.
+ * This is done for JSON Schemas that cannot be converted into dataTypes
+ * @param {JSONSchema} _schema: the schema to dump as a string
+ * @param {Array<string>} deps: an array representing the dependencies of the schema
+ * @param {Map<string, { schema: JSONSchema }>} coreInfoMap: a Map containing all the schemas in the
+ * Api.
+ * @returns {string|JSONSchema} the corresponding string, except if the stringification failed, in
+ * which case the object itself is dumped (this should not happen)
+ */
 methods.dumpJSONIntoDataType = (_schema, deps, coreInfoMap) => {
   const schema = Object.assign({}, _schema)
 
@@ -437,6 +475,17 @@ methods.dumpJSONIntoDataType = (_schema, deps, coreInfoMap) => {
   }
 }
 
+/**
+ * recursively extracts all dependencies from the coreInfoMap based on the name of a schema or an
+ * array of dependencies. (follows sub-dependencies until no new found)
+ * @param {Map<string, { deps: Array<string> }>} coreInfoMap: a Map containing all the dependencies
+ * for each schema
+ * @param {Object<string, boolean>} depsMap: an accumulator that saves already found dependencies
+ * (helps avoiding dependency cycles)
+ * @param {string?} name: the name of the schema to get the dependencies of
+ * @param {Array<string>?} $deps: an array of dependencies to use as a starting point
+ * @returns {Object<string, boolean>} the updated accumulator (depsMap)
+ */
 methods.getAllDependencies = (coreInfoMap, depsMap, name, $deps) => {
   const deps = $deps || (coreInfoMap.get(name) || {}).deps
   depsMap[name] = true
@@ -455,11 +504,22 @@ methods.getAllDependencies = (coreInfoMap, depsMap, name, $deps) => {
  * Second Strategy (more advanced):
  * tries to find all the schemas that can't be converted or depend on a schema that can't
  */
+/**
+ * marks a schema in a schema map, based on the name of the schema
+ * @param {Map<string, { marked: boolean? }>} schemaMap: the map of schemas to update
+ * @param {string} name: the name of the schema to mark
+ * @returns {Map<string, { marked: boolean? }>} the updated schema map
+ */
 methods.markSchema = (schemaMap, name) => {
   schemaMap.get(name).marked = true
   return schemaMap
 }
 
+/**
+ * unmarks all schemas in a schema map
+ * @param {Object<string, { marked: boolean? }> } schemaMap: the map of schemas to update
+ * @returns {Object<string, {marked: undefined }> } the updated schema map
+ */
 methods.unmarkSchemas = (schemaMap) => {
   schemaMap.forEach((v) => {
     delete v.marked
@@ -468,6 +528,16 @@ methods.unmarkSchemas = (schemaMap) => {
   return schemaMap
 }
 
+/**
+ * tests whether a schema and all its dependencies are convertible into dataTypes
+ * @param {Map<string, { convertible: boolean, deps: Array<string>?} >} coreInfoMap: a map
+ * containing informations about each schemas to convert.
+ * @param {string?} name: the name of the schema to test
+ * @param {{ convertible: boolean, deps: Array<string>? }?} optionalCoreInfo: an optional set of
+ * information to use. If it is provided, it supersedes the data obtained from the name of the
+ * schema.
+ * @returns {boolean} whether the schema and all its dependencies are convertible
+ */
 methods.areSchemaAndDepsConvertible = (coreInfoMap, name, optionalCoreInfo) => {
   const { convertible, deps = [] } = optionalCoreInfo ?
     optionalCoreInfo :
@@ -494,6 +564,12 @@ methods.areSchemaAndDepsConvertible = (coreInfoMap, name, optionalCoreInfo) => {
     .reduce((acc, bool) => acc && bool, true)
 }
 
+/**
+ * extract core information from a schema, e.g. its convertibility into dataType, and its
+ * dependencies
+ * @param {JSONSchema} schema: the schema to get the core information from
+ * @returns {{ deps: Array<string>?, convertible: boolean }} the corresponding core information
+ */
 methods.extractCoreInformationFromSchema = (schema) => {
   const deps = methods.getRefsFromSchema(schema)
   const convertible = methods.isConvertible(schema)
@@ -501,6 +577,19 @@ methods.extractCoreInformationFromSchema = (schema) => {
   return { deps, convertible }
 }
 
+/**
+ * extracts core information from a constraint. (e.g. itself, its corresponding schema, its
+ * dependencies, its name and whether it is convertible into a dataType)
+ * @param {Constraint} constraint: the constraint to extract the core information from
+ * @param {string?} name: the name of the constraint, if it exists
+ * @returns {{
+ *   constraint: Constraint,
+ *   schema: JSONSchema,
+ *   deps: Array<string>?,
+ *   convertible: boolean,
+ *   name: string?
+ * }} the corresponding core information about the constraint
+ */
 methods.extractCoreInformationFromConstraint = (constraint, name) => {
   const schema = constraint.toJSONSchema()
   const { deps, convertible } = methods.extractCoreInformationFromSchema(schema)
@@ -508,6 +597,20 @@ methods.extractCoreInformationFromConstraint = (constraint, name) => {
   return { constraint, schema, deps, convertible, name }
 }
 
+/**
+ * converts a core information about a constraint into a dataType
+ * @param {{
+ *   schema: JSONSchema,
+ *   deps: Array<string>?,
+ *   convertible: boolean,
+ *   name: string?
+ * }} coreInfo: the core information about a constraint
+ * @param {string} key: the key of the coreInfo in the coreInfoMap. This is only present because
+ * we are using this method in tandem with the standard `map` method.
+ * @param {Map<string, coreInfo>} coreInfoMap: the coreInfo map from which to extract the data to
+ * create the dataType
+ * @returns {Entry<string, RamlDataType>} the corresponding dataType, as an Entry
+ */
 methods.extractDataTypeFromCoreInformation = (
   { schema, name, deps, convertible }, key, coreInfoMap
 ) => {
@@ -533,6 +636,11 @@ methods.extractDataTypeFromCoreInformation = (
   }
 }
 
+/**
+ * extracts core information for each shared constraint in an Api.
+ * @param {Api} api: the api to get the core information about shared constraints from
+ * @returns {Map<string, coreInfo>} the corresponding coreInfo map
+ */
 methods.extractCoreInformationMapFromApi = (api) => {
   const constraints = api.getIn([ 'store', 'constraint' ])
 
@@ -542,6 +650,12 @@ methods.extractCoreInformationMapFromApi = (api) => {
   return coreInfoMap
 }
 
+/**
+ * extracts dataTypes from a coreInfoMap that represents all the shared constraints of an Api
+ * @param {Map<string, coreInfo>} coreInfoMap: the coreInfo map that holds all the necessary
+ * information about each constraint to create dataTypes
+ * @returns {Entry<string, Object<string, RamlDataType>>} the shared dataTypes, in Entry format
+ */
 methods.extractDataTypesFromApi = (coreInfoMap) => {
   const types = coreInfoMap
     .map(methods.extractDataTypeFromCoreInformation)
@@ -550,6 +664,11 @@ methods.extractDataTypesFromApi = (coreInfoMap) => {
   return { key: 'types', value: types }
 }
 
+/**
+ * extract the title from an Api
+ * @param {Api} api: the api from which to get the title
+ * @returns {Entry<string, string>?} the corresponding title, if it exists, in Entry format
+ */
 methods.extractTitleFromApi = (api) => {
   const title = api.getIn([ 'info', 'title' ]) || null
 
@@ -560,6 +679,11 @@ methods.extractTitleFromApi = (api) => {
   return { key: 'title', value: title }
 }
 
+/**
+ * extract the description from an Api
+ * @param {Api} api: the api from which to get the description
+ * @returns {Entry<string, string>?} the corresponding description, if it exists, in Entry format
+ */
 methods.extractDescriptionFromApi = (api) => {
   const description = api.getIn([ 'info', 'description' ]) || null
 
@@ -570,6 +694,11 @@ methods.extractDescriptionFromApi = (api) => {
   return { key: 'description', value: description }
 }
 
+/**
+ * extract the version from an Api
+ * @param {Api} api: the api from which to get the version
+ * @returns {Entry<string, string>?} the corresponding version, if it exists, in Entry format
+ */
 methods.extractVersionFromApi = (api) => {
   const version = api.getIn([ 'info', 'version' ]) || null
 
@@ -580,6 +709,11 @@ methods.extractVersionFromApi = (api) => {
   return { key: 'version', value: version }
 }
 
+/**
+ * extract the baseUri from an Api
+ * @param {Api} api: the api from which to get the baseUri
+ * @returns {Entry<string, string>?} the corresponding baseUri, if it exists, in Entry format
+ */
 methods.extractBaseUriFromApi = (api) => {
   const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
 
@@ -596,6 +730,11 @@ methods.extractBaseUriFromApi = (api) => {
   return { key: 'baseUri', value: url }
 }
 
+/**
+ * extract the parameters from a urlComponent
+ * @param {URLComponent} urlComponent: the component from which to get the parameters
+ * @returns {List<Parameter>?} the corresponding list of parameters, if applicable
+ */
 methods.extractParametersFromURLComponent = (urlComponent) => {
   if (!urlComponent) {
     return null
@@ -615,6 +754,14 @@ methods.extractParametersFromURLComponent = (urlComponent) => {
   return params
 }
 
+/**
+ * converts a JSONSchema into a Named Parameter (aka: dataType)
+ * @param {Map<string, coreInfo>} coreInfoMap: the map containing all information necessary to the
+ * creation of DataTypes
+ * @param {string} name: the name of the named parameter
+ * @param {JSONSchema} schema: the schema to convert into a named parameter / dataType
+ * @returns {Entry<string, RamlDataType>} the corresponding dataType, in Entry format
+ */
 methods.convertJSONSchemaIntoNamedParameter = (coreInfoMap, name, schema) => {
   const { deps, convertible } = methods.extractCoreInformationFromSchema(schema)
   return methods.extractDataTypeFromCoreInformation(
@@ -622,6 +769,13 @@ methods.convertJSONSchemaIntoNamedParameter = (coreInfoMap, name, schema) => {
   )
 }
 
+/**
+ * converts a Parameter into a NamedParameter / dataType.
+ * @param {Map<string, coreInfo>} coreInfoMap: the map containing all information necessary to the
+ * creation of DataTypes
+ * @param {Parameter} param: the parameter to convert
+ * @returns {Entry<string, string>?} the corresponding dataType, if it exists, in Entry format
+ */
 methods.convertParameterIntoNamedParameter = (coreInfoMap, param) => {
   if (!param) {
     return null
@@ -634,6 +788,14 @@ methods.convertParameterIntoNamedParameter = (coreInfoMap, param) => {
   return namedParameter
 }
 
+/**
+ * extracts the base uri parameters from an Api.
+ * @param {Map<string, coreInfo>} coreInfoMap: the map containing all information necessary to the
+ * creation of DataTypes
+ * @param {Api} api: the api to get the base uri and its parameter from
+ * @returns {Entry<string, Object<string, RamlDataType>>?} the corresponding dataType, if it exists,
+ * in Entry format.
+ */
 methods.extractBaseUriParametersFromApi = (coreInfoMap, api) => {
   const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
 
@@ -658,6 +820,12 @@ methods.extractBaseUriParametersFromApi = (coreInfoMap, api) => {
   return { key: 'baseUriParameters', value: paramMap }
 }
 
+/**
+ * extracts the protocols from an Api
+ * @param {Api} api: the api from which to get the shared protocols
+ * @returns {Entry<string, Array<string>>?} the corresponding dataType, if it exists, in Entry
+ * format
+ */
 methods.extractProtocolsFromApi = (api) => {
   const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
 
@@ -682,6 +850,12 @@ methods.extractProtocolsFromApi = (api) => {
   return { key: 'protocols', value: validProtocols }
 }
 
+/**
+ * extracts the shared media type uuid from an Api. This uuid is defined iff there is exactly
+ * one shared Content-Type header for requests in the whole Api.
+ * @param {Api} api: the api to extract the global media type uuid from
+ * @returns {string?} the corresponding uuid, if it exists
+ */
 methods.extractMediaTypeUUIDfromApi = (api) => {
   const params = api.getIn([ 'store', 'parameter' ])
   const contentTypeParams = params
@@ -695,6 +869,13 @@ methods.extractMediaTypeUUIDfromApi = (api) => {
   return uuid
 }
 
+/**
+ * extracts the shared media type from an Api. This media type is defined iff there is exactly
+ * one shared Content-Type header for requests in the whole Api.
+ * @param {Api} api: the api to extract the global media type from
+ * @returns {Entry<string, string|Array<string>>?} the corresponding media type, if it exists, in
+ * Entry format
+ */
 methods.extractMediaTypeFromApi = (api) => {
   const params = api.getIn([ 'store', 'parameter' ])
   const contentTypeParams = params
@@ -718,6 +899,15 @@ methods.extractMediaTypeFromApi = (api) => {
   return null
 }
 
+/**
+ * extracts a RAMLMethodBase object from a request, with the help of a coreInfo map and of the
+ * global mediaTypeUUID.
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Request} request: the request to convert into a RAMLMethodBase
+ * @returns {RAMLMethodBase?} the corresponding RAMLMethodBase, if it exists
+ */
 methods.extractMethodBaseFromRequest = (mediaTypeUUID, coreInfoMap, request) => {
   const kvs = [
     methods.extractDisplayNameFromRequest(request),
@@ -738,6 +928,14 @@ methods.extractMethodBaseFromRequest = (mediaTypeUUID, coreInfoMap, request) => 
   return kvs.reduce(convertEntryListInMap, {})
 }
 
+/**
+ * extracts a Traits from an Api, with the help of a coreInfo map and of the global mediaTypeUUID.
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Api} api: the api to get the shared request level interfaces to convert into RAMLTraits
+ * @returns {Array<Entry<string, RAMLTrait>>} the corresponding array of Traits
+ */
 methods.extractTraitsFromInterfaces = (mediaTypeUUID, coreInfoMap, api) => {
   const itfs = api.getIn([ 'store', 'interface' ])
     .filter(itf => itf.get('level') === 'request')
@@ -761,6 +959,15 @@ methods.extractTraitsFromInterfaces = (mediaTypeUUID, coreInfoMap, api) => {
   return traits.valueSeq().toJS()
 }
 
+/**
+ * extracts a RAMLMethodBase from a Parameter, with the help of a coreInfo map and of the global
+ * mediaTypeUUID. This is done to represent shared Parameters (which do not have an exact match in
+ * RAML)
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Parameter} parameter: the parameter to convert into a RAMLMethodBase
+ * @returns {RAMLMethodBase?} the corresponding RAMLMethodBase if it exists
+ */
 methods.extractMethodBaseFromParameter = (coreInfoMap, parameter) => {
   const location = parameter.get('in')
   const locationMap = {
@@ -780,15 +987,24 @@ methods.extractMethodBaseFromParameter = (coreInfoMap, parameter) => {
 
   if (location === 'body') {
     if (kv.key) {
-      return { key: 'body', value: { [kv.key]: kv.value } }
+      return { body: { [kv.key]: kv.value } }
     }
 
-    return { key: 'body', value: kv.value }
+    return { body: kv.value }
   }
 
   return null
 }
 
+/**
+ * extracts Traits from shared Parameters, with the help of a coreInfo map and of the global
+ * mediaTypeUUID.
+ * @param {string?} mediaTypeUUID: the uuid of the global mediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Api} api: the api from which to get the shared parameters
+ * @returns {Array<Entry<string, RAMLMethodBase>>} the corresponding traits, as an array of Entries
+ */
 methods.extractTraitsFromParameters = (mediaTypeUUID, coreInfoMap, api) => {
   const params = api.getIn([ 'store', 'parameter' ])
   const traits = params
@@ -802,6 +1018,18 @@ methods.extractTraitsFromParameters = (mediaTypeUUID, coreInfoMap, api) => {
   return traits.valueSeq().toJS()
 }
 
+/**
+ * extracts all possible Traits from an Api, with the help of a coreInfo map and of the global
+ * mediaTypeUUID. This is done to represent shared Parameters (which do not have an exact match in
+ * RAML)
+ * @param {string?} mediaTypeUUID: the uuid of the global mediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Api} api: the api from which to get all possible Traits (from shared interfaces and
+ * shared parameters)
+ * @returns {Entry<string, Object<string, RAMLMethodBase>>?} the corresponding traits object,
+ * if it exists, as an Entry
+ */
 methods.extractTraitsFromApi = (mediaTypeUUID, coreInfoMap, api) => {
   const itfsTraits = methods.extractTraitsFromInterfaces(mediaTypeUUID, coreInfoMap, api) || []
   const paramTraits = methods.extractTraitsFromParameters(mediaTypeUUID, coreInfoMap, api) || []
@@ -817,7 +1045,17 @@ methods.extractTraitsFromApi = (mediaTypeUUID, coreInfoMap, api) => {
   return { key: 'traits', value: traitMap }
 }
 
-// TODO implement this (args: api)
+/**
+ * extracts all ResourceTypes from an Api, with the help of a coreInfo map and of the global
+ * mediaTypeUUID. This is done to represent shared Parameters (which do not have an exact match in
+ * RAML)
+ * @param {string?} mediaTypeUUID: the uuid of the global mediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Api} api: the api from which to get all possible ResourceTypes.
+ * @returns {Entry<string, Object<string, RAMLMethodBase>>?} the corresponding resourceTypes object,
+ * if it exists, as an Entry
+ */
 methods.extractResourceTypesFromApi = (mediaTypeUUID, coreInfoMap, api) => {
   const resourceTypeItfs = api.getIn([ 'store', 'interface' ])
     .filter(itf => itf.get('level') === 'resource')
@@ -849,6 +1087,11 @@ methods.extractResourceTypesFromApi = (mediaTypeUUID, coreInfoMap, api) => {
   return { key: 'resourceTypes', value: resourceTypes }
 }
 
+/**
+ * extracts a Basic Auth securityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLSecurityScheme} the corresponding securityScheme
+ */
 methods.extractSecuritySchemeFromBasicAuth = (auth) => {
   const securityScheme = {
     type: 'Basic Authentication'
@@ -862,6 +1105,11 @@ methods.extractSecuritySchemeFromBasicAuth = (auth) => {
   return { key: auth.get('authName'), value: securityScheme }
 }
 
+/**
+ * extracts a Digest Auth securityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLSecurityScheme} the corresponding securityScheme
+ */
 methods.extractSecuritySchemeFromDigestAuth = (auth) => {
   const securityScheme = {
     type: 'Digest Authentication'
@@ -875,6 +1123,11 @@ methods.extractSecuritySchemeFromDigestAuth = (auth) => {
   return { key: auth.get('authName'), value: securityScheme }
 }
 
+/**
+ * extracts a describedBy section for a PassThroughSecurityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLDescribedByObject?} the corresponding describedBy object, if applicable
+ */
 methods.extractDescribedByForApiKeyAuth = (auth) => {
   if (auth.get('in') === 'header') {
     return {
@@ -895,6 +1148,11 @@ methods.extractDescribedByForApiKeyAuth = (auth) => {
   return null
 }
 
+/**
+ * extracts an ApiKey Auth securityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLSecurityScheme} the corresponding securityScheme
+ */
 methods.extractSecuritySchemeFromApiKeyAuth = (auth) => {
   const securityScheme = {
     type: 'Pass Through'
@@ -914,6 +1172,11 @@ methods.extractSecuritySchemeFromApiKeyAuth = (auth) => {
 }
 
 // TODO signature
+/**
+ * extracts an OAuth1 Auth securityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLSecurityScheme} the corresponding securityScheme
+ */
 methods.extractSecuritySchemeFromOAuth1Auth = (auth) => {
   const securityScheme = {
     type: 'OAuth 1.0'
@@ -941,6 +1204,11 @@ methods.extractSecuritySchemeFromOAuth1Auth = (auth) => {
 }
 
 // TODO scopes
+/**
+ * extracts an OAuth2 Auth securityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLSecurityScheme} the corresponding securityScheme
+ */
 methods.extractSecuritySchemeFromOAuth2Auth = (auth) => {
   const securityScheme = {
     type: 'OAuth 2.0'
@@ -971,6 +1239,11 @@ methods.extractSecuritySchemeFromOAuth2Auth = (auth) => {
   return { key: auth.get('authName'), value: securityScheme }
 }
 
+/**
+ * extracts an Hawk Auth securityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLSecurityScheme} the corresponding securityScheme
+ */
 methods.extractSecuritySchemeFromHawkAuth = (auth) => {
   const securityScheme = {
     type: 'x-hawk'
@@ -989,6 +1262,11 @@ methods.extractSecuritySchemeFromHawkAuth = (auth) => {
   return { key: auth.get('authName'), value: securityScheme }
 }
 
+/**
+ * extracts an AWSSig4Auth securityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLSecurityScheme} the corresponding securityScheme
+ */
 methods.extractSecuritySchemeFromAWSSig4Auth = (auth) => {
   const securityScheme = {
     type: 'x-aws-sig4'
@@ -1007,6 +1285,11 @@ methods.extractSecuritySchemeFromAWSSig4Auth = (auth) => {
   return { key: auth.get('authName'), value: securityScheme }
 }
 
+/**
+ * extracts a securityScheme from an Auth
+ * @param {Auth} auth: the auth to convert into a securityScheme
+ * @returns {RAMLSecurityScheme} the corresponding securityScheme
+ */
 methods.extractSecuritySchemeFromAuth = (auth) => {
   if (auth instanceof Auth.Basic) {
     return methods.extractSecuritySchemeFromBasicAuth(auth)
@@ -1039,6 +1322,12 @@ methods.extractSecuritySchemeFromAuth = (auth) => {
   return null
 }
 
+/**
+ * extracts securitySchemes from an Api
+ * @param {Api} api: the api to get all the shared auths from
+ * @returns {Entry<string, Object<string, RAMLSecurityScheme>>?} the corresponding securitySchemes,
+ * if it exists, as an Entry
+ */
 methods.extractSecuritySchemesFromApi = (api) => {
   const auths = api.getIn([ 'store', 'auth' ])
 
@@ -1058,6 +1347,11 @@ methods.extractSecuritySchemesFromApi = (api) => {
 // TODO implement this (args: api)
 methods.extractSecuredByFromApi = () => null
 
+/**
+ * extracts the displayName from a Request
+ * @param {Request} request: the request to get the displayName from
+ * @returns {Entry<string, string>?} the corresponding displayName, if it exists, as an Entry
+ */
 methods.extractDisplayNameFromRequest = (request) => {
   const displayName = request.get('name') || null
 
@@ -1068,6 +1362,11 @@ methods.extractDisplayNameFromRequest = (request) => {
   return { key: 'displayName', value: displayName }
 }
 
+/**
+ * extracts the description from a Request
+ * @param {Request} request: the request to get the description from
+ * @returns {Entry<string, string>?} the corresponding description, if it exists, as an Entry
+ */
 methods.extractDescriptionFromRequest = (request) => {
   const description = request.get('description') || null
 
@@ -1078,6 +1377,14 @@ methods.extractDescriptionFromRequest = (request) => {
   return { key: 'description', value: description }
 }
 
+/**
+ * extracts the queryParameters from a Request
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo, that contains all that is
+ * necessary to create DataTypes
+ * @param {Request} request: the request to get the queryParameters from
+ * @returns {Entry<string, Object<string, RamlDataType>>?} the corresponding queryParameters, if
+ * they exist, as an Entry
+ */
 methods.extractQueryParametersFromRequest = (coreInfoMap, request) => {
   const params = request.getIn([ 'parameters', 'queries' ])
     .filter(param => !(param instanceof Reference))
@@ -1095,6 +1402,14 @@ methods.extractQueryParametersFromRequest = (coreInfoMap, request) => {
   return { key: 'queryParameters', value: queryParameters }
 }
 
+/**
+ * extracts the headers from a Request
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo, that contains all that is
+ * necessary to create DataTypes
+ * @param {Request} request: the request to get the headers from
+ * @returns {Entry<string, Object<string, RamlDataType>>?} the corresponding headers, if they
+ * exist, as an Entry
+ */
 methods.extractHeadersFromRequest = (coreInfoMap, request) => {
   const params = request.getIn([ 'parameters', 'headers' ])
     .filter(param => !(param instanceof Reference))
@@ -1112,6 +1427,11 @@ methods.extractHeadersFromRequest = (coreInfoMap, request) => {
   return { key: 'headers', value: headers }
 }
 
+/**
+ * tests whether a Context is applicable to the body (i.e. has exactly one Content-Type constraint)
+ * @param {Context} context: the context to test
+ * @returns {boolean} true if it is applicable, false otherwise
+ */
 methods.isBodyContext = (context) => {
   return context.get('constraints')
     .filter(param => {
@@ -1122,6 +1442,11 @@ methods.isBodyContext = (context) => {
     .size === 1
 }
 
+/**
+ * extracts all contexts that are applicable to the body from a request
+ * @param {Request} request: the request to get the body contexts from
+ * @returns {List<Context>?} the corresponding list of contexts, if it exists
+ */
 methods.getBodyContextsFromRequest = (request) => {
   const bodyContexts = request.get('contexts').filter(methods.isBodyContext)
   if (bodyContexts.size === 0) {
@@ -1131,6 +1456,14 @@ methods.getBodyContextsFromRequest = (request) => {
   return bodyContexts
 }
 
+/**
+ * converts a single parameter body into a RAMLBody object (in the case where there are no contexts)
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {Map<string, Parameter>} bodyParams: a map of body parameters to convert into a RAMLBody
+ * object
+ * @returns {Entry<string, RamlDataType>} the corresponding RAMLBody, as an Entry
+ */
 methods.extractSingleParameterFromRequestWithNoContext = (coreInfoMap, bodyParams) => {
   const value = methods.convertParameterIntoNamedParameter(
     coreInfoMap, bodyParams.valueSeq().get(0)
@@ -1139,6 +1472,15 @@ methods.extractSingleParameterFromRequestWithNoContext = (coreInfoMap, bodyParam
   return { key: 'body', value }
 }
 
+/**
+ * converts a multiple parameters body into a RAMLBody (in the case where there are no contexts)
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {Map<string, Parameter>} bodyParams: a map of body parameters to convert into a RAMLBody
+ * object
+ * @returns {Entry<string, { properties: Object<string, RamlDataType> }>?} the corresponding
+ * RAMLBody, if it exists, as an Entry
+ */
 methods.extractMultipleParametersFromRequestWithNoContext = (coreInfoMap, bodyParams) => {
   const propsEntries = bodyParams.map(
     (param) => methods.convertParameterIntoNamedParameter(coreInfoMap, param)
@@ -1154,6 +1496,15 @@ methods.extractMultipleParametersFromRequestWithNoContext = (coreInfoMap, bodyPa
   return { key: 'body', value }
 }
 
+/**
+ * converts a ParameterContainer `body` block into a RAMLBody (in the case where there are no
+ * contexts)
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {ParameterContainer} paramContainer: the ParameterContainer from which to get the body
+ * parameters to convert
+ * @returns {Entry<string, RAMLBody>?} the corresponding RAMLBody, if it exists, as an Entry
+ */
 methods.extractBodyParamsFromRequestWithNoContext = (coreInfoMap, paramContainer) => {
   const bodyParams = paramContainer.get('body')
 
@@ -1168,6 +1519,11 @@ methods.extractBodyParamsFromRequestWithNoContext = (coreInfoMap, paramContainer
   return methods.extractMultipleParametersFromRequestWithNoContext(coreInfoMap, bodyParams)
 }
 
+/**
+ * extracts the Content-Type from a context
+ * @param {Context} context: the context from which to extract the Content-Type
+ * @returns {string?} the corresponding Content-Type, if it exists
+ */
 methods.getContentTypeFromContext = (context) => {
   return context.get('constraints')
     .filter(param => {
@@ -1179,6 +1535,15 @@ methods.getContentTypeFromContext = (context) => {
     .valueSeq().get(0) || null
 }
 
+/**
+ * extracts the RAMLBody object for a specific Content-Type from a Parameter Container
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {ParameterContainer} paramContainer: the ParameterContainer from which to get the body
+ * parameters to convert
+ * @param {Context} context: the context from which to extract the Content-Type
+ * @returns {Entry<string, RAMLBody>?} the corresponding RAMLBody, if it exists, as an Entry
+ */
 methods.extractBodyParamsFromRequestForContext = (coreInfoMap, paramContainer, context) => {
   const contentType = methods.getContentTypeFromContext(context) || '*/*'
 
@@ -1201,6 +1566,16 @@ methods.extractBodyParamsFromRequestForContext = (coreInfoMap, paramContainer, c
   return { key: contentType, value: bodyParams.reduce(convertEntryListInMap, {}) }
 }
 
+/**
+ * extracts the RAMLBodies from a Request with (multiple) context(s)
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {List<Context>} contexts: the contexts to use to generate the RAMLBodies
+ * @param {ParameterContainer} paramContainer: the ParameterContainer from which to get the body
+ * parameters to convert
+ * @returns {Entry<string, RAMLBody | Object<string, RAMLBody>>?} the corresponding RAMLBody, if it
+ * exists, as an Entry
+ */
 methods.extractBodyParamsFromRequestWithContexts = (coreInfoMap, contexts, paramContainer) => {
   const bodies = contexts.map(context => {
     return methods.extractBodyParamsFromRequestForContext(coreInfoMap, paramContainer, context)
@@ -1218,6 +1593,13 @@ methods.extractBodyParamsFromRequestWithContexts = (coreInfoMap, contexts, param
   return { key: 'body', value: bodies.reduce(convertEntryListInMap, {}) }
 }
 
+/**
+ * extracts a RAMLBody from a request.
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {Request} request: the request from which to extract the RAMLBody
+ * @returns {Entry<string, RAMLBody>?} the corresponding RAMLBody if it exists, as an Entry
+ */
 methods.extractBodyFromRequest = (coreInfoMap, request) => {
   const paramContainer = request.get('parameters')
   const bodyContexts = methods.getBodyContextsFromRequest(request)
@@ -1230,6 +1612,11 @@ methods.extractBodyFromRequest = (coreInfoMap, request) => {
 }
 
 // TODO fix that ugly code
+/**
+ * extracts Protocols from a Request
+ * @param {Request} request: the request to extract the protocols from
+ * @returns {Entry<string, Array<string>>?} the extracted protocols, if they exist, as an Entry
+ */
 methods.extractProtocolsFromRequest = (request) => {
   const protocols = request.get('endpoints')
     .map(endpoint => {
@@ -1260,6 +1647,14 @@ methods.extractProtocolsFromRequest = (request) => {
   return { key: 'protocols', value: protocols.toJS() }
 }
 
+/**
+ * extracts TraitRefs from Request parameters (ignoring the global mediaType reference)
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType. Used to filter out the
+ * potential globalMediaType reference in the headers
+ * @param {Request} request: the request from which to get the parameters. Only the References
+ * matter for TraitRef extraction.
+ * @returns {Array<string>} the corresponding array of TraitRef
+ */
 methods.extractTraitsFromRequestParameters = (mediaTypeUUID, request) => {
   const paramContainer = request.get('parameters')
 
@@ -1284,6 +1679,13 @@ methods.extractTraitsFromRequestParameters = (mediaTypeUUID, request) => {
   return [].concat(headerTraits, queryParamTraits, bodyTraits)
 }
 
+/**
+ * extracts the RAML `is` field from a Request
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType. Used to filter out the unwanted
+ * reference to the globalMediaType from the parameters of the request
+ * @param {Request} request: the request from which to extract the `is` field
+ * @returns {Entry<string, Array<string>>?} the corresponding `is` field, if it exists, as an Entry
+ */
 methods.extractIsFromRequest = (mediaTypeUUID, request) => {
   const traits = request
     .get('interfaces')
@@ -1300,6 +1702,12 @@ methods.extractIsFromRequest = (mediaTypeUUID, request) => {
 }
 
 // TODO deal with overlay
+/**
+ * extract securedBy from a Request
+ * @param {Request} request: the request to extract the securedBy field from
+ * @returns {Entry<string, Array<string|Object>>?} the corresponding securedBy field, if it exists,
+ * as an Entry
+ */
 methods.extractSecuredByFromRequest = (request) => {
   const auths = request.get('auths')
     .filter(auth => auth instanceof Reference || auth === null)
@@ -1330,6 +1738,11 @@ methods.extractSecuredByFromRequest = (request) => {
   return { key: 'securedBy', value: auths.toJS() }
 }
 
+/**
+ * extracts the description from a Response
+ * @param {Response} response: the response to get the description from
+ * @returns {Entry<string, string>?} the corresponding description, if it exists, as an Entry
+ */
 methods.extractDescriptionFromResponse = (response) => {
   const description = response.get('description')
 
@@ -1340,14 +1753,36 @@ methods.extractDescriptionFromResponse = (response) => {
   return { key: 'description', value: description }
 }
 
+/**
+ * extracts the headers from a Response
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo, that contains all that is
+ * necessary to create DataTypes
+ * @param {Request} response: the response to get the headers from
+ * @returns {Entry<string, Object<string, RamlDataType>>?} the corresponding headers, if they
+ * exist, as an Entry
+ */
 methods.extractHeadersFromResponse = (coreInfoMap, response) => {
   return methods.extractHeadersFromRequest(coreInfoMap, response)
 }
 
+/**
+ * extracts a RAMLBody from a response.
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {Request} response: the response from which to extract the RAMLBody
+ * @returns {Entry<string, RAMLBody>?} the corresponding RAMLBody if it exists, as an Entry
+ */
 methods.extractBodyFromResponse = (coreInfoMap, response) => {
   return methods.extractBodyFromRequest(coreInfoMap, response)
 }
 
+/**
+ * extracts a RAMLResponse from a Response.
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {Response} response: the response to convert
+ * @returns {RAMLResponse?} the corresponding RAMLResponse, if it exists
+ */
 methods.extractResponseFromResponseRecord = (coreInfoMap, response) => {
   const kvs = [
     methods.extractDescriptionFromResponse(response),
@@ -1355,9 +1790,21 @@ methods.extractResponseFromResponseRecord = (coreInfoMap, response) => {
     methods.extractBodyFromResponse(coreInfoMap, response)
   ].filter(v => !!v)
 
+  if (!kvs.length) {
+    return null
+  }
+
   return kvs.reduce(convertEntryListInMap, {})
 }
 
+/**
+ * extract RAMLResponses from a Request
+ * @param {Map<string, coreInfo>} coreInfoMap: a map of coreInfo containing all that is necessary
+ * to create DataTypes
+ * @param {Request} request: the request to get the responses from
+ * @returns {Entry<string, Object<string, RAMLResponse>>?} the corresponding responses, it they
+ * exist, as an Entry
+ */
 methods.extractResponsesFromRequest = (coreInfoMap, request) => {
   const responses = request.get('responses')
     .map(response => {
@@ -1380,11 +1827,27 @@ methods.extractResponsesFromRequest = (coreInfoMap, request) => {
   return { key: 'responses', value: responses.reduce(convertEntryListInMap, {}) }
 }
 
+/**
+ * extracts a RAMLMethod from a Request
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Request} request: the request to convert into a RAMLMethodBase
+ * @returns {RAMLMethod?} the corresponding RAMLMethod, if it exists
+ */
 methods.extractMethodFromRequest = (mediaTypeUUID, coreInfoMap, request) => {
   const methodBase = methods.extractMethodBaseFromRequest(mediaTypeUUID, coreInfoMap, request)
   return methodBase
 }
 
+/**
+ * extracts a RAMLMethod from a Request, in Entry format
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Request} request: the request to convert into a RAMLMethodBase
+ * @returns {Entry<string, RAMLMethod>?} the corresponding RAMLMethod, if it exists, as an Entry
+ */
 methods.extractMethodEntryFromRequest = (mediaTypeUUID, coreInfoMap, request) => {
   const key = request.get('method')
   const value = methods.extractMethodFromRequest(mediaTypeUUID, coreInfoMap, request)
@@ -1396,6 +1859,14 @@ methods.extractMethodEntryFromRequest = (mediaTypeUUID, coreInfoMap, request) =>
   return { key, value }
 }
 
+/**
+ * extract RAMLMethods from a Resource
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Resource} resource: the resource from which to get the methods to convert
+ * @returns {Array<RAMLMethod>} the corresponding array of RAMLMethod
+ */
 methods.extractMethodsFromResource = (mediaTypeUUID, coreInfoMap, resource) => {
   const requests = resource.get('methods')
     .map((request) => methods.extractMethodEntryFromRequest(mediaTypeUUID, coreInfoMap, request))
@@ -1408,6 +1879,11 @@ methods.extractMethodsFromResource = (mediaTypeUUID, coreInfoMap, resource) => {
   return requests.valueSeq().toJS()
 }
 
+/**
+ * extracts the displayName from a Resource
+ * @param {Resource} resource: the resource to get the displayName from
+ * @returns {Entry<string, string>?} the corresponding displayName, if it exists, as an Entry
+ */
 methods.extractDisplayNameFromResource = (resource) => {
   const key = 'name'
   const value = resource.get(key) || null
@@ -1419,6 +1895,11 @@ methods.extractDisplayNameFromResource = (resource) => {
   return { key: 'displayName', value }
 }
 
+/**
+ * extracts the description from a Resource
+ * @param {Resource} resource: the resource to get the description from
+ * @returns {Entry<string, string>?} the corresponding description, if it exists, as an Entry
+ */
 methods.extractDescriptionFromResource = (resource) => {
   const key = 'description'
   const value = resource.get(key) || null
@@ -1430,6 +1911,11 @@ methods.extractDescriptionFromResource = (resource) => {
   return { key, value }
 }
 
+/**
+ * extracts the resourceTypeRef from a Resource
+ * @param {Resource} resource: the resource to get the resourceTypeRef from
+ * @returns {Entry<string, string>?} the corresponding resourceTypeRef, if it exists, as an Entry
+ */
 methods.extractTypeFromResource = (resource) => {
   const type = resource.get('interfaces')
     .filter(itf => itf instanceof Reference)
@@ -1444,6 +1930,14 @@ methods.extractTypeFromResource = (resource) => {
   return { key: 'type', value: type }
 }
 
+/**
+ * extracts the uriParameters from a Resource
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Resource} resource: the resource to get the uriParameters from
+ * @returns {Entry<string, Object<string, RamlDataType>>?} the corresponding uriParameters, if they
+ * exist, as an Entry
+ */
 methods.extractUriParametersFromResource = (coreInfoMap, resource) => {
   const pathParam = resource.getIn([ 'path', 'pathname', 'parameter' ])
 
@@ -1461,6 +1955,14 @@ methods.extractUriParametersFromResource = (coreInfoMap, resource) => {
   return { key: 'uriParameters', value: uriParams }
 }
 
+/**
+ * extracts a RAMLResource from a Resource
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Resource} resource: the resource to convert
+ * @returns {RAMLResource} the corresponding RAMLResource
+ */
 methods.extractResourceFromResourceRecord = (mediaTypeUUID, coreInfoMap, resource) => {
   const kvs = [
     methods.extractDisplayNameFromResource(resource),
@@ -1473,6 +1975,16 @@ methods.extractResourceFromResourceRecord = (mediaTypeUUID, coreInfoMap, resourc
   return kvs.reduce(convertEntryListInMap, {})
 }
 
+/**
+ * nests resources entries according to their key (which should be the evaluated path of the
+ * resource)
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Array<Entry<string, Resource>>} resources: the array of resource entries, where the keys
+ * are the paths of the resources
+ * @returns {RAMLResource} the corresponding nested resources
+ */
 methods.nestResources = (mediaTypeUUID, coreInfoMap, resources) => {
   let nested = {}
   const subResources = {}
@@ -1499,7 +2011,14 @@ methods.nestResources = (mediaTypeUUID, coreInfoMap, resources) => {
   return nested
 }
 
-// TODO write extractResourceFromResourceRecord
+/**
+ * extracts RAMLResources from an Api
+ * @param {string?} mediaTypeUUID: the uuid of the globalMediaType, if it exists
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary
+ * to convert a schema into a RamlDataType
+ * @param {Api} api: the api to get the resources from
+ * @returns {Array<Entry<string, RAMLResource>>} the corresponding RAMLResources, as entries
+ */
 methods.extractResourcesFromApi = (mediaTypeUUID, coreInfoMap, api) => {
   const resourceKVs = api.get('resources')
     .map(resource => {
@@ -1515,6 +2034,11 @@ methods.extractResourcesFromApi = (mediaTypeUUID, coreInfoMap, api) => {
   return entries(nested)
 }
 
+/**
+ * converts an Api into a RAMLModel
+ * @param {Api} api: the api to convert
+ * @returns {RAMLModel} the corresponding converted model
+ */
 methods.createRAMLJSONModel = (api) => {
   const coreInfoMap = methods.extractCoreInformationMapFromApi(api)
   const mediaTypeUUID = methods.extractMediaTypeUUIDfromApi(api)
@@ -1538,10 +2062,21 @@ methods.createRAMLJSONModel = (api) => {
   return kvs.reduce(convertEntryListInMap, {})
 }
 
+/**
+ * corrects responses codes not being integers in the ramlRaml string. This is due to RAML imposing
+ * that response codes be integers, while it is impossible to have non-string keys in an object.
+ * @param {string} rawRaml: the raml string to fix
+ * @returns {string} the raml string, with integer codes, instead of string ones
+ */
 methods.fixResponseCodes = (rawRaml) => {
   return rawRaml.replace(/^(\s*)'([0-9]{3})':$/gm, '$1$2:')
 }
 
+/**
+ * serializes an Api into a RAML document
+ * @param {Object} args: the args passed to the serializer
+ * @returns {string} the corresponding RAML document
+ */
 methods.serialize = ({ api }) => {
   const model = methods.createRAMLJSONModel(api)
   const raw = '#%RAML 1.0\n' + yaml.safeDump(JSON.parse(JSON.stringify(model)))

@@ -2556,7 +2556,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       ]
 
       const expected = [
-        {},
+        null,
         { headers: 123, body: 234 },
         { description: 345 },
         { description: 345, headers: 123, body: 234 }

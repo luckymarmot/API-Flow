@@ -2894,6 +2894,16 @@
         "tokenUrl": "https://api.dropbox.com/1/oauth2/token",
         "scopes": []
       },
+      "custom_scheme": {
+        "_model": {
+          "name": "custom.auth.models",
+          "version": "0.1.0"
+        },
+        "description": "A custom security scheme for authenticating requests.\n",
+        "authName": "custom_scheme",
+        "setup": null,
+        "interfaces": {}
+      },
       "ApiLib.basic_api": {
         "_model": {
           "name": "basic.auth.models",
