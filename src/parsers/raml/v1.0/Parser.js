@@ -1117,6 +1117,12 @@ methods.createDefinitions = (api, offsetKey) => {
   return { definitions }
 }
 
+/**
+ * extracts definitions from the libraries included with the RAMLApi object
+ * @param {RAMLApi} api: the api object from which to get the libraries
+ * @returns {Object<string, JSONSchema>} the corresponding defintions map of JSONSchemas belonging
+ * to the libraries (namespaced)
+ */
 methods.extractDefinitionsFromLibaries = (api) => {
   const libraries = api.uses()
 
@@ -1392,6 +1398,11 @@ methods.convertRAMLAuthIntoDigestAuthEntry = (scheme) => {
   return { key: authName, value: new Auth.Digest(authInstance) }
 }
 
+/**
+* converts a RAML Custom Security Scheme into a CustomAuth Record
+* @param {RAMLAbstractSecurityScheme} scheme: the security scheme to convert
+* @returns {Entry<string, CustomAuth>} the corresponding CustomAuth record
+ */
 methods.convertRAMLAuthIntoCustomAuthEntry = (scheme) => {
   const authName = methods.extractAuthNameFromAuthScheme(scheme)
   const description = methods.extractDescription(scheme)
@@ -1577,6 +1588,14 @@ methods.extractInterfaceStore = (api) => {
   return OrderedMap(interfaces)
 }
 
+/**
+ * updates an endpoint's URLComponent with uriParameters, based on the component's name
+ * @param {URL} endpoint: the endpoint to update
+ * @param {string} componentName: the name of the component to update in the endpoint
+ * @param {Array<JSONSchema>} uriParameters: the uriParameters to use to upgrade the description of
+ * named parameters in the endpoint
+ * @returns {URL} the updated endpoint
+ */
 methods.updateURLComponentWithUriParameters = (endpoint, componentName, uriParameters) => {
   const component = endpoint.get(componentName)
 
@@ -1601,6 +1620,13 @@ methods.updateURLComponentWithUriParameters = (endpoint, componentName, uriParam
   return component
 }
 
+/**
+ * update an endpoint with uriParameters
+ * @param {URL} $endpoint: the endpoint to update
+ * @param {Array<JSONSchema>} uriParameters: the uriParameters to use to upgrade the description of
+ * named parameters in the endpoint
+ * @returns {URL} the updated endpoint
+ */
 methods.updateEndpointWithUriParameters = ($endpoint, uriParameters) => {
   return $endpoint.withMutations(endpoint => {
     const componentNames = [ 'hostname', 'port', 'pathname' ]
@@ -1612,6 +1638,12 @@ methods.updateEndpointWithUriParameters = ($endpoint, uriParameters) => {
   })
 }
 
+/**
+ * extracts the baseUri endpoint from a RAMLApi
+ * @param {RAMLBaseUri} baseUri: the baseUri to convert into an endpoint
+ * @param {RAMLApi} api: the api from which to get the baseUriParameters
+ * @returns {URL} the corresponding endpoint
+ */
 methods.extractBaseUriWithParameters = (baseUri, api) => {
   const uri = baseUri.value()
   const protocols = api.protocols()
@@ -1637,6 +1669,11 @@ methods.extractBaseUriWithParameters = (baseUri, api) => {
   return methods.updateEndpointWithUriParameters(endpoint, uriParameters)
 }
 
+/**
+ * extracts the shared endpoint TypedStore from a RAMLApi
+ * @param {RAMLApi} api: the api from which to get the shared endpoint
+ * @returns {OrderedMap<string, URL>} the corresponding TypedStore
+ */
 methods.extractEndpointStore = (api) => {
   const baseUri = api.baseUri()
   if (!baseUri) {
@@ -1837,6 +1874,13 @@ methods.addPathParameterToSequence = ({ remaining, sequence }, schema) => {
   return { sequence: [ ...sequence, beforeParam, param ], remaining: after.join(key) }
 }
 
+
+/**
+ * creates a simple component Parameter from a resource uri string
+ * @param {string} componentName: the name of the component which this Parameter should represent
+ * @param {string} resourceUri: the uri to convert into a pathname Parameter
+ * @returns {Parameter} the corresponding Parameter
+ */
 methods.createSimpleURLComponentParameter = (componentName, resourceUri) => {
   return new Parameter({
     key: componentName,
@@ -1855,6 +1899,12 @@ methods.createSimplePathnameParameter = (resourceUri) => {
   return methods.createSimpleURLComponentParameter('pathname', resourceUri)
 }
 
+/**
+ * creates a sequence component Parameter from a sequence of parameters
+ * @param {string} componentName: the name of the component which this Parameter should represent
+ * @param {Array<Parameter>} sequence: the sequence of parameter to use for the Sequence Parameter
+ * @returns {Parameter} the corresponding sequence parameter
+ */
 methods.createSequenceURLComponentParameter = (componentName, sequence) => {
   return new Parameter({
     key: componentName,
@@ -1874,6 +1924,13 @@ methods.createSequencePathnameParameter = (sequence) => {
   return methods.createSequenceURLComponentParameter('pathname', sequence)
 }
 
+/**
+ * creates a generic URL Component from a resourceUri and a Parameter
+ * @param {string} componentName: the name of the component
+ * @param {string} resourceUri: the resource uri this URLComponent should represent
+ * @param {Parameter} param: the parameter that describes the resourceUri
+ * @returns {URLComponent} the corresponding URLComponent
+ */
 methods.createURLComponentFromParameter = (componentName, resourceUri, param) => {
   const urlComponent = new URLComponent({
     componentName,
@@ -2487,6 +2544,13 @@ methods.extractInterfacesFromRequest = (request) => {
   return OrderedMap(interfaces)
 }
 
+/**
+ * tests whether the protocols of a request match the ones from the baseUri
+ * @param {Array<string>?} first: the protocols from the request
+ * @param {RAMLBaseUri?} baseUri: the baseUri to test against
+ * @returns {boolean} true iff first is of length 1 and its first protocol is equal to the protocol
+ * from the baseUri.
+ */
 methods.areProtocolsEquals = (first, baseUri) => {
   if (!first || !baseUri || first.length !== 1) {
     return false
@@ -2603,6 +2667,12 @@ methods.convertRAMLResourceBaseIntoResourceInstance = (api, resource) => {
   return resourceInstance
 }
 
+/**
+ * extracts a name for a resource, if appropriate.
+ * If the displayName is equal to the relativeUri, we ignore the displayName.
+ * @param {RAMLResource} resource: the resource from which to get a name
+ * @returns {string?} the corresponding name, if it is appropriate
+ */
 methods.getNameFromResource = (resource) => {
   const displayName = resource.displayName()
   const relativeUri = resource.relativeUri()
