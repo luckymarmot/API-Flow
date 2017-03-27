@@ -35,6 +35,8 @@ methods.getLoaderByFormat = (format) => {
   return loaders.filter(loader => loader.format === format)[0] || null
 }
 
+methods.filter = (...args) => loaders.filter(...args)
+
 export const getLoaderByExtension = methods.getLoaderByExtension
 export const getLoaderByFormat = methods.getLoaderByFormat
 
