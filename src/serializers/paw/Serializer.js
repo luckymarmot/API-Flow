@@ -590,7 +590,8 @@ methods.convertParameterIntoVariableDS = (pawRequest, param) => {
   const variable = pawRequest.addVariable(name, value, description)
   variable.schema = JSON.stringify(schema)
 
-  return variable.createDynamicString()
+  const ds = variable.createDynamicString()
+  return ds
 }
 
 /**
@@ -699,7 +700,8 @@ methods.getDefaultValueFromParameter = (parameter) => {
 methods.getVariableArgumentsFromParameter = (parameter) => {
   const name = parameter.get('key') || ''
   const value = methods.getDefaultValueFromParameter(parameter)
-  const description = parameter.get('description') || ''
+  const schema = parameter.getJSONSchema()
+  const description = parameter.get('description') || schema.description || ''
 
   return { name, value, description }
 }
@@ -998,7 +1000,8 @@ methods.getContainerFromRequest = (request) => {
  */
 methods.convertAuthFromReference = (store, reference) => {
   const variable = store.getIn([ 'auth', reference.get('uuid') ])
-  return variable.createDynamicString()
+  const ds = variable.createDynamicString()
+  return ds
 }
 
 /**
@@ -1133,10 +1136,14 @@ methods.createGroups = (context, resources, group, groupName) => {
       })
       .filter(value => !!value)
 
-    if (children.size) {
+    if (children.size > 1) {
       const pawGroup = context.createRequestGroup(name)
       children.forEach(child => pawGroup.appendChild(child))
       return pawGroup
+    }
+
+    if (children.size === 1) {
+      return children.valueSeq().get(0)
     }
 
     return null
