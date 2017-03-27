@@ -876,6 +876,13 @@ methods.getRequestsForResource = (store, security, resourceObject) => {
   return operations
 }
 
+/**
+ * updates the path endpoint from the Resource with pathParameters from its swagger operations
+ * @param {Store} store: the store to get the parameters from.
+ * @param {URL} path: the path endpoint of the Resource
+ * @param {Entry} entry: a operation object, as an entry
+ * @returns {URL} the updated path endpoint
+ */
 methods.updatePathWithParametersFromOperations = (store, path, { key, value }) => {
   const container = methods.getParameterContainerForOperation(store, value, key)
   const pathParams = container.get('path')
@@ -1174,6 +1181,11 @@ methods.getConstraintsFromParam = (parameter) => {
   return List(constraints)
 }
 
+/**
+ * extracts applicableContexts from a SwaggerParameter location value
+ * @param {string} location: the location of a swagger parameter
+ * @returns {List<Parameter>} the corresponding applicableContexts
+ */
 methods.getApplicableContextsFromLocation = (location) => {
   if (location !== 'formData') {
     return List()
@@ -1299,6 +1311,12 @@ methods.convertSchemaIntoParameterEntry = (schema) => {
   return paramEntry
 }
 
+/**
+ * updates a Parameter to state that it is used in the response, instead of the request (for shared
+ * parameters)
+ * @param {Parameter} param: the parameter to update
+ * @returns {Parameter} the updated parameter
+ */
 methods.addUsedInResponseToParam = (param) => {
   if (param instanceof Parameter) {
     return param.set('usedIn', 'response')
@@ -1540,16 +1558,33 @@ methods.getSharedAuthInterfaces = ({ security = [] } = {}) => {
     .reduce(convertEntryListInMap, {})
 }
 
+/**
+ * converts a JSONSchema into a Constraint Entry
+ * @param {Entry<string, JSONSchema>} entry: the JSONSchema entry to convert
+ * @returns {Entry<string, Constraint>} the corresponding Constraint entry
+ */
 methods.convertDefinitionIntoConstraint = ({ key, value }) => {
   return { key, value: new Constraint.JSONSchema(value) }
 }
 
+/**
+ * extracts shared Constraints from a SwaggerDefinitionsObject
+ * @param {SwaggerObject} swagger: the object to extract the definitions from
+ * @param {SwaggerDefinitionsObject} swagger.definitions: the definitions to convert into a
+ * TypedStoreInstance
+ * @returns {Object<string, Constraint>} the corresponding TypedStoreInstance for constraints
+ */
 methods.getSharedConstraints = ({ definitions = {} } = {}) => {
   return entries(definitions)
     .map(methods.convertDefinitionIntoConstraint)
     .reduce(convertEntryListInMap, {})
 }
 
+/**
+ * creates shared tag Interfaces from a SwaggerObject
+ * @param {SwaggerObject} swagger: the swagger object to extract the shared tags from
+ * @returns {Object<string, Interface>} the corresponding TypedStoreInstance for interfaces
+ */
 methods.getTagInterfaces = (swagger) => {
   const pathnames = Object.keys(swagger.paths || {})
   const tags = pathnames
