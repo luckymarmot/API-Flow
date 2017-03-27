@@ -1276,6 +1276,12 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
   return { key, value }
 }
 
+/**
+ * adds path parameters to an operation object
+ * @param {Parameter} pathParam: the Parameter representing the path
+ * @param {SwaggerOperationObject} operation: the operation object to update
+ * @returns {SwaggerOperationObject} the updated operation object
+ */
 methods.addPathParametersToOperation = (pathParam, operation) => {
   if (!pathParam || pathParam.get('superType') !== 'sequence') {
     return operation
@@ -1328,6 +1334,15 @@ methods.convertResourceToPathItemObject = (store, globalContentTypes, resource) 
   return { key, value }
 }
 
+/**
+ * merges resource objects together if need be
+ * @param {Object<string, SwaggerPathObject>} resourceMap: the object containing all path
+ * objects
+ * @param {Entry} entry: a SwaggerPathObject as an Entry
+ * @param {string} entry.key: the path of the SwaggerPathObject
+ * @param {SwaggerPathObject} entry.value: the SwaggerPathObject to merge in the resourceMap
+ * @returns {Object<string, SwaggerPathObject>} the updated resource map
+ */
 methods.mergeResourceObjects = (resourceMap, { key, value }) => {
   if (resourceMap[key]) {
     Object.assign(resourceMap[key], value)
