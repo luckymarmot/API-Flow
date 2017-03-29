@@ -1,6 +1,13 @@
-import Immutable from 'immutable'
+import { Record } from 'immutable'
 
-export default class Model extends Immutable.Record({
-    name: null,
-    version: null
-}) { }
+/**
+ * Default Spec for the Model Record.
+ */
+const ModelSpec = {
+  name: '',
+  version: ''
+}
+
+export const Model = Record(ModelSpec)
+
+export default Model

@@ -34,1973 +34,1973 @@ import JSONSchemaReference from '../../../models/references/JSONSchema'
 export class TestRAMLSerializer extends UnitTest {
 
     @targets('serialize')
-    testSerializeWithEmptyContext() {
-        let s = this.__init()
+  testSerializeWithEmptyContext() {
+    const s = this.__init()
 
-        s.spyOn('_formatStructure', () => {
-            return null
-        })
+    s.spyOn('_formatStructure', () => {
+      return null
+    })
 
-        let input = new Context()
+    const input = new Context()
 
-        let result = s.serialize(input)
+    const result = s.serialize(input)
 
-        let expected =
+    const expected =
             '#%RAML 0.8\n' +
             'null\n'
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatStructure')
-    testFormatStructureWithEmptyContext() {
-        let s = this.__init()
+  testFormatStructureWithEmptyContext() {
+    const s = this.__init()
 
-        s.spyOn('_formatBasicInfo', () => {
-            return {}
-        })
+    s.spyOn('_formatBasicInfo', () => {
+      return {}
+    })
 
-        s.spyOn('_formatURLInfo', () => {
+    s.spyOn('_formatURLInfo', () => {
 
-        })
+    })
 
-        let input = new Context()
+    const input = new Context()
 
-        let result = s._formatStructure(input)
+    const result = s._formatStructure(input)
 
-        let expected = null
+    const expected = null
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatBasicInfo.count, 1)
-        this.assertEqual(s.spy._formatURLInfo.count, 0)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatBasicInfo.count, 1)
+    this.assertEqual(s.spy._formatURLInfo.count, 0)
+  }
 
     @targets('_formatStructure')
-    testFormatStructureWithSimpleContext() {
-        let s = this.__init()
+  testFormatStructureWithSimpleContext() {
+    const s = this.__init()
 
-        s.spyOn('_formatBasicInfo', () => {
-            return {
-                baseUri: '{version}.uri.com',
-                version: 'v1'
-            }
-        })
+    s.spyOn('_formatBasicInfo', () => {
+      return {
+        baseUri: '{version}.uri.com',
+        version: 'v1'
+      }
+    })
 
-        s.spyOn('_formatURLInfo', () => {
-            return {
-                uriParameters: {
-                    value: 12
-                }
-            }
-        })
-
-        s.spyOn('_formatSecuritySchemes', () => {
-            return {
-                securitySchemes: true
-            }
-        })
-
-        s.spyOn('_formatPaths', () => {
-            return {
-                '/a-path': 90
-            }
-        })
-
-        let input = new Context({
-            requests: new Immutable.OrderedMap({ a: 12 })
-        })
-
-        let expected = {
-            baseUri: '{version}.uri.com',
-            version: 'v1',
-            uriParameters: {
-                value: 12
-            },
-            securitySchemes: true,
-            '/a-path': 90
+    s.spyOn('_formatURLInfo', () => {
+      return {
+        uriParameters: {
+          value: 12
         }
+      }
+    })
 
-        let result = s._formatStructure(input)
+    s.spyOn('_formatSecuritySchemes', () => {
+      return {
+        securitySchemes: true
+      }
+    })
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatBasicInfo.count, 1)
-        this.assertEqual(s.spy._formatURLInfo.count, 1)
-        this.assertEqual(s.spy._formatSecuritySchemes.count, 1)
-        this.assertEqual(s.spy._formatPaths.count, 1)
+    s.spyOn('_formatPaths', () => {
+      return {
+        '/a-path': 90
+      }
+    })
+
+    const input = new Context({
+      requests: new Immutable.OrderedMap({ a: 12 })
+    })
+
+    const expected = {
+      baseUri: '{version}.uri.com',
+      version: 'v1',
+      uriParameters: {
+        value: 12
+      },
+      securitySchemes: true,
+      '/a-path': 90
     }
+
+    const result = s._formatStructure(input)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatBasicInfo.count, 1)
+    this.assertEqual(s.spy._formatURLInfo.count, 1)
+    this.assertEqual(s.spy._formatSecuritySchemes.count, 1)
+    this.assertEqual(s.spy._formatPaths.count, 1)
+  }
 
     @targets('_formatBasicInfo')
-    testFormatBasicInfoWithEmptyContext() {
-        let s = this.__init()
+  testFormatBasicInfoWithEmptyContext() {
+    const s = this.__init()
 
-        let input = new Context()
+    const input = new Context()
 
-        let expected = {}
+    const expected = {}
 
-        let result = s._formatBasicInfo(input)
+    const result = s._formatBasicInfo(input)
 
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatContact.count, 0)
-        this.assertEqual(s.spy._formatLicense.count, 0)
-    }
-
-    @targets('_formatBasicInfo')
-    testFormatBasicInfoWithSimpleContextInfo() {
-        let s = this.__init()
-
-        let input = new Context({
-            info: new Info({
-                title: 'Test API',
-                description: 'a simple description',
-                tos: 'http://tos.api.com',
-                version: 'v1'
-            })
-        })
-
-        let expected = {
-            title: 'Test API',
-            documentation: [
-                {
-                    title: 'Description',
-                    content: 'a simple description'
-                },
-                {
-                    title: 'Terms of Service',
-                    content: 'http://tos.api.com'
-                }
-            ],
-            version: 'v1'
-        }
-
-        let result = s._formatBasicInfo(input)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatContact.count, 0)
-        this.assertEqual(s.spy._formatLicense.count, 0)
-    }
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatContact.count, 0)
+    this.assertEqual(s.spy._formatLicense.count, 0)
+  }
 
     @targets('_formatBasicInfo')
-    testFormatBasicInfoWithContactContextInfo() {
-        let s = this.__init()
+  testFormatBasicInfoWithSimpleContextInfo() {
+    const s = this.__init()
 
-        s.spyOn('_formatContact', () => {
-            return 'name: test\nurl: contact.luckymarmot.com\n'
-        })
+    const input = new Context({
+      info: new Info({
+        title: 'Test API',
+        description: 'a simple description',
+        tos: 'http://tos.api.com',
+        version: 'v1'
+      })
+    })
 
-        let input = new Context({
-            info: new Info({
-                title: 'Test API',
-                description: 'a simple description',
-                tos: 'http://tos.api.com',
-                version: 'v1',
-                contact: new Contact()
-            })
-        })
-
-        let expected = {
-            title: 'Test API',
-            documentation: [
-                {
-                    title: 'Description',
-                    content: 'a simple description'
-                },
-                {
-                    title: 'Terms of Service',
-                    content: 'http://tos.api.com'
-                },
-                {
-                    title: 'Contact',
-                    content: 'name: test\nurl: contact.luckymarmot.com\n'
-                }
-            ],
-            version: 'v1'
+    const expected = {
+      title: 'Test API',
+      documentation: [
+        {
+          title: 'Description',
+          content: 'a simple description'
+        },
+        {
+          title: 'Terms of Service',
+          content: 'http://tos.api.com'
         }
-
-        let result = s._formatBasicInfo(input)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatContact.count, 1)
-        this.assertEqual(s.spy._formatLicense.count, 0)
+      ],
+      version: 'v1'
     }
+
+    const result = s._formatBasicInfo(input)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatContact.count, 0)
+    this.assertEqual(s.spy._formatLicense.count, 0)
+  }
 
     @targets('_formatBasicInfo')
-    testFormatBasicInfoWithLicenseContextInfo() {
-        let s = this.__init()
+  testFormatBasicInfoWithContactContextInfo() {
+    const s = this.__init()
 
-        s.spyOn('_formatLicense', () => {
-            return 'name: MIT\nurl: license.luckymarmot.com\n'
-        })
+    s.spyOn('_formatContact', () => {
+      return 'name: test\nurl: contact.luckymarmot.com\n'
+    })
 
-        let input = new Context({
-            info: new Info({
-                title: 'Test API',
-                description: 'a simple description',
-                tos: 'http://tos.api.com',
-                version: 'v1',
-                license: new License()
-            })
-        })
+    const input = new Context({
+      info: new Info({
+        title: 'Test API',
+        description: 'a simple description',
+        tos: 'http://tos.api.com',
+        version: 'v1',
+        contact: new Contact()
+      })
+    })
 
-        let expected = {
-            title: 'Test API',
-            documentation: [
-                {
-                    title: 'Description',
-                    content: 'a simple description'
-                },
-                {
-                    title: 'Terms of Service',
-                    content: 'http://tos.api.com'
-                },
-                {
-                    title: 'License',
-                    content: 'name: MIT\nurl: license.luckymarmot.com\n'
-                }
-            ],
-            version: 'v1'
+    const expected = {
+      title: 'Test API',
+      documentation: [
+        {
+          title: 'Description',
+          content: 'a simple description'
+        },
+        {
+          title: 'Terms of Service',
+          content: 'http://tos.api.com'
+        },
+        {
+          title: 'Contact',
+          content: 'name: test\nurl: contact.luckymarmot.com\n'
         }
-
-        let result = s._formatBasicInfo(input)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatContact.count, 0)
-        this.assertEqual(s.spy._formatLicense.count, 1)
+      ],
+      version: 'v1'
     }
+
+    const result = s._formatBasicInfo(input)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatContact.count, 1)
+    this.assertEqual(s.spy._formatLicense.count, 0)
+  }
+
+    @targets('_formatBasicInfo')
+  testFormatBasicInfoWithLicenseContextInfo() {
+    const s = this.__init()
+
+    s.spyOn('_formatLicense', () => {
+      return 'name: MIT\nurl: license.luckymarmot.com\n'
+    })
+
+    const input = new Context({
+      info: new Info({
+        title: 'Test API',
+        description: 'a simple description',
+        tos: 'http://tos.api.com',
+        version: 'v1',
+        license: new License()
+      })
+    })
+
+    const expected = {
+      title: 'Test API',
+      documentation: [
+        {
+          title: 'Description',
+          content: 'a simple description'
+        },
+        {
+          title: 'Terms of Service',
+          content: 'http://tos.api.com'
+        },
+        {
+          title: 'License',
+          content: 'name: MIT\nurl: license.luckymarmot.com\n'
+        }
+      ],
+      version: 'v1'
+    }
+
+    const result = s._formatBasicInfo(input)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatContact.count, 0)
+    this.assertEqual(s.spy._formatLicense.count, 1)
+  }
 
     @targets('_formatContact')
-    testFormatContactWithEmptyContact() {
-        let s = this.__init()
+  testFormatContactWithEmptyContact() {
+    const s = this.__init()
 
-        let contact = new Contact()
+    const contact = new Contact()
 
-        let expected = ''
-        let result = s._formatContact(contact)
+    const expected = ''
+    const result = s._formatContact(contact)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatContact')
-    testFormatContactWithRichContact() {
-        let s = this.__init()
+  testFormatContactWithRichContact() {
+    const s = this.__init()
 
-        let contact = new Contact({
-            name: 'test',
-            url: 'test.lucky.com',
-            email: 'test@lucky.com'
-        })
+    const contact = new Contact({
+      name: 'test',
+      url: 'test.lucky.com',
+      email: 'test@lucky.com'
+    })
 
-        let expected =
+    const expected =
             'name: test\n' +
             'url: test.lucky.com\n' +
             'email: test@lucky.com\n'
 
-        let result = s._formatContact(contact)
+    const result = s._formatContact(contact)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatLicense')
-    testFormatLicenseWithEmptyLicense() {
-        let s = this.__init()
-
-        let license = new License()
-
-        let expected = ''
-        let result = s._formatLicense(license)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatLicense')
-    testFormatLicenseWithRichLicense() {
-        let s = this.__init()
+  testFormatLicenseWithEmptyLicense() {
+    const s = this.__init()
 
-        let license = new License({
-            name: 'MIT',
-            url: 'license.lucky.com'
-        })
+    const license = new License()
 
-        let expected =
+    const expected = ''
+    const result = s._formatLicense(license)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatLicense')
+  testFormatLicenseWithRichLicense() {
+    const s = this.__init()
+
+    const license = new License({
+      name: 'MIT',
+      url: 'license.lucky.com'
+    })
+
+    const expected =
             'name: MIT\n' +
             'url: license.lucky.com\n'
 
-        let result = s._formatLicense(license)
+    const result = s._formatLicense(license)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatURLInfo')
-    testFormatURLInfoWithEmptyRequestList() {
-        let s = this.__init()
-        let reqs = new Immutable.List()
-
-        let expected = {}
-        let result = s._formatURLInfo(reqs)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._updateProtocols.count, 0)
-        this.assertEqual(s.spy._generateSequenceParam.count, 0)
-        this.assertEqual(s.spy._formatURIParameters.count, 0)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatURLInfo')
-    testFormatURLInfoWithTwoRequests() {
-        let s = this.__init()
+  testFormatURLInfoWithEmptyRequestList() {
+    const s = this.__init()
+    const reqs = new Immutable.List()
 
-        s.spyOn('_updateProtocols', () => {
-            return { http: true, https: true }
-        })
+    const expected = {}
+    const result = s._formatURLInfo(reqs)
 
-        s.spyOn('_generateSequenceParam', () => {
-            return 'test.luckymarmot.com'
-        })
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._updateProtocols.count, 0)
+    this.assertEqual(s.spy._generateSequenceParam.count, 0)
+    this.assertEqual(s.spy._formatURIParameters.count, 0)
+  }
 
-        s.spyOn('_formatURIParameters', () => {
-            return [ { baseUriParameters: 42 }, 'v1' ]
-        })
+    @targets('_formatURLInfo')
+  testFormatURLInfoWithTwoRequests() {
+    const s = this.__init()
 
-        let reqs = new Immutable.List([
-            new Request(),
-            new Request()
+    s.spyOn('_updateProtocols', () => {
+      return { http: true, https: true }
+    })
+
+    s.spyOn('_generateSequenceParam', () => {
+      return 'test.luckymarmot.com'
+    })
+
+    s.spyOn('_formatURIParameters', () => {
+      return [ { baseUriParameters: 42 }, 'v1' ]
+    })
+
+    const reqs = new Immutable.List([
+      new Request(),
+      new Request()
+    ])
+
+    const expected = {
+      protocols: [ 'HTTP', 'HTTPS' ],
+      baseUri: 'http://test.luckymarmot.com',
+      version: 'v1',
+      baseUriParameters: 42
+    }
+
+    const result = s._formatURLInfo(reqs)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._updateProtocols.count, 2)
+    this.assertEqual(s.spy._generateSequenceParam.count, 1)
+    this.assertEqual(s.spy._formatURIParameters.count, 1)
+  }
+
+    @targets('_updateProtocols')
+  testUpdateProtocolsWithEmptyURL() {
+    const s = this.__init()
+
+    const protocols = {
+      http: true
+    }
+    const url = new URL()
+
+    const expected = {
+      http: true
+    }
+
+    const result = s._updateProtocols(protocols, url)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_updateProtocols')
+  testUpdateProtocolsWithSimpleURL() {
+    const s = this.__init()
+
+    const protocols = {
+      http: true
+    }
+    const url = new URL('https://luckymarmot.com')
+
+    const expected = {
+      http: true,
+      https: true
+    }
+
+    const result = s._updateProtocols(protocols, url)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_updateProtocols')
+  testUpdateProtocolsWithSocketURL() {
+    const s = this.__init()
+
+    const protocols = {
+      http: true
+    }
+    const url = new URL('wss://luckymarmot.com')
+
+    const expected = {
+      http: true
+    }
+
+    const result = s._updateProtocols(protocols, url)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_generateSequenceParam')
+  testGenerateSequenceParamWithSimpleParam() {
+    const s = this.__init()
+
+    const url = new URL({
+      host: new Parameter({
+        key: 'host',
+        type: 'string',
+        internals: new Immutable.List([
+          new Constraint.Enum([
+            'luckymarmot.com'
+          ])
         ])
+      })
+    })
 
-        let expected = {
-            protocols: [ 'HTTP', 'HTTPS' ],
-            baseUri: 'http://test.luckymarmot.com',
-            version: 'v1',
-            baseUriParameters: 42
-        }
+    const expected = 'luckymarmot.com'
+    const result = s._generateSequenceParam(url, 'host')
 
-        let result = s._formatURLInfo(reqs)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._updateProtocols.count, 2)
-        this.assertEqual(s.spy._generateSequenceParam.count, 1)
-        this.assertEqual(s.spy._formatURIParameters.count, 1)
-    }
-
-    @targets('_updateProtocols')
-    testUpdateProtocolsWithEmptyURL() {
-        let s = this.__init()
-
-        let protocols = {
-            http: true
-        }
-        let url = new URL()
-
-        let expected = {
-            http: true
-        }
-
-        let result = s._updateProtocols(protocols, url)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_updateProtocols')
-    testUpdateProtocolsWithSimpleURL() {
-        let s = this.__init()
-
-        let protocols = {
-            http: true
-        }
-        let url = new URL('https://luckymarmot.com')
-
-        let expected = {
-            http: true,
-            https: true
-        }
-
-        let result = s._updateProtocols(protocols, url)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_updateProtocols')
-    testUpdateProtocolsWithSocketURL() {
-        let s = this.__init()
-
-        let protocols = {
-            http: true
-        }
-        let url = new URL('wss://luckymarmot.com')
-
-        let expected = {
-            http: true
-        }
-
-        let result = s._updateProtocols(protocols, url)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_generateSequenceParam')
-    testGenerateSequenceParamWithSimpleParam() {
-        let s = this.__init()
+  testGenerateSequenceParamWithSequenceParam() {
+    const s = this.__init()
 
-        let url = new URL({
-            host: new Parameter({
-                key: 'host',
-                type: 'string',
-                internals: new Immutable.List([
-                    new Constraint.Enum([
-                        'luckymarmot.com'
-                    ])
-                ])
-            })
-        })
-
-        let expected = 'luckymarmot.com'
-        let result = s._generateSequenceParam(url, 'host')
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_generateSequenceParam')
-    testGenerateSequenceParamWithSequenceParam() {
-        let s = this.__init()
-
-        let url = new URL({
-            host: new Parameter({
-                key: 'host',
-                type: 'string',
-                value: new Immutable.List([
-                    new Parameter({
-                        key: 'version',
-                        type: 'string',
-                        internals: new Immutable.List([
-                            new Constraint.Enum([ 'v0.8', 'v1' ])
-                        ])
-                    }),
-                    new Parameter({
-                        type: 'string',
-                        internals: new Immutable.List([
-                            new Constraint.Enum([ '.luckymarmot.' ])
-                        ])
-                    }),
-                    new Parameter({
-                        key: 'extension',
-                        type: 'string',
-                        internals: new Immutable.List([
-                            new Constraint.Enum([
-                                'com', 'co.uk', 'io'
-                            ])
-                        ])
-                    })
-                ]),
-                format: 'sequence'
-            })
-        })
-
-        let expected = '{version}.luckymarmot.{extension}'
-        let result = s._generateSequenceParam(url, 'host')
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatURIParameters')
-    testFormatURIParametersWithSimpleParam() {
-        let s = this.__init()
-
-        let param = new Parameter({
+    const url = new URL({
+      host: new Parameter({
+        key: 'host',
+        type: 'string',
+        value: new Immutable.List([
+          new Parameter({
+            key: 'version',
             type: 'string',
             internals: new Immutable.List([
-                new Constraint.Enum([ 'luckymarmot.com' ])
+              new Constraint.Enum([ 'v0.8', 'v1' ])
             ])
-        })
-        let target = 'baseUriParameters'
-
-        let expected = [ {}, null ]
-        let result = s._formatURIParameters(param, target)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._convertJSONSchemaToNamedParameter.count, 0)
-    }
-
-    @targets('_formatURIParameters')
-    testFormatURIParametersWithSequenceParam() {
-        let s = this.__init()
-
-        s.spyOn('_convertJSONSchemaToNamedParameter', () => {
-            return {
-                extension: {
-                    displayName: 'extension',
-                    type: 'string',
-                    enum: [ 'com', 'co.uk', 'io' ]
-                }
-            }
-        })
-
-        let param = new Parameter({
-            key: 'host',
+          }),
+          new Parameter({
             type: 'string',
-            value: new Immutable.List([
-                new Parameter({
-                    key: 'version',
-                    type: 'string',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([ 'v1' ])
-                    ])
-                }),
-                new Parameter({
-                    type: 'string',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([ '.luckymarmot.' ])
-                    ])
-                }),
-                new Parameter({
-                    key: 'extension',
-                    type: 'string',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            'com', 'co.uk', 'io'
-                        ])
-                    ])
-                })
-            ]),
-            format: 'sequence'
-        })
-        let target = 'baseUriParameters'
-
-        let expected = [ {
-            baseUriParameters: {
-                extension: {
-                    displayName: 'extension',
-                    type: 'string',
-                    enum: [ 'com', 'co.uk', 'io' ]
-                }
-            }
-        }, 'v1' ]
-        let result = s._formatURIParameters(param, target)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._convertJSONSchemaToNamedParameter.count, 1)
-    }
-
-    @targets('_convertJSONSchemaToNamedParameter')
-    testConvertJSONToNamedParameterWithSimpleSchema() {
-        let s = this.__init()
-
-        let schema = {}
-
-        /* eslint-disable no-undefined */
-        let expected = {
-            null: {}
-        }
-        /* eslint-enable no-undefined */
-        let result = s._convertJSONSchemaToNamedParameter(schema)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_convertJSONSchemaToNamedParameter')
-    testConvertJSONToNamedParameterWithRichSchema() {
-        let s = this.__init()
-
-        let schema = {
-            'x-title': 'extension',
-            type: 'string',
-            enum: [ 'com', 'io' ],
-            minimumLength: 2,
-            maximumLength: 3
-        }
-
-        let expected = {
-            extension: {
-                displayName: 'extension',
-                type: 'string',
-                enum: [ 'com', 'io' ],
-                minLength: 2,
-                maxLength: 3
-            }
-        }
-        let result = s._convertJSONSchemaToNamedParameter(schema)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_convertJSONSchemaToNamedParameter')
-    testConvertJSONToNamedParameterWithNumberSchema() {
-        let s = this.__init()
-
-        let schema = {
-            'x-title': 'version',
-            type: 'integer',
-            minimum: 1,
-            maximum: 4
-        }
-
-        let expected = {
-            version: {
-                displayName: 'version',
-                type: 'integer',
-                minimum: 1,
-                maximum: 4
-            }
-        }
-        let result = s._convertJSONSchemaToNamedParameter(schema)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_convertParameterToNamedParameter')
-    testConvertParameterToNamedParameterWithSimpleParam() {
-        let s = this.__init()
-
-        let param = new Parameter()
-
-        let expected = {
-            required: false
-        }
-
-        let result = s._convertParameterToNamedParameter(param)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_convertParameterToNamedParameter')
-    testConvertParameterToNamedParameterWithRichParam() {
-        let s = this.__init()
-
-        let param = new Parameter({
+            internals: new Immutable.List([
+              new Constraint.Enum([ '.luckymarmot.' ])
+            ])
+          }),
+          new Parameter({
             key: 'extension',
             type: 'string',
             internals: new Immutable.List([
-                new Constraint.Enum([ 'com', 'io' ])
-            ]),
-            example: 'com',
-            description: 'the extension of the domain',
-            required: true
-        })
+              new Constraint.Enum([
+                'com', 'co.uk', 'io'
+              ])
+            ])
+          })
+        ]),
+        format: 'sequence'
+      })
+    })
 
-        let expected = {
-            extension: {
-                displayName: 'extension',
-                type: 'string',
-                enum: [ 'com', 'io' ],
-                required: true,
-                example: 'com',
-                description: 'the extension of the domain'
-            }
+    const expected = '{version}.luckymarmot.{extension}'
+    const result = s._generateSequenceParam(url, 'host')
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatURIParameters')
+  testFormatURIParametersWithSimpleParam() {
+    const s = this.__init()
+
+    const param = new Parameter({
+      type: 'string',
+      internals: new Immutable.List([
+        new Constraint.Enum([ 'luckymarmot.com' ])
+      ])
+    })
+    const target = 'baseUriParameters'
+
+    const expected = [ {}, null ]
+    const result = s._formatURIParameters(param, target)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._convertJSONSchemaToNamedParameter.count, 0)
+  }
+
+    @targets('_formatURIParameters')
+  testFormatURIParametersWithSequenceParam() {
+    const s = this.__init()
+
+    s.spyOn('_convertJSONSchemaToNamedParameter', () => {
+      return {
+        extension: {
+          displayName: 'extension',
+          type: 'string',
+          enum: [ 'com', 'co.uk', 'io' ]
         }
+      }
+    })
 
-        let result = s._convertParameterToNamedParameter(param)
+    const param = new Parameter({
+      key: 'host',
+      type: 'string',
+      value: new Immutable.List([
+        new Parameter({
+          key: 'version',
+          type: 'string',
+          internals: new Immutable.List([
+            new Constraint.Enum([ 'v1' ])
+          ])
+        }),
+        new Parameter({
+          type: 'string',
+          internals: new Immutable.List([
+            new Constraint.Enum([ '.luckymarmot.' ])
+          ])
+        }),
+        new Parameter({
+          key: 'extension',
+          type: 'string',
+          internals: new Immutable.List([
+            new Constraint.Enum([
+              'com', 'co.uk', 'io'
+            ])
+          ])
+        })
+      ]),
+      format: 'sequence'
+    })
+    const target = 'baseUriParameters'
 
-        this.assertEqual(expected, result)
+    const expected = [ {
+      baseUriParameters: {
+        extension: {
+          displayName: 'extension',
+          type: 'string',
+          enum: [ 'com', 'co.uk', 'io' ]
+        }
+      }
+    }, 'v1' ]
+    const result = s._formatURIParameters(param, target)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._convertJSONSchemaToNamedParameter.count, 1)
+  }
+
+    @targets('_convertJSONSchemaToNamedParameter')
+  testConvertJSONToNamedParameterWithSimpleSchema() {
+    const s = this.__init()
+
+    const schema = {}
+
+        /* eslint-disable no-undefined */
+    const expected = {
+      null: {}
     }
+        /* eslint-enable no-undefined */
+    const result = s._convertJSONSchemaToNamedParameter(schema)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_convertJSONSchemaToNamedParameter')
+  testConvertJSONToNamedParameterWithRichSchema() {
+    const s = this.__init()
+
+    const schema = {
+      'x-title': 'extension',
+      type: 'string',
+      enum: [ 'com', 'io' ],
+      minimumLength: 2,
+      maximumLength: 3
+    }
+
+    const expected = {
+      extension: {
+        displayName: 'extension',
+        type: 'string',
+        enum: [ 'com', 'io' ],
+        minLength: 2,
+        maxLength: 3
+      }
+    }
+    const result = s._convertJSONSchemaToNamedParameter(schema)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_convertJSONSchemaToNamedParameter')
+  testConvertJSONToNamedParameterWithNumberSchema() {
+    const s = this.__init()
+
+    const schema = {
+      'x-title': 'version',
+      type: 'integer',
+      minimum: 1,
+      maximum: 4
+    }
+
+    const expected = {
+      version: {
+        displayName: 'version',
+        type: 'integer',
+        minimum: 1,
+        maximum: 4
+      }
+    }
+    const result = s._convertJSONSchemaToNamedParameter(schema)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_convertParameterToNamedParameter')
+  testConvertParameterToNamedParameterWithSimpleParam() {
+    const s = this.__init()
+
+    const param = new Parameter()
+
+    const expected = {
+      required: false
+    }
+
+    const result = s._convertParameterToNamedParameter(param)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_convertParameterToNamedParameter')
+  testConvertParameterToNamedParameterWithRichParam() {
+    const s = this.__init()
+
+    const param = new Parameter({
+      key: 'extension',
+      type: 'string',
+      internals: new Immutable.List([
+        new Constraint.Enum([ 'com', 'io' ])
+      ]),
+      example: 'com',
+      description: 'the extension of the domain',
+      required: true
+    })
+
+    const expected = {
+      extension: {
+        displayName: 'extension',
+        type: 'string',
+        enum: [ 'com', 'io' ],
+        required: true,
+        example: 'com',
+        description: 'the extension of the domain'
+      }
+    }
+
+    const result = s._convertParameterToNamedParameter(param)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatSecuritySchemes')
-    testFormatSecuritySchemesWithEmptyRequestList() {
-        let s = this.__init()
+  testFormatSecuritySchemesWithEmptyRequestList() {
+    const s = this.__init()
 
-        let reqs = new Immutable.List()
+    const reqs = new Immutable.List()
 
-        let expected = {}
+    const expected = {}
 
-        let result = s._formatSecuritySchemes(reqs)
+    const result = s._formatSecuritySchemes(reqs)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatSecuritySchemes')
-    testFormatSecuritySchemesWithTwoRequests() {
-        let s = this.__init()
+  testFormatSecuritySchemesWithTwoRequests() {
+    const s = this.__init()
 
-        s.spyOn('_formatBasic', () => {
-            return {
-                basic: {
-                    type: 'Basic Authentication'
-                }
-            }
-        })
-
-        s.spyOn('_formatOAuth2', () => {
-            return {
-                oauth_2_0: {
-                    type: 'OAuth 2.0',
-                    settings: {
-                        authorizationUri: 'api.com/oauth2/authorize',
-                        accessTokenUri: 'api.com/oauth2/token',
-                        authorizationGrants: [ 'token' ]
-                    }
-                }
-            }
-        })
-
-        let reqs = new Immutable.List([
-            new Request({
-                auths: new Immutable.List([
-                    null,
-                    new Auth.OAuth2({
-                        flow: 'implicit',
-                        authorizationUrl: 'api.com/oauth2/authorize',
-                        tokenUrl: 'api.com/oauth2/token',
-                        scopes: Immutable.List([ 'read:any', 'write:own' ])
-                    })
-                ])
-            }),
-            new Request({
-                auths: new Immutable.List([
-                    null,
-                    new Auth.Basic({
-                        username: 'admin'
-                    })
-                ])
-            })
-        ])
-
-        let expected = {
-            securitySchemes: [
-                {
-                    oauth_2_0: {
-                        type: 'OAuth 2.0',
-                        settings: {
-                            authorizationUri: 'api.com/oauth2/authorize',
-                            accessTokenUri: 'api.com/oauth2/token',
-                            authorizationGrants: [ 'token' ]
-                        }
-                    }
-                },
-                {
-                    basic: {
-                        type: 'Basic Authentication'
-                    }
-                }
-            ]
+    s.spyOn('_formatBasic', () => {
+      return {
+        basic: {
+          type: 'Basic Authentication'
         }
+      }
+    })
 
-        let result = s._formatSecuritySchemes(reqs)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatOAuth2')
-    testFormatOAuth2WithSimpleAuth() {
-        let s = this.__init()
-
-        let auth = new Auth.OAuth2()
-
-        let expected = {
-            oauth_2_0: {
-                type: 'OAuth 2.0',
-                settings: {
-                    authorizationUri: '',
-                    accessTokenUri: '',
-                    authorizationGrants: [ null ]
-                }
-            }
+    s.spyOn('_formatOAuth2', () => {
+      return {
+        oauth_2_0: {
+          type: 'OAuth 2.0',
+          settings: {
+            authorizationUri: 'api.com/oauth2/authorize',
+            accessTokenUri: 'api.com/oauth2/token',
+            authorizationGrants: [ 'token' ]
+          }
         }
+      }
+    })
 
-        let result = s._formatOAuth2(auth)
-
-        this.assertJSONEqual(expected, result)
-    }
-
-    @targets('_formatOAuth2')
-    testFormatOAuth2WithRichAuth() {
-        let s = this.__init()
-
-        let auth = new Auth.OAuth2({
+    const reqs = new Immutable.List([
+      new Request({
+        auths: new Immutable.List([
+          null,
+          new Auth.OAuth2({
             flow: 'implicit',
             authorizationUrl: 'api.com/oauth2/authorize',
             tokenUrl: 'api.com/oauth2/token',
             scopes: Immutable.List([ 'read:any', 'write:own' ])
-        })
+          })
+        ])
+      }),
+      new Request({
+        auths: new Immutable.List([
+          null,
+          new Auth.Basic({
+            username: 'admin'
+          })
+        ])
+      })
+    ])
 
-        let expected = {
-            oauth_2_0: {
-                type: 'OAuth 2.0',
-                settings: {
-                    authorizationUri: 'api.com/oauth2/authorize',
-                    accessTokenUri: 'api.com/oauth2/token',
-                    authorizationGrants: [ 'token' ]
-                }
+    const expected = {
+      securitySchemes: [
+        {
+          oauth_2_0: {
+            type: 'OAuth 2.0',
+            settings: {
+              authorizationUri: 'api.com/oauth2/authorize',
+              accessTokenUri: 'api.com/oauth2/token',
+              authorizationGrants: [ 'token' ]
             }
+          }
+        },
+        {
+          basic: {
+            type: 'Basic Authentication'
+          }
         }
-
-        let result = s._formatOAuth2(auth)
-
-        this.assertEqual(expected, result)
+      ]
     }
+
+    const result = s._formatSecuritySchemes(reqs)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatOAuth2')
+  testFormatOAuth2WithSimpleAuth() {
+    const s = this.__init()
+
+    const auth = new Auth.OAuth2()
+
+    const expected = {
+      oauth_2_0: {
+        type: 'OAuth 2.0',
+        settings: {
+          authorizationUri: '',
+          accessTokenUri: '',
+          authorizationGrants: [ null ]
+        }
+      }
+    }
+
+    const result = s._formatOAuth2(auth)
+
+    this.assertJSONEqual(expected, result)
+  }
+
+    @targets('_formatOAuth2')
+  testFormatOAuth2WithRichAuth() {
+    const s = this.__init()
+
+    const auth = new Auth.OAuth2({
+      flow: 'implicit',
+      authorizationUrl: 'api.com/oauth2/authorize',
+      tokenUrl: 'api.com/oauth2/token',
+      scopes: Immutable.List([ 'read:any', 'write:own' ])
+    })
+
+    const expected = {
+      oauth_2_0: {
+        type: 'OAuth 2.0',
+        settings: {
+          authorizationUri: 'api.com/oauth2/authorize',
+          accessTokenUri: 'api.com/oauth2/token',
+          authorizationGrants: [ 'token' ]
+        }
+      }
+    }
+
+    const result = s._formatOAuth2(auth)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatOAuth1')
-    testFormatOAuth1WithSimpleAuth() {
-        let s = this.__init()
+  testFormatOAuth1WithSimpleAuth() {
+    const s = this.__init()
 
-        let auth = new Auth.OAuth1()
+    const auth = new Auth.OAuth1()
 
-        let expected = {
-            oauth_1_0: {
-                type: 'OAuth 1.0'
-            }
-        }
-
-        let result = s._formatOAuth1(auth)
-
-        this.assertEqual(expected, result)
+    const expected = {
+      oauth_1_0: {
+        type: 'OAuth 1.0'
+      }
     }
+
+    const result = s._formatOAuth1(auth)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatOAuth1')
-    testFormatOAuth1WithRichAuth() {
-        let s = this.__init()
+  testFormatOAuth1WithRichAuth() {
+    const s = this.__init()
 
-        let auth = new Auth.OAuth1({
-            callback: 'http://api.com/oauth1/callback',
-            consumerSecret: 'consumer secret',
-            tokenSecret: 'token secret',
-            consumerKey: 'consumer key',
-            algorithm: 'super secret algorithm',
-            nonce: '12345',
-            additionalParameters: 'none',
-            timestamp: 'now',
-            token: 'token',
-            version: '1.0',
-            signature: 'this is signed',
-            tokenCredentialsUri: 'http://api.com/oauth1/credentials',
-            requestTokenUri: 'http://api.com/oauth1/request',
-            authorizationUri: 'http://api.com/oauth1/authorize'
-        })
+    const auth = new Auth.OAuth1({
+      callback: 'http://api.com/oauth1/callback',
+      consumerSecret: 'consumer secret',
+      tokenSecret: 'token secret',
+      consumerKey: 'consumer key',
+      algorithm: 'super secret algorithm',
+      nonce: '12345',
+      additionalParameters: 'none',
+      timestamp: 'now',
+      token: 'token',
+      version: '1.0',
+      signature: 'this is signed',
+      tokenCredentialsUri: 'http://api.com/oauth1/credentials',
+      requestTokenUri: 'http://api.com/oauth1/request',
+      authorizationUri: 'http://api.com/oauth1/authorize'
+    })
 
-        let expected = {
-            oauth_1_0: {
-                type: 'OAuth 1.0',
-                settings: {
-                    callback: 'http://api.com/oauth1/callback',
-                    consumerSecret: 'consumer secret',
-                    tokenSecret: 'token secret',
-                    consumerKey: 'consumer key',
-                    algorithm: 'super secret algorithm',
-                    nonce: '12345',
-                    additionalParameters: 'none',
-                    timestamp: 'now',
-                    token: 'token',
-                    version: '1.0',
-                    signature: 'this is signed',
-                    tokenCredentialsUri: 'http://api.com/oauth1/credentials',
-                    requestTokenUri: 'http://api.com/oauth1/request',
-                    authorizationUri: 'http://api.com/oauth1/authorize'
-                }
-            }
+    const expected = {
+      oauth_1_0: {
+        type: 'OAuth 1.0',
+        settings: {
+          callback: 'http://api.com/oauth1/callback',
+          consumerSecret: 'consumer secret',
+          tokenSecret: 'token secret',
+          consumerKey: 'consumer key',
+          algorithm: 'super secret algorithm',
+          nonce: '12345',
+          additionalParameters: 'none',
+          timestamp: 'now',
+          token: 'token',
+          version: '1.0',
+          signature: 'this is signed',
+          tokenCredentialsUri: 'http://api.com/oauth1/credentials',
+          requestTokenUri: 'http://api.com/oauth1/request',
+          authorizationUri: 'http://api.com/oauth1/authorize'
         }
-
-        let result = s._formatOAuth1(auth)
-
-        this.assertEqual(expected, result)
+      }
     }
+
+    const result = s._formatOAuth1(auth)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatDigest')
-    testFormatDigest() {
-        let s = this.__init()
+  testFormatDigest() {
+    const s = this.__init()
 
-        const input = new Auth.Digest({
-            description: 'some desc'
-        })
+    const input = new Auth.Digest({
+      description: 'some desc'
+    })
 
-        let expected = {
-            digest: {
-                description: 'some desc',
-                type: 'Digest Authentication'
-            }
-        }
-
-        let result = s._formatDigest(input)
-
-        this.assertEqual(expected, result)
+    const expected = {
+      digest: {
+        description: 'some desc',
+        type: 'Digest Authentication'
+      }
     }
+
+    const result = s._formatDigest(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatBasic')
-    testFormatBasic() {
-        let s = this.__init()
+  testFormatBasic() {
+    const s = this.__init()
 
-        const input = new Auth.Digest({
-            description: 'some desc'
-        })
+    const input = new Auth.Digest({
+      description: 'some desc'
+    })
 
-        let expected = {
-            basic: {
-                description: 'some desc',
-                type: 'Basic Authentication'
-            }
-        }
-
-        let result = s._formatBasic(input)
-
-        this.assertEqual(expected, result)
+    const expected = {
+      basic: {
+        description: 'some desc',
+        type: 'Basic Authentication'
+      }
     }
+
+    const result = s._formatBasic(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatPaths')
-    testFormatPathsWithEmptyList() {
-        let s = this.__init()
+  testFormatPathsWithEmptyList() {
+    const s = this.__init()
 
-        let group = new Immutable.List()
+    const group = new Immutable.List()
 
-        let expected = {}
-        let result = s._formatPaths(group)
+    const expected = {}
+    const result = s._formatPaths(group)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatPaths')
-    testFormatPathsWithSimpleGroup() {
-        let s = this.__init()
+  testFormatPathsWithSimpleGroup() {
+    const s = this.__init()
 
-        s.spyOn('_formatRequest', (req) => {
-            let res = {}
-            res[req.get('method')] = true
-            return res
-        })
+    s.spyOn('_formatRequest', (req) => {
+      const res = {}
+      res[req.get('method')] = true
+      return res
+    })
 
-        s.spyOn('_formatURIParametersForFragment', () => {
-            return {}
-        })
+    s.spyOn('_formatURIParametersForFragment', () => {
+      return {}
+    })
 
-        let requests = new Immutable.List([
-            new Request({
-                url: new URL({
-                    pathname: new Parameter({
-                        key: 'pathname',
-                        type: 'string',
-                        value: new Immutable.List([
-                            new Parameter({
-                                type: 'string',
-                                internals: new Immutable.List([
-                                    new Constraint.Enum([ '/songs' ])
-                                ])
-                            })
-                        ]),
-                        format: 'sequence'
-                    })
-                }),
-                method: 'get'
-            }),
-            new Request({
-                url: new URL({
-                    pathname: new Parameter({
-                        key: 'pathname',
-                        type: 'string',
-                        value: new Immutable.List([
-                            new Parameter({
-                                type: 'string',
-                                internals: new Immutable.List([
-                                    new Constraint.Enum([ '/songs' ])
-                                ])
-                            })
-                        ]),
-                        format: 'sequence'
-                    })
-                }),
-                method: 'post'
-            }),
-            new Request({
-                url: new URL({
-                    pathname: new Parameter({
-                        key: 'pathname',
-                        type: 'string',
-                        value: new Immutable.List([
-                            new Parameter({
-                                type: 'string',
-                                internals: new Immutable.List([
-                                    new Constraint.Enum([ '/songs/' ])
-                                ])
-                            }),
-                            new Parameter({
-                                key: 'songId',
-                                type: 'integer',
-                                internals: new Immutable.List([
-                                    new Constraint.Enum([ 0, 1, 3 ])
-                                ])
-                            })
-                        ]),
-                        format: 'sequence'
-                    })
-                }),
-                method: 'get'
-            })
-        ])
-
-        let expected = {
-            '/songs': {
-                get: true,
-                post: true,
-                '/{songId}': {
-                    get: true
-                }
-            }
-        }
-
-        let result = s._formatPaths(requests)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatRequest.count, 3)
-        this.assertEqual(s.spy._formatURIParametersForFragment.count, 4)
-    }
-
-    @targets('_formatRequest')
-    testFormatRequestWithEmptyRequest() {
-        let s = this.__init()
-        let req = new Request()
-
-        let expected = {}
-        let result = s._formatRequest(req)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatRequest')
-    testFormatRequestWithSimpleRequest() {
-        let s = this.__init()
-
-        s.spyOn('_formatParameters', () => {
-            return {
-                headers: true
-            }
-        })
-
-        s.spyOn('_formatBody', () => {
-            return {
-                body: true
-            }
-        })
-
-        s.spyOn('_formatURIParameters', (_, target) => {
-            let res = {}
-            res[target] = true
-            return [ res, null ]
-        })
-
-        let req = new Request({
-            method: 'get',
-            description: 'a simple description'
-        })
-
-        let expected = {
-            get: {
-                description: 'a simple description',
-                headers: true,
-                body: true,
-                baseUriParameters: true
-            }
-        }
-
-        let result = s._formatRequest(req)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatParameters.count, 1)
-        this.assertEqual(s.spy._formatBody.count, 1)
-        this.assertEqual(s.spy._formatURIParameters.count, 1)
-    }
-
-    @targets('_formatParameters')
-    testFormatParametersWithEmptyContainer() {
-        let s = this.__init()
-
-        let container = new ParameterContainer()
-
-        let expected = {}
-
-        let result = s._formatParameters(container)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._formatHeaders.count, 0)
-        this.assertEqual(s.spy._formatQueries.count, 0)
-    }
-
-    @targets('_formatParameters')
-    testFormatParametersWithSimpleContainer() {
-        let s = this.__init()
-
-        s.spyOn('_formatHeaders', () => {
-            return {
-                'Content-Type': true
-            }
-        })
-
-        s.spyOn('_formatQueries', () => {
-            return {
-                access_token: true
-            }
-        })
-
-        let container = new ParameterContainer({
-            headers: new Immutable.List([
-                new Parameter({
-                    key: 'Content-Type',
-                    type: 'string',
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            'application/json'
-                        ])
-                    ])
-                })
+    const requests = new Immutable.List([
+      new Request({
+        url: new URL({
+          pathname: new Parameter({
+            key: 'pathname',
+            type: 'string',
+            value: new Immutable.List([
+              new Parameter({
+                type: 'string',
+                internals: new Immutable.List([
+                  new Constraint.Enum([ '/songs' ])
+                ])
+              })
             ]),
-            queries: new Immutable.List([
-                new Parameter({
-                    key: 'access_token',
-                    type: 'string',
-                    internals: new Immutable.List([
-                        new Constraint.Pattern(/[a-f0-9]{32}/)
-                    ])
-                })
+            format: 'sequence'
+          })
+        }),
+        method: 'get'
+      }),
+      new Request({
+        url: new URL({
+          pathname: new Parameter({
+            key: 'pathname',
+            type: 'string',
+            value: new Immutable.List([
+              new Parameter({
+                type: 'string',
+                internals: new Immutable.List([
+                  new Constraint.Enum([ '/songs' ])
+                ])
+              })
+            ]),
+            format: 'sequence'
+          })
+        }),
+        method: 'post'
+      }),
+      new Request({
+        url: new URL({
+          pathname: new Parameter({
+            key: 'pathname',
+            type: 'string',
+            value: new Immutable.List([
+              new Parameter({
+                type: 'string',
+                internals: new Immutable.List([
+                  new Constraint.Enum([ '/songs/' ])
+                ])
+              }),
+              new Parameter({
+                key: 'songId',
+                type: 'integer',
+                internals: new Immutable.List([
+                  new Constraint.Enum([ 0, 1, 3 ])
+                ])
+              })
+            ]),
+            format: 'sequence'
+          })
+        }),
+        method: 'get'
+      })
+    ])
+
+    const expected = {
+      '/songs': {
+        get: true,
+        post: true,
+        '/{songId}': {
+          get: true
+        }
+      }
+    }
+
+    const result = s._formatPaths(requests)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatRequest.count, 3)
+    this.assertEqual(s.spy._formatURIParametersForFragment.count, 4)
+  }
+
+    @targets('_formatRequest')
+  testFormatRequestWithEmptyRequest() {
+    const s = this.__init()
+    const req = new Request()
+
+    const expected = {}
+    const result = s._formatRequest(req)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatRequest')
+  testFormatRequestWithSimpleRequest() {
+    const s = this.__init()
+
+    s.spyOn('_formatParameters', () => {
+      return {
+        headers: true
+      }
+    })
+
+    s.spyOn('_formatBody', () => {
+      return {
+        body: true
+      }
+    })
+
+    s.spyOn('_formatURIParameters', (_, target) => {
+      const res = {}
+      res[target] = true
+      return [ res, null ]
+    })
+
+    const req = new Request({
+      method: 'get',
+      description: 'a simple description'
+    })
+
+    const expected = {
+      get: {
+        description: 'a simple description',
+        headers: true,
+        body: true,
+        baseUriParameters: true
+      }
+    }
+
+    const result = s._formatRequest(req)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatParameters.count, 1)
+    this.assertEqual(s.spy._formatBody.count, 1)
+    this.assertEqual(s.spy._formatURIParameters.count, 1)
+  }
+
+    @targets('_formatParameters')
+  testFormatParametersWithEmptyContainer() {
+    const s = this.__init()
+
+    const container = new ParameterContainer()
+
+    const expected = {}
+
+    const result = s._formatParameters(container)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._formatHeaders.count, 0)
+    this.assertEqual(s.spy._formatQueries.count, 0)
+  }
+
+    @targets('_formatParameters')
+  testFormatParametersWithSimpleContainer() {
+    const s = this.__init()
+
+    s.spyOn('_formatHeaders', () => {
+      return {
+        'Content-Type': true
+      }
+    })
+
+    s.spyOn('_formatQueries', () => {
+      return {
+        access_token: true
+      }
+    })
+
+    const container = new ParameterContainer({
+      headers: new Immutable.List([
+        new Parameter({
+          key: 'Content-Type',
+          type: 'string',
+          internals: new Immutable.List([
+            new Constraint.Enum([
+              'application/json'
             ])
+          ])
         })
+      ]),
+      queries: new Immutable.List([
+        new Parameter({
+          key: 'access_token',
+          type: 'string',
+          internals: new Immutable.List([
+            new Constraint.Pattern(/[a-f0-9]{32}/)
+          ])
+        })
+      ])
+    })
 
-        let expected = {
-            headers: {
-                'Content-Type': true
-            },
-            queryParameters: {
-                access_token: true
-            }
-        }
-
-        let result = s._formatParameters(container)
-
-        this.assertEqual(expected, result)
+    const expected = {
+      headers: {
+        'Content-Type': true
+      },
+      queryParameters: {
+        access_token: true
+      }
     }
 
-    @targets('_formatHeaders')
-    testFormatHeadersWithEmptyHeaders() {
-        let s = this.__init()
+    const result = s._formatParameters(container)
 
-        let headers = new Immutable.List()
-
-        let expected = {}
-
-        let result = s._formatHeaders(headers)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatHeaders')
-    testFormatHeadersWithSimpleHeaders() {
-        let s = this.__init()
+  testFormatHeadersWithEmptyHeaders() {
+    const s = this.__init()
 
-        let headers = new Immutable.List([
-            new Parameter({
-                key: 'Content-Type',
-                type: 'string',
-                internals: new Immutable.List([
-                    new Constraint.Enum([
-                        'application/json'
-                    ])
-                ])
-            }),
-            new Parameter({
-                key: 'Expect',
-                type: 'string',
-                internals: new Immutable.List([
-                    new Constraint.Enum([
-                        '100-continue'
-                    ])
-                ])
-            })
+    const headers = new Immutable.List()
+
+    const expected = {}
+
+    const result = s._formatHeaders(headers)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatHeaders')
+  testFormatHeadersWithSimpleHeaders() {
+    const s = this.__init()
+
+    const headers = new Immutable.List([
+      new Parameter({
+        key: 'Content-Type',
+        type: 'string',
+        internals: new Immutable.List([
+          new Constraint.Enum([
+            'application/json'
+          ])
         ])
+      }),
+      new Parameter({
+        key: 'Expect',
+        type: 'string',
+        internals: new Immutable.List([
+          new Constraint.Enum([
+            '100-continue'
+          ])
+        ])
+      })
+    ])
 
-        let expected = {
-            'Content-Type': {
-                displayName: 'Content-Type',
-                type: 'string',
-                enum: [ 'application/json' ],
-                required: false
-            },
-            Expect: {
-                displayName: 'Expect',
-                type: 'string',
-                enum: [ '100-continue' ],
-                required: false
-            }
-        }
-
-        let result = s._formatHeaders(headers)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._convertParameterToNamedParameter.count, 2)
+    const expected = {
+      'Content-Type': {
+        displayName: 'Content-Type',
+        type: 'string',
+        enum: [ 'application/json' ],
+        required: false
+      },
+      Expect: {
+        displayName: 'Expect',
+        type: 'string',
+        enum: [ '100-continue' ],
+        required: false
+      }
     }
+
+    const result = s._formatHeaders(headers)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._convertParameterToNamedParameter.count, 2)
+  }
 
         @targets('_formatQueries')
-    testFormatQueriesWithEmptyQueries() {
-        let s = this.__init()
+  testFormatQueriesWithEmptyQueries() {
+    const s = this.__init()
 
-        let queries = new Immutable.List()
+    const queries = new Immutable.List()
 
-        let expected = {}
+    const expected = {}
 
-        let result = s._formatQueries(queries)
+    const result = s._formatQueries(queries)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatQueries')
-    testFormatQueriesWithSimpleQueries() {
-        let s = this.__init()
+  testFormatQueriesWithSimpleQueries() {
+    const s = this.__init()
 
-        let queries = new Immutable.List([
-            new Parameter({
-                key: 'access_token',
-                type: 'string',
-                internals: new Immutable.List([
-                    new Constraint.MinimumLength(32)
-                ])
-            }),
-            new Parameter({
-                key: 'count',
-                type: 'integer',
-                internals: new Immutable.List([
-                    new Constraint.Minimum(1),
-                    new Constraint.Maximum(500)
-                ])
-            })
+    const queries = new Immutable.List([
+      new Parameter({
+        key: 'access_token',
+        type: 'string',
+        internals: new Immutable.List([
+          new Constraint.MinimumLength(32)
         ])
+      }),
+      new Parameter({
+        key: 'count',
+        type: 'integer',
+        internals: new Immutable.List([
+          new Constraint.Minimum(1),
+          new Constraint.Maximum(500)
+        ])
+      })
+    ])
 
-        let expected = {
-            access_token: {
-                displayName: 'access_token',
-                type: 'string',
-                minLength: 32,
-                required: false
-            },
+    const expected = {
+      access_token: {
+        displayName: 'access_token',
+        type: 'string',
+        minLength: 32,
+        required: false
+      },
+      count: {
+        displayName: 'count',
+        type: 'integer',
+        minimum: 1,
+        maximum: 500,
+        required: false
+      }
+    }
+
+    const result = s._formatQueries(queries)
+
+    this.assertEqual(expected, result)
+    this.assertEqual(s.spy._convertParameterToNamedParameter.count, 2)
+  }
+
+    @targets('_formatBody')
+  testFormatBodyWithEmptyBodyList() {
+    const s = this.__init()
+
+    const container = new ParameterContainer()
+    const bodies = new Immutable.List()
+
+    const expected = {}
+    const result = s._formatBody(container, bodies)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatBody')
+  testFormatBodyWithSimpleBodyList() {
+    const s = this.__init()
+
+    s.spyOn('_getContentTypeConstraint', () => {
+      return 'application/json'
+    })
+
+    const container = new ParameterContainer({
+      body: new Immutable.List([
+        new Parameter({
+          key: 'schema',
+          type: 'string',
+          value: '{ "super": "schema" }',
+          externals: new Immutable.List([
+            new Parameter({
+              key: 'Content-Type',
+              type: 'string',
+              internals: new Immutable.List([
+                new Constraint.Enum([ 'application/json' ])
+              ])
+            })
+          ])
+        })
+      ])
+    })
+
+    const bodies = new Immutable.List([
+      new Body({
+        constraints: new Immutable.List([
+          new Parameter({
+            key: 'Content-Type',
+            type: 'string',
+            value: 'application/json'
+          })
+        ])
+      })
+    ])
+
+    const expected = {
+      body: {
+        'application/json': {
+          schema: '{ "super": "schema" }'
+        }
+      }
+    }
+
+    const result = s._formatBody(container, bodies)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatBody')
+  testFormatBodyWithFormBodyList() {
+    const s = this.__init()
+
+    s.spyOn('_getContentTypeConstraint', () => {
+      return 'application/x-www-form-urlencoded'
+    })
+
+    const container = new ParameterContainer({
+      body: new Immutable.List([
+        new Parameter({
+          key: 'count',
+          type: 'integer',
+          internals: new Immutable.List([
+            new Constraint.Minimum(0),
+            new Constraint.Maximum(100)
+          ]),
+          externals: new Immutable.List([
+            new Parameter({
+              key: 'Content-Type',
+              type: 'string',
+              internals: new Immutable.List([
+                new Constraint.Enum([
+                  'application/x-www-form-urlencoded'
+                ])
+              ])
+            })
+          ])
+        })
+      ])
+    })
+
+    const bodies = new Immutable.List([
+      new Body({
+        constraints: new Immutable.List([
+          new Parameter({
+            key: 'Content-Type',
+            type: 'string',
+            value: 'application/x-www-form-urlencoded'
+          })
+        ])
+      })
+    ])
+
+    const expected = {
+      body: {
+        'application/x-www-form-urlencoded': {
+          formParameters: {
             count: {
-                displayName: 'count',
-                type: 'integer',
-                minimum: 1,
-                maximum: 500,
-                required: false
+              displayName: 'count',
+              type: 'integer',
+              minimum: 0,
+              maximum: 100,
+              required: false
             }
+          }
         }
-
-        let result = s._formatQueries(queries)
-
-        this.assertEqual(expected, result)
-        this.assertEqual(s.spy._convertParameterToNamedParameter.count, 2)
+      }
     }
 
-    @targets('_formatBody')
-    testFormatBodyWithEmptyBodyList() {
-        let s = this.__init()
+    const result = s._formatBody(container, bodies)
 
-        let container = new ParameterContainer()
-        let bodies = new Immutable.List()
-
-        let expected = {}
-        let result = s._formatBody(container, bodies)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatBody')
-    testFormatBodyWithSimpleBodyList() {
-        let s = this.__init()
-
-        s.spyOn('_getContentTypeConstraint', () => {
-            return 'application/json'
-        })
-
-        let container = new ParameterContainer({
-            body: new Immutable.List([
-                new Parameter({
-                    key: 'schema',
-                    type: 'string',
-                    value: '{ "super": "schema" }',
-                    externals: new Immutable.List([
-                        new Parameter({
-                            key: 'Content-Type',
-                            type: 'string',
-                            internals: new Immutable.List([
-                                new Constraint.Enum([ 'application/json' ])
-                            ])
-                        })
-                    ])
-                })
-            ])
-        })
-
-        let bodies = new Immutable.List([
-            new Body({
-                constraints: new Immutable.List([
-                    new Parameter({
-                        key: 'Content-Type',
-                        type: 'string',
-                        value: 'application/json'
-                    })
-                ])
-            })
-        ])
-
-        let expected = {
-            body: {
-                'application/json': {
-                    schema: '{ "super": "schema" }'
-                }
-            }
-        }
-
-        let result = s._formatBody(container, bodies)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatBody')
-    testFormatBodyWithFormBodyList() {
-        let s = this.__init()
-
-        s.spyOn('_getContentTypeConstraint', () => {
-            return 'application/x-www-form-urlencoded'
-        })
-
-        let container = new ParameterContainer({
-            body: new Immutable.List([
-                new Parameter({
-                    key: 'count',
-                    type: 'integer',
-                    internals: new Immutable.List([
-                        new Constraint.Minimum(0),
-                        new Constraint.Maximum(100)
-                    ]),
-                    externals: new Immutable.List([
-                        new Parameter({
-                            key: 'Content-Type',
-                            type: 'string',
-                            internals: new Immutable.List([
-                                new Constraint.Enum([
-                                    'application/x-www-form-urlencoded'
-                                ])
-                            ])
-                        })
-                    ])
-                })
-            ])
-        })
-
-        let bodies = new Immutable.List([
-            new Body({
-                constraints: new Immutable.List([
-                    new Parameter({
-                        key: 'Content-Type',
-                        type: 'string',
-                        value: 'application/x-www-form-urlencoded'
-                    })
-                ])
-            })
-        ])
-
-        let expected = {
-            body: {
-                'application/x-www-form-urlencoded': {
-                    formParameters: {
-                        count: {
-                            displayName: 'count',
-                            type: 'integer',
-                            minimum: 0,
-                            maximum: 100,
-                            required: false
-                        }
-                    }
-                }
-            }
-        }
-
-        let result = s._formatBody(container, bodies)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_getContentTypeConstraint')
-    testGetContentTypeConstraintWithEmptyBody() {
-        let s = this.__init()
+  testGetContentTypeConstraintWithEmptyBody() {
+    const s = this.__init()
 
-        let body = new Body()
+    const body = new Body()
 
-        let expected = null
+    const expected = null
 
-        let result = s._getContentTypeConstraint(body)
+    const result = s._getContentTypeConstraint(body)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_getContentTypeConstraint')
-    testGetContentTypeConstraintWithSimpleBody() {
-        let s = this.__init()
-        let body = new Body({
-            constraints: new Immutable.List([
-                new Parameter({
-                    key: 'Content-Type',
-                    type: 'string',
-                    value: 'application/json'
-                })
-            ])
-        })
-
-        let expected = 'application/json'
-
-        let result = s._getContentTypeConstraint(body)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_getContentTypeConstraint')
-    testGetContentTypeConstraintWithSimpleBody() {
-        let s = this.__init()
-        let body = new Body({
-            constraints: new Immutable.List([
-                new Parameter({
-                    key: 'Expect',
-                    type: 'string',
-                    value: '100-continue'
-                }),
-                new Parameter({
-                    key: 'Content-Type',
-                    type: 'string',
-                    value: 'application/json'
-                }),
-                new Parameter({
-                    key: 'Warning',
-                    type: 'string',
-                    value: 'client-load:0.8'
-                })
-            ])
+  testGetContentTypeConstraintWithSimpleBody() {
+    const s = this.__init()
+    const body = new Body({
+      constraints: new Immutable.List([
+        new Parameter({
+          key: 'Content-Type',
+          type: 'string',
+          value: 'application/json'
         })
+      ])
+    })
 
-        let expected = 'application/json'
+    const expected = 'application/json'
 
-        let result = s._getContentTypeConstraint(body)
+    const result = s._getContentTypeConstraint(body)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_getContentTypeConstraint')
+  testGetContentTypeConstraintWithSimpleBody() {
+    const s = this.__init()
+    const body = new Body({
+      constraints: new Immutable.List([
+        new Parameter({
+          key: 'Expect',
+          type: 'string',
+          value: '100-continue'
+        }),
+        new Parameter({
+          key: 'Content-Type',
+          type: 'string',
+          value: 'application/json'
+        }),
+        new Parameter({
+          key: 'Warning',
+          type: 'string',
+          value: 'client-load:0.8'
+        })
+      ])
+    })
+
+    const expected = 'application/json'
+
+    const result = s._getContentTypeConstraint(body)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatSchemas')
-    testFormatSchemas() {
-        let s = this.__init()
-        let references = new ReferenceContainer()
-        references = references.update(
+  testFormatSchemas() {
+    const s = this.__init()
+    let references = new ReferenceContainer()
+    references = references.update(
             new ExoticReference({
-                uri: '/absolute/path/some-song.mp3',
-                relative: 'some-song.mp3',
-                resolved: true
+              uri: '/absolute/path/some-song.mp3',
+              relative: 'some-song.mp3',
+              resolved: true
             })
         ).update(
             new JSONSchemaReference({
-                uri: '/absolute/path/current.json#/definitions/User',
-                relative: '#/definitions/User',
-                value: { test: 12 },
-                resolved: true
+              uri: '/absolute/path/current.json#/definitions/User',
+              relative: '#/definitions/User',
+              value: { test: 12 },
+              resolved: true
             })
         ).update(
             new JSONSchemaReference({
-                uri: '/absolute/path/other.json',
-                relative: 'other.json',
-                resolved: true
+              uri: '/absolute/path/other.json',
+              relative: 'other.json',
+              resolved: true
             })
         )
 
-        const expected = {
-            schemas: [
-                {
-                    'some-song.mp3': JSON.stringify({
-                        type: 'string',
-                        default: 'null'
-                    }, null, '  '),
-                    'other.json': '!include other.json',
-                    '#/definitions/User': JSON.stringify({
-                        test: 12
-                    }, null, '  ')
-                }
-            ]
+    const expected = {
+      schemas: [
+        {
+          'some-song.mp3': JSON.stringify({
+            type: 'string',
+            default: 'null'
+          }, null, '  '),
+          'other.json': '!include other.json',
+          '#/definitions/User': JSON.stringify({
+            test: 12
+          }, null, '  ')
         }
-
-        const result = s._formatSchemas(new Immutable.OrderedMap({
-            raml: references
-        }))
-
-        this.assertEqual(expected, result)
+      ]
     }
+
+    const result = s._formatSchemas(new Immutable.OrderedMap({
+      raml: references
+    }))
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatResponses')
-    testFormatResponsesCallsFormatBody() {
-        let s = this.__init()
+  testFormatResponsesCallsFormatBody() {
+    const s = this.__init()
 
-        let count = 0
-        s.spyOn('_formatBody', () => {
-            count += 1
-            return {
-                body: count
-            }
-        })
+    let count = 0
+    s.spyOn('_formatBody', () => {
+      count += 1
+      return {
+        body: count
+      }
+    })
 
-        let responses = new Immutable.List([
-            new Response({
-                code: 200
-            }),
-            new Response({
-                code: 404
-            })
-        ])
+    const responses = new Immutable.List([
+      new Response({
+        code: 200
+      }),
+      new Response({
+        code: 404
+      })
+    ])
 
-        let expected = {
-            responses: {
-                200: {
-                    body: 1
-                },
-                404: {
-                    body: 2
-                }
-            }
+    const expected = {
+      responses: {
+        '200': {
+          body: 1
+        },
+        '404': {
+          body: 2
         }
-
-        let result = s._formatResponses(responses)
-
-        this.assertEqual(expected, result)
+      }
     }
+
+    const result = s._formatResponses(responses)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatResponses')
-    testFormatResponsesAddsDescription() {
-        let s = this.__init()
+  testFormatResponsesAddsDescription() {
+    const s = this.__init()
 
-        let count = 0
-        s.spyOn('_formatBody', () => {
-            count += 1
-            return {
-                body: {
-                    count: count
-                }
-            }
-        })
-
-        let responses = new Immutable.List([
-            new Response({
-                code: 200,
-                description: 'basic'
-            }),
-            new Response({
-                code: 404,
-                description: 'other'
-            })
-        ])
-
-        let expected = {
-            responses: {
-                200: {
-                    body: {
-                        count: 1
-                    },
-                    description: 'basic'
-                },
-                404: {
-                    body: {
-                        count: 2
-                    },
-                    description: 'other'
-                }
-            }
+    let count = 0
+    s.spyOn('_formatBody', () => {
+      count += 1
+      return {
+        body: {
+          count: count
         }
+      }
+    })
 
-        let result = s._formatResponses(responses)
+    const responses = new Immutable.List([
+      new Response({
+        code: 200,
+        description: 'basic'
+      }),
+      new Response({
+        code: 404,
+        description: 'other'
+      })
+    ])
 
-        this.assertEqual(expected, result)
+    const expected = {
+      responses: {
+        '200': {
+          body: {
+            count: 1
+          },
+          description: 'basic'
+        },
+        '404': {
+          body: {
+            count: 2
+          },
+          description: 'other'
+        }
+      }
     }
+
+    const result = s._formatResponses(responses)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatURIParametersForFragment')
-    testFormatURIParametersForFragmentWithSimpleFragment() {
-        const s = this.__init()
+  testFormatURIParametersForFragmentWithSimpleFragment() {
+    const s = this.__init()
 
-        s.spyOn('_formatURIParameters', () => {
-            return [ { uriParameters: {} } ]
-        })
+    s.spyOn('_formatURIParameters', () => {
+      return [ { uriParameters: {} } ]
+    })
 
-        const fragment = '/songs'
-        const url = new URL('http://echo.luckymarmot.com/songs/{songId}')
+    const fragment = '/songs'
+    const url = new URL('http://echo.luckymarmot.com/songs/{songId}')
 
-        const expected = {}
-        const result = s._formatURIParametersForFragment(fragment, url)
+    const expected = {}
+    const result = s._formatURIParametersForFragment(fragment, url)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatURIParametersForFragment')
-    testFormatURIParametersForFragmentWithRichFragment() {
-        const s = this.__init()
+  testFormatURIParametersForFragmentWithRichFragment() {
+    const s = this.__init()
 
-        s.spyOn('_formatURIParameters', () => {
-            return [ { uriParameters: {
-                songId: {
-                    type: 'integer',
-                    minimum: 0
-                }
-            } } ]
-        })
-
-        const fragment = '/{songId}'
-        const url = new URL({
-            protocol: new Parameter({
-                key: 'protocol',
-                type: 'string',
-                value: 'http',
-                internals: new Immutable.List([
-                    new Constraint.Enum([
-                        'http'
-                    ])
-                ])
-            }),
-            host: new Parameter({
-                key: 'host',
-                type: 'string',
-                value: 'echo.luckymarmot.com',
-                internals: new Immutable.List([
-                    new Constraint.Enum([
-                        'echo.luckymarmot.com'
-                    ])
-                ])
-            }),
-            pathname: new Parameter({
-                key: 'pathname',
-                type: 'string',
-                format: 'sequence',
-                value: new Immutable.List([
-                    new Parameter({
-                        type: 'string',
-                        value: '/songs/',
-                        internals: new Immutable.List([
-                            new Constraint.Enum([
-                                '/songs/'
-                            ])
-                        ])
-                    }),
-                    new Parameter({
-                        key: 'songId',
-                        type: 'integer',
-                        internals: new Immutable.List([
-                            new Constraint.Minimum(0)
-                        ])
-                    })
-                ])
-            })
-        })
-
-        const expected = {
-            uriParameters: {
-                songId: {
-                    type: 'integer',
-                    minimum: 0
-                }
-            }
+    s.spyOn('_formatURIParameters', () => {
+      return [ { uriParameters: {
+        songId: {
+          type: 'integer',
+          minimum: 0
         }
-        const result = s._formatURIParametersForFragment(fragment, url)
+      } } ]
+    })
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatAuths')
-    testFormatAuthsWithNoAuth() {
-        const s = this.__init()
-
-        const input = new Immutable.List()
-
-        const expected = {}
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatAuths')
-    testFormatAuthsWithNullAuth() {
-        const s = this.__init()
-
-        const input = new Immutable.List([ null ])
-
-        const expected = {
-            securedBy: [ null ]
-        }
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatAuths')
-    testFormatAuthsWithBasicAuth() {
-        const s = this.__init()
-
-        const input = new Immutable.List([
-            new Auth.Basic()
+    const fragment = '/{songId}'
+    const url = new URL({
+      protocol: new Parameter({
+        key: 'protocol',
+        type: 'string',
+        value: 'http',
+        internals: new Immutable.List([
+          new Constraint.Enum([
+            'http'
+          ])
         ])
+      }),
+      host: new Parameter({
+        key: 'host',
+        type: 'string',
+        value: 'echo.luckymarmot.com',
+        internals: new Immutable.List([
+          new Constraint.Enum([
+            'echo.luckymarmot.com'
+          ])
+        ])
+      }),
+      pathname: new Parameter({
+        key: 'pathname',
+        type: 'string',
+        format: 'sequence',
+        value: new Immutable.List([
+          new Parameter({
+            type: 'string',
+            value: '/songs/',
+            internals: new Immutable.List([
+              new Constraint.Enum([
+                '/songs/'
+              ])
+            ])
+          }),
+          new Parameter({
+            key: 'songId',
+            type: 'integer',
+            internals: new Immutable.List([
+              new Constraint.Minimum(0)
+            ])
+          })
+        ])
+      })
+    })
 
-        const expected = {
-            securedBy: [ 'basic' ]
+    const expected = {
+      uriParameters: {
+        songId: {
+          type: 'integer',
+          minimum: 0
         }
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
+      }
     }
+    const result = s._formatURIParametersForFragment(fragment, url)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithDigestAuth() {
-        const s = this.__init()
+  testFormatAuthsWithNoAuth() {
+    const s = this.__init()
 
-        const input = new Immutable.List([
-            new Auth.Digest()
-        ])
+    const input = new Immutable.List()
 
-        const expected = {
-            securedBy: [ 'digest' ]
-        }
-        const result = s._formatAuths(input)
+    const expected = {}
+    const result = s._formatAuths(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithOAuth1Auth() {
-        const s = this.__init()
+  testFormatAuthsWithNullAuth() {
+    const s = this.__init()
 
-        const input = new Immutable.List([
-            new Auth.OAuth1()
-        ])
+    const input = new Immutable.List([ null ])
 
-        const expected = {
-            securedBy: [ 'oauth_1_0' ]
-        }
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
+    const expected = {
+      securedBy: [ null ]
     }
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithOAuth2Auth() {
-        const s = this.__init()
+  testFormatAuthsWithBasicAuth() {
+    const s = this.__init()
 
-        const input = new Immutable.List([
-            new Auth.OAuth2()
-        ])
+    const input = new Immutable.List([
+      new Auth.Basic()
+    ])
 
-        const expected = {
-            securedBy: [ 'oauth_2_0' ]
-        }
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
+    const expected = {
+      securedBy: [ 'basic' ]
     }
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithOAuth2AuthAndScopes() {
-        const s = this.__init()
+  testFormatAuthsWithDigestAuth() {
+    const s = this.__init()
 
-        const input = new Immutable.List([
-            new Auth.OAuth2({
-                scopes: new Immutable.List([
-                    'read:any', 'write:self'
-                ])
-            })
-        ])
+    const input = new Immutable.List([
+      new Auth.Digest()
+    ])
 
-        const expected = {
-            securedBy: [
-                {
-                    oauth_2_0: {
-                        scopes: [ 'read:any', 'write:self' ]
-                    }
-                }
-            ]
-        }
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
+    const expected = {
+      securedBy: [ 'digest' ]
     }
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatAuths')
-    testFormatAuthsWithMultipleAuth() {
-        const s = this.__init()
+  testFormatAuthsWithOAuth1Auth() {
+    const s = this.__init()
 
-        const input = new Immutable.List([
-            null,
-            new Auth.Basic(),
-            new Auth.Digest()
-        ])
+    const input = new Immutable.List([
+      new Auth.OAuth1()
+    ])
 
-        const expected = {
-            securedBy: [ null, 'basic', 'digest' ]
-        }
-        const result = s._formatAuths(input)
-
-        this.assertEqual(expected, result)
+    const expected = {
+      securedBy: [ 'oauth_1_0' ]
     }
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatAuths')
+  testFormatAuthsWithOAuth2Auth() {
+    const s = this.__init()
+
+    const input = new Immutable.List([
+      new Auth.OAuth2()
+    ])
+
+    const expected = {
+      securedBy: [ 'oauth_2_0' ]
+    }
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatAuths')
+  testFormatAuthsWithOAuth2AuthAndScopes() {
+    const s = this.__init()
+
+    const input = new Immutable.List([
+      new Auth.OAuth2({
+        scopes: new Immutable.List([
+          'read:any', 'write:self'
+        ])
+      })
+    ])
+
+    const expected = {
+      securedBy: [
+        {
+          oauth_2_0: {
+            scopes: [ 'read:any', 'write:self' ]
+          }
+        }
+      ]
+    }
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatAuths')
+  testFormatAuthsWithMultipleAuth() {
+    const s = this.__init()
+
+    const input = new Immutable.List([
+      null,
+      new Auth.Basic(),
+      new Auth.Digest()
+    ])
+
+    const expected = {
+      securedBy: [ null, 'basic', 'digest' ]
+    }
+    const result = s._formatAuths(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_isInlineRef')
-    testIsInlineRefWithEmptyReferenceMap() {
-        const parser = this.__init()
+  testIsInlineRefWithEmptyReferenceMap() {
+    const parser = this.__init()
 
-        parser.references = new Immutable.OrderedMap()
+    parser.references = new Immutable.OrderedMap()
 
-        const input = new JSONSchemaReference({
-            uri: '#/definitions/User'
-        })
+    const input = new JSONSchemaReference({
+      uri: '#/definitions/User'
+    })
 
-        const expected = true
-        const result = parser._isInlineRef(input)
+    const expected = true
+    const result = parser._isInlineRef(input)
 
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_isInlineRef')
-    testIsInlineRefWithEmptyContainer() {
-        const parser = this.__init()
-
-        parser.references = new Immutable.OrderedMap({
-            paw: new ReferenceContainer()
-        })
-
-        const input = new JSONSchemaReference({
-            uri: '#/definitions/User'
-        })
-
-        const expected = true
-        const result = parser._isInlineRef(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_isInlineRef')
-    testIsInlineRefWithNoMatchingReference() {
-        const parser = this.__init()
+  testIsInlineRefWithEmptyContainer() {
+    const parser = this.__init()
 
-        let references = new Immutable.List([
-            new JSONSchemaReference({
-                uri: '#/definitions/Team'
-            }),
-            new JSONSchemaReference({
-                uri: '#/definitions/Admin'
-            })
-        ])
+    parser.references = new Immutable.OrderedMap({
+      paw: new ReferenceContainer()
+    })
 
-        parser.references = new Immutable.OrderedMap({
-            paw: (new ReferenceContainer()).create(references)
-        })
+    const input = new JSONSchemaReference({
+      uri: '#/definitions/User'
+    })
 
-        const input = new JSONSchemaReference({
-            uri: '#/definitions/User'
-        })
+    const expected = true
+    const result = parser._isInlineRef(input)
 
-        const expected = true
-        const result = parser._isInlineRef(input)
-
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
 
     @targets('_isInlineRef')
-    testIsInlineRefWithMatchingRef() {
-        const parser = this.__init()
+  testIsInlineRefWithNoMatchingReference() {
+    const parser = this.__init()
 
-        let references = new Immutable.List([
-            new JSONSchemaReference({
-                uri: '#/definitions/Team'
-            }),
-            new JSONSchemaReference({
-                uri: '#/definitions/User'
-            }),
-            new JSONSchemaReference({
-                uri: '#/definitions/Admin'
-            })
-        ])
+    const references = new Immutable.List([
+      new JSONSchemaReference({
+        uri: '#/definitions/Team'
+      }),
+      new JSONSchemaReference({
+        uri: '#/definitions/Admin'
+      })
+    ])
 
-        parser.references = new Immutable.OrderedMap({
-            paw: (new ReferenceContainer()).create(references)
-        })
+    parser.references = new Immutable.OrderedMap({
+      paw: (new ReferenceContainer()).create(references)
+    })
 
-        const input = new JSONSchemaReference({
-            uri: '#/definitions/User'
-        })
+    const input = new JSONSchemaReference({
+      uri: '#/definitions/User'
+    })
 
-        const expected = false
-        const result = parser._isInlineRef(input)
+    const expected = true
+    const result = parser._isInlineRef(input)
 
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_isInlineRef')
+  testIsInlineRefWithMatchingRef() {
+    const parser = this.__init()
+
+    const references = new Immutable.List([
+      new JSONSchemaReference({
+        uri: '#/definitions/Team'
+      }),
+      new JSONSchemaReference({
+        uri: '#/definitions/User'
+      }),
+      new JSONSchemaReference({
+        uri: '#/definitions/Admin'
+      })
+    ])
+
+    parser.references = new Immutable.OrderedMap({
+      paw: (new ReferenceContainer()).create(references)
+    })
+
+    const input = new JSONSchemaReference({
+      uri: '#/definitions/User'
+    })
+
+    const expected = false
+    const result = parser._isInlineRef(input)
+
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatBodyParam')
-    testFormatBodyParamCallsConvertToNamedParameterIfNotReference() {
-        const s = this.__init()
+  testFormatBodyParamCallsConvertToNamedParameterIfNotReference() {
+    const s = this.__init()
 
-        s.spyOn('_convertParameterToNamedParameter', () => {
-            return 12
-        })
+    s.spyOn('_convertParameterToNamedParameter', () => {
+      return 12
+    })
 
-        const input = new Parameter({
-            type: 'string'
-        })
+    const input = new Parameter({
+      type: 'string'
+    })
 
-        const expected = 12
-        const result = s._formatBodyParam(input)
+    const expected = 12
+    const result = s._formatBodyParam(input)
 
-        this.assertEqual(s.spy._convertParameterToNamedParameter.count, 1)
-        this.assertEqual(expected, result)
-    }
-
-    @targets('_formatBodyParam')
-    testFormatBodyParamCallsIsInlineRefIfReference() {
-        const s = this.__init()
-
-        s.spyOn('_isInlineRef', () => {
-            return true
-        })
-
-        const input = new Parameter({
-            type: 'reference',
-            value: new JSONSchemaReference({
-                value: {
-                    type: 'integer',
-                    default: 42
-                }
-            })
-        })
-
-        const expected = {
-            schema: JSON.stringify({
-                type: 'integer',
-                default: 42
-            }, null, '  ')
-        }
-        const result = s._formatBodyParam(input)
-
-        this.assertEqual(s.spy._convertParameterToNamedParameter.count, 0)
-        this.assertEqual(s.spy._isInlineRef.count, 1)
-        this.assertEqual(expected, result)
-    }
+    this.assertEqual(s.spy._convertParameterToNamedParameter.count, 1)
+    this.assertEqual(expected, result)
+  }
 
     @targets('_formatBodyParam')
-    testFormatBodyParamReturnsExpectedSchemaIfNotInline() {
-        const s = this.__init()
+  testFormatBodyParamCallsIsInlineRefIfReference() {
+    const s = this.__init()
 
-        s.spyOn('_isInlineRef', () => {
-            return false
-        })
+    s.spyOn('_isInlineRef', () => {
+      return true
+    })
 
-        const input = new Parameter({
-            type: 'reference',
-            value: new JSONSchemaReference({
-                uri: '#/definitions/User',
-                relative: '#/definitions/User',
-                value: {
-                    type: 'integer',
-                    default: 42
-                }
-            })
-        })
-
-        const expected = {
-            schema: '#/definitions/User'
+    const input = new Parameter({
+      type: 'reference',
+      value: new JSONSchemaReference({
+        value: {
+          type: 'integer',
+          default: 42
         }
-        const result = s._formatBodyParam(input)
+      })
+    })
 
-        this.assertEqual(s.spy._convertParameterToNamedParameter.count, 0)
-        this.assertEqual(s.spy._isInlineRef.count, 1)
-        this.assertEqual(expected, result)
+    const expected = {
+      schema: JSON.stringify({
+        type: 'integer',
+        default: 42
+      }, null, '  ')
     }
+    const result = s._formatBodyParam(input)
+
+    this.assertEqual(s.spy._convertParameterToNamedParameter.count, 0)
+    this.assertEqual(s.spy._isInlineRef.count, 1)
+    this.assertEqual(expected, result)
+  }
+
+    @targets('_formatBodyParam')
+  testFormatBodyParamReturnsExpectedSchemaIfNotInline() {
+    const s = this.__init()
+
+    s.spyOn('_isInlineRef', () => {
+      return false
+    })
+
+    const input = new Parameter({
+      type: 'reference',
+      value: new JSONSchemaReference({
+        uri: '#/definitions/User',
+        relative: '#/definitions/User',
+        value: {
+          type: 'integer',
+          default: 42
+        }
+      })
+    })
+
+    const expected = {
+      schema: '#/definitions/User'
+    }
+    const result = s._formatBodyParam(input)
+
+    this.assertEqual(s.spy._convertParameterToNamedParameter.count, 0)
+    this.assertEqual(s.spy._isInlineRef.count, 1)
+    this.assertEqual(expected, result)
+  }
 
 
     @targets('validate')
-    _testValidate() {
+  _testValidate() {
         // TODO
-    }
+  }
 
-    __init() {
-        let serializer = new RAMLSerializer()
-        return new ClassMock(serializer, '')
-    }
+  __init() {
+    const serializer = new RAMLSerializer()
+    return new ClassMock(serializer, '')
+  }
 }

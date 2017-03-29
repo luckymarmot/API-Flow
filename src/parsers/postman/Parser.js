@@ -2,53 +2,53 @@ import PostmanParserV1 from './v1/Parser'
 import PostmanParserV2 from './v2/Parser'
 
 export default class PostmanParser {
-    static detect() {
-        let scorev1 = PostmanParserV1.detect(...arguments)
-        let scorev2 = PostmanParserV2.detect(...arguments)
+  static detect() {
+    const scorev1 = PostmanParserV1.detect(...arguments)
+    const scorev2 = PostmanParserV2.detect(...arguments)
 
-        return scorev1.concat(scorev2)
+    return scorev1.concat(scorev2)
+  }
+
+  static getAPIName() {
+    const namev1 = PostmanParserV1.getAPIName(...arguments)
+    const namev2 = PostmanParserV2.getAPIName(...arguments)
+
+    if (namev1) {
+      if (namev2) {
+        return namev2.length > namev1.length ? namev2 : namev1
+      }
+      return namev1
     }
 
-    static getAPIName() {
-        let namev1 = PostmanParserV1.getAPIName(...arguments)
-        let namev2 = PostmanParserV2.getAPIName(...arguments)
+    return namev2 || null
+  }
 
-        if (namev1) {
-            if (namev2) {
-                return namev2.length > namev1.length ? namev2 : namev1
-            }
-            return namev1
-        }
+  constructor(_version) {
+    const version = _version || 'v1'
 
-        return namev2 || null
+    const versionMap = {
+      '1': PostmanParserV1,
+      '2': PostmanParserV2
     }
 
-    constructor(_version) {
-        let version = _version || 'v1'
+    const stripped = this._stripVersion(version)
 
-        let versionMap = {
-            1: PostmanParserV1,
-            2: PostmanParserV2
-        }
+    this._parser = new versionMap[stripped]()
+  }
 
-        let stripped = this._stripVersion(version)
+  detect() {
+    return PostmanParser.detect(...arguments)
+  }
 
-        this._parser = new versionMap[stripped]()
-    }
+  getAPIName() {
+    return PostmanParser.getAPIName(...arguments)
+  }
 
-    detect() {
-        return PostmanParser.detect(...arguments)
-    }
+  parse(item) {
+    return this._parser.parse(item)
+  }
 
-    getAPIName() {
-        return PostmanParser.getAPIName(...arguments)
-    }
-
-    parse(item) {
-        return this._parser.parse(item)
-    }
-
-    _stripVersion(version) {
-        return version.replace('v', '').split('.')[0]
-    }
+  _stripVersion(version) {
+    return version.replace('v', '').split('.')[0]
+  }
 }

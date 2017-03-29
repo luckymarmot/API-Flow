@@ -7,179 +7,179 @@ import {
 @registerTest
 export class TestPawMocks extends UnitTest {
 
-    testSimpleMock() {
-        let mock = new Mock()
+  testSimpleMock() {
+    const mock = new Mock()
 
-        this.assertEqual(
+    this.assertEqual(
             Object.keys(mock),
             [ '$$_spy', '$$_spyOn', '$$_getSpy' ]
         )
-        this.assertEqual(mock.$$_spy, {})
-    }
+    this.assertEqual(mock.$$_spy, {})
+  }
 
-    testSimpleObjectMock() {
-        let mock = new Mock({
-            a: 12
-        })
+  testSimpleObjectMock() {
+    const mock = new Mock({
+      a: 12
+    })
 
-        this.assertEqual(
+    this.assertEqual(
             Object.keys(mock),
             [ '$$_spy', 'a', '$$_spyOn', '$$_getSpy' ]
         )
-        this.assertEqual(mock.$$_spy, {})
+    this.assertEqual(mock.$$_spy, {})
+  }
+
+  testSimpleObjectWithFuncMock() {
+    const obj = {
+      a: (arg) => {
+        return arg * arg
+      }
     }
 
-    testSimpleObjectWithFuncMock() {
-        let obj = {
-            a: (arg) => {
-                return arg * arg
-            }
-        }
+    const mock = new Mock(obj)
 
-        let mock = new Mock(obj)
-
-        this.assertEqual(
+    this.assertEqual(
             Object.keys(mock),
             [ '$$_spy', 'a', '$$_spyOn', '$$_getSpy' ]
         )
-        this.assertEqual(Object.keys(mock.$$_spy), [ 'a' ])
+    this.assertEqual(Object.keys(mock.$$_spy), [ 'a' ])
+  }
+
+  testSimpleObjectWithFuncAndVarsMock() {
+    const obj = {
+      a: (arg) => {
+        return arg * arg
+      },
+      b: true
     }
 
-    testSimpleObjectWithFuncAndVarsMock() {
-        let obj = {
-            a: (arg) => {
-                return arg * arg
-            },
-            b: true
-        }
+    const mock = new Mock(obj)
 
-        let mock = new Mock(obj)
-
-        this.assertEqual(
+    this.assertEqual(
             Object.keys(mock),
             [ '$$_spy', 'a', 'b', '$$_spyOn', '$$_getSpy' ]
         )
-        this.assertEqual(Object.keys(mock.$$_spy), [ 'a' ])
+    this.assertEqual(Object.keys(mock.$$_spy), [ 'a' ])
+  }
+
+  testSpyOn() {
+    const obj = {
+      a: (arg) => {
+        return arg * arg
+      }
     }
 
-    testSpyOn() {
-        let obj = {
-            a: (arg) => {
-                return arg * arg
-            }
-        }
+    const mock = new Mock(obj)
 
-        let mock = new Mock(obj)
-
-        mock.$$_spyOn(
+    mock.$$_spyOn(
             'a',
             (arg) => {
-                return arg * 2
+              return arg * 2
             }
         )
 
-        this.assertEqual(
+    this.assertEqual(
             Object.keys(mock),
             [ '$$_spy', 'a', '$$_spyOn', '$$_getSpy' ]
         )
 
-        let expected = 6
-        mock.a(10)
-        let result = mock.a(3)
-        this.assertEqual(mock.$$_spy.a.count, 2)
-        this.assertEqual(mock.$$_spy.a.calls, [ [ 10 ], [ 3 ] ])
-        this.assertEqual(result, expected)
+    const expected = 6
+    mock.a(10)
+    const result = mock.a(3)
+    this.assertEqual(mock.$$_spy.a.count, 2)
+    this.assertEqual(mock.$$_spy.a.calls, [ [ 10 ], [ 3 ] ])
+    this.assertEqual(result, expected)
+  }
+
+  testGetSpy() {
+    const obj = {
+      a: (arg) => {
+        return arg * arg
+      }
     }
 
-    testGetSpy() {
-        let obj = {
-            a: (arg) => {
-                return arg * arg
-            }
-        }
+    const mock = new Mock(obj)
 
-        let mock = new Mock(obj)
-
-        mock.$$_spyOn(
+    mock.$$_spyOn(
             'a',
             (arg) => {
-                return arg * 2
+              return arg * 2
             }
         )
 
-        this.assertEqual(
+    this.assertEqual(
             Object.keys(mock),
             [ '$$_spy', 'a', '$$_spyOn', '$$_getSpy' ]
         )
 
-        mock.a(10)
-        mock.a(3)
+    mock.a(10)
+    mock.a(3)
 
-        this.assertEqual(mock.$$_getSpy('a').count, 2)
-        this.assertEqual(mock.$$_getSpy('a').calls, [ [ 10 ], [ 3 ] ])
+    this.assertEqual(mock.$$_getSpy('a').count, 2)
+    this.assertEqual(mock.$$_getSpy('a').calls, [ [ 10 ], [ 3 ] ])
+  }
+
+  testMultipleSpies() {
+    const obj = {
+      a: (arg) => {
+        return arg * arg
+      },
+      b: (key, value) => {
+        const result = {}
+        result[value] = key
+        return result
+      }
     }
 
-    testMultipleSpies() {
-        let obj = {
-            a: (arg) => {
-                return arg * arg
-            },
-            b: (key, value) => {
-                let result = {}
-                result[value] = key
-                return result
-            }
-        }
+    const mock = new Mock(obj)
 
-        let mock = new Mock(obj)
-
-        mock
+    mock
             .$$_spyOn(
                 'a',
                 (arg) => {
-                    return arg * 2
+                  return arg * 2
                 }
             )
             .$$_spyOn(
                 'b',
                 (k, v) => {
-                    return k + ',' + v
+                  return k + ',' + v
                 }
             )
 
-        mock.a(10)
-        mock.b(3, 10)
+    mock.a(10)
+    mock.b(3, 10)
 
-        this.assertEqual(mock.$$_getSpy('a').count, 1)
-        this.assertEqual(mock.$$_getSpy('a').calls, [ [ 10 ] ])
+    this.assertEqual(mock.$$_getSpy('a').count, 1)
+    this.assertEqual(mock.$$_getSpy('a').calls, [ [ 10 ] ])
 
-        this.assertEqual(mock.$$_getSpy('b').count, 1)
-        this.assertEqual(mock.$$_getSpy('b').calls, [ [ 3, 10 ] ])
+    this.assertEqual(mock.$$_getSpy('b').count, 1)
+    this.assertEqual(mock.$$_getSpy('b').calls, [ [ 3, 10 ] ])
+  }
+
+  testPrefix() {
+    const obj = {
+      a: (arg) => {
+        return arg * arg
+      },
+      b: true
     }
 
-    testPrefix() {
-        let obj = {
-            a: (arg) => {
-                return arg * arg
-            },
-            b: true
-        }
+    let mock = new Mock(obj, '__')
 
-        let mock = new Mock(obj, '__')
-
-        this.assertEqual(
+    this.assertEqual(
             Object.keys(mock),
             [ '__spy', 'a', 'b', '__spyOn', '__getSpy' ]
         )
-        this.assertEqual(Object.keys(mock.__spy), [ 'a' ])
+    this.assertEqual(Object.keys(mock.__spy), [ 'a' ])
 
         // no prefix
-        mock = new Mock(obj, '')
+    mock = new Mock(obj, '')
 
-        this.assertEqual(
+    this.assertEqual(
             Object.keys(mock),
             [ 'spy', 'a', 'b', 'spyOn', 'getSpy' ]
         )
-        this.assertEqual(Object.keys(mock.spy), [ 'a' ])
-    }
+    this.assertEqual(Object.keys(mock.spy), [ 'a' ])
+  }
 }

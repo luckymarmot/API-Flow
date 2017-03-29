@@ -5,29 +5,29 @@ import CurlSerializer from '../../../serializers/postman/Serializer'
 
 @registerCodeGenerator
 export default class CURLGenerator {
-    static identifier =
+  static identifier =
         'com.luckymarmot.PawExtensions.PostmanGenerator'
-    static title = 'Postman Dump v1'
-    static help =
+  static title = 'Postman Dump v1'
+  static help =
         'https://github.com/luckymarmot/API-Flow'
-    static languageHighlighter = 'json'
-    static fileExtension = 'json'
+  static languageHighlighter = 'json'
+  static fileExtension = 'json'
 
-    constructor() {
-        this.parser = new PawParser()
-        this.serializer = new CurlSerializer()
+  constructor() {
+    this.parser = new PawParser()
+    this.serializer = new CurlSerializer()
+  }
+
+  generate(context, reqs, opts) {
+    try {
+      const api = this.parser.generate(context, reqs, opts)
+      const generated = this.serializer.serialize(api)
+
+      return generated
     }
-
-    generate(context, reqs, opts) {
-        try {
-            let api = this.parser.generate(context, reqs, opts)
-            let generated = this.serializer.serialize(api)
-
-            return generated
-        }
-        catch (e) {
+    catch (e) {
             /* eslint-disable no-console */
-            console.error(
+      console.error(
                 this.constructor.title,
                 'generation failed with error:',
                 e,
@@ -35,7 +35,7 @@ export default class CURLGenerator {
                 JSON.stringify(e, null, '  ')
             )
             /* eslint-enable no-console */
-            throw e
-        }
+      throw e
     }
+  }
 }

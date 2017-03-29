@@ -5,29 +5,29 @@ import RAMLSerializer from '../../../serializers/raml/Serializer'
 
 @registerCodeGenerator
 export default class RAMLGenerator {
-    static identifier =
+  static identifier =
         'com.luckymarmot.PawExtensions.RAMLGenerator'
-    static title = 'RAML'
-    static help =
+  static title = 'RAML'
+  static help =
         'https://github.com/luckymarmot/API-Flow'
-    static languageHighlighter = 'yaml'
-    static fileExtension = 'raml'
+  static languageHighlighter = 'yaml'
+  static fileExtension = 'raml'
 
-    constructor() {
-        this.parser = new PawParser()
-        this.serializer = new RAMLSerializer()
+  constructor() {
+    this.parser = new PawParser()
+    this.serializer = new RAMLSerializer()
+  }
+
+  generate(context, reqs, opts) {
+    try {
+      const api = this.parser.generate(context, reqs, opts)
+      const generated = this.serializer.serialize(api)
+
+      return generated
     }
-
-    generate(context, reqs, opts) {
-        try {
-            let api = this.parser.generate(context, reqs, opts)
-            let generated = this.serializer.serialize(api)
-
-            return generated
-        }
-        catch (e) {
+    catch (e) {
             /* eslint-disable no-console */
-            console.error(
+      console.error(
                 this.constructor.title,
                 'generation failed with error:',
                 e,
@@ -35,7 +35,7 @@ export default class RAMLGenerator {
                 JSON.stringify(e, null, '  ')
             )
             /* eslint-enable no-console */
-            throw e
-        }
+      throw e
     }
+  }
 }

@@ -1,52 +1,55 @@
 import { registerImporter } from '../../../mocks/PawShims'
 
-import BaseImporter from '../../../serializers/paw/Serializer'
-import SwaggerParser from '../../../parsers/swagger/Parser'
+import SwaggerParser from '../../../parsers/Swagger/v2.0/Parser'
+import PawSerializer from '../../../serializers/paw/Serializer'
+
+import { currify } from '../../../utils/fp-utils'
+
+const methods = {}
 
 @registerImporter // eslint-disable-line
-export default class SwaggerImporter extends BaseImporter {
-    static identifier = 'com.luckymarmot.PawExtensions.SwaggerImporter';
-    static title = 'Swagger Importer';
+export default class SwaggerImporter extends PawSerializer {
+  static identifier = 'com.luckymarmot.PawExtensions.SwaggerImporter';
+  static title = 'Swagger Importer';
 
-    static fileExtensions = [];
+  static fileExtensions = [];
 
-    constructor() {
-        super()
-        this.parser = new SwaggerParser()
-        this.ENVIRONMENT_DOMAIN_NAME = 'Swagger Environments'
-    }
+  canImport(context, items) {
+    return methods.canImport(context, items)
+  }
 
-    canImport(context, items) {
-        let sum = 0
-        for (let item of items) {
-            sum += ::this._canImportItem(context, item)
-        }
-        let score = items.length > 0 ? sum / items.length : 0
-        return score
-    }
+  import(context, items, options) {
+    return methods.import(this, context, items, options)
+  }
+}
 
-    _canImportItem(context, item) {
-        return this.parser.detect(item.content)[0].score
-    }
+methods.canImportItem = (item) => {
+  return SwaggerParser.isParsable(item)
+}
 
-    /*
-      @params:
-        - context
-        - items
-        - options
-    */
-    createRequestContexts(context, items) {
-        const parser = this.parser
+methods.canImport = (context, items) => {
+  let sum = 0
+  for (const item of items) {
+    sum += methods.canImportItem(item)
+  }
+  const score = items.length > 0 ? sum / items.length : 0
+  return score
+}
 
-        let reqContexts = []
-        for (let item of items) {
-            let reqContext = parser.parse(item)
-            reqContexts.push({
-                context: reqContext,
-                items: [ item ]
-            })
-        }
+methods.import = (importer, context, items, options) => {
+  const serializerOptions = { context, items, options }
+  const parser = new SwaggerParser()
+  const serializer = new PawSerializer()
 
-        return reqContexts
-    }
+  const resolve = parser.resolve
+  const parse = parser.parse
+  const serialize = currify(serializer.serialize, serializerOptions)
+
+  items
+    .filter(parser.isParsable)
+    .reduce(resolve, [])
+    .map(parse)
+    .map(serialize)
+
+  // const statusMessage = methods.formatStatusMessage(parser, serializer)
 }

@@ -1,0 +1,32 @@
+#%RAML 1.0
+title: Hello world # required title
+protocols: [ HTTPS, HTTP ]
+baseUri: https://{sub}.paw.cloud/
+baseUriParameters:
+  sub:
+    type: string
+    enum: [ 'echo', 'app' ]
+/helloworld: # optional resource
+  get: # HTTP method declaration
+    queryParameters:
+      toto:
+        type: 'string'
+        enum: [ '123', '234' ]
+    responses: # declare a response
+      200: # HTTP status code
+        body: # declare content of response
+          application/json: # media type
+            type: | # structural definition of a response (schema or type)
+              {
+                "title": "Hello world Response",
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            example: # example how a response looks like
+              {
+                "message": "Hello world"
+              }

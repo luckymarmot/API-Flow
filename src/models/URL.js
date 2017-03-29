@@ -1,419 +1,313 @@
-import Immutable from 'immutable'
+import { parse, format, resolve } from 'url'
+import { Record, List } from 'immutable'
 
 import Model from './ModelInfo'
 
-import {
-    Parameter
-} from './Core'
-
-import Constraint from './Constraint'
-
-export default class URL extends Immutable.Record({
-    _model: new Model({
-        name: 'url.models',
-        version: '0.1.0'
-    }),
-    protocol: null,
-    username: null,
-    password: null,
-    host: null,
-    hostname: null,
-    port: null,
-    pathname: null,
-    search: null,
-    hash: null
-}) {
-    constructor(url, baseURL) {
-        if (typeof url === 'string') {
-            super()
-            return this._constructorFromURL(url, baseURL)
-        }
-        else {
-            super()
-            return this._constructorFromObj(url)
-        }
-    }
-
-    _constructorFromURL(url, baseURL) {
-        /* eslint-disable max-len */
-        let m = String(url)
-            .replace(/^\s+|\s+$/g, '')
-            .match(/^([^:\./?#]+:)?(?:\/\/(?:([^:@\/?#]*)(?::([^:@\/?#]*))?@)?(([^:\/?#]*)(?::(\d*))?))?([^?#]*)(\?[^#]*)?(#[\s\S]*)?/)
-        /* eslint-enable max-len */
-
-        if (!m) {
-            throw new RangeError()
-        }
-
-        let protocol = m[1] || ''
-        let username = m[2] || ''
-        let password = m[3] || ''
-        let host = m[4] || ''
-        let hostname = m[5] || ''
-        let port = m[6] || ''
-        let pathname = m[7] || ''
-        let search = m[8] || ''
-        let hash = m[9] || ''
-
-        if (typeof baseURL !== 'undefined') {
-            let base = (new URL(baseURL)).toJSONSchema()
-            let flag = protocol === '' && host === '' && username === ''
-
-            if (flag && pathname === '' && search === '') {
-                search = base.search
-            }
-
-            if (flag && pathname.charAt(0) !== '/') {
-                pathname = pathname !== '' ?
-                    (
-                        (
-                            base.host !== '' ||
-                            base.username !== ''
-                        ) &&
-                        base.pathname === '' ?
-                        '/' : ''
-                    ) +
-                    base.pathname
-                        .slice(0, base.pathname.lastIndexOf('/') + 1) +
-                    pathname
-                    :
-                    base.pathname
-            }
-
-            // dot segments removal
-            let output = []
-            pathname.replace(/^(\.\.?(\/|$))+/, '')
-                .replace(/\/(\.(\/|$))+/g, '/')
-                .replace(/\/\.\.$/, '/../')
-                .replace(/\/?[^\/]*/g, function(p) {
-                    if (p === '/..') {
-                        output.pop()
-                    }
-                    else {
-                        output.push(p)
-                    }
-                })
-            pathname = output
-                .join('')
-                .replace(/^\//, pathname.charAt(0) === '/' ? '/' : '')
-            if (flag) {
-                port = base.port
-                hostname = base.hostname
-                host = base.host
-                password = base.password
-                username = base.username
-            }
-            if (protocol === '') {
-                protocol = base.protocol + ':'
-            }
-        }
-
-        let def = new Immutable.List([
-            new Constraint.Enum([ '' ])
-        ])
-
-        return this.withMutations(_this => {
-            _this
-                .set('protocol', new Parameter({
-                    key: 'protocol',
-                    type: 'string',
-                    internals: protocol.slice(0, -1) ? new Immutable.List([
-                        new Constraint.Enum([ protocol.slice(0, -1) ])
-                    ]) : def
-                }))
-                .set('username', new Parameter({
-                    key: 'username',
-                    type: 'string',
-                    internals: username ? new Immutable.List([
-                        new Constraint.Enum([ username ])
-                    ]) : def
-                }))
-                .set('password', new Parameter({
-                    key: 'password',
-                    type: 'string',
-                    internals: password ? new Immutable.List([
-                        new Constraint.Enum([ password ])
-                    ]) : def
-                }))
-                .set('host', new Parameter({
-                    key: 'host',
-                    type: 'string',
-                    internals: host ? new Immutable.List([
-                        new Constraint.Enum([ host ])
-                    ]) : def
-                }))
-                .set('hostname', new Parameter({
-                    key: 'hostname',
-                    type: 'string',
-                    internals: hostname ? new Immutable.List([
-                        new Constraint.Enum([ hostname ])
-                    ]) : def
-                }))
-                .set('port', new Parameter({
-                    key: 'port',
-                    type: 'string',
-                    internals: port ? new Immutable.List([
-                        new Constraint.Enum([ port ])
-                    ]) : def
-                }))
-                .set('pathname', new Parameter({
-                    key: 'pathname',
-                    type: 'string',
-                    internals: pathname ? new Immutable.List([
-                        new Constraint.Enum([ pathname ])
-                    ]) : def
-                }))
-                .set('search', new Parameter({
-                    key: 'search',
-                    type: 'string',
-                    internals: search ? new Immutable.List([
-                        new Constraint.Enum([ search ])
-                    ]) : def
-                }))
-                .set('hash', new Parameter({
-                    key: 'hash',
-                    type: 'string',
-                    internals: hash ? new Immutable.List([
-                        new Constraint.Enum([ hash ])
-                    ]) : def
-                }))
-        })
-    }
-
-    _constructorFromObj(obj) {
-        if (typeof obj === 'undefined' || obj === null) {
-            return this
-        }
-
-        let protocol = this._formatParam('protocol', obj.protocol)
-        let username = this._formatParam('username', obj.username)
-        let password = this._formatParam('password', obj.password)
-        let host = this._formatParam('host', obj.host)
-        let hostname = this._formatParam('hostname', obj.hostname)
-        let port = this._formatParam('port', obj.port)
-        let pathname = this._formatParam('pathname', obj.pathname)
-        let search = this._formatParam('search', obj.search)
-        let hash = this._formatParam('hash', obj.hash)
-
-        return this.withMutations(url => {
-            url
-                .set('protocol', protocol)
-                .set('username', username)
-                .set('password', password)
-                .set('host', host)
-                .set('hostname', hostname)
-                .set('port', port)
-                .set('pathname', pathname)
-                .set('search', search)
-                .set('hash', hash)
-        })
-    }
-
-    _formatParam(name, param) {
-        if (param instanceof Parameter) {
-            return param
-        }
-        else if (typeof param === 'undefined' || param === null) {
-            return new Parameter({
-                key: name,
-                type: 'string',
-                internals: new Immutable.List([
-                    new Constraint.Enum([ '' ])
-                ])
-            })
-        }
-        else if (
-            typeof param !== 'string' &&
-            typeof param[Symbol.iterator] === 'function'
-        ) {
-            return new Parameter({
-                key: name,
-                type: 'string',
-                internals: new Immutable.List([
-                    new Constraint.Enum(param)
-                ])
-            })
-        }
-        else {
-            return new Parameter({
-                key: name,
-                type: 'string',
-                internals: param ? new Immutable.List([
-                    new Constraint.Enum([ param ])
-                ]) : new Immutable.List([
-                    new Constraint.Enum([ '' ])
-                ])
-            })
-        }
-    }
-
-    href() {
-        let protocol = this.generateParam('protocol')
-        let host = this.generateParam('host')
-        let username = this.generateParam('username')
-        let password = this.generateParam('password')
-        let pathname = this.generateParam('pathname')
-        let search = this.generateParam('search')
-        let hash = this.generateParam('hash')
-
-        if (host) {
-            protocol = protocol || 'http'
-        }
-
-        if (protocol) {
-            protocol = protocol + ':'
-        }
-
-        return protocol +
-            (protocol !== '' || host !== '' ? '//' : '') +
-            (
-                username !== '' ?
-                username + (password !== '' ? ':' + password : '') + '@' :
-                ''
-            ) +
-            host +
-            pathname +
-            search +
-            hash
-    }
-
-    origin() {
-        let protocol = this.generateParam('protocol')
-        let host = this.generateParam('host')
-
-        if (host) {
-            protocol = protocol || 'http'
-        }
-
-        if (protocol) {
-            protocol = protocol + ':'
-        }
-
-        return protocol +
-            (protocol !== '' || host !== '' ? '//' : '') +
-            host
-    }
-
-    toJSONSchema() {
-        let protocol = this.generateParam('protocol')
-        let host = this.generateParam('host')
-        let hostname = this.generateParam('hostname')
-        let username = this.generateParam('username')
-        let password = this.generateParam('password')
-        let pathname = this.generateParam('pathname')
-        let search = this.generateParam('search')
-        let hash = this.generateParam('hash')
-
-        let _protocol = protocol
-        if (host) {
-            _protocol = _protocol || 'http'
-        }
-
-        if (protocol) {
-            _protocol = _protocol + ':'
-        }
-
-        let href = _protocol +
-            (_protocol !== '' || host !== '' ? '//' : '') +
-            (
-                username !== '' ?
-                username + (password !== '' ? ':' + password : '') + '@' :
-                ''
-            ) +
-            host +
-            pathname +
-            search +
-            hash
-
-        let origin = _protocol +
-            (_protocol !== '' || host !== '' ? '//' : '') +
-            host
-
-        return {
-            protocol: protocol,
-            hostname: hostname,
-            host: host,
-            username: username,
-            password: password,
-            pathname: pathname,
-            search: search,
-            hash: hash,
-            href: href,
-            origin: origin
-        }
-    }
-
-    _getParamValue(name) {
-        return this.getIn([ name, 'internals', 0, 'value' ]) || []
-    }
-
-    _mergeParams(paramList) {
-        let dict = {}
-        for (let param of paramList) {
-            dict[param] = true
-        }
-        let result = Object.keys(dict)
-        if (result.length === 1) {
-            return result[0]
-        }
-        else if (result.length === 0) {
-            return null
-        }
-        return result
-    }
-
-    generateParam(name) {
-        if (
-            !this.getIn([ name, 'internals', 0 ]) &&
-            this.getIn([ name, 'format' ]) !== 'sequence'
-        ) {
-            return ''
-        }
-        else {
-            return this.get(name).generate()
-        }
-    }
-
-    merge(url) {
-        let protocol = this._mergeParams(this
-            ._getParamValue('protocol')
-            .concat(url._getParamValue('protocol')))
-        let username = this._mergeParams(this
-            ._getParamValue('username')
-            .concat(url._getParamValue('username')))
-        let password = this._mergeParams(this
-            ._getParamValue('password')
-            .concat(url._getParamValue('password')))
-        let host = this._mergeParams(this
-            ._getParamValue('host')
-            .concat(url._getParamValue('host')))
-        let hostname = this._mergeParams(this
-            ._getParamValue('hostname')
-            .concat(url._getParamValue('hostname')))
-        let port = this._mergeParams(this
-            ._getParamValue('port')
-            .concat(url._getParamValue('port')))
-        let pathname = this._mergeParams(this
-            ._getParamValue('pathname')
-            .concat(url._getParamValue('pathname')))
-        let search = this._mergeParams(this
-            ._getParamValue('search')
-            .concat(url._getParamValue('search')))
-        let hash = this._mergeParams(this
-            ._getParamValue('hash')
-            .concat(url._getParamValue('hash')))
-
-        return this.withMutations(_this => {
-            _this
-                .set('protocol', this._formatParam('protocol', protocol))
-                .set('username', this._formatParam('username', username))
-                .set('password', this._formatParam('password', password))
-                .set('host', this._formatParam('host', host))
-                .set('hostname', this._formatParam('hostname', hostname))
-                .set('port', this._formatParam('port', port))
-                .set('pathname', this._formatParam('pathname', pathname))
-                .set('search', this._formatParam('search', search))
-                .set('hash', this._formatParam('hash', hash))
-        })
-    }
+import URLComponent from './URLComponent'
+/**
+ * Metadata about the URL Record.
+ * Used for internal serialization and deserialization
+ */
+const modelInstance = {
+  name: 'url.models',
+  version: '0.1.0'
 }
+const model = new Model(modelInstance)
+
+/**
+ * Default Spec for the URL Record.
+ * Most fields are direct matches for parse(url), except for protocol, hostname, pathname, and
+ * secure.
+ * - `protocol` expects a List of protocols applicable to the url
+ * - `hostname` and `pathname` are URLComponents, as they are the two core fields of the urlObject.
+ * - `secure` is a boolean to tell whether the url supports a secure protocol. This is a helper to
+ * make generation more uniform and favor secure protocols over unsecure ones.
+ * Other fields may evolve into URLComponents in future versions, when the need for higher
+ * descriptivity arises.
+ */
+const URLSpec = {
+  _model: model,
+  uuid: null,
+  protocol: List(),
+  slashes: true,
+  auth: null,
+  host: null,
+  port: null,
+  hostname: null,
+  href: null,
+  path: null,
+  pathname: null,
+  query: null,
+  search: null,
+  hash: null,
+  secure: false,
+  variableDelimiters: List(),
+  description: null
+}
+
+/**
+ * Holds all the internal methods used in tandem with a URL
+ */
+const methods = {}
+
+/**
+ * The URL Record
+ */
+export class URL extends Record(URLSpec) {
+  constructor(props) {
+    if (!props) {
+      super()
+      return this
+    }
+
+    const { url, uuid, secure, variableDelimiters, description } = props
+    let urlComponents = url
+    if (typeof url === 'string') {
+      const urlObject = parse(url)
+      urlComponents = methods.convertURLObjectToURLComponents(urlObject, variableDelimiters)
+    }
+
+    if (url && typeof url === 'object' && !(url.host instanceof URLComponent)) {
+      urlComponents = methods.convertURLObjectToURLComponents(url, variableDelimiters)
+    }
+
+    super({ ...urlComponents, secure, uuid, variableDelimiters, description })
+    return this
+  }
+
+  generate(delimiters = List(), useDefault = true) {
+    return methods.generate(this, delimiters, useDefault)
+  }
+
+  resolve(url, delimiters = List(), useDefault = true) {
+    return methods.resolve(this, url, delimiters, useDefault)
+  }
+
+  toURLObject(delimiters, useDefault) {
+    return methods.convertURLComponentsToURLObject(this, delimiters, useDefault)
+  }
+}
+
+/**
+ * converts all urlObject fields into their corresponding type used in the URL Record
+ * @param {Object} _urlObject: the urlObject to convert
+ * @param {List<string>} variableDelimiters: the variable delimiters (needed to detect variables in
+ * the fields)
+ * @returns {Object} an object containing the matching URL Record fields
+ */
+methods.convertURLObjectToURLComponents = (_urlObject, variableDelimiters = List()) => {
+  const urlObject = methods.fixUrlObject(_urlObject)
+
+  const components = {
+    protocol: List([ urlObject.protocol ]),
+    slashes: urlObject.slashes,
+    auth: urlObject.auth,
+    host: urlObject.host,
+    hostname: urlObject.hostname ? new URLComponent({
+      componentName: 'hostname',
+      string: urlObject.hostname,
+      variableDelimiters
+    }) : null,
+    port: urlObject.port ? new URLComponent({
+      componentName: 'port',
+      string: urlObject.port,
+      variableDelimiters
+    }) : null,
+    path: urlObject.path,
+    pathname: urlObject.pathname ? new URLComponent({
+      componentName: 'pathname',
+      string: urlObject.pathname,
+      variableDelimiters
+    }) : null,
+    search: urlObject.search,
+    query: urlObject.query,
+    hash: urlObject.hash,
+    href: urlObject.href,
+    secure: urlObject.secure || false
+  }
+
+  return components
+}
+
+methods.formatHostFromHostnameAndPort = (hostname, port) => {
+  if (hostname && port) {
+    return hostname + ':' + port
+  }
+
+  if (hostname) {
+    return hostname
+  }
+
+  return null
+}
+
+/**
+ * converts a URL Record into a urlObject
+ * @param {URL} url: the URL Record to convert
+ * @param {List<string>} delimiters: the variable delimiters (needed to format variables in the
+ * fields)
+ * @param {boolean} useDefault: whether to use the default values or not
+ * @returns {Object} the corresponding urlObject
+ */
+methods.convertURLComponentsToURLObject = (url, delimiters = List(), useDefault = true) => {
+  const protocol = url.get('secure') ?
+    url.get('protocol').filter(proto => proto.match(/[^w]s:?$/)).get(0) :
+    url.getIn([ 'protocol', 0 ])
+
+  const slashes = url.get('slashes')
+  const hostname = url.get('hostname') ?
+    url.get('hostname').generate(delimiters, useDefault) : null
+  const port = url.get('port') ?
+    url.get('port').generate(delimiters, useDefault) : null
+  const host = methods.formatHostFromHostnameAndPort(hostname, port)
+  const pathname = url.get('pathname') ?
+    url.get('pathname').generate(delimiters, useDefault) : null
+
+  const urlObject = {
+    protocol, slashes, hostname, port, host, pathname
+  }
+
+  return urlObject
+}
+
+/**
+ * generates an href from a URL
+ * @param {URL} url: the URL Record to generate the href from
+ * @param {List<string>} delimiters: the variable delimiters (needed to format variables in the
+ * fields)
+ * @param {boolean} useDefault: whether to use the default values or not
+ * @returns {string} the url.href
+ */
+methods.generate = (url, delimiters = List(), useDefault = true) => {
+  const urlObject = methods.convertURLComponentsToURLObject(url, delimiters, useDefault)
+  return format(urlObject)
+}
+
+/**
+ * generates a URL from a URL and a url string
+ * @param {URL} from: the URL Record to that serves as a base reference
+ * @param {string} to: the url to reach
+ * @param {List<string>} delimiters: the variable delimiters (needed to format variables in the
+ * fields)
+ * @param {boolean} useDefault: whether to use the default values or not
+ * @returns {URL} the resolved URL
+ */
+methods.resolve = (from, to, delimiters, useDefault = true) => {
+  const fromString = methods.generate(from, delimiters, useDefault)
+  let resolved = resolve(fromString, to)
+
+  // massive hack
+  // FIXME
+  resolved = resolved.replace('///', '//')
+
+  return new URL({
+    url: resolved,
+    variableDelimiters: delimiters
+  })
+}
+
+/**
+ * urldecodes every field of a UrlObject
+ * @param {UrlObject} urlObject: the urlObject to decode
+ * @returns {UrlObject} the decoded urlObject
+ */
+methods.decodeUrlObject = (urlObject) => {
+  const keys = Object.keys(urlObject)
+
+  for (const key of keys) {
+    if (typeof urlObject[key] === 'string') {
+      urlObject[key] = decodeURIComponent(urlObject[key])
+    }
+  }
+
+  return urlObject
+}
+
+/**
+ * separates the host string into hostname and port
+ * @param {string} host: the host string
+ * @returns {Object} the hostname and port if they exist
+ */
+methods.splitHostInHostnameAndPort = (host) => {
+  if (!host) {
+    return { hostname: null, port: null }
+  }
+
+  const [ hostname, port ] = host.split(':')
+  return { hostname: hostname || null, port: port || null }
+}
+
+/**
+ * extracts the host from a pathname. Used when URL.parse failed to parse
+ * the URL correctly (often due to the presence of brackets in the hostname)
+ * @param {string} _pathname: the pathname to decompose
+ * @returns {Object} the host and pathname, if they exist
+ */
+methods.splitPathnameInHostAndPathname = (_pathname) => {
+  if (!_pathname) {
+    return { host: null, pathname: null }
+  }
+
+  const m = _pathname.match(/([^/]*)(\/.*)/)
+
+  if (m) {
+    const host = m[1] || null
+    const pathname = m[2] || null
+    return { host, pathname }
+  }
+
+  return { host: _pathname || null, pathname: null }
+}
+
+/**
+ * creates a path from a pathname and a search field
+ * @param {string} pathname: the pathname field of a UrlObject
+ * @param {string} search: the search field of a UrlObject
+ * @returns {string} the url.path
+ */
+methods.createPathFromPathNameAndSearch = (pathname, search) => {
+  return (pathname || '') + (search || '') || null
+}
+
+/**
+ * generates an href from a base URL, a host and a path. This is used to update
+ * the href field of a UrlObject, when the URL.parse failed.
+ * @param {URL} base: the base URL Record to generate the href from
+ * @param {?string} host: the host to use in place of the base URL's host
+ * @param {?string} pathname: the pathname to use in place of the base URL's pathname
+ * @returns {string} the url.href
+ */
+methods.createHrefFromBaseAndHostAndPathName = (base, host, pathname) => {
+  return format({
+    protocol: base.protocol || null,
+    slashes: base.slashes,
+    auth: base.auth || null,
+    host: host || null,
+    pathname: pathname || null,
+    search: base.search || null,
+    hash: base.hash || null
+  })
+}
+
+/**
+ * tries to fix a UrlObject that has no host by searching the pathname for a host
+ * and updating the related fields
+ * @param {UrlObject} urlObject: the UrlObject to fix
+ * @returns {UrlObject} the fixed urlObject
+ */
+methods.fixUrlObject = (urlObject) => {
+  const decoded = methods.decodeUrlObject(urlObject)
+  if (decoded.host || !decoded.pathname) {
+    return decoded
+  }
+
+  const { host, pathname } = methods.splitPathnameInHostAndPathname(decoded.pathname)
+  const { hostname, port } = methods.splitHostInHostnameAndPort(host)
+  const path = methods.createPathFromPathNameAndSearch(pathname, decoded.search)
+  const href = methods.createHrefFromBaseAndHostAndPathName(decoded, host, pathname)
+
+  return { ...urlObject, host, pathname, hostname, port, path, href }
+}
+
+export const __internals__ = methods
+export default URL
