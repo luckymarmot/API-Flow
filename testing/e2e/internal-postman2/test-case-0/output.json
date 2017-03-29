@@ -1,0 +1,365 @@
+{
+  "info": {
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+    "description": "This is a sample server Petstore server.\n\n[Learn about Swagger](http://swagger.wordnik.com) or join the IRC channel `#swagger` on irc.freenode.net.\n\nFor this sample, you can use the api key `special-key` to test the authorization filters\n",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "/stores/order",
+      "item": [
+        {
+          "name": "Place an order for a pet",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/stores/order",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalConsumes}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"$ref\": \"#/definitions/Order\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "/users/logout",
+      "item": [
+        {
+          "name": "Logs out current logged in user session",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/users/logout",
+            "method": "GET"
+          }
+        }
+      ]
+    },
+    {
+      "name": "/users/createWithArray",
+      "item": [
+        {
+          "name": "Creates list of users with given input array",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/users/createWithArray",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalConsumes}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"array\",\n  \"items\": {\n    \"$ref\": \"#/definitions/User\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "/pets",
+      "item": [
+        {
+          "name": "Add a new pet to the store",
+          "description": "This is a fairly long description about the API request /pets with Method POST",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/pets",
+            "auth": {
+              "type": "oauth2",
+              "oauth2": {
+                "authUrl": "http://petstore.swagger.wordnik.com/api/oauth/dialog",
+                "scope": "write_pets read_pets"
+              }
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"$ref\": \"#/definitions/Pet\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update an existing pet",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/pets",
+            "auth": {
+              "type": "oauth2",
+              "oauth2": {
+                "authUrl": "http://petstore.swagger.wordnik.com/api/oauth/dialog",
+                "scope": "write_pets read_pets"
+              }
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"$ref\": \"#/definitions/Pet\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "/pets/:petId",
+      "item": [
+        {
+          "name": "Find pet by ID",
+          "description": "Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error conditions",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/pets/:petId",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Updates a pet in the store with form data",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/pets/:petId",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "{{name}}",
+                  "enabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "{{status}}",
+                  "enabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Deletes a pet",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/pets/:petId",
+            "auth": {
+              "type": "oauth2",
+              "oauth2": {
+                "authUrl": "http://petstore.swagger.wordnik.com/api/oauth/dialog",
+                "scope": "write_pets read_pets"
+              }
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "api_key",
+                "value": null
+              },
+              {
+                "key": "Content-Type",
+                "value": "{{globalConsumes}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "/pets/findByStatus",
+      "item": [
+        {
+          "name": "Finds Pets by status",
+          "description": "Multiple status values can be provided with comma seperated strings",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/pets/findByStatus?status=",
+            "auth": {
+              "type": "oauth2",
+              "oauth2": {
+                "authUrl": "http://petstore.swagger.wordnik.com/api/oauth/dialog",
+                "scope": "write_pets read_pets"
+              }
+            },
+            "method": "GET"
+          }
+        }
+      ]
+    },
+    {
+      "name": "/users/login",
+      "item": [
+        {
+          "name": "Logs user into the system",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/users/login?username=&password=",
+            "method": "GET"
+          }
+        }
+      ]
+    },
+    {
+      "name": "/pets/findByTags",
+      "item": [
+        {
+          "name": "Finds Pets by tags",
+          "description": "Muliple tags can be provided with comma seperated strings. Use tag1, tag2, tag3 for testing.",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/pets/findByTags?tags=",
+            "auth": {
+              "type": "oauth2",
+              "oauth2": {
+                "authUrl": "http://petstore.swagger.wordnik.com/api/oauth/dialog",
+                "scope": "write_pets read_pets"
+              }
+            },
+            "method": "GET"
+          }
+        }
+      ]
+    },
+    {
+      "name": "/users/createWithList",
+      "item": [
+        {
+          "name": "Creates list of users with given input array",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/users/createWithList",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalConsumes}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"array\",\n  \"items\": {\n    \"$ref\": \"#/definitions/User\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "/users",
+      "item": [
+        {
+          "name": "Create user",
+          "description": "This can only be done by the logged in user.",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/users",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalConsumes}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"$ref\": \"#/definitions/User\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "/users/:username",
+      "item": [
+        {
+          "name": "Get user by user name",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/users/:username",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Updated user",
+          "description": "This can only be done by the logged in user.",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/users/:username",
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalConsumes}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"$ref\": \"#/definitions/User\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete user",
+          "description": "This can only be done by the logged in user.",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/users/:username",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalConsumes}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "/stores/order/:orderId",
+      "item": [
+        {
+          "name": "Find purchase order by ID",
+          "description": "For valid response try integer IDs with value <= 5 or > 10. Other values will generated exceptions",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/stores/order/:orderId",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Delete purchase order by ID",
+          "description": "For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors",
+          "request": {
+            "url": "https://petstore.swagger.wordnik.com/v2/stores/order/:orderId",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalConsumes}}"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "id": "globalConsumes",
+      "type": "string",
+      "name": "Content-Type"
+    },
+    {
+      "id": "globalProduces",
+      "type": "string",
+      "name": "Content-Type"
+    }
+  ]
+}

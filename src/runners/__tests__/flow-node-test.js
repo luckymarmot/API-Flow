@@ -22,61 +22,61 @@ import Options from '../../models/options/Options'
 export class TestNodeRunner extends UnitTest {
 
     @targets('_createParser')
-    testCreateParserReturnsArgumentParser() {
-        const flow = this.__init()
+  testCreateParserReturnsArgumentParser() {
+    const flow = this.__init()
 
-        const parser = flow._createParser()
+    const parser = flow._createParser()
 
-        this.assertEqual(parser instanceof ArgumentParser, true)
-    }
+    this.assertEqual(parser instanceof ArgumentParser, true)
+  }
 
     @targets('processArguments')
-    testProcessArgumentsUpdatesOptions() {
-        const flow = this.__init([ 'fake-source.json', '-f', 'raml' ])
+  testProcessArgumentsUpdatesOptions() {
+    const flow = this.__init([ 'fake-source.json', '-f', 'raml' ])
 
-        const parser = flow._createParser()
-        flow.processArguments(parser)
+    const parser = flow._createParser()
+    flow.processArguments(parser)
 
-        const options = flow.options
-        const expectedOptions = new Options({
-            parser: {
-                name: 'raml'
-            },
-            resolver: {
-                base: 'local'
-            }
-        })
+    const options = flow.options
+    const expectedOptions = new Options({
+      parser: {
+        name: 'raml'
+      },
+      resolver: {
+        base: 'local'
+      }
+    })
 
-        this.assertEqual(expectedOptions, options)
+    this.assertEqual(expectedOptions, options)
 
-        const input = flow.input
-        const expectedInput = 'fake-source.json'
+    const input = flow.input
+    const expectedInput = 'fake-source.json'
 
-        this.assertEqual(expectedInput, input)
-    }
+    this.assertEqual(expectedInput, input)
+  }
 
     @targets('run')
-    _testRun() {}
+  _testRun() {}
 
     @targets('getParsers')
-    _testGetparsers() {}
+  _testGetparsers() {}
 
     @targets('getSerializers')
-    _testGetSerializers() {}
+  _testGetSerializers() {}
 
     @targets('load')
-    _testLoad() {}
+  _testLoad() {}
 
     @targets('getFormat')
-    _testGetFormat() {}
+  _testGetFormat() {}
 
     @targets('getName')
-    _testGetName() {}
+  _testGetName() {}
 
-    __init(argv = [ 'fake-source.json' ]) {
-        const args = [ 'node', 'api-flow.js' ].concat(argv)
-        process.argv = args
-        const flow = new ClassMock(new FlowCLI(), '')
-        return flow
-    }
+  __init(argv = [ 'fake-source.json' ]) {
+    const args = [ 'node', 'api-flow.js' ].concat(argv)
+    process.argv = args
+    const flow = new ClassMock(new FlowCLI(), '')
+    return flow
+  }
 }

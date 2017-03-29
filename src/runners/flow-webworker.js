@@ -17,36 +17,36 @@ import BrowserEnvironment, {
 } from '../models/environments/BrowserEnvironment'
 
 export default class FlowWorker extends BaseFlow {
-    static parsers = {
-        swagger: SwaggerParser,
-        raml: RAMLParser,
-        postman: PostmanParser,
-        curl: CurlParser,
-        __internal__: InternalParser
-    }
+  static parsers = {
+    swagger: SwaggerParser,
+    raml: RAMLParser,
+    postman: PostmanParser,
+    curl: CurlParser,
+    __internal__: InternalParser
+  }
 
-    static serializers = {
-        swagger: SwaggerSerializer,
-        raml: RAMLSerializer,
-        postman: PostmanSerializer,
-        curl: CurlSerializer,
-        __internal__: InternalSerializer
-    }
+  static serializers = {
+    swagger: SwaggerSerializer,
+    raml: RAMLSerializer,
+    postman: PostmanSerializer,
+    curl: CurlSerializer,
+    __internal__: InternalSerializer
+  }
 
-    constructor() {
-        super(BrowserEnvironment, URLResolver)
-    }
+  constructor() {
+    super(BrowserEnvironment, URLResolver)
+  }
 
-    getParsers() {
-        return FlowWorker.parsers
-    }
+  getParsers() {
+    return FlowWorker.parsers
+  }
 
-    getSerializers() {
-        return FlowWorker.serializers
-    }
+  getSerializers() {
+    return FlowWorker.serializers
+  }
 
-    validateArguments(args) {
-        let isValid =
+  validateArguments(args) {
+    const isValid =
             args.content &&
             [ 'remote', 'raw' ]
                 .indexOf((args.mode || '').toLowerCase()) >= 0 &&
@@ -54,50 +54,50 @@ export default class FlowWorker extends BaseFlow {
                 .indexOf((args.source.format || '').toLowerCase()) >= 0 &&
             [ 'paw', 'swagger', 'raml', 'postman', 'curl' ]
                 .indexOf((args.target.format || '').toLowerCase()) >= 0
-        return isValid
+    return isValid
+  }
+
+  extractActionAndQuery(data) {
+    const { action, ...parameters } = data
+
+    const extractorMap = {
+      transform: ::this.extractTransformQuery,
+      detectFormat: ::this.extractDetectFormatQuery,
+      detectName: ::this.extractDetectNameQuery
     }
 
-    extractActionAndQuery(data) {
-        let { action, ...parameters } = data
+    const extractor = extractorMap[action]
 
-        let extractorMap = {
-            transform: ::this.extractTransformQuery,
-            detectFormat: ::this.extractDetectFormatQuery,
-            detectName: ::this.extractDetectNameQuery
-        }
-
-        let extractor = extractorMap[action]
-
-        if (!extractor) {
-            return {
-                extraneous: data
-            }
-        }
-
-        let { query, ...extraneous } = extractor(parameters)
-
-        if (!query) {
-            return {
-                extraneous
-            }
-        }
-
-        return {
-            action,
-            query,
-            extraneous
-        }
+    if (!extractor) {
+      return {
+        extraneous: data
+      }
     }
 
-    extractTransformQuery(parameters) {
-        let valid = this.validateArguments(parameters)
-        if (!valid) {
-            return {
-                extraneous: parameters
-            }
-        }
+    const { query, ...extraneous } = extractor(parameters)
 
-        let {
+    if (!query) {
+      return {
+        extraneous
+      }
+    }
+
+    return {
+      action,
+      query,
+      extraneous
+    }
+  }
+
+  extractTransformQuery(parameters) {
+    const valid = this.validateArguments(parameters)
+    if (!valid) {
+      return {
+        extraneous: parameters
+      }
+    }
+
+    const {
             content,
             mode,
             source,
@@ -106,132 +106,132 @@ export default class FlowWorker extends BaseFlow {
             ...extraneous
         } = parameters
 
-        let flowOptions = {
-            parser: {
-                name: source.format,
-                version: source.version
-            },
-            resolver: {
-                base: mode,
-                resolve: resolutionOptions
-            },
-            serializer: {
-                name: target.format,
-                version: target.version
-            }
-        }
-
-        return {
-            query: [ content, flowOptions ],
-            extraneous
-        }
+    const flowOptions = {
+      parser: {
+        name: source.format,
+        version: source.version
+      },
+      resolver: {
+        base: mode,
+        resolve: resolutionOptions
+      },
+      serializer: {
+        name: target.format,
+        version: target.version
+      }
     }
 
-    extractDetectFormatQuery(parameters) {
-        let { content, ...extraneous } = parameters
-        return {
-            query: [ content ],
-            extraneous
-        }
+    return {
+      query: [ content, flowOptions ],
+      extraneous
     }
+  }
 
-    extractDetectNameQuery(parameters) {
-        let { content, ...extraneous } = parameters
-        return {
-            query: [ content ],
-            extraneous
-        }
+  extractDetectFormatQuery(parameters) {
+    const { content, ...extraneous } = parameters
+    return {
+      query: [ content ],
+      extraneous
     }
+  }
 
-    postSuccess(action, extraneous) {
-        return (data) => {
-            self.postMessage({
-                action,
-                success: true,
-                result: data,
-                ...extraneous
-            })
-        }
+  extractDetectNameQuery(parameters) {
+    const { content, ...extraneous } = parameters
+    return {
+      query: [ content ],
+      extraneous
     }
+  }
 
-    postError(action, extraneous) {
-        return (_error) => {
-            let error = _error
-
-            if (_error instanceof Error) {
-                error = _error.message || _error.name || 'unknown error'
-            }
-
-            self.postMessage({
-                action,
-                success: false,
-                error,
-                ...extraneous
-            })
-        }
+  postSuccess(action, extraneous) {
+    return (data) => {
+      self.postMessage({
+        action,
+        success: true,
+        result: data,
+        ...extraneous
+      })
     }
+  }
+
+  postError(action, extraneous) {
+    return (_error) => {
+      let error = _error
+
+      if (_error instanceof Error) {
+        error = _error.message || _error.name || 'unknown error'
+      }
+
+      self.postMessage({
+        action,
+        success: false,
+        error,
+        ...extraneous
+      })
+    }
+  }
 
     // TODO Handle Failures differently from Errors
-    postFailure(action, extraneous) {
-        return (_error) => {
-            let error = _error
+  postFailure(action, extraneous) {
+    return (_error) => {
+      let error = _error
 
-            if (_error instanceof Error) {
-                error = _error.message || _error.name || 'unknown error'
-            }
+      if (_error instanceof Error) {
+        error = _error.message || _error.name || 'unknown error'
+      }
 
-            self.postMessage({
-                action,
-                success: false,
-                error,
-                ...extraneous
-            })
-        }
+      self.postMessage({
+        action,
+        success: false,
+        error,
+        ...extraneous
+      })
     }
+  }
 
-    onMessage(msg) {
-        if (msg) {
-            let {
+  onMessage(msg) {
+    if (msg) {
+      const {
                 action,
                 query,
                 extraneous
             } = this.extractActionAndQuery(msg.data)
-            if (action && query) {
-                let actionMap = {
-                    transform: ::this.transform,
-                    detectName: ::this.detectName,
-                    detectFormat: ::this.detectFormat
-                }
+      if (action && query) {
+        const actionMap = {
+          transform: ::this.transform,
+          detectName: ::this.detectName,
+          detectFormat: ::this.detectFormat
+        }
 
-                let actor = actionMap[action]
-                if (!actor) {
+        const actor = actionMap[action]
+        if (!actor) {
                     // TODO send message about internal conflict
-                    let error = 'Internal Error: ' +
+          const error = 'Internal Error: ' +
                         'ApiFlow did not find any actors for this action ' +
                         'despite validating the action. This should not happen'
-                    return this.postFailure(action, extraneous)(error)
-                }
+          return this.postFailure(action, extraneous)(error)
+        }
 
-                let promise = actor(...query)
+        const promise = actor(...query)
 
-                promise
+        promise
                     .then(
                         this.postSuccess(action, extraneous),
                         this.postError(action, extraneous)
                     )
                     .catch(this.postFailure(action, extraneous))
-            }
-            else {
-                this.postError(action, extraneous)('Unrecognized action')
-            }
-        }
-        else {
-            this.postError(null, null)('ApiFlow does not accept empty message')
-        }
+      }
+      else {
+        this.postError(action, extraneous)('Unrecognized action')
+      }
     }
+    else {
+      this.postError(null, null)('ApiFlow does not accept empty message')
+    }
+  }
 }
 
-let worker = new FlowWorker()
+const worker = new FlowWorker()
 self.onmessage = function() {
-    worker.onMessage.apply(worker, arguments)
+  worker.onMessage.apply(worker, arguments)
 }

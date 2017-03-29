@@ -1,1138 +1,1695 @@
-import Immutable from 'immutable'
+/**
+ * TODO: improve Tag management (there's a Tag Object that contains a description)
+ */
+
+import { parse, format } from 'url'
+import { OrderedMap, Map, List } from 'immutable'
 import yaml from 'js-yaml'
 import tv4 from 'tv4'
 import swaggerSchema from 'swagger-schema-official/schema.json'
 
+import Api from '../../../models/Api'
+import Info from '../../../models/Info'
+import Contact from '../../../models/Contact'
+import License from '../../../models/License'
+import Store from '../../../models/Store'
+import Reference from '../../../models/Reference'
+import Interface from '../../../models/Interface'
+import Parameter from '../../../models/Parameter'
+import ParameterContainer from '../../../models/ParameterContainer'
 import Constraint from '../../../models/Constraint'
-
-import Context, {
-    Parameter,
-    ParameterContainer,
-    Body,
-    Response
-} from '../../../models/Core'
-
-import {
-    Info, Contact, License
-} from '../../../models/Utils'
-
-import Group from '../../../models/Group'
-import Request from '../../../models/Request'
 import Auth from '../../../models/Auth'
 import URL from '../../../models/URL'
-import Item from '../../../models/Item'
-
-import ReferenceContainer from '../../../models/references/Container'
-import JSONSchemaReference from '../../../models/references/JSONSchema'
-
-export default class SwaggerParser {
-    static version = 'v2.0'
-    static format = 'swagger'
-
-    static detect(content) {
-        let parser = SwaggerParser
-        let detection = {
-            format: parser.format,
-            version: parser.version,
-            score: 0
-        }
-
-        let swag
-        try {
-            swag = JSON.parse(content)
-        }
-        catch (jsonParseError) {
-            try {
-                swag = yaml.safeLoad(content)
-            }
-            catch (yamlParseError) {
-                return [ detection ]
-            }
-        }
-
-        if (swag) {
-            // converting objects to bool to number, fun stuff
-            let score = 0
-            score += swag.swagger ? 1 / 3 : 0
-            score += swag.swagger === '2.0' ? 1 / 3 : 0
-            score += swag.info ? 1 / 3 : 0
-            score += swag.paths ? 1 / 3 : 0
-            score = score > 1 ? 1 : score
-            detection.score = score
-            return [ detection ]
-        }
-
-        return [ detection ]
-    }
-
-    static getAPIName(content) {
-        let swag
-        try {
-            swag = JSON.parse(content)
-        }
-        catch (jsonParseError) {
-            try {
-                swag = yaml.safeLoad(content)
-            }
-            catch (yamlParseError) {
-                return null
-            }
-        }
-
-        if (swag && swag.info) {
-            return swag.info.title || null
-        }
-
-        return null
-    }
-
-    constructor() {
-        this.context = new Context()
-        this.item = new Item()
-    }
-
-    detect() {
-        return SwaggerParser.detect(...arguments)
-    }
-
-    getAPIName() {
-        return SwaggerParser.getAPIName(...arguments)
-    }
-
-    // @NotTested -> assumed valid
-    parse(item) {
-        this.item = new Item(item)
-        const string = item.content
-        const swaggerCollection = this._loadSwaggerCollection(string)
-        const valid = this._validateSwaggerCollection(swaggerCollection)
-
-        if (!valid) {
-            const m = 'Invalid Swagger File (invalid schema / version < 2.0):\n'
-            throw new Error(m + tv4.error)
-        }
-
-        if (swaggerCollection) {
-            let refs = new ReferenceContainer()
-            refs = refs.create(
-                this._extractReferences(this.item, swaggerCollection)
-            )
-
-            let rootGroup = new Group()
-            rootGroup = rootGroup.set('name', swaggerCollection.info.title)
-            let requests = this._extractRequests(swaggerCollection)
-
-            rootGroup = this._createGroupTree(rootGroup, requests)
-
-            let info = this._extractContextInfo(swaggerCollection.info)
-
-            let reqContext = new Context()
-            reqContext = reqContext
-                .set('requests', new Immutable.OrderedMap(requests))
-                .set('group', rootGroup)
-                .setIn([ 'references', 'schemas' ], refs)
-                .set('info', info)
-
-            this.context = reqContext
-
-            return reqContext
-        }
-    }
-
-    _extractContextInfo(_info) {
-        if (!_info) {
-            return new Info()
-        }
-
-        let contact = null
-        if (_info.contact) {
-            contact = new Contact({
-                name: _info.contact.name || null,
-                url: _info.contact.url || null,
-                email: _info.contact.email || null
-            })
-        }
-
-        let license = null
-        if (_info.license) {
-            license = new License({
-                name: _info.license.name || null,
-                url: _info.license.url || null
-            })
-        }
-
-        let info = new Info({
-            title: _info.title || null,
-            description: _info.description || null,
-            tos: _info.termsOfService || null,
-            contact: contact,
-            license: license,
-            version: _info.version || null
-        })
-
-        return info
-    }
-
-    // @NotTested -> assumed valid
-    _createRequest(swaggerCollection, path, method, content, description) {
-        const url = this._extractUrlInfo(
-            swaggerCollection,
-            path,
-            content
-        )
-
-        const container = this._extractParams(
-            swaggerCollection,
-            content
-        )
-
-        const responses = this._extractResponses(
-            swaggerCollection, content
-        )
-
-        const bodies = this._extractBodies(swaggerCollection, content)
-
-        let request = new Request()
-        request = this._setTagsAndId(request, content)
-        request = this._setSummary(request, path, content)
-        request = this._setDescription(request, content, description)
-        request = this._setBasicInfo(
-            request,
-            url,
-            method,
-            container,
-            bodies,
-            responses
-        )
-        request = this._setAuth(request, swaggerCollection, content)
-
-        return request
-    }
-
-    _setTagsAndId(_request, content) {
-        let request = _request
-        if (content.tags) {
-            let tags = new Immutable.List(content.tags)
-            request = request.set('tags', tags)
-        }
-
-        if (content.operationId) {
-            request = request.set('id', content.operationId)
-        }
-
-        return request
-    }
-
-    // @tested
-    _setSummary(request, path, content) {
-        if (content.summary) {
-            return request.set('name', content.summary)
-        }
-        else if (content.operationId) {
-            return request.set('name', content.operationId)
-        }
-        return request.set('name', path)
-    }
-
-    // @tested
-    _setDescription(request, content, description) {
-        let _description = []
-        if (content.description) {
-            _description.push(content.description)
-        }
-
-        if (description) {
-            _description.push(description)
-        }
-
-        return request.set('description', _description.join('\n\n') || null)
-    }
-
-    // @tested
-    _setBasicInfo(request, url, method, container, bodies, responses) {
-        let _container = container || new ParameterContainer()
-        let _bodies = bodies || new Immutable.List()
-        let _responses = responses || new Immutable.List()
-
-        return request.withMutations(req => {
-            req
-                .set('url', url)
-                .set('method', method.toUpperCase())
-                .set('parameters', _container)
-                .set('bodies', _bodies)
-                .set('responses', _responses)
-        })
-    }
-
-    // @Tested
-    _setAuth(request, swaggerCollection, content) {
-        let _request = request
-
-        let _security = content.security || swaggerCollection.security || []
-
-        const typeMap = {
-            basic: this._setBasicAuth,
-            apiKey: this._setApiKeyAuth,
-            oauth2: this._setOAuth2Auth
-        }
-
-        if (_security.length === 0) {
-            return _request
-        }
-
-        if (!swaggerCollection.securityDefinitions) {
-            const m = 'Swagger - expected a security definition to exist'
-            throw new Error(m)
-        }
-
-        let auths = []
-        for (let security of _security) {
-            for (let key in security) {
-                if (
-                    security.hasOwnProperty(key) &&
-                    swaggerCollection.securityDefinitions[key]
-                ) {
-                    let definition = Immutable.fromJS(swaggerCollection
-                        .securityDefinitions[key])
-                    definition = definition.set(
-                        'scopes', new Immutable.List(security[key])
-                    )
-
-                    const type = definition.get('type')
-                    if (typeMap[type]) {
-                        let auth = typeMap[type](key, definition)
-                        auths.push(auth)
-                    }
-                }
-            }
-        }
-
-        auths = new Immutable.List(auths)
-        return _request.set('auths', auths)
-    }
-
-    _setBasicAuth(authName = null, definition) {
-        let username = null
-        let password = null
-        let description = null
-
-        if (definition) {
-            username = definition.get('x-username') || null
-            password = definition.get('x-password') || null
-            description = definition.get('description') || null
-        }
-
-        return new Auth.Basic({ authName, username, password, description })
-    }
-
-    _setApiKeyAuth(authName = null, definition) {
-        return new Auth.ApiKey({
-            authName,
-            description: definition.get('description') || null,
-            in: definition.get('in'),
-            name: definition.get('name')
-        })
-    }
-
-    _setOAuth2Auth(authName = null, definition) {
-        return new Auth.OAuth2({
-            authName,
-            description: definition.get('description') || null,
-            flow: definition.get('flow', null),
-            authorizationUrl: definition.get('authorizationUrl', null),
-            tokenUrl: definition.get('tokenUrl', null),
-            scopes: definition.get('scopes')
-        })
-    }
-
-    // @tested
-    _loadSwaggerCollection(string) {
-        let swaggerCollection
-        try {
-            swaggerCollection = JSON.parse(string)
-        }
-        catch (jsonParseError) {
-            try {
-                swaggerCollection = yaml.safeLoad(string)
-            }
-            catch (yamlParseError) {
-                let m = 'Invalid Swagger File format (invalid JSON or YAML)'
-                m += '\nJSON Error: ' + jsonParseError
-                m += '\nYAML Error: ' + yamlParseError
-                throw new Error(m)
-            }
-        }
-
-        return swaggerCollection
-    }
-
-    // @tested
-    _validateSwaggerCollection(swag) {
-        return tv4.validate(swag, swaggerSchema)
-    }
-
-    _updateParametersInMethod(content, baseParams) {
-        // shallow copy
-        let params = (baseParams || []).map(d => { return d })
-        let contentParams = content.parameters || []
-        for (let param of contentParams) {
-            let name = param.name
-            let index = 0
-            let used = false
-            for (let _param of baseParams || []) {
-                let _name = _param.name
-                if (name === _name) {
-                    params[index] = param
-                    used = true
-                }
-                index += 1
-            }
-            if (!used) {
-                params.push(param)
-            }
-        }
-
-        return params
-    }
-
-    _uuid() {
-        let d = new Date().getTime()
-        let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-            .replace(/[xy]/g, c => {
-                let r = (d + Math.random() * 16) % 16 | 0
-                d = Math.floor(d / 16)
-                return (c === 'x' ? r : r & 0x3 | 0x8).toString(16)
-            })
-        return uuid
-    }
-
-    // @tested
-    _extractRequests(collection) {
-        let requests = {}
-
-        let filterOtherFieldsOutFunc = (bool) => {
-            return (val) => {
-                let _bool = (val || '').toLowerCase().indexOf('x-') === 0
-                return bool !== _bool
-            }
-        }
-
-        let createOtherFieldDescFunc = (methods) => {
-            return (str, field) => {
-                return str + '\n  - ' + field + ': ' +
-                    JSON.stringify(methods[field] || null, null, '  ')
-            }
-        }
-
-        let pathMap = collection.paths
-        const paths = Object.keys(pathMap)
-        for (let path of paths) {
-            let methodMap = pathMap[path]
-            let methods = Object.keys(methodMap)
-            if (methodMap.parameters) {
-                let _params = this._getParameters(
-                    collection,
-                    methodMap.parameters
-                )
-
-                let paramKey = methods.indexOf('parameters')
-                // remove paramKey
-                methods.splice(paramKey, 1)
-
-                for (let method of methods) {
-                    let params = this._updateParametersInMethod(
-                        methodMap[method],
-                        _params
-                    )
-                    methodMap[method].parameters = params
-                }
-            }
-
-            let validMethods = methods.filter(
-                filterOtherFieldsOutFunc(true)
-            )
-
-            let description = methods.filter(
-                filterOtherFieldsOutFunc(false)
-            ).reduce(createOtherFieldDescFunc(methods), '')
-
-            if (description) {
-                description = 'The following fields were provided at the ' +
-                    'path level:' + description
-            }
-
-            for (let method of validMethods) {
-                let request = this._createRequest(
-                    collection,
-                    path,
-                    method,
-                    methodMap[method],
-                    description
-                )
-
-                let uuid = this._uuid()
-
-                requests[uuid] = request
-            }
-        }
-
-        return requests
-    }
-
-    _getParameters(collection, params) {
-        let _params = []
-        for (let param of params) {
-            if (param.$ref) {
-                let _param = ::this._extractSubTree(
-                    collection,
-                    param.$ref
-                )
-
-                if (_param) {
-                    _params.push(_param)
-                }
-            }
-            else {
-                _params.push(param)
-            }
-        }
-
-        return _params
-    }
-
-    _unescapeURIFragment(uriFragment) {
-        return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
-    }
-
-    _extractSubTree(collection, ref) {
-        let path = ref.split('/').slice(1).map((d) => {
-            return this._unescapeURIFragment(d)
-        })
-
-        let subTree = collection
-        for (let key of path) {
-            subTree = subTree[key]
-        }
-
-        return subTree
-    }
-
-    _extractReferences(item, collection) {
-        let ref = new JSONSchemaReference()
-        ref = ref.resolve(JSON.stringify(collection))
-        let refs = ref.get('dependencies')
-        return refs
-    }
-
-    _extractUrlInfo(collection, path, content) {
-        let rootSchemes = collection.schemes || [ 'http' ]
-        let schemes = content.schemes || rootSchemes
-
-        let host = collection.host || 'localhost'
-
-        let basePath = ''
-        let subPath = ''
-
-        if (
-            collection.basePath &&
-            collection.basePath.length > 0
-        ) {
-            basePath = collection.basePath
-            if (!(basePath.indexOf('/') === 0)) {
-                basePath = '/' + basePath
-            }
-
-            if (basePath.indexOf('/') === basePath.length - 1) {
-                basePath = basePath.substr(0, basePath.length - 1)
-            }
-        }
-
-        if (!path || path.length === 0 || path[0] !== '/') {
-            throw new Error('Invalid Swagger, path must begin with a /')
-        }
-        else {
-            subPath = path
-        }
-
-        let resolvedParams = this._getParameters(
-            collection,
-            content.parameters || []
-        )
-
-        let pathParams = resolvedParams.filter(param => {
-            return param.in === 'path'
-        })
-
-        let protocol = new Parameter({
-            key: 'protocol',
-            type: 'string',
-            internals: new Immutable.List([
-                new Constraint.Enum(schemes)
-            ])
-        })
-
-        let hostParam = this._extractSequenceParam(
-            host, 'host', pathParams
-        )
-
-        let pathnameParam = this._extractSequenceParam(
-            basePath + subPath, 'pathname', pathParams
-        )
-
-        let url = new URL({
-            protocol: protocol,
-            host: hostParam,
-            pathname: pathnameParam
-        })
-
-        return url
-    }
-
-    _extractResponses(collection, content) {
-        let _collection = collection || {}
-        let _content = content || {}
-
-        let result = []
-
-        let responses = _content.responses
-
-        const externals = this._extractExternals(
-            _collection, _content, false
-        )
-
-        const bodies = this._extractResponseBodies(
-            _collection, _content
-        )
-
-        let codes = Object.keys(responses || {})
-        for (let code of codes) {
-            let body = new Immutable.List()
-            if (responses[code].schema) {
-                let param = this._extractParam(
-                    responses[code],
-                    externals
-                ).set('name', 'body')
-
-                body = body.push(param)
-            }
-
-            let contentTypes = this._extractContentTypes(
-                _collection, _content, false
-            )
-
-            let headers = new Immutable.List()
-            for (let contentType of contentTypes) {
-                headers.push(new Parameter({
-                    key: 'Content-Type',
-                    name: 'Content-Type',
-                    type: 'string',
-                    value: contentType,
-                    internals: new Immutable.List([
-                        new Constraint.Enum([ contentType ])
-                    ]),
-                    externals: new Immutable.List([
-                        new Parameter({
-                            key: 'Content-Type',
-                            type: 'string',
-                            internals: new Immutable.List([
-                                new Constraint.Enum([ contentType ])
-                            ])
-                        })
-                    ])
-                }))
-            }
-
-            if (responses[code].headers) {
-                let headerNames = Object.keys(responses[code].headers)
-                for (let header of headerNames) {
-                    let param = this._extractParam(
-                        responses[code].headers[header],
-                        externals
-                    )
-                    headers = headers.push(param)
-                }
-            }
-
-            let examples = responses[code].examples || null
-
-            let container = new ParameterContainer({
-                body: body,
-                headers: headers
-            })
-            let response = new Response({
-                code: code,
-                description: responses[code].description || null,
-                examples: examples,
-                parameters: container,
-                bodies: bodies
-            })
-
-            result.push(response)
-        }
-
-        result = new Immutable.List(result)
-        return result
-    }
-
-    _extractExternals(collection, content, consume = true) {
-        let consumes
-        if (consume) {
-            consumes = content.consumes || collection.consumes
-        }
-        else {
-            consumes = content.produces || collection.produces
-        }
-
-        if (!consumes) {
-            return new Immutable.List()
-        }
-
-        return new Immutable.List([
-            new Parameter({
-                key: 'Content-Type',
-                type: 'string',
-                internals: new Immutable.List([
-                    new Constraint.Enum(consumes)
-                ])
-            })
-        ])
-    }
-
-    _extractContentTypes(collection, content, consume = true) {
-        let consumeKey = consume ? 'consumes' : 'produces'
-        let _content = content || {}
-        let _collection = collection || {}
-
-        let contentTypes = []
-
-        if (_content[consumeKey] && _content[consumeKey].length > 0) {
-            contentTypes = _content[consumeKey]
-        }
-        else if (
-            _collection[consumeKey] &&
-            _collection[consumeKey].length > 0
-        ) {
-            contentTypes = _collection[consumeKey]
-        }
-        return contentTypes
-    }
-
-    _extractParams(collection, content) {
-        let _content = content || {}
-        let _collection = collection || {}
-        let parameters = _content.parameters || []
-
-        parameters = this._getParameters(collection, parameters)
-
-        let headers = []
-        let queries = []
-        let body = []
-        let path = []
-
-        let contentTypes = this._extractContentTypes(_collection, _content)
-        let externals = this._extractExternals(_collection, _content)
-
-        for (let contentType of contentTypes) {
-            headers.push(new Parameter({
-                key: 'Content-Type',
-                name: 'Content-Type',
-                type: 'string',
-                value: contentType,
-                internals: new Immutable.List([
-                    new Constraint.Enum([ contentType ])
-                ]),
-                externals: new Immutable.List([
-                    new Parameter({
-                        key: 'Content-Type',
-                        type: 'string',
-                        internals: new Immutable.List([
-                            new Constraint.Enum([ contentType ])
-                        ])
-                    })
-                ])
-            }))
-        }
-
-        const mapping = {
-            query: queries,
-            header: headers,
-            formData: body,
-            body: body,
-            path: path
-        }
-
-        for (let param of parameters) {
-            let fieldList = mapping[param.in]
-            if (fieldList) {
-                let _param = this._extractParam(param, externals)
-                fieldList.push(_param)
-            }
-        }
-
-        let container = new ParameterContainer({
-            headers: new Immutable.List(headers),
-            queries: new Immutable.List(queries),
-            body: new Immutable.List(body),
-            path: new Immutable.List(path)
-        })
-
-        return container
-    }
-
-    _extractParam(param, externals) {
-        let _key = param.name || null
-        let value = param.default
-        let format = param.format || param['x-format'] || null
-        let required = param.required || false
-        let _externals = externals
-
-        if (typeof value === 'undefined') {
-            value = null
-        }
-
-        let internalsMap = {
-            maximum: Constraint.Maximum,
-            minimum: Constraint.Minimum,
-            maxLength: Constraint.MaxLength,
-            minLength: Constraint.MinLength,
-            pattern: Constraint.Pattern,
-            maxItems: Constraint.MaxItems,
-            minItems: Constraint.MinItems,
-            uniqueItems: Constraint.UniqueItems,
-            enum: Constraint.Enum,
-            multipleOf: Constraint.MultipleOf
-        }
-
-
-        let type = param.type || null
-
-        let internals = new Immutable.List()
-        for (let key of Object.keys(param)) {
-            if (internalsMap[key]) {
-                let constraint = new internalsMap[key](param[key])
-                internals = internals.push(constraint)
-            }
-
-            if (key === 'exclusiveMaximum') {
-                internals = internals.push(
-                    new Constraint.ExclusiveMaximum(param.maximum)
-                )
-            }
-
-            if (key === 'exclusiveMinimum') {
-                internals = internals.push(
-                    new Constraint.ExclusiveMinimum(param.minimum)
-                )
-            }
-        }
-
-        if (param.schema) {
-            let currentURI = this.item.getPath()
-            let uri = (new URL(param.schema.$ref, currentURI)).href()
-            value = new JSONSchemaReference({
-                uri: uri,
-                relative: param.schema.$ref || ''
-            }).resolve(param.schema)
-            type = 'reference'
-            _key = null
-        }
-
-        if (param.type === 'array') {
-            if (param.items) {
-                value = this._extractParam(param.items, externals)
-            }
-            else {
-                value = new Immutable.List()
-            }
-            format = param.collectionFormat || null
-        }
-
-        if (param['x-use-with']) {
-            _externals = new Immutable.List()
-            for (let external of param['x-use-with']) {
-                _externals = _externals.push(
-                    this._extractParam(external, new Immutable.List())
-                )
-            }
-        }
-
-        let _param = new Parameter({
-            key: _key,
-            name: param.name || null,
-            value: value,
-            type: type,
-            format: format,
-            required: required,
-            description: param.description || null,
-            internals: internals,
-            externals: _externals,
-            example: param['x-example'] || null
-        })
-
-        return _param
-    }
-
-    _extractBodies(collection, content) {
-        let bodies = new Immutable.List()
-        let contentTypes = this._extractContentTypes(collection, content)
-
-        const typeMapping = {
-            'application/x-www-form-urlencoded': 'urlEncoded',
-            'multipart/form-data': 'formData'
-        }
-        for (let contentType of contentTypes) {
-            let bodyType = null
-
-            if (typeMapping[contentType]) {
-                bodyType = typeMapping[contentType]
-            }
-
-            let body = new Body({
-                type: bodyType,
-                constraints: new Immutable.List([
-                    new Parameter({
-                        key: 'Content-Type',
-                        type: 'string',
-                        value: contentType
-                    })
-                ])
-            })
-
-            bodies = bodies.push(body)
-        }
-
-        return bodies
-    }
-
-    _extractResponseBodies(collection, content) {
-        let produces = content.produces || collection.produces
-
-        if (!produces) {
-            return new Immutable.List()
-        }
-
-        let bodies = produces.map(mime => {
-            return new Body({
-                constraints: new Immutable.List([
-                    new Parameter({
-                        key: 'Content-Type',
-                        type: 'string',
-                        value: mime
-                    })
-                ])
-            })
-        })
-
-        return new Immutable.List(bodies)
-    }
-
-    _formatSequenceParam(_param) {
-        if (_param.get('format') !== 'sequence') {
-            let schema = _param.getJSONSchema(false, true)
-            if (!schema.enum && typeof schema.default !== 'undefined') {
-                schema.enum = [ schema.default ]
-            }
-            let generated = _param.generate(false, schema)
-            return generated
-        }
-
-        let schema = _param.getJSONSchema()
-
-        if (!schema['x-sequence']) {
-            return _param.generate()
-        }
-
-        for (let sub of schema['x-sequence']) {
-            if (sub['x-title']) {
-                sub.enum = [ '{' + sub['x-title'] + '}' ]
-            }
-        }
-
-        let generated = _param.generate(false, schema)
-        return generated
-    }
-
-
-    _createTagGroupTree(group, tagLists) {
-        let _group = group
-        if (!group || !(group instanceof Group)) {
-            _group = new Group({
-                name: 'root'
-            })
-        }
-        const tagGroups = tagLists.reduce((tagGroup, { tags, uuid }) => {
-            const firstTag = tags.get(0) || 'Uncategorized'
-            tagGroup[firstTag] = tagGroup[firstTag] || new Group({
-                name: firstTag
-            })
-
-            tagGroup[firstTag] = tagGroup[firstTag]
-                .setIn([ 'children', uuid ], uuid)
-            return tagGroup
-        }, {})
-
-        return _group.set('children', new Immutable.OrderedMap(tagGroups))
-    }
-
-    _createPathGroupTree(group, paths) {
-        let _group = group
-        if (!group || !(group instanceof Group)) {
-            _group = new Group({
-                name: 'root'
-            })
-        }
-        const pathMap = paths.reduce((_pathMap, { uuid, path, method }) => {
-            _pathMap[path] = _pathMap[path] || {}
-            _pathMap[path][method] = uuid
-            return _pathMap
-        }, {})
-
-        for (let path in pathMap) {
-            if (pathMap.hasOwnProperty(path)) {
-                let nodes = path.split('/')
-
-                if (path.indexOf('/') === 0) {
-                    nodes.splice(0, 1)
-                }
-
-                let keyPath = []
-                for (let node of nodes) {
-                    keyPath.push('children')
-                    keyPath.push('/' + node)
-
-                    let sub = _group.getIn(keyPath)
-                    if (!sub) {
-                        _group = _group.setIn(keyPath, new Group({
-                            name: '/' + node
-                        }))
-                    }
-                }
-
-                keyPath.push('children')
-                for (let method in pathMap[path]) {
-                    if (pathMap[path].hasOwnProperty(method)) {
-                        _group = _group.setIn(
-                            keyPath.concat(method),
-                            pathMap[path][method]
-                        )
-                    }
-                }
-            }
-        }
-
-        return _group
-    }
-
-    // @tested
-    _createGroupTree(group, requestMap) {
-        const uuids = Object.keys(requestMap)
-
-        const tagLists = uuids
-            .map(uuid => {
-                const tags = requestMap[uuid].get('tags')
-                return { uuid, tags }
-            })
-
-        const countRequestWithTags = tagLists
-            .filter(({ tags }) => tags.size > 0)
-            .length
-
-        if (countRequestWithTags < uuids.length * 0.5) {
-            const paths = uuids.map(uuid => {
-                const path = this._formatSequenceParam(
-                    requestMap[uuid].getIn([ 'url', 'pathname' ])
-                )
-
-                const method = requestMap[uuid].get('method')
-
-                return { uuid, path, method }
-            })
-
-            return this._createPathGroupTree(group, paths)
-        }
-        else {
-            return this._createTagGroupTree(group, tagLists)
-        }
-    }
-
-    _extractSequenceParam(_sequence, _key, parameters) {
-        let simpleParam = new Parameter({
-            key: _key,
-            type: 'string',
-            internals: new Immutable.List([
-                new Constraint.Enum([
-                    _sequence
-                ])
-            ])
-        })
-
-        let groups = _sequence.match(/([^{}]*)(\{[^{}]*\})([^{}]*)/g)
-        if (!groups) {
-            return simpleParam
-        }
-
-        let sequence = new Immutable.List()
-        for (let group of groups) {
-            let sub = group.match(/([^{}]*)(\{[^{}]*\})([^{}]*)/)
-            if (sub[1]) {
-                sequence = sequence.push(new Parameter({
-                    type: 'string',
-                    value: sub[1],
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            sub[1]
-                        ])
-                    ])
-                }))
-            }
-
-            if (sub[2]) {
-                let key = sub[2].slice(1, -1)
-                let _param
-
-                let found = false
-
-                for (let param of parameters || []) {
-                    if (param.name === key) {
-                        _param = this._extractParam(param, new Immutable.List())
-                        found = true
-                    }
-                }
-
-                if (!found) {
-                    _param = new Parameter({
-                        key: key,
-                        type: 'string',
-                        value: sub[2],
-                        internals: new Immutable.List([
-                            new Constraint.Enum([
-                                sub[2]
-                            ])
-                        ])
-                    })
-                }
-
-                _param = _param.set('required', true)
-                sequence = sequence.push(_param)
-            }
-
-            if (sub[3]) {
-                sequence = sequence.push(new Parameter({
-                    type: 'string',
-                    value: sub[3],
-                    internals: new Immutable.List([
-                        new Constraint.Enum([
-                            sub[3]
-                        ])
-                    ])
-                }))
-            }
-        }
-
-        return new Parameter({
-            key: _key,
-            type: 'string',
-            format: 'sequence',
-            value: sequence
-        })
-    }
+import Group from '../../../models/Group'
+import Resource from '../../../models/Resource'
+import Response from '../../../models/Response'
+import Request from '../../../models/Request'
+
+import { currify, entries, convertEntryListInMap, flatten } from '../../../utils/fp-utils'
+
+export const __errors__ = {
+  InvalidJSONorYAML: class InvalidJSONorYAMLError extends SyntaxError {},
+  NotASwaggerV2: class NotASwaggerV2Error extends TypeError {}
 }
+
+const methods = {}
+
+export const __meta__ = {
+  version: 'v2.0',
+  format: 'swagger'
+}
+
+export class SwaggerParser {
+  static __meta__ = __meta__
+
+  static detect(content) {
+    return methods.detect(content)
+  }
+
+  static getAPIName(content) {
+    return methods.getAPIName(content)
+  }
+
+  static isParsable({ content }) {
+    return methods.detect(content)
+  }
+
+  static resolve() {
+    return methods.resolve(...arguments)
+  }
+
+  static parse() {
+    return methods.parse(...arguments)
+  }
+}
+
+// TODO: implement resolve correctly so that it resolves externals dependencies
+methods.resolve = (items, item) => {
+  items.push(item)
+  return items
+}
+
+/**
+ * throws with message explaining that the file could not be parsed
+ * @throws {InvalidJSONorYAMLError}
+ * @returns {void}
+ */
+methods.handleUnkownFormat = () => {
+  const message = 'Failed to parse file (not a JSON or a YAML)'
+  const error = new __errors__.InvalidJSONorYAML(message)
+  throw error
+}
+
+/**
+ * throws with message explaining that the file could not be parsed
+ * @throws {InvalidJSONorYAMLError}
+ * @returns {void}
+ */
+methods.handleInvalidSwagger = () => {
+  const message = 'Invalid Swagger File (invalid schema / version < 2.0)'
+  const error = new __errors__.NotASwaggerV2(message)
+  throw error
+}
+
+/**
+ * converts a string written in JSON or YAML format into an object
+ * @param {string} str: the string to parse
+ * @returns {Object?} the converted object, or null if str was not a JSON or YAML string
+ */
+methods.parseJSONorYAML = (str) => {
+  let parsed
+  try {
+    parsed = JSON.parse(str)
+  }
+  catch (jsonParseError) {
+    try {
+      parsed = yaml.safeLoad(str)
+    }
+    catch (yamlParseError) {
+      return null
+    }
+  }
+
+  return parsed
+}
+
+/**
+ * creates a list of normalized objects from a score
+ * @param {integer} score: the detection score
+ * @returns {List<Object>} the normalized list of objects
+ */
+methods.formatDetectionObject = (score = 0) => {
+  return [ { ...__meta__, score } ]
+}
+
+/**
+ * gives a confidence score that the string passed is a swagger file
+ * @param {string} content: the content to test the format of
+ * @returns {List<Object>} a normalized list of confidence scores
+ */
+methods.detect = (content) => {
+  const parsed = methods.parseJSONorYAML(content)
+
+  let score = 0
+
+  if (parsed) {
+    score += parsed.swagger ? 1 / 4 : 0
+    score += parsed.swagger === '2.0' ? 1 / 4 : 0
+    score += parsed.info ? 1 / 4 : 0
+    score += parsed.paths ? 1 / 4 : 0
+    score = score > 1 ? 1 : score
+  }
+
+  return methods.formatDetectionObject(score)
+}
+
+/**
+ * suggests an API name based on the content of a swagger file
+ * @param {string} content: the content of the swagger file
+ * @returns {string?} a suggested title for the API
+ */
+methods.getAPIName = (content) => {
+  const parsed = methods.parseJSONorYAML(content)
+
+  if (parsed && parsed.info && parsed.info.title) {
+    return parsed.info.title
+  }
+
+  return null
+}
+
+/**
+ * tests whether an object is a swagger object or not
+ * @param {Object} maybeSwagger: the object to test
+ * @returns {boolean} true if it is a swagger, false otherwise
+ */
+methods.isSwagger = (maybeSwagger) => {
+  const isValid = tv4.validate(maybeSwagger, swaggerSchema)
+  return isValid
+}
+
+/**
+ * converts a swagger Contact Object into a Contact Record
+ * @param {string} name?: the name of the contact
+ * @param {string} url?: the url to visit
+ * @param {string} email?: the email to use
+ * @returns {Contact} the corresponding Contact Record
+ */
+methods.getContact = ({ name = null, url = null, email = null } = {}) => {
+  const contactInstance = { name, url, email }
+  return new Contact(contactInstance)
+}
+
+/**
+ * converts a swagger License Object into a License Record
+ * @param {string} name?: the license's name
+ * @param {string} url?: location of the license description
+ * @returns {License} the corresponding License Record
+ */
+methods.getLicense = ({ name = null, url = null } = {}) => {
+  const licenseInstance = { name, url }
+  return new License(licenseInstance)
+}
+
+/**
+ * convert a swagger Info Object into an Info Record
+ * @param {InfoObject} info: the object to convert
+ * @returns {Info} the corresponding Info Record
+ */
+methods.getInfo = ({
+  contact,
+  license,
+  title = null,
+  description = null,
+  termsOfService = null,
+  version = null
+} = {}) => {
+  const infoInstance = {
+    title,
+    description,
+    version,
+    tos: termsOfService,
+    contact: methods.getContact(contact),
+    license: methods.getLicense(license)
+  }
+
+  return new Info(infoInstance)
+}
+
+/**
+ * Fixes the swagger file to not rely on an external context, like the url we got the file from
+ * @param {SwaggerObject} swagger: the swagger file that may need fixing
+ * @param {string?} url: the context to fix the swagger file
+ * @returns {SwaggerObject}: the fixed swagger
+ *
+ * TODO: this may raise reference issue when dealing with silently defined local files. we could
+ * fix this.
+ */
+methods.fixExternalContextDependencies = (swagger, url) => {
+  if (!swagger.host) {
+    swagger.host = url ? parse(url).host : 'localhost'
+  }
+
+  if (!swagger.schemes || !swagger.schemes.length) {
+    const scheme = url ? parse(url).protocol.split(':')[0] : 'http'
+    swagger.schemes = [ scheme ]
+  }
+
+  return swagger
+}
+
+/**
+ * extracts entries of a Swagger Resource Object and returns the ones that are methods
+ * @param {SwaggerResourceObject} resource: the swagger resource to extract the method entries of
+ * @returns {Array<Entry<string, SwaggerOperationObject>>} the methods entries
+ */
+methods.getMethodsFromResourceObject = (resource) => {
+  const $entries = entries(resource)
+  const validMethods = [
+    'get', 'put', 'post', 'delete', 'options', 'head', 'patch'
+  ]
+
+  return $entries.filter(({ key }) => {
+    return validMethods.indexOf(key.toLowerCase()) >= 0
+  })
+}
+
+/**
+ * separates parameters and references from a list of Swagger Parameter Objects
+ * @param {Array<SwaggerParameterObject|SwaggerReferenceObject>} params: the list of parameters to
+ * separate.
+ * @returns {
+ *   {
+ *     parameters: Array<Entry<string, SwaggerParameterObject>>,
+ *     references: Array<Entry<string, SwaggerReferenceObject>>
+ *   }
+ * } the separated parameters and references objects, as Entries.
+ */
+methods.getParametersAndReferencesFromParameterArray = (params = []) => {
+  return params.reduce((acc, param) => {
+    if (param && param.$ref) {
+      acc.references.push({
+        key: param.$ref,
+        value: param
+      })
+    }
+    else {
+      acc.parameters.push({
+        key: param.name + '-' + param.in,
+        value: param
+      })
+    }
+
+    return acc
+  }, { parameters: [], references: [] })
+}
+
+/**
+ * converts a Swagger Reference Object into into an Entry of a Reference Record.
+ * @param {string} type: the type of the reference
+ * @param {string} key: the URI of the Swagger Reference Object
+ * @returns {Entry<string, Reference>} the corresponding Reference Record
+ */
+methods.convertReferenceObjectEntryIntoReferenceEntry = (type, { key }) => {
+  return {
+    key,
+    value: new Reference({
+      type,
+      uuid: key
+    })
+  }
+}
+
+/**
+ * transforms a list of Swagger Reference Objects into a map of Reference Records
+ * @param {string} type: the type of the references
+ * @param {Array<string>} refs: the array of Swagger Reference Objects
+ * @returns {Object<string, Reference>} the corresponding map of Reference
+ */
+methods.convertReferenceArrayIntoReferenceMap = (type, refs = []) => {
+  const convertRef = currify(methods.convertReferenceObjectEntryIntoReferenceEntry, type)
+  return refs.map(convertRef).reduce(convertEntryListInMap, {})
+}
+
+/**
+ * appends parameters that are shared at the Resource level to an Operation Object passed as an
+ * Entry.
+ * @param {Array<SwaggerParameterObject|SwaggerReferenceObject>} params: the shared parameters
+ * @param {string} key: the key of the Entry.
+ * @param {SwaggerOperationObject} value: the Swagger Operation Object to update.
+ * @returns {Entry<string, SwaggerOperationObject>} the updated operation object
+ */
+methods.updateOperationEntryWithSharedParameters = (params = [], { key, value }) => {
+  const operationObject = value
+  if (params.length && !operationObject.parameters) {
+    operationObject.parameters = params
+  }
+  else if (params.length) {
+    operationObject.parameters = operationObject.parameters.concat(params)
+  }
+  return { key, value: operationObject }
+}
+
+/**
+ * returns the Parameter associated with the consumes field for this operation. If this operation
+ * has no `consumes` field, a reference to the global one is used, if it exists.
+ * @param {Store} store: the Store Record that holds shared values.
+ * @param {SwaggerOperationObject} operation: the operation object to get the consumes field of
+ * @returns {
+ *   {
+ *     consumeParameter: Parameter?,
+ *     consumeReference: Reference?,
+ *     consumeInterface: Interface?
+ *   }
+ * } the corresponding Parameter, and interface if it exists
+ */
+methods.getConsumesParamFromOperation = (store = new Store(), operation = {}) => {
+  let consumeInterface = null
+  let consumeParam = null
+  let consumeReference = null
+
+  if (!operation.consumes && store.getIn([ 'parameter', 'globalConsumes' ])) {
+    consumeInterface = store.getIn([ 'interface', 'apiRequestMediaType' ]) || null
+    consumeReference = new Reference({ type: 'parameter', uuid: 'globalConsumes' })
+  }
+  else {
+    const consumes = operation.consumes || []
+    if (consumes.length) {
+      consumeParam = new Parameter({
+        uuid: 'Content-Type-header',
+        in: 'headers',
+        key: 'Content-Type',
+        name: 'Content Type Header',
+        description: 'describes the media type of the request',
+        type: 'string',
+        required: true,
+        constraints: List([
+          new Constraint.Enum(consumes)
+        ])
+      })
+    }
+  }
+
+  return { consumeParameter: consumeParam, consumeReference, consumeInterface: consumeInterface }
+}
+
+/**
+ * returns the Parameter associated with the produces field for this operation. If this operation
+ * has no `produces` field, a reference to the global one is used, if it exists.
+ * @param {Store} store: the Store Record that holds shared values.
+ * @param {SwaggerOperationObject} operation: the operation object to get the produces field of
+ * @returns {
+ *   {
+ *     produceParameter: (Parameter | Reference)?,
+ *     produceInterface: Interface?
+ *   }
+ * } the corresponding Parameter, and interface if it exists
+ */
+methods.getProducesParamFromOperation = (store, operation) => {
+  let produceInterface = null
+  let produceParam = null
+
+  if (!operation.produces && store.getIn([ 'parameter', 'globalProduces' ])) {
+    produceInterface = store.getIn([ 'interface', 'apiResponseMediaType' ]) || null
+    produceParam = new Reference({ type: 'parameter', uuid: 'globalProduces' })
+  }
+  else {
+    const produces = operation.produces || []
+    if (produces.length) {
+      produceParam = new Parameter({
+        uuid: 'Content-Type-header',
+        in: 'headers',
+        usedIn: 'response',
+        key: 'Content-Type',
+        name: 'Content Type Header',
+        description: 'describes the media type of the response',
+        type: 'string',
+        required: true,
+        constraints: List([
+          new Constraint.Enum(produces)
+        ])
+      })
+    }
+  }
+
+  return { produceParameter: produceParam, produceInterface: produceInterface }
+}
+
+/**
+ * converts a Swagger location (for the `in` field of a parameter object) into a location in a
+ * ParameterContainer.
+ * @param {string} location: the location to convert
+ * @returns {string?} the corresponding location in a ParameterContainer
+ */
+methods.mapParamLocationToParamContainerField = (location) => {
+  if (!location || typeof location !== 'string') {
+    return null
+  }
+
+  const mapping = {
+    path: 'path',
+    header: 'headers',
+    query: 'queries',
+    body: 'body',
+    formdata: 'body'
+  }
+
+  return mapping[location.toLowerCase()] || null
+}
+
+/**
+ * adds a Parameter to a container based on the location of the parameter.
+ * @param {Instance<ParameterContainer>} container: the parameter container instance to update.
+ * @param {string} key: the key of the Entry of a Parameter
+ * @param {Parameter} value: the Parameter to add to the container instance.
+ * @returns {Instance<ParameterContainer>} the updated container
+ *
+ * NOTE: an Instance is very different from a record, as it is the mutable object passed to
+ * instantiate the Record.
+ */
+methods.addParameterToContainerBlock = (container, { key, value }) => {
+  const containerKey = value.get('in')
+
+  if (container && container[containerKey] && typeof container[containerKey] === 'object') {
+    container[containerKey][key] = value
+  }
+
+  return container
+}
+
+/**
+ * gets the value stored at a certain location, and returns it as an Entry.
+ * @param {Store} store: the store to fetch the value from
+ * @param {string} type: the type of the reference. Used to find the correct TypedStore
+ * @param {string} key: the reference in the TypedStore
+ * @returns {Entry<string, *>} the resolved value, as an Entry
+ */
+methods.resolveReferenceFromKey = (store, type, { key }) => ({
+  key,
+  value: store.getIn([ type, key ])
+})
+
+/**
+ * adds a Reference to a resolved Parameter.
+ * @param {Instance<ParameterContainer>} container: the container instance to add the Reference to.
+ * @param {string} key: the reference of the resolved Parameter
+ * @param {Parameter} value: the resolved Parameter, used to get the location of the Reference in
+ * the ParameterContainer.
+ * @returns {Instance<ParameterContainer>} the updated container instance
+ *
+ * NOTE: an Instance is very different from a record, as it is the mutable object passed to
+ * instantiate the Record.
+ */
+methods.addReferenceToContainerBlock = (container, { key, value }) => {
+  const containerKey = value.get('in')
+
+  if (container && container[containerKey] && typeof container[containerKey] === 'object') {
+    container[containerKey][key] = new Reference({
+      type: 'parameter',
+      uuid: key
+    })
+  }
+
+  return container
+}
+
+/**
+ * creates a ParameterContainer based on a list of parameters and references, wrt. a store.
+ * @param {Store} store: the store to get shared values from.
+ * @param {Array<Parameter>} params: the parameters to add to the ParameterContainer.
+ * @param {Array<Entry<string, string>>} refs: the reference entries to add to the
+ * ParameterContainer
+ * @returns {ParameterContainer} the corresponding parameter container
+ */
+methods.createParameterContainer = (store, params, refs = []) => {
+  let paramContainer = {
+    headers: {},
+    queries: {},
+    body: {},
+    path: {}
+  }
+
+  paramContainer = params.reduce(methods.addParameterToContainerBlock, paramContainer)
+
+  const resolveParameterReference = currify(methods.resolveReferenceFromKey, store, 'parameter')
+  paramContainer = refs
+    .map(resolveParameterReference)
+    .filter(({ value }) => !!value)
+    .reduce(methods.addReferenceToContainerBlock, paramContainer)
+
+  const paramContainerInstance = {
+    headers: new OrderedMap(paramContainer.headers),
+    queries: new OrderedMap(paramContainer.queries),
+    path: new OrderedMap(paramContainer.path),
+    body: new OrderedMap(paramContainer.body)
+  }
+
+  return new ParameterContainer(paramContainerInstance)
+}
+
+/**
+ * creates an overlay for security requirements that need it (OAuth2)
+ * @param {Auth} auth: the Auth to create an Overlay for
+ * @param {Array<string>} scopes: the scopes to use for the Overlay
+ * @returns {Auth?} the corresponding overlay, if it exists
+ */
+methods.getOverlayFromRequirement = (auth, scopes = []) => {
+  if (auth instanceof Auth.OAuth2) {
+    return new Auth.OAuth2({
+      scopes: List(scopes.map(scope => ({ key: scope })))
+    })
+  }
+
+  return null
+}
+
+/**
+ * creates an Auth from each security requirement.
+ * @param {Store} store: the store in which the auths are saved.
+ * @param {Array<SwaggerSecurityRequirementObject>} requirements: the list of security requirements.
+ * @returns {List<Reference>}: the corresponding array of references to auth objects in the store.
+ */
+methods.getAuthReferences = (store, requirements = []) => {
+  const authReferences = requirements.map((req) => {
+    const $ref = Object.keys(req)[0]
+    const overlay = methods.getOverlayFromRequirement(store.getIn([ 'auth', $ref ]), req[$ref])
+    return new Reference({
+      type: 'auth',
+      uuid: $ref,
+      overlay
+    })
+  })
+
+  return List(authReferences)
+}
+
+/**
+ * adds the consumes Parameter to an array of Parameter, if it exists.
+ * @param {Store} store: the store in which a global consume Parameter may have been saved.
+ * @param {SwaggerOperationObject} operation: the operation object in which there may be a consumes
+ * field.
+ * @param {Array<Parameter>} parameters: the array of Parameters to add the consume parameter to.
+ * @param {Array<Reference>} references: the array of Reference to add the reference to the global
+ * consume parameter to, if suited.
+ * @returns {Array<Parameter>} the updated parameter array.
+ */
+methods.updateParamsWithConsumeParameter = (store, operation, parameters = [], references = []) => {
+  const {
+    consumeParameter,
+    consumeReference
+  } = methods.getConsumesParamFromOperation(store, operation)
+  if (consumeParameter) {
+    parameters.push({
+      key: consumeParameter.get('uuid'),
+      value: consumeParameter
+    })
+  }
+
+  if (consumeReference) {
+    references.push({
+      key: consumeReference.get('uuid'),
+      value: consumeReference
+    })
+  }
+
+  return [ parameters, references ]
+}
+
+/**
+ * updates a Response Object to have a code field. Useful for shared response objects.
+ * @param {string} key: the code of the Response object.
+ * @param {SwaggerResponseObject} value: the response object to update.
+ * @returns {Entry<string, SwaggerResponseObject>} the updated response object, as an Entry.
+ */
+methods.addCodeToResponseEntry = ({ key, value }) => {
+  value.code = key
+  return { key, value }
+}
+
+/**
+ * updates the overlay of a ResponseReference to include the producesParameter.
+ * @param {Parameter} producesParameter: the Parameter associated with the `produces` field.
+ * @param {Entry<string, Reference>} entry: the reference to a shared response, as an Entry.
+ * @returns {Entry<string, Reference>} the updated reference
+ */
+methods.updateResponseReferenceWithProduceParameter = (producesParameter, entry) => {
+  const overlay = entry.value.get('overlay')
+  if (!overlay) {
+    const overlayHeaders = {}
+    overlayHeaders[producesParameter.get('uuid')] = producesParameter
+    entry.value = entry.value.set('overlay', new Response({
+      parameters: new ParameterContainer({
+        headers: new OrderedMap(overlayHeaders)
+      })
+    }))
+  }
+  else {
+    const updatedOverlay = overlay.setIn(
+      [ 'parameters', 'headers', producesParameter.get('uuid') ],
+      producesParameter
+    )
+
+    entry.value = entry.value.set('overlay', updatedOverlay)
+  }
+
+  return entry
+}
+
+/**
+ * updates a Response to include the producesParameter.
+ * @param {Parameter} producesParameter: the Parameter associated with the `produces` field.
+ * @param {Entry<string, Response>} entry: the response to update, as an Entry.
+ * @returns {Entry<string, Response>} the updated response
+ */
+methods.updateResponseRecordWithProduceParameter = (producesParameter, entry) => {
+  if (producesParameter) {
+    entry.value = entry.value.setIn(
+      [ 'parameters', 'headers', producesParameter.get('uuid') ],
+      producesParameter
+    )
+  }
+
+  return entry
+}
+
+/**
+ * updates Response Records as well as References to Response Records to take into account the
+ * producesParameter.
+ * @param {Parameter} producesParameter: the Parameter associated with the `produces` field.
+ * @param {Entry<string, Response|Reference>} entry: the entry to update, be it either a response or
+ * a reference.
+ * @returns {Entry<string, Response|Reference>} the updated entry.
+ */
+methods.updateResponsesWithProduceParameter = (producesParameter, entry) => {
+  if (!producesParameter) {
+    return entry
+  }
+
+  if (entry.value instanceof Reference) {
+    return methods.updateResponseReferenceWithProduceParameter(producesParameter, entry)
+  }
+  else {
+    return methods.updateResponseRecordWithProduceParameter(producesParameter, entry)
+  }
+}
+
+/**
+ * creates a list of Interfaces from a list of tags.
+ * @param {Array<string>} tags: the list of tags to use for the interfaces.
+ * @returns {OrderedMap<string, Interface>} the corresponding list of interfaces
+ */
+methods.getInterfacesFromTags = (tags = []) => {
+  const interfaces = tags.map(tag => {
+    return {
+      key: tag,
+      value: new Interface({
+        name: tag,
+        uuid: tag,
+        level: 'request'
+      })
+    }
+  }).reduce(convertEntryListInMap, {})
+
+  return OrderedMap(interfaces)
+}
+
+/**
+ * creates a Reference to an endpoint, with an Overlay to update the protocol, if needed.
+ * @param {SwaggerOperationObject} operation: the operation object that holds the schemes defined
+ * for this operation.
+ * @param {URL} value: the endpoint we are creating a reference to.
+ * @param {string} key: the uuid reference to the endpoint in the store.
+ * @returns {Reference} the corresponding reference.
+ */
+methods.addEndpointOverlayFromOperation = (operation, value, key) => {
+  const overlay = operation.schemes ? new URL({
+    variableDelimiters: List([ '{', '}' ])
+  }).set('protocol', List(operation.schemes.map(methods.addDotsToScheme))) : null
+  return new Reference({
+    type: 'endpoint',
+    uuid: key,
+    overlay
+  })
+}
+
+/**
+ * tests whether a method can have a body.
+ * @param {string} method: the method to test.
+ * @returns {boolean} whether this method accepts a body or not.
+ */
+methods.isMethodWithBody = (method) => {
+  return [ 'post', 'put', 'patch', 'delete', 'options' ].indexOf(method) >= 0
+}
+
+/**
+ * extracts the ParameterContainer from an operation object. it uses the the store to access the
+ * globally defined parameters, and it uses the method name to determine whether to include the
+ * globally defined consumes in a parameter, depending on the method.
+ * @param {Store} store: the store that holds shared parameters
+ * @param {SwaggerOperationObject} operation: the operation object to extract the parameters from
+ * @param {string} method: the method of the operation object. used to eliminate consumes for `get`
+ * operations, and the like.
+ * @returns {ParameterContainer} the corresponding ParameterContainer
+ */
+methods.getParameterContainerForOperation = (store, operation, method) => {
+  /* eslint-disable prefer-const */
+  let {
+    parameters,
+    references
+  } = methods.getParametersAndReferencesFromParameterArray(operation.parameters || [])
+  /* eslint-enable prefer-const */
+  let params = parameters.map(methods.convertParameterObjectIntoParameter)
+
+  if (methods.isMethodWithBody(method)) {
+    [
+      params,
+      references
+    ] = methods.updateParamsWithConsumeParameter(store, operation, params, references)
+  }
+
+  const parameterContainer = methods.createParameterContainer(store, params, references)
+
+  return parameterContainer
+}
+
+/**
+ * extracts the responses from an operation object. It uses the store to access the globally defined
+ * responses and overlay them with information relevant to the operation object, like the produces
+ * field.
+ * @param {Store} store: the store frm which to get the shared responses
+ * @param {SwaggerOperationObject} operation: the swagger operation object to extract the responses
+ * from.
+ * @returns {Map<string, Response|Reference>} the corresponding map of Responses or References to
+ * Responses.
+ */
+methods.getResponsesForOperation = (store, operation) => {
+  const { produceParameter } = methods.getProducesParamFromOperation(store, operation)
+
+  const updateResponseEntryWithProduceParameter = currify(
+    methods.updateResponsesWithProduceParameter,
+    produceParameter
+  )
+
+  const responses = entries(operation.responses || {})
+    .map(methods.addCodeToResponseEntry)
+    .map(methods.convertResponseObjectIntoResponse)
+    .map(updateResponseEntryWithProduceParameter)
+    .reduce(convertEntryListInMap, {})
+
+  return Map(responses)
+}
+
+/**
+ * extracts the endpoints from an operation object. It uses the store to access the globally defined
+ * endpoints and overlay them with information relevant to the operation object, like the schemes.
+ * @param {Store} store: the store from which to get the shared endpoints
+ * @param {SwaggerOperationObject} operation: the swagger operation object to extract the endpoints
+ * from.
+ * @returns {Map<string, Reference>} a list of potentially overlayed references.
+ */
+methods.getEndpointsForOperation = (store, operation) => {
+  const addOverlayToEndpoints = currify(methods.addEndpointOverlayFromOperation, operation)
+  const endpoints = store.get('endpoint').map(addOverlayToEndpoints)
+
+  return endpoints
+}
+
+/**
+ * extracts the request Id from a swagger operation object. It maps to an operationId if it exists.
+ * Otherwise, it generates a UUID.
+ * @param {string?} operationId: the operationId to convert into a request id.
+ * @returns {string} the extracted requestId
+ */
+methods.getRequestIdFromOperation = ({ operationId }) => {
+  return operationId || null
+}
+
+// TODO deal with externalDocs
+/**
+ * converts a Swagger Operation Object into a Request Record.
+ * @param {Store} store: the store from which to get shared values that may be used by the Request.
+ * @param {Array<SwaggerSecurityRequirementObject>} security: the global security requirements
+ * @param {string} key: the method associated with this swagger Operation.
+ * @param {SwaggerOperationObject} value: the operation object to convert.
+ * @returns {Request} the corresponding request record.
+ */
+methods.convertOperationIntoRequest = (store, security, { key, value }) => {
+  const method = key
+  const operation = value
+  const { description, summary } = operation
+
+  const reqId = methods.getRequestIdFromOperation(operation)
+  const parameters = methods.getParameterContainerForOperation(store, operation, method)
+  const auths = methods.getAuthReferences(store, operation.security || security || [])
+  const responses = methods.getResponsesForOperation(store, operation)
+  const interfaces = methods.getInterfacesFromTags(operation.tags || [])
+  const endpoints = methods.getEndpointsForOperation(store, operation)
+
+  const requestInstance = {
+    id: reqId,
+    endpoints,
+    name: summary || null,
+    description: description || null,
+    method,
+    parameters,
+    auths,
+    responses,
+    interfaces
+  }
+
+  return { key: method, value: new Request(requestInstance) }
+}
+
+/**
+ * creates references for endpoints saved in a store.
+ * @param {Store} store: the store to get the endpoints from.
+ * @returns {OrderedMap<string, Reference>} the corresponding map of references
+ */
+methods.createReferencesForEndpoints = (store) => {
+  return store.get('endpoint').map((value, key) => {
+    return new Reference({
+      type: 'endpoint',
+      uuid: key
+    })
+  })
+}
+
+/**
+ * extracts all Requests from a resource objects and store them in an Object.
+ * @param {Store} store: the store to get shared objects from (endpoints, parameters, responses ...)
+ * @param {Array<SwaggerSecurityRequirementObject>} security: the global security requirements
+ * @param {SwaggerResourceObject} resourceObject: the resource object to extract the requests from
+ * @returns {Object<string, Request>} the corresponding Requests, in an object.
+ */
+methods.getRequestsForResource = (store, security, resourceObject) => {
+  const $methods = methods.getMethodsFromResourceObject(resourceObject)
+  const params = resourceObject.parameters || []
+
+  const updateOperationObjects = currify(methods.updateOperationEntryWithSharedParameters, params)
+  const convertOperationIntoRequest = currify(methods.convertOperationIntoRequest, store, security)
+
+  const operations = $methods
+    .map(updateOperationObjects)
+    .map(convertOperationIntoRequest)
+    .reduce(convertEntryListInMap, {})
+
+  return operations
+}
+
+/**
+ * updates the path endpoint from the Resource with pathParameters from its swagger operations
+ * @param {Store} store: the store to get the parameters from.
+ * @param {URL} path: the path endpoint of the Resource
+ * @param {Entry} entry: a operation object, as an entry
+ * @returns {URL} the updated path endpoint
+ */
+methods.updatePathWithParametersFromOperations = (store, path, { key, value }) => {
+  const container = methods.getParameterContainerForOperation(store, value, key)
+  const pathParams = container.get('path')
+
+  if (!pathParams.size || path.getIn([ 'pathname', 'parameter', 'superType' ]) !== 'sequence') {
+    return path
+  }
+
+  const $value = path.getIn([ 'pathname', 'parameter', 'value' ]).map(param => {
+    return pathParams
+      .filter(pathParam => pathParam.get('key') === param.get('key'))
+      .valueSeq()
+      .get(0) || param
+  })
+
+  return path.setIn([ 'pathname', 'parameter', 'value' ], $value)
+}
+
+/**
+ * converts a Swagger Resource Object into a Resource Record.
+ * @param {Store} store: the store from which to get the possibly shared resources relevant to this
+ * Resource.
+ * @param {Array<SwaggerSecurityRequirementObject>} security: the global security requirements
+ * @param {SwaggerPathObject} paths: the paths of a swagger object.
+ * @param {string} path: the path of the swagger resource object.
+ * @returns {Resource} the corresponding Resource.
+ *
+ * FIXME: we assume all external references are resolved.
+ * TODO: support $ref for swagger path Items (i.e. this can be a $ref)
+ * TODO: transform path into SequenceParameter <- URL
+ */
+methods.getResource = (store, security, paths, path) => {
+  const resourceObject = paths[path]
+  const $methods = methods.getMethodsFromResourceObject(resourceObject)
+
+  const operations = methods.getRequestsForResource(store, security, resourceObject)
+  const endpoints = methods.createReferencesForEndpoints(store)
+  const $path = new URL({
+    url: path,
+    variableDelimiters: List([ '{', '}' ])
+  })
+
+  const updatedPath = methods.updatePathWithParametersFromOperations(store, $path, $methods[0])
+
+  const resourceInstance = {
+    path: updatedPath,
+    endpoints,
+    uuid: path,
+    methods: Map(operations)
+  }
+
+  return new Resource(resourceInstance)
+}
+
+/**
+ * converts the swagger path object into a map of Resources.
+ * @param {Store} shared: the store in which shared objects are stored.
+ * @param {SwaggerObject} swagger: the swagger file to conver the path objects from.
+ * @returns {OrderedMap<string, Resource>} the corresponding Map of Resources
+ */
+methods.getResources = (shared, { paths = {}, security = null } = {}) => {
+  const $paths = Object.keys(paths)
+
+  const resourceConverter = currify(methods.getResource, shared, security, paths)
+  const resources = $paths.map(resourceConverter)
+
+  const resourceMap = resources.reduce((acc, resource) => {
+    const key = resource.get('uuid')
+    acc[key] = resource
+    return acc
+  }, {})
+
+  return new OrderedMap(resourceMap)
+}
+
+/**
+ * adds dots to schemes that are missing them
+ * @param {string} scheme: the scheme to add dots to.
+ * @returns {string} the updated schemes with dots at the end
+ */
+methods.addDotsToScheme = (scheme) => {
+  if (scheme.lastIndexOf(':') !== scheme.length - 1) {
+    return scheme + ':'
+  }
+
+  return scheme
+}
+
+/**
+ * returns the list of shared endpoints in the swagger file (in v2, it's the combination of
+ * protocol, host, and basePath)
+ * @param {List<string>} schemes: the list of protocols supported by the API
+ * @param {string} host: the reference host for the API.
+ * @param {string} basePath: a path that acts as a prefix to the paths of each resources in the API.
+ * @returns {List<URL>} a List that contains all the shared endpoints
+ */
+methods.getSharedEndpoints = ({
+  schemes = [ 'http' ],
+  host = 'localhost',
+  basePath = '/'
+} = {}) => {
+  const secure = schemes.filter(scheme => scheme.match(/[^w]s:?$/)).length > 0
+  const protocol = schemes[0]
+  const url = format({ protocol, host, pathname: basePath })
+  const uuid = 'base'
+  const variableDelimiters = List([ '{', '}' ])
+
+  let endpoint = new URL({ url, uuid, secure, variableDelimiters })
+  endpoint = endpoint.set('protocol', List(schemes.map(methods.addDotsToScheme)))
+
+  const endpoints = {}
+  endpoints[uuid] = endpoint
+
+  return endpoints
+}
+
+/**
+ * extracts the Parameter and Interface that represent the Content-Type of requests in the API.
+ * @param {List<string>} contentTypes: a list of contentTypes that every resource uses or overrides.
+ * @returns {Object} an Object that contains the Parameters and Interfaces generated in two separate
+ * fields.
+ */
+methods.getParamsFromConsumes = (contentTypes = []) => {
+  if (contentTypes.length === 0) {
+    return {
+      consumesParams: {},
+      consumeInterfaces: {}
+    }
+  }
+
+  const uuid = 'globalConsumes'
+  const consumeInterface = new Interface({
+    name: 'apiRequestMediaType',
+    uuid: 'apiRequestMediaType',
+    level: 'request',
+    description: 'defines the common media type of requests in the API.'
+  })
+
+  const param = new Parameter({
+    uuid,
+    in: 'headers',
+    key: 'Content-Type',
+    name: 'Content Type Header',
+    description: 'describes the media type of the request',
+    type: 'string',
+    required: true,
+    constraints: List([
+      new Constraint.Enum(contentTypes)
+    ]),
+    interfaces: Map({
+      apiRequestMediaType: new Reference({
+        type: 'interface',
+        uuid: 'apiRequestMediaType'
+      })
+    })
+  })
+
+  const consumes = {}
+  consumes[uuid] = param
+
+  return {
+    consumesParams: consumes,
+    consumeInterfaces: {
+      apiRequestMediaType: consumeInterface
+    }
+  }
+}
+
+/**
+ * extracts the Parameter and Interface that represent the Content-Type of responses in the API.
+ * @param {List<string>} contentTypes: a list of contentTypes that every resource uses or overrides.
+ * @returns {Object} an Object that contains the Parameters and Interfaces generated in two separate
+ * fields.
+ */
+methods.getParamsFromProduces = (contentTypes = []) => {
+  if (contentTypes.length === 0) {
+    return {
+      consumesParams: {},
+      consumeInterfaces: {}
+    }
+  }
+
+  const uuid = 'globalProduces'
+  const produceInterface = new Interface({
+    name: 'apiResponseMediaType',
+    uuid: 'apiResponseMediaType',
+    level: 'response',
+    description: 'defines the common media type of responses in the API.'
+  })
+
+  const param = new Parameter({
+    uuid,
+    in: 'headers',
+    usedIn: 'response',
+    key: 'Content-Type',
+    name: 'Content Type Header',
+    description: 'describes the media type of the response',
+    type: 'string',
+    required: true,
+    constraints: List([
+      new Constraint.Enum(contentTypes)
+    ]),
+    interfaces: Map({
+      apiResponseMediaType: new Reference({
+        type: 'interface',
+        uuid: 'apiResponseMediaType'
+      })
+    })
+  })
+
+  const produces = {}
+  produces[uuid] = param
+
+  return {
+    producesParams: produces,
+    produceInterfaces: {
+      apiResponseMediaType: produceInterface
+    }
+  }
+}
+
+/**
+ * converts a key value pair into a constraint with the help of the initial parameter if necessary,
+ * like with exclusiveMinimum
+ * @param {SwaggerParameterObject} param: the swagger parameter object we are extracting constraints
+ * from.
+ * @param {string} key: the name of the field we are evaluating
+ * @param {any} value: the value of param[key]
+ * @returns {Constraint<*>} the corresponding constraint
+ */
+methods.formatConstraint = (param, { key, value }) => {
+  if (key === 'exclusiveMinimum') {
+    return value ?
+      new Constraint.ExclusiveMinimum(param.minimum) :
+      new Constraint.Minimum(param.minimum)
+  }
+
+  if (key === 'exclusiveMaximum') {
+    return value ?
+      new Constraint.ExclusiveMaximum(param.maximum) :
+      new Constraint.Maximum(param.maximum)
+  }
+
+  const simpleConstraints = {
+    minimum: Constraint.Minimum,
+    maximum: Constraint.Maximum,
+    multipleOf: Constraint.MultipleOf,
+    minLength: Constraint.MinimumLength,
+    maxLength: Constraint.MaximumLength,
+    pattern: Constraint.Pattern,
+    minItems: Constraint.MinimumItems,
+    maxItems: Constraint.MaximumItems,
+    uniqueItems: Constraint.UniqueItems,
+    enum: Constraint.Enum,
+    schema: Constraint.JSONSchema
+  }
+
+  if (simpleConstraints[key]) {
+    return new simpleConstraints[key](value)
+  }
+
+  const unknownConstraint = {}
+  unknownConstraint[key] = value
+
+  return new Constraint.JSONSchema(unknownConstraint)
+}
+
+/**
+ * checks whether the key of a key-value pair is a constraint.
+ * @param {string} key: the key to test
+ * @returns {boolean} true if it is a constraint, false otherwise
+ */
+methods.filterConstraintEntries = ({ key }) => {
+  return [
+    'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf',
+    'minLength', 'maxLength', 'pattern',
+    'minItems', 'maxItems', 'uniqueItems',
+    'enum', 'schema'
+  ].indexOf(key) >= 0
+}
+
+/**
+ * creates a List of Constraints out of a parameter.
+ * @param {SwaggerParameterObject} parameter: the parameter to extract the constraints of
+ * @returns {List<Constraint<*>>} the list of constraints the parameter imposes
+ */
+methods.getConstraintsFromParam = (parameter) => {
+  const paramEntries = entries(parameter)
+
+  const formatConstraints = currify(methods.formatConstraint, parameter)
+
+  const constraints = paramEntries
+    .filter(methods.filterConstraintEntries)
+    .map(formatConstraints)
+
+  return List(constraints)
+}
+
+/**
+ * extracts applicableContexts from a SwaggerParameter location value
+ * @param {string} location: the location of a swagger parameter
+ * @returns {List<Parameter>} the corresponding applicableContexts
+ */
+methods.getApplicableContextsFromLocation = (location) => {
+  if (location !== 'formData') {
+    return List()
+  }
+
+  return List([
+    new Parameter({
+      key: 'Content-Type',
+      in: 'headers',
+      constraints: List([
+        new Constraint.Enum([
+          'application/x-www-form-urlencoded',
+          'multipart/form-data'
+        ])
+      ])
+    })
+  ])
+}
+
+/**
+ * converts a swagger parameter object into a Parameter Object
+ * @param {Entry<string, SwaggerParameterObject>} parameterEntry: the entry to convert
+ * @returns {Entry<string, Parameter>} a Parameter, stored in an entry format for easier
+ * manipulation
+ * TODO: Deal with file type appropriately
+ * TODO: Deal with format metadata
+ */
+methods.convertParameterObjectIntoParameter = (parameterEntry) => {
+  const uuid = parameterEntry.key
+  const parameter = parameterEntry.value
+
+  const { name, description, required, type } = parameter
+  const constraints = methods.getConstraintsFromParam(parameter)
+  const location = methods.mapParamLocationToParamContainerField(parameter.in)
+  const applicableContexts = methods.getApplicableContextsFromLocation(parameter.in)
+
+  const paramInstance = {
+    uuid,
+    in: location,
+    default: parameter.default || null,
+    key: parameter.in !== 'body' ? name || null : null,
+    name: name || null,
+    description: description || null,
+    required: required || false,
+    type,
+    constraints,
+    applicableContexts
+  }
+
+  if (parameter.type === 'array' && parameter.items) {
+    const { value } = methods.convertParameterObjectIntoParameter({
+      key: null,
+      value: parameter.items
+    })
+    paramInstance.value = value
+  }
+
+  const param = new Parameter(paramInstance)
+
+  return {
+    key: uuid,
+    value: param
+  }
+}
+
+/**
+ * converts a List of entries of swagger parameters into a map of Parameters using the entry key
+ * as keys in the map.
+ * @param {List<Entry<string, SwaggerParameterObject>>} parameters: the list of parameters to
+ * convert, passed in an Entry format
+ * @returns {Object<string, Parameter>} the corresponding list of Parameters
+ */
+methods.convertParameterObjectArrayIntoParameterMap = (parameters = []) => {
+  const paramMap = parameters
+    .map(methods.convertParameterObjectIntoParameter)
+    .reduce(convertEntryListInMap, {})
+
+  return paramMap
+}
+
+/**
+ * extracts all globally shared Parameters in the swagger file. This checks for the consumes and
+ * produces fields at the root level, as well as for the root level parameter field.
+ * @param {List<string>} consumes: the content of the consumes fields, if it exists.
+ * @param {List<string>} produces: the content of the produces fields, if it exists.
+ * @param {Object<string, SwaggerParameterObject>} parameters: the content of the prameters field,
+ * if it exists.
+ * @returns {{parameters: Object<string, Parameter>, interfaces: Object<string, Interface>}} the
+ * extracted shared parameters, as well as the shared Interfaces they implement
+ */
+methods.getSharedParameters = ({ consumes = [], produces = [], parameters = {} } = {}) => {
+  const { consumesParams, consumeInterfaces } = methods.getParamsFromConsumes(consumes)
+  const { producesParams, produceInterfaces } = methods.getParamsFromProduces(produces)
+  const sharedParams = methods.convertParameterObjectArrayIntoParameterMap(entries(parameters))
+
+  return {
+    sharedParameters: {
+      ...consumesParams, ...producesParams, ...sharedParams
+    },
+    parameterInterfaces: {
+      ...consumeInterfaces, ...produceInterfaces
+    }
+  }
+}
+
+/**
+ * creates a Parameter with a JSON Schema as a Constraint and returns it in Entry format.
+ * @param {Schema} schema: the JSON Schema to use
+ * @returns {Entry<string, Parameter>} the Parameter, in Entry format
+ */
+methods.convertSchemaIntoParameterEntry = (schema) => {
+  const paramEntry = {
+    key: 'body',
+    value: new Parameter({
+      uuid: 'body',
+      usedIn: 'response',
+      constraints: new List([
+        new Constraint.JSONSchema(schema)
+      ])
+    })
+  }
+
+  return paramEntry
+}
+
+/**
+ * updates a Parameter to state that it is used in the response, instead of the request (for shared
+ * parameters)
+ * @param {Parameter} param: the parameter to update
+ * @returns {Parameter} the updated parameter
+ */
+methods.addUsedInResponseToParam = (param) => {
+  if (param instanceof Parameter) {
+    return param.set('usedIn', 'response')
+  }
+  return param
+}
+
+/**
+ * creates a ParameterContainer from a swagger Response Object
+ * @param {Schema} schema?: the JSON Schema of the Response Object, if it exists
+ * @param {Object<string, HeaderObject>} headers: a map of headers used by the Response Object
+ * @returns {ParameterContainer} the corresponding ParameterContainer, that has the schema saved in
+ * the body field, and the header params in the header field
+ */
+methods.createResponseParameterContainer = ({ schema, headers }) => {
+  const containerInstance = {}
+
+  if (schema) {
+    const bodyEntry = methods.convertSchemaIntoParameterEntry(schema)
+    containerInstance.body = OrderedMap(convertEntryListInMap({}, bodyEntry))
+  }
+  else {
+    containerInstance.body = OrderedMap()
+  }
+
+  if (headers) {
+    const headerMap = methods.convertParameterObjectArrayIntoParameterMap(entries(headers))
+    containerInstance.headers = OrderedMap(headerMap).map(methods.addUsedInResponseToParam)
+  }
+  else {
+    containerInstance.header = OrderedMap()
+  }
+
+  return new ParameterContainer(containerInstance)
+}
+
+/**
+ * converts an Entry-formatted Response Object into an Entry-format Response Record.
+ * @param {string} key: the key of the Entry
+ * @param {SwaggerResponseObject} value: the response object to convert
+ * @returns {Entry<string, Response>} the corresponding Entry-formatted Response Record
+ *
+ * TODO: what about uuid ? should it be '#/responses/' +... like for parameters ?
+ */
+methods.convertResponseObjectIntoResponse = ({ key, value }) => {
+  if (value.$ref) {
+    const overlay = value.code ? new Response({ code: value.code }) : null
+    return {
+      key,
+      value: new Reference({
+        type: 'response',
+        uuid: value.$ref,
+        overlay
+      })
+    }
+  }
+
+  const container = methods.createResponseParameterContainer(value)
+  const responseInstance = {
+    code: value.code || null,
+    description: value.description || null,
+    parameters: container
+  }
+
+  const response = new Response(responseInstance)
+
+  return { key, value: response }
+}
+
+/**
+ * converts a Swagger Response Definitions Object into a Map of Responses.
+ * @param {SwaggerDefinitionsResponseObject} responses: a dictionary of responses to convert
+ * @returns {Object<string, Response>} the corresponding Map of Response Record
+ */
+methods.getSharedResponses = ({ responses = {} } = {}) => {
+  return entries(responses)
+    .map(methods.convertResponseObjectIntoResponse)
+    .reduce(convertEntryListInMap, {})
+}
+
+/**
+ * finds the type of authentication method
+ * @param {SwaggerAuthObject} auth: the auth to find the type of
+ * @returns {string} the type of auth.
+ */
+methods.getAuthType = (auth = {}) => auth.type
+
+/**
+ * adds an Interface to an authInstance
+ * @param {AuthSpec} authInstance: the authInstance to update
+ * @param {Interface} $interface: the interface to add
+ * @returns {AuthSpec} the updated authInstance
+ */
+methods.addInterfaceToAuthInstance = (authInstance, $interface) => {
+  const interfaces = {}
+  interfaces[$interface.get('name')] = $interface
+  authInstance.interfaces = new Map(interfaces)
+
+  return authInstance
+}
+
+/**
+ * converts a Swagger Security Definition into a BasicAuth, including the potential interface it
+ * implements.
+ * @param {Interface?} interfaceUsingAuth: the Interface to apply, if it exists
+ * @param {string} key: the key of the entry. Used to save the auth name
+ * @param {string} description?: the description of the authentication, if it exists.
+ * @returns {BasicAuth} the corresponding BasicAuth
+ */
+methods.convertBasicAuth = (interfaceUsingAuth, key, { description = null } = {}) => {
+  let authInstance = { description, authName: key }
+
+  if (interfaceUsingAuth) {
+    authInstance = methods.addInterfaceToAuthInstance(authInstance, interfaceUsingAuth)
+  }
+
+  return new Auth.Basic(authInstance)
+}
+
+/**
+ * converts a Swagger Security Definition into a ApiKeyAuth, including the potential interface it
+ * implements.
+ * @param {Interface?} interfaceUsingAuth: the Interface to apply, if it exists
+ * @param {string} key: the key of the entry. Used to save the auth name
+ * @param {SwaggerSecurityDefinition} auth: the auth to convert
+ * @returns {ApiKeyAuth} the corresponding ApiKeyAuth
+ */
+methods.convertApiKeyAuth = (interfaceUsingAuth, key, auth = {}) => {
+  const { description = null, name = null } = auth
+  let authInstance = { description, name, in: auth.in || null, authName: key }
+
+  if (interfaceUsingAuth) {
+    authInstance = methods.addInterfaceToAuthInstance(authInstance, interfaceUsingAuth)
+  }
+
+  return new Auth.ApiKey(authInstance)
+}
+
+/**
+ * converts a Swagger Security Definition into an OAuth2Auth, including the potential interface it
+ * implements.
+ * @param {Interface?} interfaceUsingAuth: the Interface to apply, if it exists
+ * @param {string} key: the key of the entry. Used to save the auth name
+ * @param {SwaggerSecurityDefinition} auth: the auth to convert
+ * @returns {OAuth2Auth} the corresponding OAuth2Auth
+ *
+ * TODO: fix scopes
+ */
+methods.convertOAuth2Auth = (interfaceUsingAuth, key, auth = {}) => {
+  const { description = null, flow = null, authorizationUrl = null, tokenUrl = null } = auth
+  const scopes = List(entries(auth.scopes || {}))
+  let authInstance = { description, flow, authorizationUrl, tokenUrl, scopes, authName: key }
+
+  if (interfaceUsingAuth) {
+    authInstance = methods.addInterfaceToAuthInstance(authInstance, interfaceUsingAuth)
+  }
+
+  return new Auth.OAuth2(authInstance)
+}
+
+/**
+ * converts an Entry-formatted Security Definition Object into an Entry-formatted Auth Record,
+ * taking into account the potential Interface this Auth Record implements.
+ * @param {Object<string, Interface>} interfaces: a map of interfaces an Auth Record may implement.
+ * @param {string} key: the key of the Entry
+ * @param {SwaggerSecurityDefinitionObject} value: the auth object to convert
+ * @returns {Entry<string, Auth?>} the corresponding Entry-formatted Auth Record
+ */
+methods.convertAuthObjectIntoAuth = (interfaces, { key, value }) => {
+  const authType = methods.getAuthType(value)
+
+  const authConverterMap = {
+    basic: methods.convertBasicAuth,
+    apiKey: methods.convertApiKeyAuth,
+    oauth2: methods.convertOAuth2Auth
+  }
+
+  if (authConverterMap[authType]) {
+    const interfaceUsingAuth = interfaces[key]
+    const auth = authConverterMap[authType](interfaceUsingAuth, key, value)
+
+    return { key, value: auth }
+  }
+
+  return { key, value: null }
+}
+
+/**
+ * converts a swagger Security Definitions Object into a map of Auth Record,
+ * taking into account the potential Interface this Auth Record implements.
+ * @param {Object<string, Interface>} interfaces: a map of interfaces an Auth Record may implement.
+ * @param {SwaggerSecurityDefinitionsObject} securityDefinitions: a map of security definitions to
+ * convert in Auths.
+ * @returns {Object<string, Auth?>} the corresponding map of Auth Record
+ */
+methods.getSharedAuths = (interfaces, { securityDefinitions }) => {
+  const convertAuthObjectEntryIntoAuth = currify(
+    methods.convertAuthObjectIntoAuth,
+    interfaces
+  )
+  return entries(securityDefinitions)
+    .map(convertAuthObjectEntryIntoAuth)
+    .reduce(convertEntryListInMap, {})
+}
+
+/**
+ * converts an Entry-formatted Security Requirement into an Entry-formatted Interface
+ * @param {string} key: the key of the Security Requirement Entry
+ * @returns {Entry<string, Interface>} the corresponding Entry-formatted Interface
+ */
+methods.convertSecurityRequirementEntryIntoInterfaceEntry = ({ key, value }) => {
+  const underlay = value && value.length ?
+    new Auth.OAuth2({
+      scopes: List(value.map(scope => ({ key: scope, value: '' })))
+    }) :
+    null
+
+  return {
+    key,
+    value: new Interface({
+      name: key,
+      uuid: key,
+      level: 'auth',
+      underlay
+    })
+  }
+}
+
+/**
+ * converts a swagger Security Requirement Object into a map of Interfaces
+ * @param {SwaggerSecurityRequirementObject} security: the security requirement object to convert
+ * @returns {Object<string, Interface>} the corresponding map of Interfaces
+ *
+ * TODO: overlayed values of interfaces are not saved at the moment
+ */
+methods.getSharedAuthInterfaces = ({ security = [] } = {}) => {
+  return security
+    .map(methods.convertSecurityRequirementEntryIntoInterfaceEntry)
+    .reduce(convertEntryListInMap, {})
+}
+
+/**
+ * converts a JSONSchema into a Constraint Entry
+ * @param {Entry<string, JSONSchema>} entry: the JSONSchema entry to convert
+ * @returns {Entry<string, Constraint>} the corresponding Constraint entry
+ */
+methods.convertDefinitionIntoConstraint = ({ key, value }) => {
+  return { key, value: new Constraint.JSONSchema(value) }
+}
+
+/**
+ * extracts shared Constraints from a SwaggerDefinitionsObject
+ * @param {SwaggerObject} swagger: the object to extract the definitions from
+ * @param {SwaggerDefinitionsObject} swagger.definitions: the definitions to convert into a
+ * TypedStoreInstance
+ * @returns {Object<string, Constraint>} the corresponding TypedStoreInstance for constraints
+ */
+methods.getSharedConstraints = ({ definitions = {} } = {}) => {
+  return entries(definitions)
+    .map(methods.convertDefinitionIntoConstraint)
+    .reduce(convertEntryListInMap, {})
+}
+
+/**
+ * creates shared tag Interfaces from a SwaggerObject
+ * @param {SwaggerObject} swagger: the swagger object to extract the shared tags from
+ * @returns {Object<string, Interface>} the corresponding TypedStoreInstance for interfaces
+ */
+methods.getTagInterfaces = (swagger) => {
+  const pathnames = Object.keys(swagger.paths || {})
+  const tags = pathnames
+    .map(path => {
+      const resource = swagger.paths[path]
+      return methods.getMethodsFromResourceObject(resource)
+        .map(({ value: operation }) => {
+          return operation.tags || []
+        })
+        .reduce(flatten, [])
+    })
+    .reduce(flatten, [])
+
+  const tagSet = Array.from(new Set(tags))
+
+  return tagSet
+    .map(tag => ({
+      key: tag,
+      value: new Interface({
+        name: tag,
+        uuid: tag,
+        level: 'request'
+      })
+    }))
+    .reduce(convertEntryListInMap, {})
+}
+
+/**
+ * creates a store holding shared objects.
+ * @param {SwaggerObject} swagger: the swagger file to extract the shared object from.
+ * @returns {Store} a store holding all globally shared objects.
+ */
+methods.getSimpleStore = (swagger = {}) => {
+  const sharedEndpoints = methods.getSharedEndpoints(swagger)
+  const sharedConstraints = methods.getSharedConstraints(swagger)
+  const { sharedParameters, parameterInterfaces } = methods.getSharedParameters(swagger)
+  const sharedResponses = methods.getSharedResponses(swagger)
+  const authInterfaces = methods.getSharedAuthInterfaces(swagger)
+  const sharedAuths = methods.getSharedAuths(authInterfaces, swagger)
+  const tagInterfaces = methods.getTagInterfaces(swagger)
+
+  const interfaces = { ...parameterInterfaces, ...authInterfaces, ...tagInterfaces }
+  return new Store({
+    endpoint: new OrderedMap(sharedEndpoints),
+    constraint: new OrderedMap(sharedConstraints),
+    parameter: new OrderedMap(sharedParameters),
+    responses: new OrderedMap(sharedResponses),
+    auth: new OrderedMap(sharedAuths),
+    interface: new OrderedMap(interfaces)
+  })
+}
+
+/**
+ * creates a Group holding the (flat) architecture of the Api doc.
+ * @param {Object<string, SwaggerPathItemObject>} paths: the object to get the structure of.
+ * @returns {Group} the corresponding group.
+ *
+ * TODO: improve that
+ */
+methods.getGroup = ({ paths }) => {
+  const children = entries(paths).map(({ key }) => {
+    return { key, value: key }
+  }).reduce(convertEntryListInMap, {})
+
+  return new Group({
+    id: null,
+    name: null,
+    description: 'All the requests',
+    children: new OrderedMap(children)
+  })
+}
+
+/**
+ * creates an Api object based on the swagger object
+ * @param {SwaggerObject} swagger: the swagger object to convert
+ * @param {string?} url: the url we got the swagger file from, if we got it from remote
+ * @returns {Api} the corresponding Api Record
+ */
+methods.createApi = (swagger = {}) => {
+  const info = methods.getInfo(swagger.info)
+  const store = methods.getSimpleStore(swagger)
+  const resources = methods.getResources(store, swagger)
+  const group = methods.getGroup(swagger)
+
+  const apiInstance = { info, store, resources, group }
+
+  return new Api(apiInstance)
+}
+
+/**
+ * converts the content of a swagger file in an Api
+ * @param {string} content: the content of the swagger file
+ * @param {string} url?: the url of the swagger file, if it was loaded from a remote location
+ * @param {Object} file?: an object representing the location of the file if it was loaded
+ * locally. example of file object: { path: 'someAbsolutePath', name: 'someFileName'}
+ * @returns {Api} the Api Record corresponding to the swagger file
+ */
+methods.parse = ({ options, item: swagger }) => {
+  if (!methods.isSwagger(swagger)) {
+    return methods.handleInvalidSwagger()
+  }
+
+  const api = methods.createApi(swagger)
+  return { options, api }
+}
+
+export const __internals__ = methods
+export default SwaggerParser

@@ -1,0 +1,140 @@
+{
+  "info": {
+    "name": "World Music API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+    "description": "This is an example of a music API.",
+    "version": "v1"
+  },
+  "item": [
+    {
+      "name": "/api",
+      "item": [
+        {
+          "description": "This was loaded from api-library",
+          "request": {
+            "url": "http://{{environment}}.musicapi.com/{{version}}/api?queryString=",
+            "auth": {
+              "type": "basic"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalMediaType}}"
+              }
+            ]
+          }
+        },
+        {
+          "description": "This is an awesome description",
+          "request": {
+            "url": "http://{{environment}}.musicapi.com/{{version}}/api",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"$ref\": \"#/definitions/ApiLib.RamlDataType\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "/entry",
+      "item": [
+        {
+          "request": {
+            "url": "http://{{environment}}.musicapi.com/{{version}}/entry",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalMediaType}}"
+              }
+            ]
+          }
+        },
+        {
+          "description": "returns a list of entry",
+          "request": {
+            "url": "http://{{environment}}.musicapi.com/{{version}}/entry",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalMediaType}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "/songs",
+      "description": "Access to all songs inside the music world library.",
+      "item": [
+        {
+          "description": "This was loaded from songs-library",
+          "request": {
+            "url": "http://{{environment}}.musicapi.com/{{version}}/songs?genre=&access_token=",
+            "auth": {
+              "type": "oauth2",
+              "oauth2": {
+                "authUrl": "https://www.dropbox.com/1/oauth2/authorize",
+                "accessTokenUrl": "https://api.dropbox.com/1/oauth2/token"
+              }
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalMediaType}}"
+              }
+            ]
+          }
+        },
+        {
+          "request": {
+            "url": "http://{{environment}}.musicapi.com/{{version}}/songs?access_token=",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalMediaType}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "/songs/{songId}",
+      "item": [
+        {
+          "request": {
+            "url": "http://{{environment}}.musicapi.com/{{version}}/songs/:songId",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{globalMediaType}}"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "id": "globalMediaType",
+      "type": "string",
+      "name": "Content-Type"
+    }
+  ]
+}

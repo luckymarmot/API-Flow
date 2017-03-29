@@ -1,1285 +1,1186 @@
-import Context, {
-    Parameter
-} from '../../models/Core'
-
-import LateResolutionReference from '../../models/references/LateResolution'
-import JSONSchemaReference from '../../models/references/JSONSchema'
-import Reference from '../../models/references/Reference'
-
-import {
-    ApiKeyAuth
-} from '../../models/Auth'
-
-import Item from '../../models/Item'
-import ContextResolver from '../../resolvers/ContextResolver'
-import PawEnvironment from '../../models/environments/PawEnvironment'
-import ResolverOptions from '../../models/options/ResolverOptions'
-
-import {
-    DynamicValue,
-    DynamicString,
-    InputField
-} from '../../mocks/PawShims'
-
-export default class PawSerializer {
-    static fileExtensions = [];
-
-    static inputs = [
-        new InputField(
-            'jsfInProtocol',
-            'Replace schemas by randomizers in protocol params',
-            'Checkbox',
-            { defaultValue: false, persisted: true }
-        ),
-        new InputField(
-            'jsfInHost',
-            'Replace schemas by randomizers in host params',
-            'Checkbox',
-            { defaultValue: false, persisted: true }
-        ),
-        new InputField(
-            'jsfInPath',
-            'Replace schemas by randomizers in path params',
-            'Checkbox',
-            { defaultValue: true, persisted: true }
-        ),
-        new InputField(
-            'jsfInQuery',
-            'Replace schemas by randomizers in query params',
-            'Checkbox',
-            { defaultValue: true, persisted: true }
-        ),
-        new InputField(
-            'jsfInHeaders',
-            'Replace schemas by randomizers in headers',
-            'Checkbox',
-            { defaultValue: true, persisted: true }
-        ),
-        new InputField(
-            'jsfInBody',
-            'Replace schemas by randomizers in body',
-            'Checkbox',
-            { defaultValue: true, persisted: true }
-        ),
-        new InputField(
-            'jsfInEnv',
-            'Replace schemas by randomizers in Environments',
-            'Checkbox',
-            { defaultValue: true, persisted: true }
-        )
-    ];
-
-    constructor(context) {
-        this.ENVIRONMENT_DOMAIN_NAME = 'Imported Environments'
-        this.currentEnvironmentDomainName = null
-        this.context = context || null
-    }
-
-    _parserErrorHandler(e) {
-        /* eslint-disable no-console */
-        console.error(
-            '@parser failed with error',
-            e,
-            JSON.stringify(e),
-            e.stack
-        )
-        /* eslint-enable no-console */
-        throw e
-    }
-
-    _parserFailureHandler(e) {
-        /* eslint-disable no-console */
-        console.error(
-            '@parser caught error',
-            e,
-            JSON.stringify(e),
-            e.stack
-        )
-        /* eslint-enable no-console */
-        throw e
-    }
-
-    _serializerFailureHandler(e) {
-        /* eslint-disable no-console */
-        console.error(
-            '@serializer failed with error',
-            e,
-            JSON.stringify(e),
-            e.stack
-        )
-        throw e
-        /* eslint-enable no-console */
-    }
-
-    _resolverErrorHandler(error) {
-        /* eslint-disable no-console */
-        console.error(
-            '@resolver failed with error',
-            error,
-            JSON.stringify(error),
-            error.stack
-        )
-        throw error
-        /* eslint-enable no-console */
-    }
-
-    _resolverFailureHandler(error) {
-        /* eslint-disable no-console */
-        console.error(
-            '@resolver caught error',
-            error,
-            JSON.stringify(error),
-            error.stack
-        )
-        throw error
-        /* eslint-enable no-console */
-    }
-
-    _unsupportedAuthHandler(auth) {
-        /* eslint-disable no-console */
-        console.error(
-            'Auth type ' +
-            auth.constructor.name +
-            ' is not supported in Paw'
-        )
-        /* eslint-enable no-console */
-    }
-
-    _invalidJSONHandler() {
-        /* eslint-disable no-console */
-        console.error(
-            'body was set to JSON, but we couldn\'t parse it'
-        )
-        /* eslint-enable no-console */
-    }
-
-    /*
-      @params:
-        - context
-        - string
-    */
-    createRequestContextFromString(context, string) {
-        return this.createRequestContexts(
-            context,
-            [ { content: string } ],
-            {}
-        )[0]
-    }
-
-    importString(context, string) {
-        let items = [
-            {
-                content: string,
-                url: 'http://localhost/'
-            }
-        ]
-
-        return this.import(context, items)
-    }
-
-    /*
-      @params:
-        - context
-        - items
-        - options
-    */
-    createRequestContexts() {
-        throw new Error('BaseImporter is an abstract class')
-    }
-
-    import(context, items, options) {
-        this.options = (options || {}).inputs || {}
-        /*
-        this.options.jsfInBody = true
-        this.options.jsfInEnv = true
-        this.options.jsfInPath = true
-        this.options.jsfInQuery = true
-        this.options.jsfInHeaders = true
-        */
-
-        this.context = context
-
-        let parsePromiseOrResult = this.createRequestContexts(
-            context,
-            items,
-            options
-        )
-
-        if (typeof parsePromiseOrResult.then !== 'function') {
-            let value = parsePromiseOrResult
-            parsePromiseOrResult = new Promise((resolve) => {
-                resolve(value)
-            })
-        }
-
-
-        let environment = new PawEnvironment()
-        let resolver = new ContextResolver(environment)
-
-        let importPromise = parsePromiseOrResult.then((requestContexts) => {
-            let promises = []
-            for (let env of requestContexts) {
-                promises.push(
-                    this._importContext(
-                        resolver,
-                        env.context,
-                        env.items[0],
-                        options
-                    )
-                )
-            }
-
-
-            return Promise.all(promises).then(() => {
-                return true
-            }, () => {
-                return false
-            })
-        }, ::this._parserErrorHandler).catch(::this._parserFailureHandler)
-
-        return importPromise
-    }
-
-    _importContext(resolver, reqContext, _item, options) {
-        let name = ((_item || {}).file || {}).name || null
-        if (name) {
-            name = name.replace(/\.[^.]*$/, '')
-        }
-        this.currentEnvironmentDomainName = name
-        if (!(reqContext instanceof Context)) {
-            throw new Error(
-                'createRequestContext ' +
-                'did not return an instance of RequestContext'
-            )
-        }
-
-        let item = new Item(_item)
-
-
-        return resolver.resolveAll(
-            item,
-            reqContext,
-            new ResolverOptions({ resolve: { local: false } })
-        ).then(context => {
-            try {
-                this._importPawRequests(
-                    context,
-                    _item,
-                    options
-                )
-                if (options && options.order) {
-                    options.order += 1
-                }
-
-                return true
-            }
-            catch (e) {
-                this._serializerFailureHandler(e)
-            }
-        }, this._resolverErrorHandler).catch(this._resolverFailureHandler)
-    }
-
-    serialize(requestContext, opts = null, item, options) {
-        return this._importPawRequests(requestContext, item, options)
-    }
-
-    _importPawRequests(requestContext, item, options) {
-        const requests = requestContext.get('requests')
-        const group = requestContext.get('group')
-        const references = requestContext.get('references')
-
-        this._importReferences(references)
-
-        const schema = requestContext.get('schema')
-
-        if (group.get('children').size === 0) {
-            return
-        }
-
-        let parent = null
-        let name
-        if (group.get('name')) {
-            name = group.get('name')
-        }
-        else if (item && item.file) {
-            name = item.file.name
-        }
-        else if (item && item.url) {
-            name = item.url
-        }
-
-        if (requests.size > 1) {
-            parent = this.context.createRequestGroup(name)
-        }
-
-        if (options && options.parent && parent) {
-            options.parent.appendChild(parent)
-            if (
-                options &&
-                options.order !== null &&
-                typeof options.order !== 'undefined'
-            ) {
-                parent.order = options.order
-            }
-        }
-
-
-        let manageRequestGroups = (current, parentGroup) => {
-            if (
-                !parentGroup ||
-                current === parentGroup.name ||
-                current === ''
-            ) {
-                return parentGroup
-            }
-            let pawGroup = this.context.createRequestGroup(current)
-            parentGroup.appendChild(pawGroup)
-            return pawGroup
-        }
-
-        this._applyFuncOverGroupTree(
-            requests,
-            group,
-            (request, requestParent) => {
-                ::this._importPawRequest(
-                    options,
-                    requestParent,
-                    request,
-                    schema
-                )
-            },
-            manageRequestGroups,
-            parent
-        )
-    }
-
-    _importReferences(references) {
-        let environmentDomain = this._getEnvironmentDomain()
-
-        let variablesDict = {}
-
-        let environments = references.keySeq()
-
-        for (let env of environments) {
-            let container = references.get(env)
-
-            let pawEnv = this._getEnvironment(
-                environmentDomain,
-                container.get('name') || container.get('id') || env
-            )
-            let uris = container.get('cache').keySeq()
-            for (let uri of uris) {
-                let reference = container.resolve(uri)
-
-                /*
-                    LateResolutionReference defines uris in the form of
-                    `#/x-postman/~1users~1{{userId}}` as this uri uniquely
-                    identifies the char sequence `/user/{{userId}}`. These
-                    uris are necessary to prevent collision when parsing,
-                    however, since Paw has DynamicStrings it can display and
-                    store these references nicely, so we should not save them
-                    as environment variables, but directly as dynamic string
-                    where they are used.
-
-                    .slice(12) is there to remove `#/x-postman/` from the
-                    string before testing to see if it is a root
-                    LateResolutionReference or not.
-                */
-                if (!(reference instanceof LateResolutionReference) ||
-                    (reference.get('uri') || '').slice(12).match(/^{{[^{}]+}}$/)
-                ) {
-                    let content = this._setReference(reference)
-                    let ds
-                    if (content instanceof DynamicString) {
-                        ds = content
-                    }
-                    else {
-                        ds = new DynamicString(content || '')
-                    }
-
-                    let key = reference.get('relative')
-                    if (reference instanceof LateResolutionReference) {
-                        // remove '#/x-postman/' and {{ }}
-                        key = key.slice(12)
-                        key = key.slice(2, key.length - 2)
-                    }
-
-                    if (
-                        key !== null &&
-                        key !== '' &&
-                        typeof key !== 'undefined'
-                    ) {
-                        variablesDict[key] = ds
-                    }
-                }
-            }
-
-            pawEnv.setVariablesValues(variablesDict)
-        }
-    }
-
-    _setReference(reference) {
-        if (reference instanceof JSONSchemaReference) {
-            return this._setJSONSchemaReference(reference)
-        }
-        else if (reference instanceof LateResolutionReference) {
-            return this._setLateResolutionReference(reference)
-        }
-        else if (reference.get('value') === null) {
-            return this._setExoticReference(reference)
-        }
-        else {
-            return this._setSimpleReference(reference)
-        }
-    }
-
-    _setJSONSchemaReference(reference) {
-        let dv
-        if (this.options.jsfInEnv) {
-            dv = new DynamicValue(
-                'com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue',
-                {
-                    schema: JSON.stringify(reference.toJSONSchema() || {})
-                }
-            )
-        }
-        else {
-            dv = ''
-        }
-        return dv
-    }
-
-    _setLateResolutionReference(reference) {
-        // slice(12) because we slice out '#/x-postman/' from the uri
-        let ref = (reference.get('relative') || reference.get('uri') || '')
-            .slice(12)
-        let match = ref.match(/({{[^{}]*}})/g)
-        if (match && ref !== match[0]) {
-            let components = []
-            let baseIndex = 0
-            let re = /({{[^{}]+}})/g
-            let m
-            while ((m = re.exec(ref)) !== null) {
-                let index = m.index
-                if (baseIndex !== index) {
-                    components.push(this._unescapeURIFragment(
-                        ref.slice(baseIndex, index)
-                    ))
-                }
-
-                baseIndex = index + m[0].length
-
-                let envVariable = this._getEnvironmentVariable(
-                    m[0].slice(2, m[0].length - 2)
-                )
-
-                let dv = new DynamicValue(
-                    'com.luckymarmot.EnvironmentVariableDynamicValue',
-                    {
-                        environmentVariable: envVariable.id
-                    }
-                )
-
-                components.push(dv)
-            }
-
-            components.push(this._unescapeURIFragment(
-                ref.slice(baseIndex, ref.length)
-            ))
-
-            return new DynamicString(...components)
-        }
-        else {
-            let value = reference.get('value')
-            if (typeof value !== 'string' || value === '') {
-                return ref.slice(2, ref.length - 2)
-            }
-            return value
-        }
-    }
-
-    _unescapeURIFragment(uriFragment) {
-        return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
-    }
-
-    _setExoticReference(reference) {
-        if (reference.get('uri').match('://')) {
-            return new DynamicValue(
-                'com.luckymarmot.PawExtensions.RemoteFileDynamicValue',
-                {
-                    url: reference.get('uri')
-                }
-            )
-        }
-        else {
-            return new DynamicValue(
-                'com.luckymarmot.FileContentDynamicValue', {
-                    filePath: reference.get('uri')
-                }
-            )
-        }
-    }
-
-    _setSimpleReference(reference) {
-        return reference.get('value')
-    }
-
-    _getEnvironmentDomain() {
-        let env = this.context.getEnvironmentDomainByName(
-            this.currentEnvironmentDomainName ||
-            this.ENVIRONMENT_DOMAIN_NAME
-        )
-        if (typeof env === 'undefined') {
-            env = this.context
-                .createEnvironmentDomain(
-                    this.currentEnvironmentDomainName ||
-                    this.ENVIRONMENT_DOMAIN_NAME
-                )
-        }
-        return env
-    }
-
-    _getEnvironment(domain, environmentName = 'Default Environment') {
-        let env = domain.getEnvironmentByName(environmentName)
-        if (typeof env === 'undefined') {
-            env = domain.createEnvironment(environmentName)
-        }
-        return env
-    }
-
-    _getEnvironmentVariable(name) {
-        let domain = this._getEnvironmentDomain()
-        let variable = domain.getVariableByName(name)
-        if (typeof variable === 'undefined') {
-            let env = this._getEnvironment(domain)
-            let varD = {}
-            varD[name] = ''
-            env.setVariablesValues(varD)
-            variable = domain.getVariableByName(name)
-        }
-        return variable
-    }
-
-    _importPawRequest(options, parent, request, schema) {
-        let container = request.get('parameters')
-        let bodies = request.get('bodies')
-        const auths = request.get('auths')
-        const timeout = request.get('timeout')
-
-        let contentType
-        if (bodies.size > 0) {
-            let body
-            body = bodies.get(0)
-            contentType = this._extractContentTypeFromBody(body)
-            container = container.filter(body.get('constraints'))
-        }
-
-        // url + method
-        let pawRequest = this._createPawRequest(request, container)
-
-        pawRequest.description = request.get('description')
-
-        // headers
-        pawRequest = this._setHeaders(pawRequest, container)
-
-        // auth
-        pawRequest = ::this._setAuth(pawRequest, auths)
-
-        // body
-        pawRequest = this._setBody(
-            pawRequest,
-            contentType,
-            container,
-            schema
-        )
-
-        // timeout
-        if (timeout) {
-            pawRequest.timeout = timeout * 1000
-        }
-
-        if (parent) {
-            parent.appendChild(pawRequest)
-        }
-        else if (options && options.parent) {
-            options.parent.appendChild(pawRequest)
-        }
-
-        // order
-        if (options && options.order) {
-            pawRequest.order = options.order
-        }
-
-        return pawRequest
-    }
-
-    _applyFuncOverGroupTree(requests, group, leafFunc, nodeFunc, pawGroup) {
-        let calls = []
-        let currentPawGroup = nodeFunc(group.get('name') || '', pawGroup)
-        group.get('children').forEach((child) => {
-            if (typeof child === 'string' || typeof child === 'number') {
-                const request = requests.get(child)
-                if (request) {
-                    calls.push(leafFunc(request, currentPawGroup))
-                }
-            }
-            else {
-                calls = calls.concat(
-                    this._applyFuncOverGroupTree(
-                        requests,
-                        child,
-                        leafFunc,
-                        nodeFunc,
-                        currentPawGroup
-                    )
-                )
-            }
-        })
-        return calls
-    }
-
-    _createPawRequest(request, container) {
-        let url = ::this._generateUrl(
-            request.get('url'),
-            container.get('queries'),
-            request.get('auths')
-        )
-        return this.context.createRequest(
-            request.get('name'),
-            (request.get('method') || 'get').toUpperCase(),
-            url,
-        )
-    }
-
-    _generateUrl(url, queries, auths) {
-        let protocol = this._formatProtocolParam(url.get('protocol'))
-        let host = this._toDynamicString(url.get('host'), true, 'host')
-        let path = this._toDynamicString(url.get('pathname'), true, 'pathname')
-        let hash = this._toDynamicString(url.get('hash'), true, 'url')
-
-        if (protocol.length > 0) {
-            protocol.appendString(':')
-        }
-
-        if (protocol.length > 0 || host.length > 0) {
-            protocol.appendString('//')
-        }
-
-        let _url = new DynamicString(
-            ...protocol.components,
-            ...host.components,
-            ...path.components
-        )
-
-        let queryParams = (queries || []).concat(
-            this._extractQueryParamsFromAuth(auths)
-        )
-        if (queryParams.size > 0) {
-            _url.appendString('?')
-            let _params = queryParams.reduce(
-                (params, keyValue) => {
-                    let dynKey = this._toDynamicString(
-                        keyValue.get('key'), true, 'query'
-                    ).components.map((component) => {
-                        if (typeof component === 'string') {
-                            return encodeURI(component)
-                        }
-                        return component
-                    })
-                    let dynValue = this._toDynamicString(
-                        keyValue, true, 'query'
-                    ).components.map((component) => {
-                        if (typeof component === 'string') {
-                            return encodeURI(component)
-                        }
-                        return component
-                    })
-                    let param = []
-                    if (params.length !== 0) {
-                        param.push('&')
-                    }
-                    param = param.concat(dynKey)
-                    param.push('=')
-                    param = param.concat(dynValue)
-                    return params.concat(param)
-                },
-                []
-            )
-            _url = new DynamicString(
-                ..._url.components,
-                ..._params,
-                ...hash.components
-            )
-        }
-        else {
-            _url = new DynamicString(
-                ..._url.components,
-                ...hash.components
-            )
-        }
-
-        return _url
-    }
-
-    _formatProtocolParam(protocol) {
-        if (this._useJSF('protocol')) {
-            return this._toDynamicString(protocol, true, 'protocol')
-        }
-
-        let schema = protocol.getJSONSchema(false)
-
-        if (schema && schema.enum.indexOf('https') >= 0) {
-            return new DynamicString('https')
-        }
-        else if (schema && schema.enum.indexOf('wss') >= 0) {
-            return new DynamicString('wss')
-        }
-        else {
-            return this._toDynamicString(protocol, true, 'protocol')
-        }
-    }
-
-    _extractQueryParamsFromAuth(auths) {
-        return (auths || []).filter((auth) => {
-            return auth instanceof ApiKeyAuth && auth.get('in') === 'query'
-        }).map((auth) => {
-            return new Parameter({
-                key: auth.get('name'),
-                value: auth.get('key')
-            })
-        }).toArray()
-    }
-
-    _setHeaders(pawReq, container) {
-        let headers = container.getHeadersSet()
-        headers.forEach((param) => {
-            pawReq.setHeader(
-                this._toDynamicString(param.get('key'), true, 'headers'),
-                this._toDynamicString(param, true, 'headers')
-            )
-        })
-        return pawReq
-    }
-
-    _setBasicAuth(auth) {
-        return new DynamicValue(
-            'com.luckymarmot.BasicAuthDynamicValue',
-            {
-                username: this._toDynamicString(
-                    auth.get('username') || '', true, 'auth'
-                ),
-                password: this._toDynamicString(
-                    auth.get('password') || '', true, 'auth'
-                )
-            }
-        )
-    }
-
-    _setDigestAuth(auth) {
-        return new DynamicValue(
-            'com.luckymarmot.PawExtensions.DigestAuthDynamicValue',
-            {
-                username: this._toDynamicString(
-                    auth.get('username'), true, 'auth'
-                ),
-                password: this._toDynamicString(
-                    auth.get('password'), true, 'auth'
-                )
-            }
-        )
-    }
-
-    _setOAuth1Auth(auth) {
-        return new DynamicValue(
-            'com.luckymarmot.OAuth1HeaderDynamicValue',
-            {
-                callback: this._toDynamicString(
-                    auth.get('callback') || '', true, 'auth'
-                ),
-                consumerKey: this._toDynamicString(
-                    auth.get('consumerKey') || '', true, 'auth'
-                ),
-                consumerSecret: this._toDynamicString(
-                    auth.get('consumerSecret') || '', true, 'auth'
-                ),
-                tokenSecret: this._toDynamicString(
-                    auth.get('tokenSecret') || '', true, 'auth'
-                ),
-                algorithm: auth.get('algorithm') || '',
-                nonce: this._toDynamicString(
-                    auth.get('nonce') || '', true, 'auth'
-                ),
-                additionalParamaters: auth
-                    .get('additionalParamaters') || '',
-                timestamp: this._toDynamicString(
-                    auth.get('timestamp') || '', true, 'auth'
-                ),
-                token: this._toDynamicString(
-                    auth.get('token') || '', true, 'auth'
-                )
-            }
-        )
-    }
-
-    _setOAuth2Auth(auth) {
-        const grantMap = {
-            accessCode: 0,
-            implicit: 1,
-            application: 2,
-            password: 3
-        }
-        return new DynamicValue(
-            'com.luckymarmot.OAuth2DynamicValue',
-            {
-                grantType: grantMap[auth.get('flow')] || 0,
-                authorizationUrl: this._toDynamicString(
-                    auth.get('authorizationUrl') || '', true, 'auth'
-                ),
-                accessTokenUrl: this._toDynamicString(
-                    auth.get('tokenUrl') || '', true, 'auth'
-                ),
-                scope: (auth.get('scopes') || []).join(' ')
-            }
-        )
-    }
-
-    _setAWSSig4Auth(auth) {
-        return new DynamicValue(
-            'com.shigeoka.PawExtensions.AWSSignature4DynamicValue',
-            {
-                key: this._toDynamicString(
-                    auth.get('key') || '', true, 'auth'
-                ),
-                secret: this._toDynamicString(
-                    auth.get('secret') || '', true, 'auth'
-                ),
-                region: this._toDynamicString(
-                    auth.get('region') || '', true, 'auth'
-                ),
-                service: this._toDynamicString(
-                    auth.get('service') || '', true, 'auth'
-                )
-            }
-        )
-    }
-
-    _setHawkAuth(auth) {
-        return new DynamicValue(
-            'uk.co.jalada.PawExtensions.HawkDynamicValue',
-            {
-                key: this._toDynamicString(
-                    auth.get('key') || '', true, 'auth'
-                ),
-                id: this._toDynamicString(
-                    auth.get('id') || '', true, 'auth'
-                ),
-                algorithm: this._toDynamicString(
-                    auth.get('algorithm') || '', true, 'auth'
-                )
-            }
-        )
-    }
-
-    _setAuth(pawReq, auths) {
-        const authTypeMap = {
-            BasicAuth: ::this._setBasicAuth,
-            DigestAuth: ::this._setDigestAuth,
-            OAuth1Auth: ::this._setOAuth1Auth,
-            OAuth2Auth: ::this._setOAuth2Auth,
-            AWSSig4Auth: ::this._setAWSSig4Auth,
-            HawkAuth: ::this._setHawkAuth
-        }
-
-        for (let auth of auths) {
-            let rule = authTypeMap[auth.constructor.name]
-
-            if (rule) {
-                const dv = rule(auth)
-                pawReq.setHeader('Authorization', new DynamicString(dv))
-            }
-            else if (auth instanceof ApiKeyAuth) {
-                if (auth.get('in') === 'header') {
-                    pawReq.setHeader(
-                        this._toDynamicString(auth.get('name'), true, 'auth'),
-                        this._toDynamicString(auth.get('key'), true, 'auth')
-                    )
-                }
-            }
-            else {
-                this._unsupportedAuthHandler(auth)
-            }
-        }
-        return pawReq
-    }
-
-    _setBody(pawReq, contentType, container) {
-        let body = container.get('body')
-
-        const bodyRules = {
-            'multipart/form-data':
-                ::this._setFormDataBody,
-            'application/x-www-form-urlencoded':
-                ::this._setUrlEncodedBody,
-            'application/json':
-                ::this._setJSONBody
-        }
-
-        let _pawReq = pawReq
-
-        const rule = bodyRules[contentType]
-        if (rule) {
-            _pawReq = rule(pawReq, body)
-        }
-        else if (body.size > 1) {
-            _pawReq = this._setUrlEncodedBody(pawReq, body)
-        }
-        else {
-            this._setPlainBody(pawReq, body)
-        }
-
-        return _pawReq
-    }
-
-    _extractContentTypeFromBody(body) {
-        let constraints = body.get('constraints')
-        let contentType = null
-        constraints.forEach(param => {
-            if (param.get('key') === 'Content-Type') {
-                contentType = param.get('value')
-            }
-        })
-
-        return contentType
-    }
-
-    _setFormDataBody(pawReq, body) {
-        pawReq.setHeader(
-            'Content-Type',
-            'multipart/form-data'
-        )
-        const keyValues = body.map(param => {
-            let key = this._toDynamicString(
-                param.get('key'), true, 'body'
-            )
-            let value = this._toDynamicString(
-                param.get, true, 'body'
-            )
-            return [ key, value, true ]
-        }).toArray()
-        const dv = new DynamicValue(
-            'com.luckymarmot.BodyMultipartFormDataDynamicValue', {
-                keyValues: keyValues
-            }
-        )
-        pawReq.body = new DynamicString(dv)
-        return pawReq
-    }
-
-    _setUrlEncodedBody(pawReq, body) {
-        pawReq.setHeader(
-            'Content-Type',
-            'application/x-www-form-urlencoded'
-        )
-        const keyValues = body.map(param => {
-            let key = this._toDynamicString(
-                param.get('key'), true, 'body'
-            )
-            let value = this._toDynamicString(
-                param, true, 'body'
-            )
-            return [ key, value, true ]
-        }).toArray()
-        const dv = new DynamicValue(
-            'com.luckymarmot.BodyFormKeyValueDynamicValue', {
-                keyValues: keyValues
-            }
-        )
-        pawReq.body = new DynamicString(dv)
-        return pawReq
-    }
-
-    _setPlainBody(pawReq, body) {
-        if (body.size > 0) {
-            let param = body.get(0)
-            pawReq.body = this._toDynamicString(param, true, 'body')
-        }
-        else {
-            pawReq.body = ''
-        }
-        return pawReq
-    }
-
-    _setJSONBody(pawReq, body) {
-        pawReq.setHeader(
-            'Content-Type',
-            'application/json'
-        )
-
-        if (body.size === 0) {
-            return pawReq
-        }
-
-        let param = body.get(0)
-        let content = this._toDynamicString(param, true, 'body')
-
-        let component = content.getComponentAtIndex(0)
-
-        if (
-            content.length === 1 &&
-            typeof component === 'string'
-        ) {
-            try {
-                pawReq.jsonBody = JSON.parse(component)
-            }
-            catch (e) {
-                this._invalidJSONHandler()
-                pawReq.body = content
-            }
-        }
-        else {
-            pawReq.body = content
-        }
-
-        return pawReq
-    }
-
-    _toDynamicString(string, defaultToEmpty, source) {
-        if (!string) {
-            if (defaultToEmpty) {
-                return new DynamicString('')
-            }
-            return null
-        }
-
-        let envComponents = []
-        if (string instanceof Parameter) {
-            if (string.get('type') === 'reference') {
-                envComponents = this._castReferenceToDynamicString(
-                    string.get('value')
-                ).components
-            }
-            else {
-                envComponents = this._castParameterToDynamicString(
-                    string, source
-                ).components
-            }
-        }
-        else if (typeof string === 'string') {
-            envComponents.push(string)
-        }
-
-        let components = []
-
-        let splitManager = (_isRegular) => {
-            let isRegular = _isRegular
-            return (split) => {
-                if (isRegular) {
-                    components.push(split)
-                }
-                else {
-                    components.push(
-                        this._escapeSequenceDynamicValue(split)
-                    )
-                }
-                isRegular = !isRegular
-            }
-        }
-
-        for (let component of envComponents) {
-            if (typeof component !== 'string') {
-                components.push(component)
-            }
-            else {
-                // split around special characters
-                const re = /([^\x00-\x1f]+)|([\x00-\x1f]+)/gm
-                let splits = component.match(re)
-                if (splits.length > 0 && splits.length < 50) {
-                    let isRegular = /([^\x00-\x1f]+)/.test(splits[0])
-                    let splitMapper = splitManager(isRegular)
-                    splits.forEach(splitMapper)
-                }
-                else {
-                    components.push(component)
-                }
-            }
-        }
-
-        return new DynamicString(...components)
-    }
-
-    _convertCharToHex(char) {
-        let hexChar = char.charCodeAt(0).toString(16)
-        if (hexChar.length === 1) {
-            hexChar = '0' + hexChar
-        }
-        return hexChar
-    }
-
-    _escapeCharSequence(seq) {
-        const escapedChars = {
-            '\n': '\\n',
-            '\r': '\\r',
-            '\t': '\\t'
-        }
-
-        let sequence = []
-        for (let char of seq) {
-            sequence.push(
-                escapedChars[char] ?
-                    escapedChars[char] :
-                    '\\x' + this._convertCharToHex(char)
-            )
-        }
-        return sequence.join('')
-    }
-
-    _escapeSequenceDynamicValue(seq) {
-        let escapeSequence = this._escapeCharSequence(seq)
-        return new DynamicValue('com.luckymarmot.EscapeSequenceDynamicValue', {
-            escapeSequence: escapeSequence
-        })
-    }
-
-    _castReferenceToDynamicString(reference) {
-        let dv = this._extractReferenceComponent(reference)
-        if (dv instanceof DynamicString) {
-            return dv
-        }
-        return new DynamicString(dv)
-    }
-
-    _castParameterToDynamicString(param, source) {
-        let schema = param.getJSONSchema(false)
-
-        let components = []
-        if (schema['x-sequence']) {
-            for (let item of schema['x-sequence']) {
-                if (item['x-title']) {
-                    if (schema.enum && schema.enum.length === 1) {
-                        components.push(param.generate())
-                    }
-                    else if (this._useJSF(source)) {
-                        let dv = new DynamicValue(
-                            'com.luckymarmot.PawExtensions' +
-                            '.JSONSchemaFakerDynamicValue',
-                            {
-                                schema: JSON.stringify(item)
-                            }
-                        )
-                        components.push(dv)
-                    }
-                    else {
-                        components.push(param.generate(false, item))
-                    }
-                }
-                else {
-                    components.push(param.generate(false, item))
-                }
-            }
-        }
-        else if (schema.enum && schema.enum.length === 1) {
-            let generated = param.generate(false, schema)
-            if (generated === null) {
-                generated = ''
-            }
-            components.push(generated)
-        }
-        else if (this._useJSF(source)) {
-            let dv = new DynamicValue(
-                'com.luckymarmot.PawExtensions' +
-                '.JSONSchemaFakerDynamicValue',
-                {
-                    schema: JSON.stringify(schema)
-                }
-            )
-            components.push(dv)
-        }
-        else {
-            let generated = param.generate(false, schema)
-            if (generated === null) {
-                generated = ''
-            }
-            components.push(generated)
-        }
-
-        return new DynamicString(...components)
-    }
-
-    _useJSF(source) {
-        let validSources = [
-            'protocol',
-            'host',
-            'pathname',
-            'query',
-            'body',
-            'headers'
-        ]
-
-        if (validSources.indexOf(source) < 0) {
-            return true
-        }
-
-        /* eslint-disable no-extra-parens */
-        return (source === 'protocol' && this.options.jsfInProtocol) ||
-            (source === 'host' && this.options.jsfInHost) ||
-            (source === 'pathname' && this.options.jsfInPath) ||
-            (source === 'query' && this.options.jsfInQuery) ||
-            (source === 'body' && this.options.jsfInBody) ||
-            (source === 'headers' && this.options.jsfInHeaders)
-        /* eslint-enable no-extra-parens */
-    }
-
-    _extractReferenceComponent(component) {
-        if (typeof component === 'string') {
-            return component
-        }
-
-        if (component instanceof Reference) {
-            /*
-                `!component.get('relative')` is not related to the explanation
-                below.
-
-                If the component is a LateResolutionReference, we prefer to
-                have directly access to the DynamicString that represents it,
-                than having a reference to it stored in the environment domain.
-            */
-            if (
-                !component.get('relative')
-            ) {
-                return this._setReference(component)
-            }
-
-            if (component instanceof LateResolutionReference) {
-                let match = (component.get('uri') || '')
-                .slice(12)
-                .match(/^{{[^{}]+}}$/)
-                if (!match) {
-                    return this._setReference(component)
-                }
-                else {
-                    let envVariable = this._getEnvironmentVariable(
-                        match[0].slice(2, match[0].length - 2)
-                    )
-                    return new DynamicValue(
-                        'com.luckymarmot.EnvironmentVariableDynamicValue',
-                        {
-                            environmentVariable: envVariable.id
-                        }
-                    )
-                }
-            }
-
-            let envVariable = this._getEnvironmentVariable(
-                component.get('relative')
-            )
-            return new DynamicValue(
-                'com.luckymarmot.EnvironmentVariableDynamicValue',
-                {
-                    environmentVariable: envVariable.id
-                }
-            )
-        }
-
-        return null
-    }
+/**
+ * NOTE: We assume that contextual references have an overlay that contains the applicable contexts.
+ */
+
+import { List } from 'immutable'
+import { DynamicValue, DynamicString, RecordParameter } from '../../mocks/PawShims'
+
+import Store from '../../models/Store'
+import Auth from '../../models/Auth'
+import Reference from '../../models/Reference'
+import Parameter from '../../models/Parameter'
+import Group from '../../models/Group'
+
+import { currify } from '../../utils/fp-utils'
+
+const __inputs__ = []
+const __meta__ = {
+  format: 'paw',
+  version: 'v3.0'
 }
+
+const methods = {}
+
+export class PawSerializer {
+  static fileExtensions = [];
+
+  static __meta__ = __meta__
+  static inputs = __inputs__
+
+  static serialize({ options, api } = {}) {
+    return methods.serialize({ options, api })
+  }
+}
+
+/**
+ * wraps a DynamicValue in a DynamicString
+ * @param {DynamicValue} dv: the dv to wrapDV
+ * @returns {DynamicString} the corresponding DynamicString
+ */
+methods.wrapDV = (dv) => new DynamicString(dv)
+
+/**
+ * creates a JSON DynamicValue to wrap a JSON object.
+ * @param {Object} json: the json object to wrap in a DV
+ * @returns {DynamicValue} the corresponding JSON DynamicValue
+ */
+methods.createJSONDV = (json) => new DynamicValue('com.luckymarmot.JSONDynamicValue', {
+  json: JSON.stringify(json)
+})
+
+/**
+ * creates a url-encoded body DynamicValue.
+ * @param {Array<RecordParameter>} keyValues: the list of key-value pairs that store in the body dv.
+ * @returns {DynamicValue} the corresponding dynamic value
+ */
+methods.createUrlEncodedBodyDV = (keyValues) => {
+  return new DynamicValue(
+  'com.luckymarmot.BodyFormKeyValueDynamicValue', {
+    keyValues: keyValues
+  })
+}
+
+/**
+ * creates a multipart body DynamicValue.
+ * @param {Array<RecordParameter>} keyValues: the list of key-value pairs that store in the body dv.
+ * @returns {DynamicValue} the corresponding dynamic value
+ */
+methods.createMultipartBodyDV = (keyValues) => {
+  return new DynamicValue(
+    'com.luckymarmot.BodyMultipartFormDataDynamicValue', {
+      keyValues: keyValues
+    }
+  )
+}
+
+/**
+ * creates a multiselector DynamicValue.
+ * @param {Array<RecordParameter>} choices: the list of key-value pairs that store in the body dv.
+ * @returns {DynamicValue} the corresponding dynamic value
+ */
+methods.createMultiSelectorDv = (choices) => {
+  return new DynamicValue('me.elliotchance.MultiSelectorDynamicValue', {
+    choices,
+    separator: ','
+  })
+}
+
+/**
+ * extracts the title from an Api Record.
+ * @param {Api} api: the api to get the name of.
+ * @returns {string} the title of the api, or a default value if the api does not have any title
+ */
+methods.getTitleFromApi = (api) => api.getIn([ 'info', 'title' ]) || 'Imports'
+
+/**
+ * creates a standard environment domain in which to store standard values, such as shared schemas,
+ * parameters, endpoints and authentication methods.
+ * @param {Context} context: the paw context in which to create the environment domain.
+ * @param {Api} api: the api to import in Paw.
+ * @returns {EnvironmentDomain} the newly created environment domain
+ */
+methods.createStandardEnvironmentDomain = (context, api) => {
+  const title = methods.getTitleFromApi(api)
+  return context.createEnvironmentDomain(title)
+}
+
+// assumes correctly formatted api
+/**
+ * calculates the size of the standard environment domain. This is used to determine whether we
+ * should create a domain or not.
+ * @param {Api} api: the api to import in Paw.
+ * @returns {integer} the number of values that would be stored in the environment domain.
+ */
+methods.getStandardEnvironmentDomainSize = (api) => {
+  const constraints = api.getIn([ 'store', 'constraint' ])
+  const endpoints = api.getIn([ 'store', 'endpoint' ])
+  const auths = api.getIn([ 'store', 'auth' ])
+  const parameters = api.getIn([ 'store', 'parameter' ])
+  // const responses = api.getIn([ 'store', 'response' ])
+
+  const size = constraints.size +
+    endpoints.size +
+    auths.size +
+    parameters.size
+    // +
+    // responses.size
+
+  return size
+}
+
+/**
+ * tests whether an Api needs a standard environment domain to be fully imported in Paw
+ * @param {Api} api: the api to import in Paw
+ * @returns {boolean} whether a standard environment domain is needed.
+ */
+methods.needsStandardEnvironmentDomain = (api) => {
+  const size = methods.getStandardEnvironmentDomainSize(api)
+
+  return size > 0
+}
+
+/**
+ * creates a Variable environment domain. This is used to import Variables with multiple contexts
+ * into Paw.
+ * @param {Context} context: the Paw context in which to create the environment domain
+ * @param {Api} api: the api to import in Paw.
+ * @returns {EnvironmentDomain} the newly created environment domain.
+ *
+ * NOTE: It needs to be separate from the standard domain because values imported in the standard
+ * domain only have a single value possible, whereas variables can have multiple values whose
+ * evaluation depend on the name of the context (Think switching between Postman Environments)
+ */
+methods.createVariableEnvironmentDomain = (context, api) => {
+  const title = methods.getTitleFromApi(api)
+  const domainName = 'Vars - ' + title
+  return context.createEnvironmentDomain(domainName)
+}
+
+/**
+ * adds a Constraint as JSON DV to a domain.
+ * @param {EnvironmentDomain} domain: the domain to add the constraint to.
+ * @param {Environment} environment: the domain environment for which this value is applicable.
+ * @param {Constraint} constraint: the constraint to add.
+ * @param {string} key: the name of the constraint
+ * @returns {EnvironmentVariable} the newly created environment variable
+ */
+methods.addConstraintToDomain = (domain, environment, constraint, key) => {
+  const variable = domain.createEnvironmentVariable(key)
+  const schema = constraint.toJSONSchema()
+  const dv = methods.createJSONDV(schema)
+  const ds = methods.wrapDV(dv)
+  variable.setValue(ds, environment)
+
+  return variable
+}
+
+/**
+ * adds all constraints of a Constraint TypedStore into a domain.
+ * @param {EnvironmentDomain} domain: the domain to add the constraints to.
+ * @param {Environment} environment: the domain environment for which the constraints are
+ * applicable.
+ * @param {Api} api: the api to get the TypedStore from.
+ * @returns {TypedStore}: a TypedStore of EnvironmentVariables representing constraints.
+ */
+methods.addConstraintsToDomain = (domain, environment, api) => {
+  const constraints = api.getIn([ 'store', 'constraint' ])
+  const addConstraint = currify(methods.addConstraintToDomain, domain, environment)
+
+  return constraints.map(addConstraint)
+}
+
+/**
+ * removes ':' at the end of a protocol string
+ * @param {string} protocol: the protocol to trim
+ * @returns {string} the trimmed string
+ */
+methods.removeDotsFromProtocol = (protocol) => {
+  if (protocol[protocol.length - 1] === ':') {
+    return protocol.slice(0, protocol.length - 1)
+  }
+
+  return protocol
+}
+
+/**
+ * converts a protocol string into a Record Parameter.
+ * @param {string} protocol: the protocol to convert
+ * @param {integer} index: the index of the protocol in the parent array. This is used to set the
+ * first Record Parameter as enabled
+ * @return {RecordParameter} the corresponding Record Parameter.
+ */
+methods.convertProtocolIntoRecordParameter = (protocol, index) => {
+  const stripped = methods.removeDotsFromProtocol(protocol)
+  const isEnabled = index === 0
+  return new RecordParameter(stripped, ', ', isEnabled)
+}
+
+/**
+ * converts a protocol URLComponent into a DynamicValue.
+ * @param {URLComponent} protocol: the url component to convert
+ * @returns {DynamicValue} the corresponding DynamicValue.
+ */
+methods.createProtocolDV = (protocol) => {
+  if (!protocol || !protocol.size) {
+    return 'http'
+  }
+
+  if (protocol.size === 1) {
+    return methods.removeDotsFromProtocol(protocol.get(0))
+  }
+
+  const choices = protocol.map(methods.convertProtocolIntoRecordParameter).toJS()
+  return methods.createMultiSelectorDv(choices)
+}
+
+// TODO save parameters as document parameters when these finally exist in Paw
+/**
+ * converts a urlComponent into a DynamicString or a standard string as a fallback.
+ * @param {URLComponent} urlComponent: the urlComponent to convert
+ * @return {string|DynamicString} the converted value
+ */
+methods.convertURLComponentToDynamicString = (urlComponent) => {
+  if (!urlComponent) {
+    return ''
+  }
+
+  return urlComponent.generate(List([ '{', '}' ]))
+}
+
+/**
+ * converts an endpoint into a DynamicString.
+ * @param {URL} endpoint: the endpoint to convert
+ * @returns {DynamicString} the corresponding DynamicString
+ */
+methods.createEndpointDynamicString = (endpoint) => {
+  const protocol = methods.createProtocolDV(endpoint.get('protocol'))
+  const slashes = '://'
+  const hostname = methods.convertURLComponentToDynamicString(endpoint.get('hostname'))
+  const port = methods.convertURLComponentToDynamicString(endpoint.get('port'))
+  const portDots = port ? ':' : ''
+  const pathname = methods.convertURLComponentToDynamicString(endpoint.get('pathname'))
+  const cleanPathname = pathname[pathname.length - 1] === '/' ? pathname.slice(0, -1) : pathname
+
+  return new DynamicString(protocol, slashes, hostname, portDots, port, cleanPathname)
+}
+
+/**
+ * adds an endpoint to a domain, as DynamicStrings
+ * @param {EnvironmentDomain} domain: the domain to add the endpoint to.
+ * @param {Environment} environment: the environment in which this endpoint value is applicable.
+ * @param {URL} endpoint: the endpoint to add to the domain
+ * @param {string} key: the name of the endpoint
+ * @returns {EnvironmentVariable} the newly created environment variable.
+ */
+methods.addEndpointToDomain = (domain, environment, endpoint, key) => {
+  const variable = domain.createEnvironmentVariable(key)
+  const ds = methods.createEndpointDynamicString(endpoint)
+  variable.setValue(ds, environment)
+
+  return variable
+}
+
+/**
+ * adds all endpoints from an Endpoint TypedStore to a domain.
+ * @param {EnvironmentDomain} domain: the domain to add the endpoints to.
+ * @param {Environment} environment: the environment in which these endpoints are applicable.
+ * @param {Api} api: the api from which to get the Endpoint TypedStore.
+ * @returns {TypedStore} a TypedStore of EnvironmentVariables representing endpoints.
+ */
+methods.addEndpointsToDomain = (domain, environment, api) => {
+  const endpoints = api.getIn([ 'store', 'endpoint' ])
+  const addEndpoint = currify(methods.addEndpointToDomain, domain, environment)
+
+  return endpoints.map(addEndpoint)
+}
+
+/**
+ * adds a Parameter to a domain, as a DynamicString
+ * @param {EnvironmentDomain} domain: the domain to add the parameter to.
+ * @param {Environment} environment: the environment in which this parameter value is applicable.
+ * @param {Parameter} parameter: the parameter to add to the domain
+ * @param {string} key: the name of the endpoint
+ * @returns {
+ *   {
+ *     variable: EnvironmentVariable,
+ *     parameter: Parameter
+ *   }
+ * } an object containing the newly created environment variable, and its associated parameter.
+ */
+methods.addParameterToDomain = (domain, environment, parameter, key) => {
+  const variable = domain.createEnvironmentVariable(key)
+  const schema = parameter.getJSONSchema(false)
+  const dv = methods.createJSONDV(schema)
+  const ds = methods.wrapDV(dv)
+  variable.setValue(ds, environment)
+
+  return { variable, parameter }
+}
+
+/**
+ * adds all parameters from a Parameter TypedStore to a domain.
+ * @param {EnvironmentDomain} domain: the domain to add the parameters to.
+ * @param {Environment} environment: the environment in which these parameters are applicable.
+ * @param {Api} api: the api from which to get the Parameter TypedStore.
+ * @returns {TypedStore} a TypedStore of EnvironmentVariables representing parameters.
+ */
+methods.addParametersToDomain = (domain, environment, api) => {
+  const parameters = api.getIn([ 'store', 'parameter' ])
+  const addParameter = currify(methods.addParameterToDomain, domain, environment)
+
+  return parameters.map(addParameter)
+}
+
+/**
+ * converts a BasicAuth into its corresponding DynamicValue
+ * @param {Auth} auth: the basic auth to convert
+ * @returns {DynamicValue} the corresponding DynamicValue
+ */
+methods.convertBasicAuthIntoDynamicValue = (auth) => {
+  return new DynamicValue('com.luckymarmot.BasicAuthDynamicValue', {
+    username: auth.get('username') || '',
+    password: auth.get('password') || ''
+  })
+}
+
+/**
+ * converts a DigestAuth into its corresponding DynamicValue
+ * @param {Auth} auth: the basic auth to convert
+ * @returns {DynamicValue} the corresponding DynamicValue
+ */
+methods.convertDigestAuthIntoDynamicValue = (auth) => {
+  return new DynamicValue('com.luckymarmot.PawExtensions.DigestAuthDynamicValue', {
+    username: auth.get('username') || '',
+    password: auth.get('password') || ''
+  })
+}
+
+/**
+ * converts a OAuth1Auth into its corresponding DynamicValue
+ * @param {Auth} auth: the basic auth to convert
+ * @returns {DynamicValue} the corresponding DynamicValue
+ */
+methods.convertOAuth1AuthIntoDynamicValue = (auth) => {
+  return new DynamicValue('com.luckymarmot.OAuth1HeaderDynamicValue', {
+    callback: auth.get('callback') || '',
+    consumerSecret: auth.get('consumerSecret') || '',
+    tokenSecret: auth.get('tokenSecret') || '',
+    consumerKey: auth.get('consumerKey') || '',
+    algorithm: auth.get('algorithm') || '',
+    nonce: auth.get('nonce') || '',
+    additionalParameters: auth.get('additionalParameters') || '',
+    timestamp: auth.get('timestamp') || '',
+    token: auth.get('token') || ''
+  })
+}
+
+/**
+ * converts a OAuth2Auth into its corresponding DynamicValue
+ * @param {Auth} auth: the basic auth to convert
+ * @returns {DynamicValue} the corresponding DynamicValue
+ *
+ * NOTE: not 100% sure that authorizationCode is equivalent to 'accessCode'. Might be 'password'.
+ */
+methods.convertOAuth2AuthIntoDynamicValue = (auth) => {
+  const grantType = {
+    accessCode: 0,
+    implicit: 1,
+    application: 2,
+    password: 3
+  }
+
+  return new DynamicValue('com.luckymarmot.OAuth2DynamicValue', {
+    authorizationURL: auth.get('authorizationUrl') || '',
+    accessTokenURL: auth.get('tokenUrl') || '',
+    grantType: grantType[auth.get('flow')] || 0,
+    scopes: auth.get('scopes').map(({ key }) => key).join(', ')
+  })
+}
+
+/**
+ * converts an auth in its corresponding DynamicValue depending on the type of the auth.
+ * @param {Auth} auth: the auth to convert
+ * @returns {DynamicValue|''} the corresponding DynamicValue, or an empty string if there are no
+ * equivalent for this auth in Paw.
+ */
+methods.convertAuthIntoDynamicValue = (auth) => {
+  if (auth instanceof Auth.Basic) {
+    return methods.convertBasicAuthIntoDynamicValue(auth)
+  }
+
+  if (auth instanceof Auth.Digest) {
+    return methods.convertDigestAuthIntoDynamicValue(auth)
+  }
+
+  if (auth instanceof Auth.OAuth1) {
+    return methods.convertOAuth1AuthIntoDynamicValue(auth)
+  }
+
+  if (auth instanceof Auth.OAuth2) {
+    return methods.convertOAuth2AuthIntoDynamicValue(auth)
+  }
+
+  return ''
+}
+
+/**
+ * adds an Auth to a domain, as a DynamicString
+ * @param {EnvironmentDomain} domain: the domain to add the auth to.
+ * @param {Environment} environment: the environment in which this auth value is applicable.
+ * @param {Auth} auth: the auth to add to the domain
+ * @param {string} key: the name of the auth
+ * @returns {EnvironmentVariable} the newly created environment variable.
+ */
+methods.addAuthToDomain = (domain, environment, auth, key) => {
+  const variable = domain.createEnvironmentVariable(key)
+  const dv = methods.convertAuthIntoDynamicValue(auth)
+  const ds = methods.wrapDV(dv)
+  variable.setValue(ds, environment)
+
+  return variable
+}
+
+/**
+ * adds all auths from an Auth TypedStore to a domain.
+ * @param {EnvironmentDomain} domain: the domain to add the auths to.
+ * @param {Environment} environment: the environment in which these auths are applicable.
+ * @param {Api} api: the api from which to get the Auth TypedStore.
+ * @returns {TypedStore} a TypedStore of EnvironmentVariables representing auths.
+ */
+methods.addAuthsToDomain = (domain, environment, api) => {
+  const auths = api.getIn([ 'store', 'auth' ])
+  const addAuth = currify(methods.addAuthToDomain, domain, environment)
+
+  return auths.map(addAuth)
+}
+
+/**
+ * adds all shared records (except for Variables) in a standard domain.
+ * @param {EnvironmentDomain} domain: the domain in which to store the shared objects.
+ * @param {Api} api: the api to get the shared objects from.
+ * @returns {Store<*, TypedStore<*, EnvironmentVariable>>} a store containing the corresponding
+ * environment variables for each shared object of the api.
+ */
+methods.addVariablesToStandardDomain = (domain, api) => {
+  const environment = domain.createEnvironment('Default')
+
+  const constraint = methods.addConstraintsToDomain(domain, environment, api)
+  const endpoint = methods.addEndpointsToDomain(domain, environment, api)
+  const parameter = methods.addParametersToDomain(domain, environment, api)
+  const auth = methods.addAuthsToDomain(domain, environment, api)
+
+  return new Store({ constraint, endpoint, parameter, auth })
+}
+
+/**
+ * calculates the size of a potential domain dedicated to Variable records.
+ * @param {Api} api: the api to get the shared variables from.
+ * @returns {integer} the number of shared Variable records.
+ */
+methods.getVariableEnvironmentDomainSize = (api) => api.getIn([ 'store', 'variable' ]).size
+
+/**
+ * tests whether this api needs an environment domain dedicated to Variable records.
+ * @param {Api} api: the api to test.
+ * @returns {boolean} whether this api requires an environment domain for Variables.
+ */
+methods.needsVariableEnvironmentDomain = (api) => {
+  const size = methods.getVariableEnvironmentDomainSize(api)
+
+  return size > 0
+}
+
+/**
+ * updates an environment variable in a domain with a given value, for a given environment name.
+ * @param {EnvironmentDomain} domain: the domain in which the variable is stored.
+ * @param {EnvironmentVariable} variable: the variable to update
+ * @param {string|DynamicString} value: the value to store in the variable
+ * @param {string} envName: the name of the environment in which the value should be stored.
+ * @returns {EnvironmentVariable} the updated variable.
+ */
+methods.updateEnvironmentVariableWithEnvironmentValue = (domain, variable, value, envName) => {
+  let environment = domain.getEnvironmentByName(envName)
+  if (!environment) {
+    environment = domain.createEnvironment(envName)
+  }
+  variable.setValue(value, environment)
+  return variable
+}
+
+/**
+ * converts a Variable record into an environment variable.
+ * @param {EnvironmentDomain} domain: the domain in which the variable is stored.
+ * @param {Variable} variable: the variable record to convert.
+ * @param {string} key: the name of the variable
+ * @returns {EnvironmentVariable} the corresponding environment variable
+ */
+methods.convertVariableIntoEnvironmentVariable = (domain, variable, key) => {
+  const envVariable = domain.createEnvironmentVariable(key)
+  const updateVariable = currify(methods.updateEnvironmentVariableWithEnvironmentValue, domain)
+  return variable.get('values').reduce(updateVariable, envVariable)
+}
+
+/**
+ * adds all shared Variables of an Api into a dedicated domain.
+ * @param {EnvironmentDomain} domain: the domain in which to store the variables.
+ * @param {Api} api: the api to get the variables from.
+ * @returns {Store<*, TypedStore<*, EnvironmentVariable>>} the corresponding store which maps
+ * references to environment variables.
+ */
+methods.addVariablesToVariableDomain = (domain, api) => {
+  const convertVariable = currify(methods.convertVariableIntoEnvironmentVariable, domain)
+  const vars = api.getIn([ 'store', 'variable' ]).map(convertVariable)
+
+  return new Store({
+    variable: vars
+  })
+}
+
+/**
+ * creates and populates all the environment required by this Api.
+ * @param {Context} context: the paw context to import the api in.
+ * @param {Api} api: the api to get the shared objects from
+ * @returns {Store<*, TypedStore<*, EnvironmentVariable>>} the corresponding store that maps
+ * references to environment variables.
+ */
+methods.createEnvironments = (context, api) => {
+  let store = new Store()
+  if (methods.needsStandardEnvironmentDomain(api)) {
+    const domain = methods.createStandardEnvironmentDomain(context, api)
+    store = methods.addVariablesToStandardDomain(domain, api)
+  }
+
+  if (methods.needsVariableEnvironmentDomain(api)) {
+    const domain = methods.createVariableEnvironmentDomain(context, api)
+    const variableStore = methods.addVariablesToVariableDomain(domain, api)
+    store = store.set('variable', variableStore.get('variable'))
+  }
+
+  return store
+}
+
+/**
+ * converts a sequence parameter into a DynamicString with variables for sub parameters.
+ * @param {PawRequest} pawRequest: the paw request to which variables should be bound.
+ * @param {Parameter} param: the sequence parameter to convert.
+ * @returns {DynamicString} the corresponding dynamic string
+ */
+methods.convertSequenceParameterIntoVariableDS = (pawRequest, param) => {
+  const sequence = param.get('value')
+  const parameters = sequence.map((sub, index) => {
+    if (index % 2 === 0) {
+      return sub.generate(true)
+    }
+
+    return methods.convertParameterIntoVariableDS(pawRequest, sub)
+  }).toJS()
+
+  return new DynamicString(...parameters)
+}
+
+// TODO use store to resolve references inside sequence params
+/**
+ * converts a Parameter into a variable.
+ * @param {PawRequest} pawRequest: the paw request to which the variable should be bound.
+ * @param {Parameter} param: the parameter to convert.
+ * @returns {DynamicString} the corresponding dynamic string (that wraps a the variable dv)
+ */
+methods.convertParameterIntoVariableDS = (pawRequest, param) => {
+  if (param.get('superType') === 'sequence') {
+    return methods.convertSequenceParameterIntoVariableDS(pawRequest, param)
+  }
+
+  const schema = param.getJSONSchema(false)
+  const { name, value, description } = methods.getVariableArgumentsFromParameter(param)
+
+  const variable = pawRequest.addVariable(name, value, description)
+  variable.schema = JSON.stringify(schema)
+
+  const ds = variable.createDynamicString()
+  return ds
+}
+
+/**
+ * converts a pathname urlComponent into a DynamicString.
+ * @param {PawRequest} pawRequest: the paw request to which the possible variables should be bound.
+ * @param {URLComponent} pathname: the URLComponent to convert. Note that although this process is
+ * very similar to converting a Parameter, we do not create a variable named `pathname` with this
+ * process, whereas we would with the other.
+ * @returns {string|DynamicString} the corresponding DynamicString
+ */
+methods.convertPathnameIntoDynamicString = (pawRequest, pathname) => {
+  const param = pathname.get('parameter')
+  if (param.get('superType') === 'sequence') {
+    return methods.convertSequenceParameterIntoVariableDS(pawRequest, param)
+  }
+
+  return pathname.generate(List([ '{', '}' ]))
+}
+
+/**
+ * converts an endpoint or a reference into a DynamicString.
+ * @param {Store} store: the store to resolve reference with
+ * @param {URL|Reference} endpoint: the URL or Reference to convert into a DynamicString
+ * @returns {DynamicString} the corresponding dynamic string
+ */
+methods.convertEndpointOrReferenceIntoDS = (store, endpoint) => {
+  if (endpoint instanceof Reference) {
+    const variable = store.getIn([ 'endpoint', endpoint.get('uuid') ])
+    if (variable) {
+      return variable.createDynamicString()
+    }
+    return null
+  }
+
+  return methods.createEndpointDynamicString(endpoint)
+}
+
+/**
+ * converts an array of DynamicStrings representing endpoints into a Variable (selects the 1st as
+ * default value)
+ * @param {PawRequest} pawRequest: the paw request to which the possible variables should be bound.
+ * @param {Array<DynamicString>} endpoints: the array of endpoints that this request can use
+ * @returns {DynamicValue<PawRequestVariable>} the corresponding DynamicValue
+ */
+methods.convertEndpointsDSArrayIntoVariableDV = (pawRequest, endpoints) => {
+  if (endpoints.length === 1) {
+    return endpoints[0]
+  }
+
+  const variable = pawRequest
+    .addVariable('endpoint', endpoints[0], 'the endpoint of this url')
+  variable.schema = JSON.stringify({ type: 'string', enum: endpoints })
+
+  const dv = variable.createDynamicValue()
+  return dv
+}
+
+// TODO deal with case where there's an overlay for the url
+/**
+ * converts a map of endpoints and a path URL record into a DynamicString. This is used to create
+ * the url in Paw.
+ * @param {PawRequest} pawRequest: the paw request to which the possible variable should be bound.
+ * @param {Store} store: the store of environment variables
+ * @param {OrderedMap<*, URL>} endpoints: all the endpoints that this request can use.
+ * @param {URL} path: the URL record representing the pathname of the request.
+ * @returns {DynamicString} the corresponding dynamic string
+ */
+methods.convertEndpointsAndPathnameIntoDS = (pawRequest, store, endpoints, path) => {
+  const pathname = path.get('pathname')
+  const convertEndpointOrReference = currify(methods.convertEndpointOrReferenceIntoDS, store)
+
+  const converted = endpoints
+    .map(convertEndpointOrReference)
+    .filter(value => !!value)
+    .valueSeq()
+    .toJS()
+
+  const dv = methods.convertEndpointsDSArrayIntoVariableDV(pawRequest, converted)
+  const pathDs = methods.convertPathnameIntoDynamicString(pawRequest, pathname)
+
+  return new DynamicString(dv, pathDs)
+}
+
+/**
+ * extracts the default value from a Parameter, as a string
+ * @param {Parameter} parameter: the parameter to extract the default value from
+ * @returns {string} the corresponding value
+ */
+methods.getDefaultValueFromParameter = (parameter) => {
+  const defaultValue = parameter.get('default')
+
+  if (typeof defaultValue === 'string') {
+    return defaultValue
+  }
+  else if (typeof defaultValue !== 'undefined' && defaultValue !== null) {
+    return JSON.stringify(defaultValue)
+  }
+
+  return ''
+}
+
+/**
+ * extracts the name, value and description of a Parameter.
+ * @param {Parameter} parameter: the parameter from which to extract the information
+ * @returns {
+ *   {
+ *     name: string,
+ *     value: string,
+ *     description: string
+ *   }
+ * } the extracted informations
+ */
+methods.getVariableArgumentsFromParameter = (parameter) => {
+  const name = parameter.get('key') || ''
+  const value = methods.getDefaultValueFromParameter(parameter)
+  const schema = parameter.getJSONSchema()
+  const description = parameter.get('description') || schema.description || ''
+
+  return { name, value, description }
+}
+
+/**
+ * converts Parameter from a Reference into a paw variable as a DynamicString
+ * @param {PawRequest} pawRequest: the paw request to which the variable should be bound.
+ * @param {Store} store: the store used to resolve the reference into an EnvironmentVariable
+ * @param {Reference} reference: the reference to resolve to create the paw variable
+ * @returns {Entry<string, string|DynamicString>} the corresponding DynamicString
+ *
+ * NOTE: We have to do this because Paw does not yet have document variables which would allow us
+ * to simply reference them from the reference. What happens right now is that only the schema of
+ * a shared parameter is saved in the environment variable instead of the full parameter.
+ * Consequently, we have to resolve the reference to get the parameter (which is why the updated
+ * TypedStore for parameters stores objects with both the environment variable and the parameter)
+ * and create the variable at the request level, and then use the environment variable in the
+ * schema of the variable.
+ */
+methods.convertParameterFromReference = (pawRequest, store, reference) => {
+  // TODO: use const { parameter, variable } = store.getIn(...) when ready
+  const { parameter } = store.getIn([ 'parameter', reference.get('uuid') ]) || {}
+  if (!parameter) {
+    return { key: '', value: '' }
+  }
+
+  const { name, value, description } = methods.getVariableArgumentsFromParameter(parameter)
+  const variableParam = pawRequest.addVariable(name, value, description)
+  // TODO replace this schema with variable.createDynamicString()
+  variableParam.schema = '{}'
+
+  return { key: name, value: variableParam.createDynamicString() }
+}
+
+/**
+ * converts a Parameter or Reference to one into a DynamicString
+ * @param {PawRequest} pawRequest: the paw request to which variables should be bound, should they
+ * exist.
+ * @param {Store} store: the store used to resolve the reference if parameterOrReference is a
+ * Reference.
+ * @param {Parameter|Reference} parameterOrReference: the record to convert into a DynamicString.
+ * @returns {Entry<*, string|DynamicString>} the corresponding DynamicString, as an Entry
+ */
+methods.convertReferenceOrParameterToDsEntry = (pawRequest, store, parameterOrReference) => {
+  if (parameterOrReference instanceof Reference) {
+    return methods.convertParameterFromReference(pawRequest, store, parameterOrReference)
+  }
+
+  return {
+    key: parameterOrReference.get('key'),
+    value: methods.convertParameterIntoVariableDS(pawRequest, parameterOrReference)
+  }
+}
+
+/**
+ * adds a DynamicString to the header of a request
+ * @param {PawRequest} pawRequest: the paw request to which the header should be added.
+ * @param {string} key: the name of the header
+ * @param {string|DynamicString} value: the value of the header
+ * @returns {PawRequest} the updated pawRequest
+ */
+methods.addHeaderToRequest = (pawRequest, { key, value }) => {
+  pawRequest.addHeader(key, value)
+  return pawRequest
+}
+
+/**
+ * adds headers to a paw request.
+ * @param {PawRequest} pawRequest: the paw request to which the headers should be added.
+ * @param {Store} store: the store to use to resolve reference to Parameters.
+ * @param {ParameterContainer} container: the container that holds all the headers
+ * @returns {PawRequest} the update pawRequest
+ */
+methods.addHeadersToRequest = (pawRequest, store, container) => {
+  const convertHeaderParamOrRef = currify(
+    methods.convertReferenceOrParameterToDsEntry,
+    pawRequest, store
+  )
+  const headers = container.get('headers')
+  return headers
+    .map(convertHeaderParamOrRef)
+    .reduce(methods.addHeaderToRequest, pawRequest)
+}
+
+/**
+ * adds a DynamicString to the url params of a request
+ * @param {PawRequest} pawRequest: the paw request to which the url param should be added.
+ * @param {string} key: the name of the url param
+ * @param {string|DynamicString} value: the value of the url param
+ * @returns {PawRequest} the updated pawRequest
+ */
+methods.addUrlParamToRequest = (pawRequest, { key, value }) => {
+  pawRequest.addUrlParameter(key, value)
+  return pawRequest
+}
+
+/**
+ * adds url params to a paw request.
+ * @param {PawRequest} pawRequest: the paw request to which the url params should be added.
+ * @param {Store} store: the store to use to resolve reference to Parameters.
+ * @param {ParameterContainer} container: the container that holds all the url params
+ * @returns {PawRequest} the update pawRequest
+ */
+methods.addUrlParamsToRequest = (pawRequest, store, container) => {
+  const convertHeaderParamOrRef = currify(
+    methods.convertReferenceOrParameterToDsEntry,
+    pawRequest, store
+  )
+  const urlParams = container.get('queries')
+  return urlParams
+    .map(convertHeaderParamOrRef)
+    .reduce(methods.addUrlParamToRequest, pawRequest)
+}
+
+/**
+ * tests whether a parameter can be used with a multipart/form-data context.
+ * @param {Parameter} parameter: the parameter to test.
+ * @returns {boolean} whether the parameter is usable in a multipart context
+ */
+methods.isParameterValidWithMultiPartContext = (parameter) => parameter.isValid(
+  new Parameter({
+    key: 'Content-Type',
+    default: 'multipart/form-data'
+  })
+)
+
+/**
+ * tests whether a parameter can be used with a urlEncoded context.
+ * @param {Parameter} parameter: the parameter to test.
+ * @returns {boolean} whether the parameter is usable in a urlEncoded context
+ */
+methods.isParameterValidWithUrlEncodedContext = (parameter) => parameter.isValid(
+  new Parameter({
+    key: 'Content-Type',
+    default: 'application/x-www-form-urlencoded'
+  })
+)
+
+/**
+ * tests whether a Parameter is a body or a formData parameter, by checking if it is restrained to
+ * form-data or urlEncoded contexts.
+ * @param {Parameter} parameter: the parameter to test
+ * @return {boolean} true if it is a body param, false otherwise
+ */
+methods.isBodyParameter = (parameter) => {
+  if (parameter.get('in') !== 'body') {
+    return false
+  }
+
+  if (parameter.get('applicableContexts').size === 0) {
+    return true
+  }
+
+  const isFormData = methods.isParameterValidWithMultiPartContext(parameter)
+  const isUrlEncoded = methods.isParameterValidWithUrlEncodedContext(parameter)
+
+  return !isFormData && !isUrlEncoded
+}
+
+// TODO improve that with a JSF DV
+/**
+ * sets the body of request as raw
+ * @param {PawRequest} pawRequest: the paw request whose body should be set.
+ * @param {Map<*, Parameter>} params: the body params that can be used in this context.
+ * @returns {PawRequest} the updated paw request
+ */
+methods.setRawBody = (pawRequest, params) => {
+  const body = params.valueSeq().get(0)
+  pawRequest.body = new DynamicString(
+    new DynamicValue('com.luckymarmot.PawExtensions.JSONSchemaFakerDynamicValue', {
+      schema: JSON.stringify(body.getJSONSchema())
+    })
+  )
+
+  return pawRequest
+}
+
+/**
+ * tests whether a context requires the content type to be url-encoded or not.
+ * @param {Context} context: the context to test
+ * @returns {boolean} returns true if it requires url-encoded Content-Type.
+ */
+methods.isContextWithUrlEncoded = (context) => {
+  return context
+    .get('constraints')
+    .filter((param) => param.get('default') === 'application/x-www-form-urlencoded').size > 0
+}
+
+/**
+ * tests whether a context requires the content type to be multipart or not.
+ * @param {Context} context: the context to test
+ * @returns {boolean} returns true if it requires multipart Content-Type.
+ */
+methods.isContextWithMultiPart = (context) => {
+  return context
+    .get('constraints')
+    .filter((param) => param.get('default') === 'multipart/form-data').size > 0
+}
+
+/**
+ * adds an Entry to a RecordParameter array.
+ * @param {Array<RecordParameter>} kvList: the list of key-value RecordParameters to update.
+ * @param {string} key: the name of the parameter
+ * @param {string|DynamicString} value: the DynamicString corresponding to a parameter
+ * @returns {Array<RecordParameter>} the updated array
+ */
+methods.addEntryToRecordParameterArray = (kvList, { key, value }) => {
+  kvList.push(new RecordParameter(key, value, true))
+  return kvList
+}
+
+/**
+ * sets the body of a request to a urlEncoded or multipart body
+ * @param {PawRequest} pawRequest: the paw request to update
+ * @param {Store} store: the store used to resolve potential references in the params
+ * @param {Parameter|Reference} params: the parameters to add to the body
+ * @param {Context} context: the context in which the body params are set
+ * @returns {PawRequest} the update paw request
+ */
+methods.setFormDataBody = (pawRequest, store, params, context) => {
+  const convertBodyParamOrRef = currify(
+    methods.convertReferenceOrParameterToDsEntry,
+    pawRequest, store
+  )
+
+  const isUrlEncoded = methods.isContextWithUrlEncoded(context)
+  const isFormData = methods.isContextWithMultiPart(context)
+
+  const keyValues = params
+    .map(convertBodyParamOrRef)
+    .reduce(methods.addEntryToRecordParameterArray, [])
+
+  let body = ''
+  if (isFormData) {
+    body = methods.createMultipartBodyDV(keyValues)
+  }
+
+  if (isUrlEncoded) {
+    body = methods.createUrlEncodedBodyDV(keyValues)
+  }
+
+  pawRequest.body = methods.wrapDV(body)
+  return pawRequest
+}
+
+/**
+ * adds body parameters to a paw request
+ * @param {PawRequest} pawRequest: the paw request to update with a body
+ * @param {Store} store: the store to use to resolve potential reference to parameters
+ * @param {ParameterContainer} container: the parameter container that holds all the body parameters
+ * @param {Context} context: the Context record that is being applied to the container
+ * @returns {PawRequest} the updated paw request
+ */
+methods.addBodyToRequest = (pawRequest, store, container, context) => {
+  const bodyParams = container.get('body')
+
+  const rawBodyParams = bodyParams.filter(methods.isBodyParameter)
+  if (rawBodyParams.size > 0) {
+    return methods.setRawBody(pawRequest, rawBodyParams)
+  }
+
+  const formDataParams = bodyParams
+    .filter((param) => !methods.isBodyParameter(param))
+    .valueSeq()
+
+  if (formDataParams.size > 0 && context) {
+    return methods.setFormDataBody(pawRequest, store, formDataParams, context)
+  }
+}
+
+/**
+ * extracts a container from a Request record, as well as the corresponding context if it exists
+ * @param {Request} request: the request to extract the container from
+ * @returns {
+ *   {
+ *     container: ParameterContainer,
+ *     requestContext: Context?
+ *   }
+ * } the corresponding object that holds both the container and its context
+ */
+methods.getContainerFromRequest = (request) => {
+  const context = request.getIn([ 'contexts', 0 ])
+  const container = request.get('parameters')
+  if (context) {
+    return { container: context.filter(container), requestContext: context }
+  }
+
+  return { container }
+}
+
+/**
+ * converts an auth into a DynamicString from a reference.
+ * @param {Store} store: the store to use to resolve the reference
+ * @param {Reference} reference: the reference to an EnvironmentVariable representing an Auth.
+ * @returns {DynamicString} the corresponding DynamicString
+ */
+methods.convertAuthFromReference = (store, reference) => {
+  const variable = store.getIn([ 'auth', reference.get('uuid') ])
+  const ds = variable.createDynamicString()
+  return ds
+}
+
+/**
+ * converts a reference or an auth into a DynamicString Entry.
+ * @param {Store} store: the store used to resolve references
+ * @param {Auth|Reference} authOrReference: the record to convert into a DynamicString
+ * @returns {DynamicString} the corresponding DynamicString
+ */
+methods.convertReferenceOrAuthToDsEntry = (store, authOrReference) => {
+  if (authOrReference instanceof Reference) {
+    return methods.convertAuthFromReference(store, authOrReference)
+  }
+
+  const dv = methods.convertAuthIntoDynamicValue(authOrReference)
+  return methods.wrapDV(dv)
+}
+
+// TODO create Variable DS that has enum with all auth possible
+/**
+ * sets the Auth DynamicString as am Authorization Header.
+ * @param {PawRequest} pawRequest: the paw request to update
+ * @param {DynamicString} auth: the DynamicString representing an auth
+ * @returns {PawRequest} the update paw request
+ */
+methods.addAuthToRequest = (pawRequest, auth) => {
+  pawRequest.setHeader('Authorization', auth)
+  return pawRequest
+}
+
+/**
+ * converts the auths of a request into DynamicStrings and adds them to a paw request.
+ * @param {PawRequest} pawRequest: the paw request to update with all the auths
+ * @param {Store} store: the store to use to resolve references
+ * @param {Request} request: the request to get the auths from
+ * @returns {PawRequest} the updated paw request
+ */
+methods.addAuthsToRequest = (pawRequest, store, request) => {
+  const convertAuthParamOrRef = currify(methods.convertReferenceOrAuthToDsEntry, store)
+  const auths = request.get('auths')
+  return auths
+    .map(convertAuthParamOrRef)
+    .reduce(methods.addAuthToRequest, pawRequest)
+}
+
+/**
+ * converts a request into a paw request
+ * @param {PawContext} context: the paw context in which to create the paw request.
+ * @param {Store} store: the store used to resolve references
+ * @param {URL} path: the URL record representing the path of the method
+ * @param {Request} request: the request to convert
+ * @returns {PawRequest} the newly created request
+ */
+methods.convertRequestIntoPawRequest = (context, store, path, request) => {
+  const pathname = path.toURLObject(List([ '{', '}' ])).pathname
+  const name = request.get('name') || pathname
+  const method = (request.get('method') || 'get').toUpperCase()
+  const endpoints = request.get('endpoints')
+  const description = request.get('description') || ''
+
+  const pawRequest = context.createRequest(name, method, new DynamicString(), description)
+
+  const url = methods.convertEndpointsAndPathnameIntoDS(pawRequest, store, endpoints, path)
+  const { container, requestContext } = methods.getContainerFromRequest(request)
+  methods.addHeadersToRequest(pawRequest, store, container)
+  methods.addUrlParamsToRequest(pawRequest, store, container)
+  methods.addBodyToRequest(pawRequest, store, container, requestContext)
+  methods.addAuthsToRequest(pawRequest, store, request)
+
+
+  pawRequest.url = url
+  return pawRequest
+}
+
+// NOTE: not sure this is the best idea
+/**
+ * Converts a Resource into a RequestGroup of PawRequests
+ * @param {PawContext} context: the context in which to create the resource group
+ * @param {Store} store: the store used to resolve the references
+ * @param {Resource} resource: the resource to convert
+ * @returns {PawRequestGroup} the newly created request group
+ */
+methods.convertResourceIntoGroup = (context, store, resource) => {
+  const path = resource.get('path')
+  const pathname = path.toURLObject(List([ '{', '}' ])).pathname
+  const group = context.createRequestGroup(resource.get('name') || pathname)
+
+  const convertRequest = currify(
+    methods.convertRequestIntoPawRequest,
+    context, store, path
+  )
+
+  return resource.get('methods')
+    .map(convertRequest)
+    .reduce(($group, pawRequest) => {
+      $group.appendChild(pawRequest)
+      return $group
+    }, group)
+}
+
+/**
+ * converts all Resources in an Api into request groups that hold paw requests
+ * @param {PawContext} context: the context in which to extract all the resources as request groups
+ * @param {Store} store: the store to use to resolve references
+ * @param {Api} api: the api to extract all the resources from
+ * @returns {OrderedMap<*, PawRequestGroup>} the corresponding map of paw request groups
+ */
+methods.createRequests = (context, store, api) => {
+  const convertResource = currify(methods.convertResourceIntoGroup, context, store)
+  const resources = api.get('resources').map(convertResource)
+
+  return resources
+}
+
+/**
+ * creates a layout of nested request groups based on the structure inside Group Records.
+ * @param {PawContext} context: the paw context in which this layout should be constructed
+ * @param {OrderedMap<*, PawRequestGroup>} resources: the map of requests groups to insert
+ * @param {Group|PawRequestGroup} group: the group to process to set the layout up.
+ * @param {string} groupName: the name that should be used for the group
+ * @returns {PawRequestGroup?} the corresponding layout of nested paw request groups
+ */
+methods.createGroups = (context, resources, group, groupName) => {
+  if (!group) {
+    return null
+  }
+
+  if (group instanceof Group) {
+    const name = groupName || group.get('name')
+    const children = group.get('children')
+      .map((groupOrRef) => {
+        return methods.createGroups(context, resources, groupOrRef)
+      })
+      .filter(value => !!value)
+
+    if (children.size > 1) {
+      const pawGroup = context.createRequestGroup(name)
+      children.forEach(child => pawGroup.appendChild(child))
+      return pawGroup
+    }
+
+    if (children.size === 1) {
+      return children.valueSeq().get(0)
+    }
+
+    return null
+  }
+
+  const resourceGroup = resources.get(group)
+  return resourceGroup
+}
+
+/**
+ * imports an Api into a PawContext
+ * @param {PawContext} context: the paw context in which the api should be imported
+ * @param {Api} api: the api to convert
+ * @param {Array<Items>} items: the list of items that was passed to the serializer
+ * @param {PawOptions} options: contains a few options that can improve the user experience when
+ * importing in paw.
+ * @returns {boolean} whether the import was successful or not
+ */
+methods.serialize = ({ options: { context } = {}, api } = {}) => {
+  const store = methods.createEnvironments(context, api)
+  const resources = methods.createRequests(context, store, api)
+  methods.createGroups(context, resources, api.get('group'), methods.getTitleFromApi(api))
+  return true
+}
+
+export const __internals__ = methods
+export default PawSerializer

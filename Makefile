@@ -22,6 +22,9 @@ transfer: importers generators
 pack: importers generators
 	sh "$(SCRIPTS)/pack.sh" $(BASE) $(TARGET)
 
+flow-server:
+	./node_modules/.bin/babel-node --expose-gc "$(SCRIPTS)/flow-runner.js"
+
 lint:
 	sh "$(SCRIPTS)/lint.sh" $(BASE)
 

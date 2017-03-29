@@ -1,36 +1,37 @@
-import Immutable from 'immutable'
+import { List, Map, Record } from 'immutable'
 
 import Model from './ModelInfo'
+import ParameterContainer from './ParameterContainer'
 
-import {
-    ParameterContainer
-} from './Core'
-
-import URL from './URL'
-
-
-export default class Request extends Immutable.Record({
-    _model: new Model({
-        name: 'request.models',
-        version: '0.1.0'
-    }),
-    id: null,
-    name: null,
-    description: null,
-    url: new URL(),
-    method: null,
-    parameters: new ParameterContainer(),
-    bodies: Immutable.List(),
-    auths: Immutable.List(),
-    responses: Immutable.List(),
-    timeout: null,
-    tags: Immutable.List()
-}) {
-    getUrl(scheme) {
-        return this.get('url').getUrl(scheme)
-    }
-
-    decomposeUrl(url) {
-        return this.get('url').decomposeUrl(url)
-    }
+/**
+ * Metadata about the Request Record.
+ * Used for internal serialization and deserialization
+ */
+const modelInstance = {
+  name: 'request.models',
+  version: '0.1.0'
 }
+const model = new Model(modelInstance)
+
+/**
+ * Default Spec for the Request Record.
+ */
+const RequestSpec = {
+  _model: model,
+  id: null,
+  endpoints: Map(),
+  name: null,
+  description: null,
+  method: null,
+  parameters: new ParameterContainer(),
+  contexts: List(),
+  auths: List(),
+  responses: Map(),
+  timeout: null,
+  tags: List(),
+  interfaces: Map()
+}
+
+export const Request = Record(RequestSpec)
+
+export default Request

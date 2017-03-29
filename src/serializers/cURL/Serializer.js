@@ -8,927 +8,927 @@ import JSONSchemaReference from '../../models/references/JSONSchema'
 import LateResolutionReference from '../../models/references/LateResolution'
 
 export default class CurlSerializer extends BaseSerializer {
-    serialize(context) {
-        let content = this._formatContent(context)
-        return content
+  serialize(context) {
+    const content = this._formatContent(context)
+    return content
+  }
+
+  validate(text) {
+    if (text.split('\n').length < 10) {
+      return 'generated file of poor quality'
+    }
+  }
+
+  _formatContent(context) {
+    const [ startInfo, endInfo ] = this._formatInfo(context)
+    const group = this._formatGroup(context.get('requests').valueSeq())
+    const references = this._formatReferences(context.get('references'))
+
+    const formatted = [
+      startInfo,
+      group,
+      references,
+      endInfo
+    ].filter(content => {
+      return !!content
+    })
+
+    return formatted.join('\n\n')
+  }
+
+  _formatInfo(context) {
+    const info = context.get('info').toJS()
+
+    const beginFormatted = []
+    const endFormatted = []
+    if (info.title) {
+      beginFormatted.push('# ' + info.title)
+    }
+    else {
+      beginFormatted.push('# API')
     }
 
-    validate(text) {
-        if (text.split('\n').length < 10) {
-            return 'generated file of poor quality'
-        }
+    if (info.description) {
+      beginFormatted.push('## Description\n' + info.description)
     }
 
-    _formatContent(context) {
-        let [ startInfo, endInfo ] = this._formatInfo(context)
-        let group = this._formatGroup(context.get('requests').valueSeq())
-        let references = this._formatReferences(context.get('references'))
-
-        let formatted = [
-            startInfo,
-            group,
-            references,
-            endInfo
-        ].filter(content => {
-            return !!content
-        })
-
-        return formatted.join('\n\n')
+    if (info.tos) {
+      endFormatted.push('## Terms of Service\n' + info.tos)
     }
 
-    _formatInfo(context) {
-        let info = context.get('info').toJS()
-
-        let beginFormatted = []
-        let endFormatted = []
-        if (info.title) {
-            beginFormatted.push('# ' + info.title)
-        }
-        else {
-            beginFormatted.push('# API')
-        }
-
-        if (info.description) {
-            beginFormatted.push('## Description\n' + info.description)
-        }
-
-        if (info.tos) {
-            endFormatted.push('## Terms of Service\n' + info.tos)
-        }
-
-        if (info.contact && Object.keys(info.contact).length > 0) {
-            endFormatted.push(
+    if (info.contact && Object.keys(info.contact).length > 0) {
+      endFormatted.push(
                 this._formatContact(info.contact)
             )
-        }
+    }
 
-        if (info.license && Object.keys(info.license).length > 0) {
-            endFormatted.push(
+    if (info.license && Object.keys(info.license).length > 0) {
+      endFormatted.push(
                 this._formatLicense(info.license)
             )
-        }
-
-        return [ beginFormatted.join('\n\n'), endFormatted.join('\n\n') ]
     }
 
-    _formatContact(contact) {
-        let formatted = [ '## Contact' ]
-        if (contact.name) {
-            formatted.push('- **Name:** ' + contact.name)
-        }
+    return [ beginFormatted.join('\n\n'), endFormatted.join('\n\n') ]
+  }
 
-        if (contact.url) {
-            formatted.push('- **URL:** ' + contact.url)
-        }
-
-        if (contact.email) {
-            formatted.push('- **Email:** ' + contact.email)
-        }
-
-        if (formatted.length < 2) {
-            return ''
-        }
-
-        return formatted.join('\n')
+  _formatContact(contact) {
+    const formatted = [ '## Contact' ]
+    if (contact.name) {
+      formatted.push('- **Name:** ' + contact.name)
     }
 
-    _formatLicense(license) {
-        let formatted = [ '## License' ]
-        if (license.name) {
-            formatted.push('- **Name:** ' + license.name)
-        }
-
-        if (license.url) {
-            formatted.push('- **URL:** ' + license.url)
-        }
-
-        if (formatted.length < 2) {
-            return ''
-        }
-
-        return formatted.join('\n')
+    if (contact.url) {
+      formatted.push('- **URL:** ' + contact.url)
     }
 
-    _formatGroup(requests) {
-        if (!requests || !requests.size) {
-            return ''
-        }
-
-        let formatted = []
-        requests.forEach(request => {
-            let formattedReq = this._formatRequest(request)
-            formatted.push(formattedReq)
-        })
-
-        if (formatted.length > 0) {
-            return '## Requests\n\n' + formatted.join('\n\n')
-        }
-
-        return ''
+    if (contact.email) {
+      formatted.push('- **Email:** ' + contact.email)
     }
 
-    _formatRequest(request) {
-        let formatted = []
-
-        let name = this._formatName(request)
-        formatted.push(name)
-
-        let description = this._formatDescription(request)
-        if (description) {
-            formatted.push(description)
-        }
-
-        let curl = this._formatCurlCommand(request)
-        formatted.push(curl)
-
-        let parameters = this._formatParameterDescriptions(request)
-        if (parameters) {
-            formatted.push(parameters)
-        }
-
-        let authDescription = this._formatAuthDescription(request)
-        if (authDescription) {
-            formatted.push(authDescription)
-        }
-
-        let responses = this._formatResponses(request)
-        if (responses) {
-            formatted.push(responses)
-        }
-
-        return formatted.join('\n\n')
+    if (formatted.length < 2) {
+      return ''
     }
 
-    _formatName(req) {
-        let method = (req.get('method') || 'GET').toUpperCase()
-        let path = this._formatURLBlock(req.get('url'), 'pathname')
+    return formatted.join('\n')
+  }
 
-        if (path) {
-            return '### **' + method + '** - ' + path
-        }
-
-        return '### **' + method + '** - ?'
+  _formatLicense(license) {
+    const formatted = [ '## License' ]
+    if (license.name) {
+      formatted.push('- **Name:** ' + license.name)
     }
 
-    _formatDescription(req) {
-        let description = req.get('description')
-
-        if (description) {
-            return '#### Description\n' + description
-        }
-
-        return ''
+    if (license.url) {
+      formatted.push('- **URL:** ' + license.url)
     }
 
-    _formatCurlCommand(req) {
-        let formatted = []
-        let offset = '    '
+    if (formatted.length < 2) {
+      return ''
+    }
 
-        let url = this._formatURL(req, offset)
-        let method = (req.get('method') || 'GET').toUpperCase()
+    return formatted.join('\n')
+  }
 
-        let curlLine = 'curl -X ' + method + ' ' + url + ' \\'
-        formatted.push(curlLine)
+  _formatGroup(requests) {
+    if (!requests || !requests.size) {
+      return ''
+    }
 
-        let container = req.get('parameters')
-        let bodies = req.get('bodies')
-        if (bodies.size > 0) {
-            container = bodies.get(0).filter(container)
-        }
+    const formatted = []
+    requests.forEach(request => {
+      const formattedReq = this._formatRequest(request)
+      formatted.push(formattedReq)
+    })
 
-        let headers = this._formatHeaders(container, offset)
-        if (headers) {
-            formatted.push(headers)
-        }
+    if (formatted.length > 0) {
+      return '## Requests\n\n' + formatted.join('\n\n')
+    }
 
-        let body = this._formatBody(container, offset)
-        if (body) {
-            formatted.push(body)
-        }
+    return ''
+  }
 
-        let auths = this._formatAuths(req)
-        if (auths) {
-            formatted.push(auths)
-        }
+  _formatRequest(request) {
+    const formatted = []
 
-        return '#### CURL\n\n' +
+    const name = this._formatName(request)
+    formatted.push(name)
+
+    const description = this._formatDescription(request)
+    if (description) {
+      formatted.push(description)
+    }
+
+    const curl = this._formatCurlCommand(request)
+    formatted.push(curl)
+
+    const parameters = this._formatParameterDescriptions(request)
+    if (parameters) {
+      formatted.push(parameters)
+    }
+
+    const authDescription = this._formatAuthDescription(request)
+    if (authDescription) {
+      formatted.push(authDescription)
+    }
+
+    const responses = this._formatResponses(request)
+    if (responses) {
+      formatted.push(responses)
+    }
+
+    return formatted.join('\n\n')
+  }
+
+  _formatName(req) {
+    const method = (req.get('method') || 'GET').toUpperCase()
+    const path = this._formatURLBlock(req.get('url'), 'pathname')
+
+    if (path) {
+      return '### **' + method + '** - ' + path
+    }
+
+    return '### **' + method + '** - ?'
+  }
+
+  _formatDescription(req) {
+    const description = req.get('description')
+
+    if (description) {
+      return '#### Description\n' + description
+    }
+
+    return ''
+  }
+
+  _formatCurlCommand(req) {
+    const formatted = []
+    const offset = '    '
+
+    const url = this._formatURL(req, offset)
+    const method = (req.get('method') || 'GET').toUpperCase()
+
+    const curlLine = 'curl -X ' + method + ' ' + url + ' \\'
+    formatted.push(curlLine)
+
+    let container = req.get('parameters')
+    const bodies = req.get('bodies')
+    if (bodies.size > 0) {
+      container = bodies.get(0).filter(container)
+    }
+
+    const headers = this._formatHeaders(container, offset)
+    if (headers) {
+      formatted.push(headers)
+    }
+
+    const body = this._formatBody(container, offset)
+    if (body) {
+      formatted.push(body)
+    }
+
+    const auths = this._formatAuths(req)
+    if (auths) {
+      formatted.push(auths)
+    }
+
+    return '#### CURL\n\n' +
             '```sh\n' + formatted.join('\n').slice(0, -2) + '\n```'
-    }
+  }
 
-    _formatURLBlock(url, blockName) {
-        let param = url.get(blockName)
-        if (
+  _formatURLBlock(url, blockName) {
+    const param = url.get(blockName)
+    if (
             param &&
             param.get('type') === 'string' &&
             param.get('format') === 'sequence'
         ) {
-            let keyValuePair = this._formatParam(param)
-            return keyValuePair[1]
-        }
-        else {
-            return url.generateParam(blockName)
-        }
+      const keyValuePair = this._formatParam(param)
+      return keyValuePair[1]
+    }
+    else {
+      return url.generateParam(blockName)
+    }
+  }
+
+  _formatURL(req) {
+    const url = req.get('url')
+    const formattedList = []
+    const blocks = [ 'protocol', 'host', 'pathname' ]
+    for (const block of blocks) {
+      const formattedBlock = this._formatURLBlock(url, block)
+      formattedList.push(formattedBlock)
     }
 
-    _formatURL(req) {
-        let url = req.get('url')
-        let formattedList = []
-        let blocks = [ 'protocol', 'host', 'pathname' ]
-        for (let block of blocks) {
-            let formattedBlock = this._formatURLBlock(url, block)
-            formattedList.push(formattedBlock)
-        }
+    const protocol = formattedList[0]
+    const host = formattedList[1]
+    const path = formattedList[2]
 
-        let protocol = formattedList[0]
-        let host = formattedList[1]
-        let path = formattedList[2]
+    let origin = ''
 
-        let origin = ''
-
-        if (protocol || host) {
-            origin += protocol + '://' + host
-        }
-
-        let formatted = origin + path
-
-        let queries = this._formatQueries(req)
-        if (queries) {
-            formatted += '\\\n' + queries
-        }
-
-        return '"' + formatted + '"'
+    if (protocol || host) {
+      origin += protocol + '://' + host
     }
 
-    _formatQueries(req) {
-        let container = req.get('parameters')
-        let bodies = req.get('bodies')
-        if (bodies.size > 0) {
-            container = bodies.get(0).filter(container)
-        }
+    let formatted = origin + path
 
-        let queries = []
-        container.get('queries').forEach(query => {
-            let [ k, v ] = this._formatParam(query, '=', false)
+    const queries = this._formatQueries(req)
+    if (queries) {
+      formatted += '\\\n' + queries
+    }
 
-            let content = ''
-            if (k) {
-                content = encodeURIComponent(k) + '='
-            }
+    return '"' + formatted + '"'
+  }
 
-            let match = v.match(/^\$.*$/)
-            if (match) {
-                content += '$' + encodeURIComponent(v.slice(1))
-            }
-            else {
-                content += encodeURIComponent(v)
-            }
-            queries.push(content)
-        })
+  _formatQueries(req) {
+    let container = req.get('parameters')
+    const bodies = req.get('bodies')
+    if (bodies.size > 0) {
+      container = bodies.get(0).filter(container)
+    }
 
-        let queryLines = []
-        let line = ''
-        for (let query of queries) {
-            let tmp = line + '&' + query
-            if (tmp.length > 80) {
-                queryLines.push(line)
-                line = '&' + query
-            }
-            else {
-                line = tmp
-            }
-        }
+    const queries = []
+    container.get('queries').forEach(query => {
+      const [ k, v ] = this._formatParam(query, '=', false)
 
+      let content = ''
+      if (k) {
+        content = encodeURIComponent(k) + '='
+      }
+
+      const match = v.match(/^\$.*$/)
+      if (match) {
+        content += '$' + encodeURIComponent(v.slice(1))
+      }
+      else {
+        content += encodeURIComponent(v)
+      }
+      queries.push(content)
+    })
+
+    const queryLines = []
+    let line = ''
+    for (const query of queries) {
+      const tmp = line + '&' + query
+      if (tmp.length > 80) {
         queryLines.push(line)
-
-        let formatted = queryLines.join('\\\n')
-
-        if (formatted) {
-            return '?' + formatted.slice(1)
-        }
-        return formatted
+        line = '&' + query
+      }
+      else {
+        line = tmp
+      }
     }
 
-    _formatHeaders(container, offset) {
-        let headers = container.get('headers')
+    queryLines.push(line)
 
-        let formatted = []
-        headers.forEach(param => {
-            let header = this._formatHeader(param)
-            formatted.push(offset + header)
-        })
+    const formatted = queryLines.join('\\\n')
 
-        return formatted.join('\n')
+    if (formatted) {
+      return '?' + formatted.slice(1)
+    }
+    return formatted
+  }
+
+  _formatHeaders(container, offset) {
+    const headers = container.get('headers')
+
+    const formatted = []
+    headers.forEach(param => {
+      const header = this._formatHeader(param)
+      formatted.push(offset + header)
+    })
+
+    return formatted.join('\n')
+  }
+
+  _formatHeader(param) {
+    const [ key, value ] = this._formatParam(param, ': ', false)
+
+    let header
+    if (key) {
+      header = '"' + key + ': ' + value + '"'
+    }
+    else {
+      header = '": ' + value + '"'
     }
 
-    _formatHeader(param) {
-        let [ key, value ] = this._formatParam(param, ': ', false)
+    return '-H ' + header + ' \\'
+  }
 
-        let header
-        if (key) {
-            header = '"' + key + ': ' + value + '"'
-        }
-        else {
-            header = '": ' + value + '"'
-        }
+  _formatBody(container, offset) {
+    const headers = container.getHeadersSet()
 
-        return '-H ' + header + ' \\'
+    const contentType = headers.get('Content-Type')
+
+    let option
+    if (contentType === 'multipart/form-data') {
+      option = '-F'
+    }
+    else {
+      option = '--data-raw'
     }
 
-    _formatBody(container, offset) {
-        let headers = container.getHeadersSet()
+    const body = container.get('body')
 
-        let contentType = headers.get('Content-Type')
+    const formatted = []
+    body.forEach(param => {
+      const kv = this._formatBodyParam(option, param)
+      formatted.push(offset + kv)
+    })
 
-        let option
-        if (contentType === 'multipart/form-data') {
-            option = '-F'
-        }
-        else {
-            option = '--data-raw'
-        }
+    return formatted.join('\n')
+  }
 
-        let body = container.get('body')
-
-        let formatted = []
-        body.forEach(param => {
-            let kv = this._formatBodyParam(option, param)
-            formatted.push(offset + kv)
-        })
-
-        return formatted.join('\n')
+  _formatParam(param, separator = '=', dropBodyKeys = false) {
+    if (!param) {
+      return [ null, '$unnamed' ]
     }
 
-    _formatParam(param, separator = '=', dropBodyKeys = false) {
-        if (!param) {
-            return [ null, '$unnamed' ]
-        }
+    const type = param.get('type')
 
-        let type = param.get('type')
+    if (type === 'reference') {
+      return this._formatReferenceParam(param, separator, dropBodyKeys)
+    }
 
-        if (type === 'reference') {
-            return this._formatReferenceParam(param, separator, dropBodyKeys)
-        }
+    if (type === 'array') {
+      return this._formatArrayParam(param, separator, dropBodyKeys)
+    }
 
-        if (type === 'array') {
-            return this._formatArrayParam(param, separator, dropBodyKeys)
-        }
+    if (type === 'multi') {
+      return this._formatMultiParam(param, separator, dropBodyKeys)
+    }
 
-        if (type === 'multi') {
-            return this._formatMultiParam(param, separator, dropBodyKeys)
-        }
-
-        if (type === 'string' && param.get('format') === 'sequence') {
-            let formatted = this
+    if (type === 'string' && param.get('format') === 'sequence') {
+      const formatted = this
                 ._formatSequenceParam(param, separator, dropBodyKeys)
-            return formatted
-        }
-
-        return this._formatSimpleParam(param, separator, dropBodyKeys)
+      return formatted
     }
 
-    _formatReferenceParam(param, separator = '=', dropBodyKeys = false) {
-        if (!param) {
-            return [ null, '$unnamed' ]
-        }
+    return this._formatSimpleParam(param, separator, dropBodyKeys)
+  }
 
-        let key = param.get('key')
-        let _key = key ? this._escape(key) : null
-
-        let name = param.get('key') || param.get('name') || 'unnamed'
-
-        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
-            _key = null
-        }
-
-        return [ _key, '$' + name ]
+  _formatReferenceParam(param, separator = '=', dropBodyKeys = false) {
+    if (!param) {
+      return [ null, '$unnamed' ]
     }
 
-    _formatArrayParam(param, separator = '=', dropBodyKeys = false) {
-        if (!param) {
-            return [ null, '$unnamed' ]
-        }
+    const key = param.get('key')
+    let _key = key ? this._escape(key) : null
 
-        let key = param.get('key')
-        let _key = key ? this._escape(key) : null
-        let array = param.get('value')
+    const name = param.get('key') || param.get('name') || 'unnamed'
 
-        let formatted = []
-        if (array instanceof Immutable.List) {
-            array.forEach(sub => {
-                let [ k, v ] = this
+    if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+      _key = null
+    }
+
+    return [ _key, '$' + name ]
+  }
+
+  _formatArrayParam(param, separator = '=', dropBodyKeys = false) {
+    if (!param) {
+      return [ null, '$unnamed' ]
+    }
+
+    const key = param.get('key')
+    let _key = key ? this._escape(key) : null
+    const array = param.get('value')
+
+    const formatted = []
+    if (array instanceof Immutable.List) {
+      array.forEach(sub => {
+        const [ k, v ] = this
                 ._formatParam(sub, separator, dropBodyKeys)
 
-                let content
-                if (k) {
-                    content += k + separator
-                }
-
-                content += v
-                formatted.push(content)
-            })
-
-            if (dropBodyKeys && (key === 'body' || key === 'schema')) {
-                _key = null
-            }
-
-            return [ _key, '[ ' + formatted.join(' AND ') + ' ]' ]
+        let content
+        if (k) {
+          content += k + separator
         }
-        else {
-            let _value = _key === null ? '$unnamed' : '$' + _key
-            return [ _key, _value ]
-        }
+
+        content += v
+        formatted.push(content)
+      })
+
+      if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+        _key = null
+      }
+
+      return [ _key, '[ ' + formatted.join(' AND ') + ' ]' ]
+    }
+    else {
+      const _value = _key === null ? '$unnamed' : '$' + _key
+      return [ _key, _value ]
+    }
+  }
+
+  _formatMultiParam(param, separator = '=', dropBodyKeys = false) {
+    if (!param) {
+      return [ null, '(  )' ]
     }
 
-    _formatMultiParam(param, separator = '=', dropBodyKeys = false) {
-        if (!param) {
-            return [ null, '(  )' ]
-        }
+    const key = param.get('key')
+    let _key = key !== null ? this._escape(key) : null
+    let array = param.get('value')
 
-        let key = param.get('key')
-        let _key = key !== null ? this._escape(key) : null
-        let array = param.get('value')
+    const formatted = []
 
-        let formatted = []
+    if (!array) {
+      array = new Immutable.List()
+    }
 
-        if (!array) {
-            array = new Immutable.List()
-        }
-
-        array.forEach(sub => {
-            let [ k, v ] = this
+    array.forEach(sub => {
+      const [ k, v ] = this
                 ._formatParam(sub, separator, dropBodyKeys)
 
-            let content = ''
-            if (k) {
-                content += k + separator
-            }
+      let content = ''
+      if (k) {
+        content += k + separator
+      }
 
-            content += v
-            formatted.push(content)
-        })
+      content += v
+      formatted.push(content)
+    })
 
-        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
-            _key = null
-        }
-
-        return [ _key, '( ' + formatted.join(' OR ') + ' )' ]
+    if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+      _key = null
     }
 
-    _formatSequenceParam(param, separator = '=', dropBodyKeys = false) {
-        if (!param) {
-            return [ null, '$unnamed' ]
-        }
+    return [ _key, '( ' + formatted.join(' OR ') + ' )' ]
+  }
 
-        let key = param.get('key')
-        let _key = key ? this._escape(key) : null
-
-        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
-            _key = null
-        }
-
-        let value = param.get('value')
-        let formatted = []
-        if (value) {
-            value.forEach(sub => {
-                let kvPair = this._formatParam(sub, separator, dropBodyKeys)
-
-                formatted.push(kvPair[1])
-            })
-        }
-
-        let _value = formatted.join('')
-        if (!_value) {
-            _value = _key === null ? '$unnamed' : '$' + _key
-        }
-        return [ _key, _value ]
+  _formatSequenceParam(param, separator = '=', dropBodyKeys = false) {
+    if (!param) {
+      return [ null, '$unnamed' ]
     }
 
-    _formatSimpleParam(param, separator = '=', dropBodyKeys = false) {
-        if (!param) {
-            return [ null, '$unnamed' ]
-        }
+    const key = param.get('key')
+    let _key = key ? this._escape(key) : null
 
-        let key = param.get('key')
-        let _key = key ? this._escape(key) : null
-
-        if (dropBodyKeys && (key === 'body' || key === 'schema')) {
-            _key = null
-        }
-
-        let value = param.get('value')
-        let _value
-        if (!value) {
-            _value = _key === null ? '$unnamed' : '$' + _key
-        }
-        else if (typeof value === 'object') {
-            _value = this._escape(JSON.stringify(value))
-        }
-        else {
-            _value = this._escape(value + '')
-        }
-
-        return [ _key, _value ]
+    if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+      _key = null
     }
 
-    _formatBodyParam(option, param) {
-        let [ key, value ] = this._formatParam(param, '=', true)
+    const value = param.get('value')
+    const formatted = []
+    if (value) {
+      value.forEach(sub => {
+        const kvPair = this._formatParam(sub, separator, dropBodyKeys)
 
-        let _param = key ? '"' + key + '"="' + value + '"' : '"' + value + '"'
-        return option + ' ' + _param + ' \\'
+        formatted.push(kvPair[1])
+      })
     }
 
-    _formatParameterDescriptions(req, headerType = 4) {
-        let headerStr = ''
-        for (let i = 0; i < headerType; i += 1) {
-            headerStr += '#'
-        }
-        let container = req.get('parameters')
-        let bodies = req.get('bodies')
-        if (bodies.size > 0) {
-            container = bodies.get(0).filter(container)
-        }
+    let _value = formatted.join('')
+    if (!_value) {
+      _value = _key === null ? '$unnamed' : '$' + _key
+    }
+    return [ _key, _value ]
+  }
 
-        let hostDescriptions = this._formatHostParams(req)
+  _formatSimpleParam(param, separator = '=', dropBodyKeys = false) {
+    if (!param) {
+      return [ null, '$unnamed' ]
+    }
 
-        let pathDescriptions = []
-        container.get('path').forEach(param => {
-            let formatted = this._formatParamDescription(param)
-            if (formatted) {
-                pathDescriptions.push(formatted)
-            }
-        })
+    const key = param.get('key')
+    let _key = key ? this._escape(key) : null
 
-        let queryDescriptions = []
-        container.get('queries').forEach(param => {
-            let formatted = this._formatParamDescription(param)
-            if (formatted) {
-                queryDescriptions.push(formatted)
-            }
-        })
+    if (dropBodyKeys && (key === 'body' || key === 'schema')) {
+      _key = null
+    }
 
-        let headerDescriptions = []
-        container.get('headers').forEach(param => {
-            let formatted = this._formatParamDescription(param)
-            if (formatted) {
-                headerDescriptions.push(formatted)
-            }
-        })
+    const value = param.get('value')
+    let _value
+    if (!value) {
+      _value = _key === null ? '$unnamed' : '$' + _key
+    }
+    else if (typeof value === 'object') {
+      _value = this._escape(JSON.stringify(value))
+    }
+    else {
+      _value = this._escape(value + '')
+    }
 
-        let bodyDescriptions = []
-        container.get('body').forEach(param => {
-            let formatted = this._formatParamDescription(param)
-            if (formatted) {
-                bodyDescriptions.push(formatted)
-            }
-        })
+    return [ _key, _value ]
+  }
 
-        let formatted = []
-        if (hostDescriptions.length > 0) {
-            let host = headerStr + ' Host Parameters\n\n' +
+  _formatBodyParam(option, param) {
+    const [ key, value ] = this._formatParam(param, '=', true)
+
+    const _param = key ? '"' + key + '"="' + value + '"' : '"' + value + '"'
+    return option + ' ' + _param + ' \\'
+  }
+
+  _formatParameterDescriptions(req, headerType = 4) {
+    let headerStr = ''
+    for (let i = 0; i < headerType; i += 1) {
+      headerStr += '#'
+    }
+    let container = req.get('parameters')
+    const bodies = req.get('bodies')
+    if (bodies.size > 0) {
+      container = bodies.get(0).filter(container)
+    }
+
+    const hostDescriptions = this._formatHostParams(req)
+
+    const pathDescriptions = []
+    container.get('path').forEach(param => {
+      const formatted = this._formatParamDescription(param)
+      if (formatted) {
+        pathDescriptions.push(formatted)
+      }
+    })
+
+    const queryDescriptions = []
+    container.get('queries').forEach(param => {
+      const formatted = this._formatParamDescription(param)
+      if (formatted) {
+        queryDescriptions.push(formatted)
+      }
+    })
+
+    const headerDescriptions = []
+    container.get('headers').forEach(param => {
+      const formatted = this._formatParamDescription(param)
+      if (formatted) {
+        headerDescriptions.push(formatted)
+      }
+    })
+
+    const bodyDescriptions = []
+    container.get('body').forEach(param => {
+      const formatted = this._formatParamDescription(param)
+      if (formatted) {
+        bodyDescriptions.push(formatted)
+      }
+    })
+
+    const formatted = []
+    if (hostDescriptions.length > 0) {
+      const host = headerStr + ' Host Parameters\n\n' +
                 hostDescriptions.join('\n')
-            formatted.push(host)
-        }
-
-        if (pathDescriptions.length > 0) {
-            let path = headerStr + ' Path Parameters\n\n' +
-                pathDescriptions.join('\n')
-            formatted.push(path)
-        }
-
-        if (queryDescriptions.length > 0) {
-            let query = headerStr + ' Query Parameters\n\n' +
-                queryDescriptions.join('\n')
-            formatted.push(query)
-        }
-
-        if (headerDescriptions.length > 0) {
-            let header = headerStr + ' Header Parameters\n\n' +
-                headerDescriptions.join('\n')
-            formatted.push(header)
-        }
-
-        if (bodyDescriptions.length > 0) {
-            let body = headerStr + ' Body Parameters\n\n' +
-                bodyDescriptions.join('\n')
-            formatted.push(body)
-        }
-
-        return formatted.join('\n\n')
+      formatted.push(host)
     }
 
-    _formatHostParams(req) {
-        let hostParams = []
-        let host = req.getIn([ 'url', 'host' ])
+    if (pathDescriptions.length > 0) {
+      const path = headerStr + ' Path Parameters\n\n' +
+                pathDescriptions.join('\n')
+      formatted.push(path)
+    }
 
-        if (
+    if (queryDescriptions.length > 0) {
+      const query = headerStr + ' Query Parameters\n\n' +
+                queryDescriptions.join('\n')
+      formatted.push(query)
+    }
+
+    if (headerDescriptions.length > 0) {
+      const header = headerStr + ' Header Parameters\n\n' +
+                headerDescriptions.join('\n')
+      formatted.push(header)
+    }
+
+    if (bodyDescriptions.length > 0) {
+      const body = headerStr + ' Body Parameters\n\n' +
+                bodyDescriptions.join('\n')
+      formatted.push(body)
+    }
+
+    return formatted.join('\n\n')
+  }
+
+  _formatHostParams(req) {
+    const hostParams = []
+    const host = req.getIn([ 'url', 'host' ])
+
+    if (
             host &&
             host.get('type') === 'string' &&
             host.get('format') === 'sequence'
         ) {
-            let sequence = host.get('value')
-            sequence.forEach(sub => {
-                if (sub.get('key') !== null) {
-                    let formatted = this._formatParamDescription(sub)
-                    if (formatted) {
-                        hostParams.push(formatted)
-                    }
-                }
-            })
+      const sequence = host.get('value')
+      sequence.forEach(sub => {
+        if (sub.get('key') !== null) {
+          const formatted = this._formatParamDescription(sub)
+          if (formatted) {
+            hostParams.push(formatted)
+          }
         }
-
-        return hostParams
+      })
     }
 
-    _formatParamDescription(param) {
-        let name = param.get('key') || param.get('name') || 'unnamed'
+    return hostParams
+  }
 
-        let value = param.getJSONSchema(false, false)
-        delete value['x-title']
+  _formatParamDescription(param) {
+    const name = param.get('key') || param.get('name') || 'unnamed'
 
-        return '- **' + name + '** should respect the following schema:\n\n' +
+    const value = param.getJSONSchema(false, false)
+    delete value['x-title']
+
+    return '- **' + name + '** should respect the following schema:\n\n' +
             '```\n' +
             JSON.stringify(value, null, '  ') + '\n' +
             '```'
-    }
+  }
 
-    _formatAuths(req) {
-        let auths = req.get('auths')
+  _formatAuths(req) {
+    const auths = req.get('auths')
 
-        if (auths.size > 0) {
-            let auth = auths.get(0)
+    if (auths.size > 0) {
+      const auth = auths.get(0)
 
-            if (auth instanceof Auth.Basic) {
-                let username = this._escape(auth.get('username')) || '$username'
-                let password = this._escape(auth.get('password')) || '$password'
-                return '-u "' + username + '":"' + password + '" \\'
-            }
+      if (auth instanceof Auth.Basic) {
+        const username = this._escape(auth.get('username')) || '$username'
+        const password = this._escape(auth.get('password')) || '$password'
+        return '-u "' + username + '":"' + password + '" \\'
+      }
 
-            if (auth instanceof Auth.Digest) {
-                let username = this._escape(auth.get('username')) || '$username'
-                let password = this._escape(auth.get('password')) || '$password'
-                return '--digest -u "' + username + '":"' + password + '" \\'
-            }
+      if (auth instanceof Auth.Digest) {
+        const username = this._escape(auth.get('username')) || '$username'
+        const password = this._escape(auth.get('password')) || '$password'
+        return '--digest -u "' + username + '":"' + password + '" \\'
+      }
 
-            if (auth instanceof Auth.NTLM) {
-                let username = this._escape(auth.get('username')) || '$username'
-                let password = this._escape(auth.get('password')) || '$password'
-                return '--ntlm -u "' + username + '":"' + password + '" \\'
-            }
+      if (auth instanceof Auth.NTLM) {
+        const username = this._escape(auth.get('username')) || '$username'
+        const password = this._escape(auth.get('password')) || '$password'
+        return '--ntlm -u "' + username + '":"' + password + '" \\'
+      }
 
-            if (auth instanceof Auth.Negotiate) {
-                let username = this._escape(auth.get('username')) || '$username'
-                let password = this._escape(auth.get('password')) || '$password'
-                return '--negotiate -u "' + username + '":"' + password + '" \\'
-            }
+      if (auth instanceof Auth.Negotiate) {
+        const username = this._escape(auth.get('username')) || '$username'
+        const password = this._escape(auth.get('password')) || '$password'
+        return '--negotiate -u "' + username + '":"' + password + '" \\'
+      }
 
-            if (auth instanceof Auth.ApiKey) {
-                if (auth.get('in') === 'header') {
-                    let name = this._escape(auth.get('name') || '')
-                    let key = this._escape(auth.get('key') || '')
-                    if (!key) {
-                        key = '$' + name
-                    }
-                    return '-H "' + name + ': ' + key + '" \\'
-                }
-            }
-
-            return ''
+      if (auth instanceof Auth.ApiKey) {
+        if (auth.get('in') === 'header') {
+          const name = this._escape(auth.get('name') || '')
+          let key = this._escape(auth.get('key') || '')
+          if (!key) {
+            key = '$' + name
+          }
+          return '-H "' + name + ': ' + key + '" \\'
         }
-        else {
-            return ''
-        }
+      }
+
+      return ''
     }
+    else {
+      return ''
+    }
+  }
 
-    _formatAuthDescription(req) {
-        let auths = req.get('auths')
+  _formatAuthDescription(req) {
+    const auths = req.get('auths')
 
-        if (auths.size > 0) {
-            let formatted = [ '#### Security\n' ]
-            auths.forEach(auth => {
-                let msg
-                if (auth === null) {
-                    msg = '- No Authentication'
-                }
-                else if (auth instanceof Auth.Basic) {
-                    let username =
+    if (auths.size > 0) {
+      const formatted = [ '#### Security\n' ]
+      auths.forEach(auth => {
+        let msg
+        if (auth === null) {
+          msg = '- No Authentication'
+        }
+        else if (auth instanceof Auth.Basic) {
+          const username =
                         this._escape(auth.get('username')) || '$username'
-                    let password =
+          const password =
                         this._escape(auth.get('password')) || '$password'
-                    msg = '- Basic Authentication'
-                    msg += '\n  - **username**: ' + username
-                    msg += '\n  - **password**: ' + password
-                }
-                else if (auth instanceof Auth.Digest) {
-                    let username =
+          msg = '- Basic Authentication'
+          msg += '\n  - **username**: ' + username
+          msg += '\n  - **password**: ' + password
+        }
+        else if (auth instanceof Auth.Digest) {
+          const username =
                         this._escape(auth.get('username')) || '$username'
-                    let password =
+          const password =
                         this._escape(auth.get('password')) || '$password'
-                    msg = '- Digest Authentication'
-                    msg += '\n  - **username**: ' + username
-                    msg += '\n  - **password**: ' + password
-                }
-                else if (auth instanceof Auth.NTLM) {
-                    let username =
+          msg = '- Digest Authentication'
+          msg += '\n  - **username**: ' + username
+          msg += '\n  - **password**: ' + password
+        }
+        else if (auth instanceof Auth.NTLM) {
+          const username =
                         this._escape(auth.get('username')) || '$username'
-                    let password =
+          const password =
                         this._escape(auth.get('password')) || '$password'
-                    msg = '- NTLM Authentication'
-                    msg += '\n  - **username**: ' + username
-                    msg += '\n  - **password**: ' + password
-                }
-                else if (auth instanceof Auth.Negotiate) {
-                    let username =
+          msg = '- NTLM Authentication'
+          msg += '\n  - **username**: ' + username
+          msg += '\n  - **password**: ' + password
+        }
+        else if (auth instanceof Auth.Negotiate) {
+          const username =
                         this._escape(auth.get('username')) || '$username'
-                    let password =
+          const password =
                         this._escape(auth.get('password')) || '$password'
-                    msg = '- Negotiate Authentication'
-                    msg += '\n  - **username**: ' + username
-                    msg += '\n  - **password**: ' + password
-                }
-                else if (auth instanceof Auth.ApiKey) {
-                    let name = auth.get('name') || '$name'
-                    let key = auth.get('key') || ''
-                    msg = '- API Key Authentication'
-                    msg += '\n  - **location**: ' + auth.get('in')
-                    msg += '\n  - **name**: ' + name
-                    msg += '\n  - **key**: ' + key
-                }
-                else if (auth instanceof Auth.OAuth1) {
-                    let infos = [
-                        'tokenCredentialsUri',
-                        'requestTokenUri',
-                        'authorizationUri'
-                    ]
-
-                    msg = '- OAuth1 Authentication'
-                    for (let info of infos) {
-                        let data = auth.get(info)
-                        if (data) {
-                            msg += '\n  - **' + info + '**: ' + data
-                        }
-                    }
-                }
-                else if (auth instanceof Auth.OAuth2) {
-                    let infos = [
-                        'flow',
-                        'authorizationUrl',
-                        'tokenUrl',
-                        'scopes'
-                    ]
-
-                    msg = '- OAuth2 Authentication'
-                    for (let info of infos) {
-                        let data = auth.get(info)
-                        if (data) {
-                            msg += '\n  - **' + info + '**: ' + data
-                        }
-                    }
-                }
-                else if (auth instanceof Auth.Hawk) {
-                    let infos = [
-                        'id',
-                        'key',
-                        'algorithm'
-                    ]
-
-                    msg = '- Hawk Authentication'
-                    for (let info of infos) {
-                        let data = auth.get(info)
-                        if (data) {
-                            msg += '\n  - **' + info + '**: ' + data
-                        }
-                    }
-                }
-                else if (auth instanceof Auth.AWSSig4) {
-                    let infos = [
-                        'key',
-                        'secret',
-                        'region',
-                        'service'
-                    ]
-
-                    msg = '- AWS Signature 4 Authentication'
-                    for (let info of infos) {
-                        let data = auth.get(info)
-                        if (data) {
-                            msg += '\n  - **' + info + '**: ' + data
-                        }
-                    }
-                }
-                formatted.push(msg)
-            })
-
-            return formatted.join('\n')
+          msg = '- Negotiate Authentication'
+          msg += '\n  - **username**: ' + username
+          msg += '\n  - **password**: ' + password
         }
-        else {
-            return ''
+        else if (auth instanceof Auth.ApiKey) {
+          const name = auth.get('name') || '$name'
+          const key = auth.get('key') || ''
+          msg = '- API Key Authentication'
+          msg += '\n  - **location**: ' + auth.get('in')
+          msg += '\n  - **name**: ' + name
+          msg += '\n  - **key**: ' + key
         }
+        else if (auth instanceof Auth.OAuth1) {
+          const infos = [
+            'tokenCredentialsUri',
+            'requestTokenUri',
+            'authorizationUri'
+          ]
+
+          msg = '- OAuth1 Authentication'
+          for (const info of infos) {
+            const data = auth.get(info)
+            if (data) {
+              msg += '\n  - **' + info + '**: ' + data
+            }
+          }
+        }
+        else if (auth instanceof Auth.OAuth2) {
+          const infos = [
+            'flow',
+            'authorizationUrl',
+            'tokenUrl',
+            'scopes'
+          ]
+
+          msg = '- OAuth2 Authentication'
+          for (const info of infos) {
+            const data = auth.get(info)
+            if (data) {
+              msg += '\n  - **' + info + '**: ' + data
+            }
+          }
+        }
+        else if (auth instanceof Auth.Hawk) {
+          const infos = [
+            'id',
+            'key',
+            'algorithm'
+          ]
+
+          msg = '- Hawk Authentication'
+          for (const info of infos) {
+            const data = auth.get(info)
+            if (data) {
+              msg += '\n  - **' + info + '**: ' + data
+            }
+          }
+        }
+        else if (auth instanceof Auth.AWSSig4) {
+          const infos = [
+            'key',
+            'secret',
+            'region',
+            'service'
+          ]
+
+          msg = '- AWS Signature 4 Authentication'
+          for (const info of infos) {
+            const data = auth.get(info)
+            if (data) {
+              msg += '\n  - **' + info + '**: ' + data
+            }
+          }
+        }
+        formatted.push(msg)
+      })
+
+      return formatted.join('\n')
+    }
+    else {
+      return ''
+    }
+  }
+
+  _formatResponses(request) {
+    const responses = request.get('responses')
+
+    const formatted = []
+    responses.forEach(response => {
+      const formattedResponse = this._formatResponse(response)
+      formatted.push(formattedResponse)
+    })
+
+    if (formatted.length > 0) {
+      return '#### Responses\n\n' + formatted.join('\n\n')
     }
 
-    _formatResponses(request) {
-        let responses = request.get('responses')
+    return ''
+  }
 
-        let formatted = []
-        responses.forEach(response => {
-            let formattedResponse = this._formatResponse(response)
-            formatted.push(formattedResponse)
-        })
+  _formatResponse(response) {
+    const formatted = []
 
-        if (formatted.length > 0) {
-            return '#### Responses\n\n' + formatted.join('\n\n')
-        }
+    const code = response.get('code')
+    let header = '##### Code\n\n- **' + code + '**'
 
-        return ''
+    const description = response.get('description')
+    if (description) {
+      header += ': ' + description
+    }
+    formatted.push(header)
+
+    const headerType = 5
+    const parameters = this._formatParameterDescriptions(response, headerType)
+    if (parameters) {
+      formatted.push(parameters)
     }
 
-    _formatResponse(response) {
-        let formatted = []
+    return formatted.join('\n\n')
+  }
 
-        let code = response.get('code')
-        let header = '##### Code\n\n- **' + code + '**'
+  _formatReferences(references) {
+    const formatted = []
 
-        let description = response.get('description')
-        if (description) {
-            header += ': ' + description
-        }
-        formatted.push(header)
-
-        let headerType = 5
-        let parameters = this._formatParameterDescriptions(response, headerType)
-        if (parameters) {
-            formatted.push(parameters)
-        }
-
-        return formatted.join('\n\n')
+    if (references.size > 0) {
+      formatted.push('## References')
     }
 
-    _formatReferences(references) {
-        let formatted = []
+    references.forEach((container) => {
+      formatted.push(this._formatReferenceContainer(container))
+    })
 
-        if (references.size > 0) {
-            formatted.push('## References')
-        }
+    return formatted.join('\n\n')
+  }
 
-        references.forEach((container) => {
-            formatted.push(this._formatReferenceContainer(container))
-        })
+  _formatReferenceContainer(container) {
+    const formatted = []
+    const cache = container.get('cache')
 
-        return formatted.join('\n\n')
-    }
-
-    _formatReferenceContainer(container) {
-        let formatted = []
-        let cache = container.get('cache')
-
-        if (cache.size > 0) {
-            let name =
+    if (cache.size > 0) {
+      const name =
                 container.get('name') ||
                 container.get('id') ||
                 'Container'
-            let header = '### ' + name
-            formatted.push(header)
-        }
-
-        cache.forEach((value, uri) => {
-            let resolved = container.resolve(uri)
-            formatted.push(this._formatReference(resolved))
-        })
-
-        return formatted.join('\n\n')
+      const header = '### ' + name
+      formatted.push(header)
     }
 
-    _formatReference(reference) {
-        let value = reference.get('value')
-        let relative = reference.get('relative') || reference.get('uri')
+    cache.forEach((value, uri) => {
+      const resolved = container.resolve(uri)
+      formatted.push(this._formatReference(resolved))
+    })
 
-        let content = ''
-        if (reference instanceof JSONSchemaReference) {
-            value = reference.toJSONSchema()
-            content = '```\n' + JSON.stringify(value, null, '  ') + '\n```'
-        }
-        else if (reference instanceof LateResolutionReference) {
-            content =
+    return formatted.join('\n\n')
+  }
+
+  _formatReference(reference) {
+    let value = reference.get('value')
+    const relative = reference.get('relative') || reference.get('uri')
+
+    let content = ''
+    if (reference instanceof JSONSchemaReference) {
+      value = reference.toJSONSchema()
+      content = '```\n' + JSON.stringify(value, null, '  ') + '\n```'
+    }
+    else if (reference instanceof LateResolutionReference) {
+      content =
                 'Replace `{{.*}}` by the corresponding ' +
                 'reference in this doc.\n' +
                 '```\n' + value + '\n```'
-        }
-        else {
-            content = '```\n' + value + '\n```'
-        }
-
-        return '#### ' + relative + '\n' + content
+    }
+    else {
+      content = '```\n' + value + '\n```'
     }
 
+    return '#### ' + relative + '\n' + content
+  }
+
     // NOTE: not sure this works as expected
-    _escape(string) {
-        if (typeof string === 'string') {
-            return string
+  _escape(string) {
+    if (typeof string === 'string') {
+      return string
                 .replace(/\\/, '\\')
                 .replace(/\$/, '\$')
                 .replace(/"/, '\"')
-        }
-        else {
-            return string
-        }
     }
+    else {
+      return string
+    }
+  }
 }

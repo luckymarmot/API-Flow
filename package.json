@@ -22,9 +22,10 @@
     "babel-plugin-transform-flow-strip-types": "6.3.15",
     "babel-polyfill": "6.3.14",
     "babel-runtime": "6.3.19",
-    "immutable": "3.7.6",
+    "immutable": "^3.8.1",
     "js-yaml": "3.5.5",
     "json-schema-faker": "^0.3.7",
+    "raml-1-parser": "^1.1.14",
     "raml-parser": "0.8.16",
     "request": "^2.72.0",
     "swagger-schema-official": "2.0.0-bab6bed",
@@ -46,12 +47,20 @@
     "babel-preset-stage-3": "6.3.13",
     "babel-register": "6.3.13",
     "chai": "3.4.1",
+    "chokidar": "^1.6.1",
+    "colors": "^1.1.2",
+    "diff": "^3.2.0",
     "eslint": "^3.3.1",
     "eslint-loader": "^1.5.0",
+    "eslint-plugin-flowtype": "^2.29.1",
+    "expect": "^1.20.2",
+    "flow-bin": "^0.36.0",
     "json-loader": "0.5.4",
     "mocha": "2.3.4",
-    "path": "0.12.7",
-    "webpack": "1.12.9"
+    "seedrandom": "^2.4.2",
+    "uglify-js": "^2.7.5",
+    "uglifyjs-webpack-plugin": "^0.2.1",
+    "webpack": "2.x"
   },
   "eslintConfig": {
     "extends": "./linting/prod.yaml"
@@ -61,7 +70,7 @@
     "compile-node": "TARGET=node ./node_modules/webpack/bin/webpack.js",
     "compile-web": "TARGET=web ./node_modules/webpack/bin/webpack.js",
     "compile-worker": "TARGET=webworker ./node_modules/webpack/bin/webpack.js",
-    "test": "$npm_package_options_mocha \"src/**/__tests__/*-test.js\"",
+    "test": "$npm_package_options_mocha \"src/**/__tests__/*.spec.js\"",
     "validate": "node validate.js",
     "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
   },
