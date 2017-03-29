@@ -236,7 +236,7 @@ methods.createRequestUrl = (api, resource, request) => {
       }
 
       const key = param.get('key')
-      const value = param.getJSONSchema().default || null
+      const value = param.getJSONSchema().default || ''
 
       return key + '=' + value
     })
