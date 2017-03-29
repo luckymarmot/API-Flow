@@ -4,6 +4,7 @@ import yaml from 'js-yaml'
 import { currify, flatten, entries, convertEntryListInMap } from '../../../utils/fp-utils'
 import Auth from '../../../models/Auth'
 import Reference from '../../../models/Reference'
+import URL from '../../../models/URL'
 
 const __meta__ = {
   format: 'raml',
@@ -717,11 +718,22 @@ methods.extractVersionFromApi = (api) => {
 methods.extractBaseUriFromApi = (api) => {
   const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
 
+  let baseUriEndpoint = endpoint
   if (!endpoint) {
-    return null
+    const variable = api.getIn([ 'store', 'variable' ]).valueSeq().get(0)
+    if (!variable) {
+      return null
+    }
+
+    const firstValue = variable.get('values').valueSeq().get(0)
+    if (!firstValue) {
+      return null
+    }
+
+    baseUriEndpoint = new URL({ url: firstValue })
   }
 
-  const url = endpoint.generate(List([ '{', '}' ]))
+  const url = baseUriEndpoint.generate(List([ '{', '}' ]))
 
   if (!url) {
     return null
@@ -799,13 +811,24 @@ methods.convertParameterIntoNamedParameter = (coreInfoMap, param) => {
 methods.extractBaseUriParametersFromApi = (coreInfoMap, api) => {
   const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
 
+  let baseUriEndpoint = endpoint
   if (!endpoint) {
-    return null
+    const variable = api.getIn([ 'store', 'variable' ]).valueSeq().get(0)
+    if (!variable) {
+      return null
+    }
+
+    const firstValue = variable.get('values').valueSeq().get(0)
+    if (!firstValue) {
+      return null
+    }
+
+    baseUriEndpoint = new URL({ url: firstValue })
   }
 
   const urlComponentNames = [ 'hostname', 'port', 'pathname' ]
   const params = urlComponentNames
-    .map(name => methods.extractParametersFromURLComponent(endpoint.get(name)))
+    .map(name => methods.extractParametersFromURLComponent(baseUriEndpoint.get(name)))
     .filter(v => !!v)
     .reduce(flatten, [])
     .map((param) => methods.convertParameterIntoNamedParameter(coreInfoMap, param))
@@ -829,11 +852,22 @@ methods.extractBaseUriParametersFromApi = (coreInfoMap, api) => {
 methods.extractProtocolsFromApi = (api) => {
   const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
 
+  let baseUriEndpoint = endpoint
   if (!endpoint) {
-    return null
+    const variable = api.getIn([ 'store', 'variable' ]).valueSeq().get(0)
+    if (!variable) {
+      return null
+    }
+
+    const firstValue = variable.get('values').valueSeq().get(0)
+    if (!firstValue) {
+      return null
+    }
+
+    baseUriEndpoint = new URL({ url: firstValue })
   }
 
-  const protocols = endpoint.get('protocol')
+  const protocols = baseUriEndpoint.get('protocol')
   if (!protocols || !protocols.size) {
     return null
   }
