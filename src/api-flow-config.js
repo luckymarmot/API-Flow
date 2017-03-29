@@ -11,6 +11,7 @@ import InternalParser from './parsers/internal/Parser'
 import SwaggerV2Serializer from './serializers/swagger/v2.0/Serializer'
 import RAMLV1Serializer from './serializers/raml/v1.0/Serializer'
 import InternalSerializer from './serializers/internal/Serializer'
+import PostmanV2Serializer from './serializers/postman/v2.0/Serializer'
 
 export const loaders = [
   SwaggerLoader,
@@ -27,7 +28,8 @@ export const parsers = [
 export const serializers = [
   SwaggerV2Serializer,
   RAMLV1Serializer,
-  InternalSerializer
+  InternalSerializer,
+  PostmanV2Serializer
 ]
 
 export const environment = Environment

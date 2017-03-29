@@ -47,15 +47,11 @@ export class DefaultApiFlow {
 
 // TODO implement this
 methods.findPrimaryUri = ({ items }) => {
-  if (items.length === 1) {
-    return items[0].uri
-  }
-
   const candidate = items
     .filter(item => loaders.filter(loader => loader.isParsable(item)).length > 0)[0]
 
   if (!candidate) {
-    throw new Error('could not find a suitable candidate to act as a primary file for the parsing')
+    return null
   }
 
   return candidate.uri
