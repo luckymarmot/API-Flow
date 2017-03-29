@@ -31,10 +31,8 @@ import { List, Map } from 'immutable'
 import Group from '../../../models/Group'
 import Reference from '../../../models/Reference'
 import Auth from '../../../models/Auth'
-// import Parameter from '../../../models/Parameter'
-// import URL from '../../../models/URL'
 
-import { entries, convertEntryListInMap } from '../../../utils/fp-utils'
+import { convertEntryListInMap } from '../../../utils/fp-utils'
 
 const __meta__ = {
   format: 'postman',
@@ -42,14 +40,6 @@ const __meta__ = {
 }
 
 const methods = {}
-
-// TODO move this to a better place
-methods.getKeysFromRecord = (keyMap, record) => {
-  return entries(keyMap)
-    .map(({ key, value }) => ({ key, value: record.get(value) }))
-    .filter(({ value }) => typeof value !== 'undefined' && value !== null)
-    .reduce(convertEntryListInMap, {})
-}
 
 export class PostmanSerializer {
   static __meta__ = __meta__
@@ -185,7 +175,7 @@ methods.getEndpointFromVariable = (variable) => {
     return null
   }
 
-  const url = variable.get('values').valueSeq().get(0)
+  const url = variable.get('values').valueSeq().get(0) || null
   return url
 }
 
@@ -199,6 +189,81 @@ methods.getEndpointFromReference = (api, reference) => {
   const uuid = reference.get('uuid')
 
   return api.getIn([ 'store', type, uuid ]) || null
+}
+
+methods.extractQueryKeyValuePairFromReference = (api, reference) => {
+  const resolved = api.getIn([ 'store', 'parameter', reference.get('uuid') ])
+
+  if (!resolved) {
+    return null
+  }
+
+  const key = resolved.get('key')
+  const value = '{{' + reference.get('uuid') + '}}'
+  return key + '=' + value
+}
+
+methods.extractQueryKeyValuePairFromParameter = (param) => {
+  const key = param.get('key')
+  const value = param.getJSONSchema().default || ''
+
+  return key + '=' + value
+}
+
+methods.extractQueryKeyValuePairFromParameterOrReference = (api, param) => {
+  if (param instanceof Reference) {
+    return methods.extractQueryKeyValuePairFromReference(api, param)
+  }
+
+  return methods.extractQueryKeyValuePairFromParameter(param)
+}
+
+methods.extractQueryStringFromRequest = (api, request) => {
+  const queryString = request.getIn([ 'parameters', 'queries' ])
+    .map(param => {
+      return methods.extractQueryKeyValuePairFromParameterOrReference(api, param)
+    })
+    .filter(v => !!v)
+    .valueSeq()
+    .toJS()
+    .join('&')
+
+  if (queryString === '') {
+    return queryString
+  }
+
+  return '?' + queryString
+}
+
+methods.combineUrlComponents = (baseUrl, path, queryString) => {
+  if (baseUrl[baseUrl.length - 1] === '/' && path[0] === '/' || path === '/') {
+    const url = baseUrl + path.slice(1)
+    return { key: 'url', value: url + queryString }
+  }
+
+  const url = baseUrl + path
+  return { key: 'url', value: url + queryString }
+}
+
+methods.extractBaseUrlFromEndpoint = (endpoint) => {
+  const baseUrl = typeof endpoint === 'string' ?
+    endpoint :
+    endpoint.generate(List([ '{{', '}}' ]))
+
+  return baseUrl
+}
+
+methods.extractPathFromResource = (resource) => {
+  const pathname = resource.getIn([ 'path', 'pathname' ])
+
+  if (!pathname) {
+    return '/'
+  }
+
+  const path = pathname
+    .generate(List([ ':', '' ]))
+
+  return path
 }
 
 /**
@@ -223,40 +288,11 @@ methods.createRequestUrl = (api, resource, request) => {
     return null
   }
 
-  const baseUrl = typeof endpoint === 'string' ? endpoint : endpoint.generate(List([ '{{', '}}' ]))
-  const path = resource.getIn([ 'path', 'pathname' ]).generate(List([ ':', '' ]))
+  const baseUrl = methods.extractBaseUrlFromEndpoint(endpoint)
+  const path = methods.extractPathFromResource(resource)
+  const queryString = methods.extractQueryStringFromRequest(api, request)
 
-  const queryParameters = request.getIn([ 'parameters', 'queries' ])
-    .map(param => {
-      if (param instanceof Reference) {
-        const resolved = api.getIn([ 'store', 'parameter', param.get('uuid') ])
-        const key = resolved.get('key')
-        const value = '{{' + param.get('uuid') + '}}'
-        return key + '=' + value
-      }
-
-      const key = param.get('key')
-      const value = param.getJSONSchema().default || ''
-
-      return key + '=' + value
-    })
-    .valueSeq()
-    .toJS()
-    .join('&')
-
-  let url = null
-  if (baseUrl[baseUrl.length - 1] === '/' && path[0] === '/' || path === '/') {
-    url = baseUrl + path.slice(1)
-  }
-  else {
-    url = baseUrl + path
-  }
-
-  if (!queryParameters) {
-    return { key: 'url', value: url }
-  }
-
-  return { key: 'url', value: url + '?' + queryParameters }
+  return methods.combineUrlComponents(baseUrl, path, queryString)
 }
 
 /**
