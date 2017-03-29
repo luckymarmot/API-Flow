@@ -33,6 +33,7 @@ import Constraint from '../../../models/Constraint'
 import Reference from '../../../models/Reference'
 import Auth from '../../../models/Auth'
 import Parameter from '../../../models/Parameter'
+import URL from '../../../models/URL'
 
 import { currify, entries, convertEntryListInMap, flatten } from '../../../utils/fp-utils'
 
@@ -297,7 +298,22 @@ methods.getMostCommonEndpoint = (api) => {
     .countBy(v => v)
     .reduce((best, value, key) => best.value > value ? best : { key, value }, {})
 
-  return api.getIn([ 'store', 'endpoint', bestEntry.key ]) || null
+  const sharedEndpoint = api.getIn([ 'store', 'endpoint', bestEntry.key ])
+  if (sharedEndpoint) {
+    return sharedEndpoint
+  }
+
+  const sharedVariable = api.getIn([ 'store', 'variable', bestEntry.key ])
+  if (!sharedVariable) {
+    return null
+  }
+
+  const firstValueInVariable = sharedVariable.get('values').valueSeq().get(0)
+  if (!firstValueInVariable) {
+    return null
+  }
+
+  return new URL({ url: firstValueInVariable })
 }
 
 /**
