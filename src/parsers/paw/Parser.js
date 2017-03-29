@@ -759,6 +759,8 @@ methods.extractResourceFromPawRequest = (context, reference, { request, pathComp
   return {
     key: request.id,
     value: new Resource({
+      name: (request.parent || {}).name || null,
+      description: (request.parent || {}).description || null,
       endpoints: OrderedMap(endpoints),
       path: path,
       methods: methods.extractRequestMapFromPawRequest(context, request, endpoints)
