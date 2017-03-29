@@ -259,8 +259,9 @@ methods.createEndpointDynamicString = (endpoint) => {
   const port = methods.convertURLComponentToDynamicString(endpoint.get('port'))
   const portDots = port ? ':' : ''
   const pathname = methods.convertURLComponentToDynamicString(endpoint.get('pathname'))
+  const cleanPathname = pathname[pathname.length - 1] === '/' ? pathname.slice(0, -1) : pathname
 
-  return new DynamicString(protocol, slashes, hostname, portDots, port, pathname)
+  return new DynamicString(protocol, slashes, hostname, portDots, port, cleanPathname)
 }
 
 /**
