@@ -4,9 +4,8 @@ const config = {
   target: 'web',
   entry: path.resolve(__dirname, './api-flow.js'),
   output: {
-    path: path.resolve(__dirname, '../../../dist/node/'),
+    path: path.resolve(__dirname, '../../../dist/web/'),
     filename: 'api-flow.js',
-    library: 'api-flow',
     libraryTarget: 'umd'
   },
   module: {
@@ -18,14 +17,15 @@ const config = {
   },
   resolve: {
     alias: {
-      'api-flow-config$': path.resolve(__dirname, './api-flow-config.js')
+      'api-flow-config$': path.resolve(__dirname, './api-flow-config.js'),
+      'raml-1-parser': path.resolve(__dirname, './raml-1-parser.js')
     }
   },
   node: {
-    fs: false,
-    request: false,
-    net: false,
-    tls: false
+    fs: 'empty',
+    request: 'empty',
+    net: 'empty',
+    tls: 'empty'
   }
 }
 module.exports = config
