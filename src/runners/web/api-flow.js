@@ -1,3 +1,3 @@
-import ApiFlow from '../../api-flow'
+import flow from '../../api-flow'
 
-export default ApiFlow
+export const ApiFlow = flow
