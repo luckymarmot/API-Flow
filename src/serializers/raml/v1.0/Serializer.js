@@ -1052,6 +1052,13 @@ methods.extractTraitsFromParameters = (mediaTypeUUID, coreInfoMap, api) => {
   return traits.valueSeq().toJS()
 }
 
+/**
+ * extracts a MethodBase from a response
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary to
+ * convert a schema into a RamlDataType
+ * @param {Response} response: the response to convert into a MethodBase
+ * @returns {RAMLMethodBase} the corresponding RAMLMethodBase, if it exists
+ */
 methods.extractMethodBaseFromResponse = (coreInfoMap, response) => {
   const responseEntry = methods.extractResponsesFromRequest(coreInfoMap, OrderedMap({
     responses: OrderedMap({
@@ -1066,9 +1073,15 @@ methods.extractMethodBaseFromResponse = (coreInfoMap, response) => {
   return { [responseEntry.key]: responseEntry.value }
 }
 
+/**
+ * extract Traits from shared responses
+ * @param {Map<string, coreInfo>} coreInfoMap: a Map of coreInfo that holds all that is necessary to
+ * convert a schema into a RamlDataType
+ * @param {Api} api: the api from which to get the shared responses
+ * @returns {Array<RAMLMethodBase>} the corresponding array of traits
+ */
 methods.extractTraitsFromSharedResponses = (coreInfoMap, api) => {
   const responses = api.getIn([ 'store', 'response' ])
-  console.log('shared responses', responses)
   const traits = responses
     .map((response, key) => ({
       key: 'response_' + key,
@@ -1741,6 +1754,11 @@ methods.extractTraitsFromRequestParameters = (mediaTypeUUID, request) => {
   return [].concat(headerTraits, queryParamTraits, bodyTraits)
 }
 
+/**
+ * extracts TraitRefs from the responses of a request
+ * @param {Request} request: the request to extract the response trait references from
+ * @returns {Seq<string>} the corresponding TraitRefs
+ */
 methods.extractTraitsFromResponses = (request) => {
   const responses = request.get('responses')
     .filter(response => response instanceof Reference)
