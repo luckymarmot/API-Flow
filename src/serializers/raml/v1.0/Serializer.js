@@ -1,4 +1,4 @@
-import { List } from 'immutable'
+import { List, OrderedMap } from 'immutable'
 import yaml from 'js-yaml'
 
 import { currify, flatten, entries, convertEntryListInMap } from '../../../utils/fp-utils'
@@ -1052,6 +1052,33 @@ methods.extractTraitsFromParameters = (mediaTypeUUID, coreInfoMap, api) => {
   return traits.valueSeq().toJS()
 }
 
+methods.extractMethodBaseFromResponse = (coreInfoMap, response) => {
+  const responseEntry = methods.extractResponsesFromRequest(coreInfoMap, OrderedMap({
+    responses: OrderedMap({
+      [response.get('code')]: response
+    })
+  }))
+
+  if (!responseEntry) {
+    return null
+  }
+
+  return { [responseEntry.key]: responseEntry.value }
+}
+
+methods.extractTraitsFromSharedResponses = (coreInfoMap, api) => {
+  const responses = api.getIn([ 'store', 'response' ])
+  console.log('shared responses', responses)
+  const traits = responses
+    .map((response, key) => ({
+      key: 'response_' + key,
+      value: methods.extractMethodBaseFromResponse(coreInfoMap, response)
+    }))
+    .filter(({ key, value }) => !!key && !!value)
+
+  return traits.valueSeq().toJS()
+}
+
 /**
  * extracts all possible Traits from an Api, with the help of a coreInfo map and of the global
  * mediaTypeUUID. This is done to represent shared Parameters (which do not have an exact match in
@@ -1067,12 +1094,13 @@ methods.extractTraitsFromParameters = (mediaTypeUUID, coreInfoMap, api) => {
 methods.extractTraitsFromApi = (mediaTypeUUID, coreInfoMap, api) => {
   const itfsTraits = methods.extractTraitsFromInterfaces(mediaTypeUUID, coreInfoMap, api) || []
   const paramTraits = methods.extractTraitsFromParameters(mediaTypeUUID, coreInfoMap, api) || []
+  const responseTraits = methods.extractTraitsFromSharedResponses(coreInfoMap, api) || []
 
-  if (!itfsTraits.length && !paramTraits.length) {
+  if (!itfsTraits.length && !paramTraits.length && !responseTraits.length) {
     return null
   }
 
-  const traits = [].concat(itfsTraits || [], paramTraits || [])
+  const traits = [].concat(itfsTraits, paramTraits, responseTraits)
 
   const traitMap = traits.reduce(convertEntryListInMap, {})
 
@@ -1713,6 +1741,15 @@ methods.extractTraitsFromRequestParameters = (mediaTypeUUID, request) => {
   return [].concat(headerTraits, queryParamTraits, bodyTraits)
 }
 
+methods.extractTraitsFromResponses = (request) => {
+  const responses = request.get('responses')
+    .filter(response => response instanceof Reference)
+    .map(reference => 'response_' + (reference.get('uuid') || '').split('/').slice(-1))
+    .valueSeq()
+
+  return responses
+}
+
 /**
  * extracts the RAML `is` field from a Request
  * @param {string?} mediaTypeUUID: the uuid of the globalMediaType. Used to filter out the unwanted
@@ -1727,12 +1764,13 @@ methods.extractIsFromRequest = (mediaTypeUUID, request) => {
     .valueSeq()
 
   const paramTraits = methods.extractTraitsFromRequestParameters(mediaTypeUUID, request)
+  const responseTraits = methods.extractTraitsFromResponses(request)
 
-  if (!traits.size && !paramTraits.length) {
+  if (!traits.size && !paramTraits.length && !responseTraits.size) {
     return null
   }
 
-  return { key: 'is', value: [].concat(traits.toJS(), paramTraits) }
+  return { key: 'is', value: [].concat(traits.toJS(), paramTraits, responseTraits.toJS()) }
 }
 
 // TODO deal with overlay
@@ -1841,6 +1879,7 @@ methods.extractResponseFromResponseRecord = (coreInfoMap, response) => {
  */
 methods.extractResponsesFromRequest = (coreInfoMap, request) => {
   const responses = request.get('responses')
+    .filter(response => !(response instanceof Reference))
     .map(response => {
       const code = response.get('code')
       const key = parseInt(code, 10) ? code : '200'

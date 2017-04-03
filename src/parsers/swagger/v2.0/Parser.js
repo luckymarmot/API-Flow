@@ -1631,7 +1631,7 @@ methods.getSimpleStore = (swagger = {}) => {
     endpoint: new OrderedMap(sharedEndpoints),
     constraint: new OrderedMap(sharedConstraints),
     parameter: new OrderedMap(sharedParameters),
-    responses: new OrderedMap(sharedResponses),
+    response: new OrderedMap(sharedResponses),
     auth: new OrderedMap(sharedAuths),
     interface: new OrderedMap(interfaces)
   })

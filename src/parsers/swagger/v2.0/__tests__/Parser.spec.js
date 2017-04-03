@@ -2697,7 +2697,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       const expected = new Store({
         endpoint: OrderedMap({ a: 123 }),
         parameter: OrderedMap({ b: 234 }),
-        responses: OrderedMap({ c: 345 }),
+        response: OrderedMap({ c: 345 }),
         auth: OrderedMap({ e: 567 }),
         interface: OrderedMap({ f: 678, d: 456 })
       })
