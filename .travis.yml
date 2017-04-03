@@ -1,7 +1,7 @@
 language: node_js
-before_script:
-- make lint
-install:
-- make configure
-test:
-- make test
+env:
+  - TEST_TARGET=lint
+  - TEST_TARGET=unit
+  - TEST_TARGET=e2e
+script:
+  - make test
