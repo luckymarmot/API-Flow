@@ -155,6 +155,13 @@ methods.createItemDescription = (groupOrResource) => {
   return { key: 'description', value: description }
 }
 
+/**
+ * extracts an endpoint out of a resource and a request, preferring the one from the request to the
+ * one from the resource
+ * @param {Resource} resource: the resource to get an endpoint from
+ * @param {Request} request: the request to get an endpoint from
+ * @returns {Endpoint?} the corresponding endpoint, if it exists
+ */
 methods.getEndpointOrReferenceFromResourceAndRequest = (resource, request) => {
   const requestEndpoint = request.get('endpoints').valueSeq().get(0)
   const resourceEndpoint = resource.get('endpoints').valueSeq().get(0)
@@ -170,6 +177,11 @@ methods.getEndpointOrReferenceFromResourceAndRequest = (resource, request) => {
   return null
 }
 
+/**
+ * extracts an endpoint url from a shared variable
+ * @param {Variable} variable: the variable to convert into an endpoint url
+ * @returns {string?} the corresponding url, if it exists
+ */
 methods.getEndpointFromVariable = (variable) => {
   if (!variable) {
     return null
@@ -179,6 +191,12 @@ methods.getEndpointFromVariable = (variable) => {
   return url
 }
 
+/**
+ * extracts an endpoint or an endpoint url from a reference (by fetching it in the store)
+ * @param {Api} api: the api to use to resolve shared objects
+ * @param {Reference} reference: the reference to use to resolve the endpoint
+ * @returns {Endpoint?|string?} the corresponding endpoint or endpoint url, if it exists
+ */
 methods.getEndpointFromReference = (api, reference) => {
   if (reference.get('type') === 'variable') {
     const variable = api.getIn([ 'store', 'variable', reference.get('uuid') ])
@@ -191,6 +209,12 @@ methods.getEndpointFromReference = (api, reference) => {
   return api.getIn([ 'store', type, uuid ]) || null
 }
 
+/**
+ * extracts a query parameter key value pair from a reference
+ * @param {Api} api: the api to use to resolve shared parameters
+ * @param {Reference} reference: the reference to use to resolve the query parameter
+ * @returns {string?} the corresponding query parameter key value pair, as a string, if it exists
+ */
 methods.extractQueryKeyValuePairFromReference = (api, reference) => {
   const resolved = api.getIn([ 'store', 'parameter', reference.get('uuid') ])
 
@@ -203,6 +227,11 @@ methods.extractQueryKeyValuePairFromReference = (api, reference) => {
   return key + '=' + value
 }
 
+/**
+ * extracts a query parameter key value pair from a parameter
+ * @param {Parameter} param: the parameter to convert
+ * @returns {string} the corresponding query parameter key value pair, as a string
+ */
 methods.extractQueryKeyValuePairFromParameter = (param) => {
   const key = param.get('key')
   const value = param.getJSONSchema().default || ''
@@ -210,6 +239,12 @@ methods.extractQueryKeyValuePairFromParameter = (param) => {
   return key + '=' + value
 }
 
+/**
+ * extract a query parameter key value pair from a Parameter or a Reference
+ * @param {Api} api: the api to use to resolve shared parameters
+ * @param {Parameter|Reference} param: the Parameter or Reference to convert into a query parameter
+ * @returns {string?} the corresponding query parameter key value pair, as a string, if it exists
+ */
 methods.extractQueryKeyValuePairFromParameterOrReference = (api, param) => {
   if (param instanceof Reference) {
     return methods.extractQueryKeyValuePairFromReference(api, param)
@@ -218,6 +253,12 @@ methods.extractQueryKeyValuePairFromParameterOrReference = (api, param) => {
   return methods.extractQueryKeyValuePairFromParameter(param)
 }
 
+/**
+ * extracts a query string from a request
+ * @param {Api} api: the api to use to resolve shared parameters
+ * @param {Request} request: the request to extract the query string from
+ * @returns {string} the corresponding queryString
+ */
 methods.extractQueryStringFromRequest = (api, request) => {
   const queryString = request.getIn([ 'parameters', 'queries' ])
     .map(param => {
@@ -235,6 +276,13 @@ methods.extractQueryStringFromRequest = (api, request) => {
   return '?' + queryString
 }
 
+/**
+ * merges together a base url with a path and a queryString
+ * @param {string} baseUrl: the base url from the endpoint of a request/resoure
+ * @param {string} path: the path of the resource this url belongs to
+ * @param {string} queryString: the queryString associated with the request this url belongs to
+ * @returns {Entry<string, string>} the corresponding complete url, as an Entry
+ */
 methods.combineUrlComponents = (baseUrl, path, queryString) => {
   if (baseUrl[baseUrl.length - 1] === '/' && path[0] === '/' || path === '/') {
     const url = baseUrl + path.slice(1)
@@ -245,6 +293,11 @@ methods.combineUrlComponents = (baseUrl, path, queryString) => {
   return { key: 'url', value: url + queryString }
 }
 
+/**
+ * extracts a url from an endpoint
+ * @param {URL|string} endpoint: the endpoint to extract a url from
+ * @returns {string} the corresponding url
+ */
 methods.extractBaseUrlFromEndpoint = (endpoint) => {
   const baseUrl = typeof endpoint === 'string' ?
     endpoint :
@@ -253,6 +306,11 @@ methods.extractBaseUrlFromEndpoint = (endpoint) => {
   return baseUrl
 }
 
+/**
+ * extract a path from a resource
+ * @param {Resource} resource: the resource to get the path from
+ * @returns {string} the corresponding path
+ */
 methods.extractPathFromResource = (resource) => {
   const pathname = resource.getIn([ 'path', 'pathname' ])
 
@@ -511,6 +569,69 @@ methods.createMethod = (request) => {
 }
 
 /**
+ * creates a Header from a reference
+ * @param {Api} api: the api to use to resolve the shared parameters
+ * @param {Reference} reference: the reference to convert into a header
+ * @returns {Entry<string?, string>?} the corresponding header, formatted as an entry, if it exists
+ */
+methods.createHeaderFromReference = (api, reference) => {
+  const param = api.getIn([ 'store', 'parameter', reference.get('uuid') ])
+
+  if (!param) {
+    return null
+  }
+
+  const key = param.get('key')
+  const value = '{{' + reference.get('uuid') + '}}'
+
+  return { key, value }
+}
+
+/**
+ * creates a header from a Parameter
+ * @param {Parameter} param: the parameter to convert into a header
+ * @returns {Entry<string, string>?} the corresponding header, formatted as an Entry, if it exists
+ */
+methods.createHeaderFromParameter = (param) => {
+  const key = param.get('key')
+
+  if (!key) {
+    return null
+  }
+
+  const schema = param.getJSONSchema()
+
+  if (schema.default) {
+    return { key, value: schema.default }
+  }
+
+  if (schema.enum) {
+    return { key, value: schema.enum[0] }
+  }
+
+  return { key, value: null }
+}
+
+/**
+ * extracts a header from a Parameter or Reference
+ * @param {Api} api: the api to use to resolve shared parameters
+ * @param {Parameter|Reference} paramOrReference: the parameter or reference to convert into a
+ * header
+ * @returns {Entry<string?, string>?} the corresponding header, formatted as an Entry, if it exists
+ */
+methods.createHeaderFromParameterOrReference = (api, paramOrReference) => {
+  if (paramOrReference instanceof Reference) {
+    return methods.createHeaderFromReference(api, paramOrReference)
+  }
+
+  if (!paramOrReference || !paramOrReference.get('key')) {
+    return null
+  }
+
+  return methods.createHeaderFromParameter(paramOrReference)
+}
+
+/**
  * extracts a PostmanHeader from a request
  * @param {Api} api: the api to use to resolve shared parameters
  * @param {Request} request: the request from which to extract the headers
@@ -518,32 +639,7 @@ methods.createMethod = (request) => {
  */
 methods.createHeader = (api, request) => {
   const headers = request.getIn([ 'parameters', 'headers' ])
-    .map(header => {
-      if (header instanceof Reference) {
-        const param = api.getIn([ 'store', 'parameter', header.get('uuid') ])
-        const key = param.get('key')
-        const value = ('{{' + header.get('uuid') + '}}')
-
-        return { key, value }
-      }
-
-      if (!header || !header.get('key')) {
-        return null
-      }
-
-      const schema = header.getJSONSchema()
-
-      const key = header.get('key')
-      let value = null
-      if (schema.default) {
-        value = schema.default
-      }
-      else if (schema.enum) {
-        value = schema.enum[0]
-      }
-
-      return { key, value }
-    })
+    .map(header => methods.createHeaderFromParameterOrReference(api, header))
     .filter(v => !!v)
 
   if (!headers.size) {
@@ -553,22 +649,113 @@ methods.createHeader = (api, request) => {
   return { key: 'header', value: headers.valueSeq().toJS() }
 }
 
+/**
+ * extracts content-type parameters from the headers of request
+ * @param {Api} api: the api to use to resolve shared parameters
+ * @param {Request} request: the request to get the content-type parameters from
+ * @returns {List<Parameter>} the corresponding List of Content-Type Parameters
+ */
 methods.getContentTypeParamsFromHeaders = (api, request) => {
   const contentTypeHeaders = request.get('parameters')
     .resolve(api.get('store'))
     .get('headers')
     .filter(header => header.get('key') === 'Content-Type')
     .valueSeq()
+    .toList()
 
   return contentTypeHeaders
 }
 
+/**
+ * extracts content-type parameters from a context
+ * @param {Context} context: the context to extract the content-type parameters from
+ * @returns {List<Parameter>} the corresponding List of Content-Type Parameters
+ */
 methods.getContentTypeParamsFromContext = (context) => {
   return context.get('constraints').filter(param => {
     return param.get('key') === 'Content-Type' &&
       param.get('in') === 'headers' &&
       param.get('usedIn') === 'request'
   })
+}
+
+/**
+ * extracts content-type parameters from a context, or from the headers of a request, if the context
+ * does not exist
+ * @param {Api} api: the api to use to resolve shared parameters
+ * @param {Request} request: the request to get the headers from
+ * @param {Context?} context: the context to extract content-type parameters from
+ * @returns {List<Parameter>} the corresponding list of content-type Parameters
+ */
+methods.getContentTypeParamsFromRequestOrContext = (api, request, context) => {
+  if (!context) {
+    return methods.getContentTypeParamsFromHeaders(api, request)
+  }
+
+  return methods.getContentTypeParamsFromContext(context)
+}
+
+/**
+ * extracts a postman body mode from the `default` field of a schema
+ * @param {JSONSchema} schema: the schema to extract the body mode from
+ * @returns {'urlencoded'|'formdata'|'raw'} the corresponding body mode
+ */
+methods.createBodyModeFromSchemaDefault = (schema) => {
+  const modeMap = [
+    { key: 'application/x-www-form-urlencoded', value: 'urlencoded' },
+    { key: 'multipart/form-data', value: 'formdata' }
+  ]
+
+  const mode = modeMap
+    .filter(({ key }) => schema.default.match(key))
+    .map(({ value }) => value)[0]
+
+  return mode || 'raw'
+}
+
+/**
+ * extracts a postman body mode from the `enum` field of a schema
+ * @param {JSONSchema} schema: the schema to extract the body mode from
+ * @returns {'urlencoded'|'formdata'|'raw'} the corresponding body mode
+ */
+methods.createBodyModeFromSchemaEnum = (schema) => {
+  const modeMap = [
+    { key: 'application/x-www-form-urlencoded', value: 'urlencoded' },
+    { key: 'multipart/form-data', value: 'formdata' }
+  ]
+
+  const mode = modeMap
+    .filter(({ key }) => {
+      return schema.enum.filter(contentType => contentType.match(key)).length > 0
+    })
+    .map(({ value }) => value)[0]
+
+  return mode || 'raw'
+}
+
+/**
+ * extracts a postman body mode from a List of Content Type Parameters
+ * @param {List<Parameter>} contentTypeParams: the List of Parameter from which to extract a body
+ * mode
+ * @returns {'urlencoded'|'formdata'|'raw'} the corresponding body mode
+ */
+methods.createBodyModeFromContentTypeParams = (contentTypeParams) => {
+  if (contentTypeParams.size !== 1) {
+    return 'raw'
+  }
+
+  const contentTypesConstraint = contentTypeParams.get(0)
+  const contentTypeSchema = contentTypesConstraint.getJSONSchema()
+
+  if (contentTypeSchema.default) {
+    return methods.createBodyModeFromSchemaDefault(contentTypeSchema)
+  }
+
+  if (contentTypeSchema.enum) {
+    return methods.createBodyModeFromSchemaEnum(contentTypeSchema)
+  }
+
+  return 'raw'
 }
 
 /**
@@ -579,63 +766,17 @@ methods.getContentTypeParamsFromContext = (context) => {
  * @returns {'raw'|'formdata'|'urlencoded'} the corresponding body mode
  */
 methods.createBodyMode = (api, request, context) => {
-  let contentTypeParams = null
-  if (!context) {
-    contentTypeParams = methods.getContentTypeParamsFromHeaders(api, request)
-  }
-  else {
-    contentTypeParams = methods.getContentTypeParamsFromContext(context)
-  }
-
-  if (contentTypeParams.size !== 1) {
-    return 'raw'
-  }
-
-  const modeMap = [
-    { key: 'application/x-www-form-urlencoded', value: 'urlencoded' },
-    { key: 'multipart/form-data', value: 'formdata' }
-  ]
-
-  const contentTypesConstraint = contentTypeParams.get(0)
-  const contentTypeSchema = contentTypesConstraint.getJSONSchema()
-
-  if (contentTypeSchema.default) {
-    const mode = modeMap
-      .filter(({ key }) => contentTypeSchema.default.match(key))
-      .map(({ value }) => value)[0]
-
-    return mode || 'raw'
-  }
-
-  if (contentTypeSchema.enum) {
-    const mode = modeMap
-      .filter(({ key }) => {
-        return contentTypeSchema.enum.filter(contentType => contentType.match(key)).length > 0
-      })
-      .map(({ value }) => value)[0]
-
-    return mode || 'raw'
-  }
+  const contentTypeParams = methods.getContentTypeParamsFromRequestOrContext(api, request, context)
+  return methods.createBodyModeFromContentTypeParams(contentTypeParams)
 }
 
 /**
- * extracts a PostmanRawBody entry from a request in a specific context
- * @param {Api} api: the api to use to resolve shared parameters
- * @param {Request} request: the request from which to get the body parameters
- * @param {Context?} context: the context to use to filter out the body parameters
- * @returns {Entry<string, PostmanRawBody>?} the corresponding entry, if it exists
+ * converts a Map of Body Parameters into a raw postman parameters string
+ * @param {OrderedMap<string, Parameter>} params: the body parameters to convert into raw parameters
+ * @returns {string} the corresponding raw parameters string
  */
-methods.createBodyFromRawMode = (api, request, context) => {
-  const bodyParams = request.get('parameters')
-    .resolve(api.get('store'))
-    .filter(!context ? List() : context.get('constraints'))
-    .get('body')
-
-  if (!bodyParams.size) {
-    return null
-  }
-
-  const rawBody = bodyParams
+methods.convertBodyParametersIntoRawParameters = (params) => {
+  const rawBody = params
     .map(param => {
       if (param.get('key')) {
         return '{{' + param.get('key') + '}}'
@@ -647,23 +788,32 @@ methods.createBodyFromRawMode = (api, request, context) => {
     .toJS()
     .join('\n')
 
+  return rawBody
+}
+
+/**
+ * extracts a PostmanRawBody entry from a request in a specific context
+ * @param {OrderedMap<string, Parameter>} bodyParams: the body parameters to convert into raw
+ * parameters
+ * @returns {Entry<string, PostmanRawBody>?} the corresponding entry, if it exists
+ */
+methods.createBodyFromRawMode = (bodyParams) => {
+  if (!bodyParams.size) {
+    return null
+  }
+
+  const rawBody = methods.convertBodyParametersIntoRawParameters(bodyParams)
+
   return { key: 'raw', value: rawBody }
 }
 
 /**
  * extracts a PostmanUrlEncodedBody entry from a request in a specific context
- * @param {Api} api: the api to use to resolve shared parameters
- * @param {Request} request: the request from which to get the body parameters
- * @param {Context?} context: the context to use to filter out the body parameters
+ * @param {OrderedMap<string, Parameter>} bodyParams: the body parameters to convert into
+ * postman url-encoded parameters
  * @returns {Entry<string, PostmanUrlEncodedBody>?} the corresponding entry, if it exists
  */
-methods.createBodyFromUrlEncodedMode = (api, request, context) => {
-  const constraints = context ? context.get('constraints') : List()
-  const bodyParams = request.get('parameters')
-    .resolve(api.get('store'))
-    .filter(constraints)
-    .get('body')
-
+methods.createBodyFromUrlEncodedMode = (bodyParams) => {
   const postmanParams = bodyParams.map(param => {
     return {
       key: param.get('key'),
@@ -677,18 +827,11 @@ methods.createBodyFromUrlEncodedMode = (api, request, context) => {
 
 /**
  * extracts a PostmanFormDataBody entry from a request in a specific context
- * @param {Api} api: the api to use to resolve shared parameters
- * @param {Request} request: the request from which to get the body parameters
- * @param {Context?} context: the context to use to filter out the body parameters
+ * @param {OrderedMap<string, Parameter>} bodyParams: the body parameters to convert into
+ * postman url-encoded parameters
  * @returns {Entry<string, PostmanFormDataBody>?} the corresponding entry, if it exists
  */
-methods.createBodyFromFormDataMode = (api, request, context) => {
-  const constraints = context ? context.get('constraints') : List()
-  const bodyParams = request.get('parameters')
-    .resolve(api.get('store'))
-    .filter(constraints)
-    .get('body')
-
+methods.createBodyFromFormDataMode = (bodyParams) => {
   const postmanParams = bodyParams.map(param => {
     return {
       key: param.get('key'),
@@ -702,26 +845,42 @@ methods.createBodyFromFormDataMode = (api, request, context) => {
 
 /**
  * extracts a PostmanModalBody entry from a request in a specific context and mode
- * @param {Api} api: the api to use to resolve shared parameters
- * @param {Request} request: the request from which to get the body parameters
- * @param {Context?} context: the context to use to filter out the body parameters
+ * @param {OrderedMap<string, Parameter>} bodyParams: the body parameters to convert into
+ * postman modal parameters (e.g. depending on the mode, they are converted differently)
  * @param {string} mode: the mode in which the body should be formatted
  * @returns {Entry<string, PostmanModalBody>?} the corresponding entry, if it exists
  */
-methods.createBodyFromMode = (api, request, context, mode) => {
+methods.createBodyFromMode = (bodyParams, mode) => {
   if (mode === 'raw') {
-    return methods.createBodyFromRawMode(api, request, context)
+    return methods.createBodyFromRawMode(bodyParams)
   }
 
   if (mode === 'urlencoded') {
-    return methods.createBodyFromUrlEncodedMode(api, request, context)
+    return methods.createBodyFromUrlEncodedMode(bodyParams)
   }
 
   if (mode === 'formdata') {
-    return methods.createBodyFromFormDataMode(api, request, context)
+    return methods.createBodyFromFormDataMode(bodyParams)
   }
 
   return null
+}
+
+/**
+ * prepares body parameters from a request based on a store and context
+ * @param {Api} api: the api that holds the store used to resolve shared parameters
+ * @param {Request} request: the request to extract the body parameters from
+ * @param {Context?} context: the context to use to filter the body parameters
+ * @returns {OrderedMap<string, Parameter>} the corresponding body parameters container block
+ */
+methods.getBodyParamsFromRequest = (api, request, context) => {
+  const constraints = context ? context.get('constraints') : List()
+  const bodyParams = request.get('parameters')
+    .resolve(api.get('store'))
+    .filter(constraints)
+    .get('body')
+
+  return bodyParams
 }
 
 /**
@@ -732,11 +891,12 @@ methods.createBodyFromMode = (api, request, context, mode) => {
  */
 methods.createBody = (api, request) => {
   const context = request.get('contexts').get(0)
+  const bodyParams = methods.getBodyParamsFromRequest(api, request, context)
   const mode = methods.createBodyMode(api, request, context)
 
   const kvs = [
     { key: 'mode', value: mode },
-    methods.createBodyFromMode(api, request, context, mode)
+    methods.createBodyFromMode(bodyParams, mode)
   ].filter(v => !!v)
 
   if (kvs.length <= 1) {
@@ -802,6 +962,11 @@ methods.createItemsFromResource = (api, resource) => {
   return items
 }
 
+/**
+ * creates an Item Name from a Resource
+ * @param {Resource} resource: the resource to extract a name from
+ * @returns {Entry<string, string>} the corresponding name, as an Entry
+ */
 methods.createItemNameFromResource = (resource) => {
   const name = resource.get('name') ||
     resource.get('description') ||
@@ -872,6 +1037,15 @@ methods.createItemGroup = (api, group) => {
   return kvs.reduce(convertEntryListInMap, {})
 }
 
+/**
+ * merges item groups that have the same name. This is done because there are no constraints on the
+ * unicity of a Resource wrt to its name/description/path in Api.get('resources'). This unicity
+ * principle would be violated by the Paw/Postman and curl parser otherwise
+ * @param {Map<string, PostmanItemGroup>} namedMap: the accumulator map that is used to merge
+ * item groups together
+ * @param {PostmanItemGroup} itemGroup: the item group to merge or add to the accumulator
+ * @returns {Map<string, PostmanItemGroup>} the updated accumulator
+ */
 methods.mergeItemGroupsWithSameName = (namedMap, itemGroup) => {
   const namedItemGroup = namedMap.get(itemGroup.name)
   if (namedItemGroup) {
@@ -917,6 +1091,28 @@ methods.createRootItem = (api) => {
 */
 
 /**
+ * converts a **shared** Parameter into a postman variable
+ * @param {Parameter} param: the parameter to converts
+ * @param {string} key: the key of the parameter in TypedStore that contains it (equals the uuid of
+ * potential references to it)
+ * @returns {PostmanVariable?} the corresponding postman variable, if it exists
+ */
+methods.convertParameterIntoVariable = (param, key) => {
+  const kvs = [
+    { key: 'id', value: key },
+    { key: 'value', value: param.get('default') },
+    { key: 'type', value: param.get('type') },
+    { key: 'name', value: param.get('key') }
+  ].filter(({ value }) => !!value)
+
+  if (!kvs.length) {
+    return null
+  }
+
+  return kvs.reduce(convertEntryListInMap, {})
+}
+
+/**
  * creates an PostmanVariable from an Api
  * @param {Api} api: the api to use to resolve shared objects
  * @returns {Entry<string, PostmanVariable>?} the corresponding entry, if it exists
@@ -928,20 +1124,11 @@ methods.createVariable = (api) => {
     return null
   }
 
-  const variables = sharedParams.map((param, key) => {
-    const kvs = [
-      { key: 'id', value: key },
-      { key: 'value', value: param.get('default') },
-      { key: 'type', value: param.get('type') },
-      { key: 'name', value: param.get('key') }
-    ].filter(({ value }) => !!value)
-
-    if (!kvs.length) {
-      return null
-    }
-
-    return kvs.reduce(convertEntryListInMap, {})
-  }).filter(v => !!v).valueSeq().toJS()
+  const variables = sharedParams
+    .map(methods.convertParameterIntoVariable)
+    .filter(v => !!v)
+    .valueSeq()
+    .toJS()
 
   if (!variables.length) {
     return null

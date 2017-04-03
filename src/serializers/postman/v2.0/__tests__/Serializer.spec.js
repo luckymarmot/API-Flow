@@ -15,6 +15,7 @@ import Constraint from '../../../../models/Constraint'
 import ParameterContainer from '../../../../models/ParameterContainer'
 import URL from '../../../../models/URL'
 import Auth from '../../../../models/Auth'
+import Context from '../../../../models/Context'
 
 import Serializer, { __internals__ } from '../Serializer'
 
@@ -755,6 +756,965 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       ]
       const actual = inputs.map(input => __internals__.createMethod(input))
       expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createHeaderFromReference', () => {
+    it('should work', () => {
+      const inputs = [
+        [ new Api(), new Reference() ],
+        [ new Api(), new Reference({ uuid: 'abc' }) ],
+        [ new Api({
+          store: new Store({
+            parameter: OrderedMap({
+              abc: new Parameter({
+                key: 123
+              })
+            })
+          })
+        }), new Reference({ uuid: 'abc' }) ]
+      ]
+      const expected = [
+        null, null, { key: 123, value: '{{abc}}' }
+      ]
+      const actual = inputs.map(input => __internals__.createHeaderFromReference(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createHeaderFromParameter', () => {
+    it('should work', () => {
+      const inputs = [
+        new Parameter(),
+        new Parameter({ key: 123 }),
+        new Parameter({
+          key: 234,
+          constraints: List([ new Constraint.JSONSchema({ default: 'abc' }) ])
+        }),
+        new Parameter({
+          key: 345,
+          constraints: List([ new Constraint.JSONSchema({ enum: [ 'def', 'ghi' ] }) ])
+        })
+      ]
+      const expected = [
+        null,
+        { key: 123, value: null },
+        { key: 234, value: 'abc' },
+        { key: 345, value: 'def' }
+      ]
+      const actual = inputs.map(input => __internals__.createHeaderFromParameter(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createHeaderFromParameterOrReference', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createHeaderFromReference').andReturn('ref')
+      spyOn(__internals__, 'createHeaderFromParameter').andReturn('param')
+
+      const inputs = [
+        [ new Api(), null ],
+        [ new Api(), new Reference() ],
+        [ new Api(), new Parameter() ],
+        [ new Api(), new Parameter({ key: 123 }) ]
+      ]
+      const expected = [
+        null,
+        'ref',
+        null,
+        'param'
+      ]
+
+      const actual = inputs.map(
+        input => __internals__.createHeaderFromParameterOrReference(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createHeader', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createHeaderFromParameterOrReference').andCall((a, h) => {
+        return h % 2 ? null : a + h
+      })
+
+      const inputs = [
+        [ 123, new Request() ],
+        [ 123, new Request({
+          parameters: new ParameterContainer({
+            headers: OrderedMap({
+              abc: 234,
+              def: 345
+            })
+          })
+        }) ]
+      ]
+      const expected = [
+        null,
+        { key: 'header', value: [ 234 + 123 ] }
+      ]
+      const actual = inputs.map(input => __internals__.createHeader(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getContentTypeParamsFromHeaders', () => {
+    it('should work', () => {
+      const inputs = [
+        [ new Api(), new Request() ],
+        [ new Api(), new Request({
+          parameters: new ParameterContainer({
+            headers: OrderedMap({
+              abc: new Parameter({
+                key: 'Accept'
+              }),
+              def: new Parameter({
+                key: 'Content-Type'
+              })
+            })
+          })
+        }) ]
+      ]
+      const expected = [
+        List(),
+        List([ new Parameter({ key: 'Content-Type' }) ])
+      ]
+      const actual = inputs.map(input => __internals__.getContentTypeParamsFromHeaders(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getContentTypeParamsFromContext', () => {
+    it('should work', () => {
+      const inputs = [
+        new Context(),
+        new Context({
+          constraints: List([
+            new Parameter({
+              key: 'Accept',
+              in: 'headers',
+              usedIn: 'request'
+            })
+          ])
+        }),
+        new Context({
+          constraints: List([
+            new Parameter({
+              key: 'Content-Type',
+              in: 'headers',
+              usedIn: 'request'
+            })
+          ])
+        }),
+        new Context({
+          constraints: List([
+            new Parameter({
+              key: 'Content-Type',
+              in: 'body',
+              usedIn: 'request'
+            })
+          ])
+        }),
+        new Context({
+          constraints: List([
+            new Parameter({
+              key: 'Content-Type',
+              in: 'headers',
+              usedIn: 'response'
+            })
+          ])
+        }),
+        new Context({
+          constraints: List([
+            new Parameter({
+              key: 'Content-Type',
+              in: 'headers',
+              usedIn: 'request',
+              value: 123
+            }),
+            new Parameter({
+              key: 'Accept',
+              in: 'headers',
+              usedIn: 'request'
+            }),
+            new Parameter({
+              key: 'Content-Type',
+              in: 'headers',
+              usedIn: 'request',
+              value: 234
+            })
+          ])
+        })
+      ]
+      const expected = [
+        List(),
+        List(),
+        List([
+          new Parameter({
+            key: 'Content-Type',
+            in: 'headers',
+            usedIn: 'request'
+          })
+        ]),
+        List(),
+        List(),
+        List([
+          new Parameter({
+            key: 'Content-Type',
+            in: 'headers',
+            usedIn: 'request',
+            value: 123
+          }),
+          new Parameter({
+            key: 'Content-Type',
+            in: 'headers',
+            usedIn: 'request',
+            value: 234
+          })
+        ])
+      ]
+      const actual = inputs.map(input => __internals__.getContentTypeParamsFromContext(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getContentTypeParamsFromRequestOrContext', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'getContentTypeParamsFromHeaders').andCall((a, r) => a + r)
+      spyOn(__internals__, 'getContentTypeParamsFromContext').andCall(c => c * 2)
+
+      const inputs = [
+        [ 123, 234, null ],
+        [ 123, 234, 345 ]
+      ]
+      const expected = [
+        123 + 234,
+        345 * 2
+      ]
+      const actual = inputs.map(
+        input => __internals__.getContentTypeParamsFromRequestOrContext(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBodyModeFromSchemaDefault', () => {
+    it('should work', () => {
+      const inputs = [
+        { default: 'application/json' },
+        { default: 'application/x-www-form-urlencoded' },
+        { default: 'application/x-www-form-urlencoded; charset=utf-8' },
+        { default: 'multipart/form-data' },
+        { default: 'multipart/form-data; boundary=__**__' }
+      ]
+      const expected = [
+        'raw',
+        'urlencoded',
+        'urlencoded',
+        'formdata',
+        'formdata'
+      ]
+      const actual = inputs.map(input => __internals__.createBodyModeFromSchemaDefault(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBodyModeFromSchemaEnum', () => {
+    it('should work', () => {
+      const inputs = [
+        { enum: [ 'application/json' ] },
+        { enum: [ 'application/json', 'application/xml' ] },
+        { enum: [ 'application/x-www-form-urlencoded' ] },
+        { enum: [ 'application/x-www-form-urlencoded', 'application/text' ] },
+        { enum: [ 'application/text', 'application/x-www-form-urlencoded' ] },
+        { enum: [ 'application/x-www-form-urlencoded; charset=utf-8' ] },
+        { enum: [ 'multipart/form-data' ] },
+        { enum: [ 'multipart/form-data', 'application/text' ] },
+        { enum: [ 'application/text', 'multipart/form-data' ] },
+        { enum: [ 'multipart/form-data; boundary=__**__' ] },
+        { enum: [ 'application/x-www-form-urlencoded', 'multipart/form-data' ] }
+      ]
+      const expected = [
+        'raw',
+        'raw',
+        'urlencoded',
+        'urlencoded',
+        'urlencoded',
+        'urlencoded',
+        'formdata',
+        'formdata',
+        'formdata',
+        'formdata',
+        'urlencoded'
+      ]
+      const actual = inputs.map(input => __internals__.createBodyModeFromSchemaEnum(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBodyModeFromContentTypeParams', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createBodyModeFromSchemaDefault').andCall(({ default: d }) => d)
+      spyOn(__internals__, 'createBodyModeFromSchemaEnum').andCall(({ enum: e }) => e[0])
+
+      const inputs = [
+        List(),
+        List([ new Parameter(), new Parameter() ]),
+        List([ new Parameter() ]),
+        List([ new Parameter({
+          default: 123
+        }) ]),
+        List([ new Parameter({
+          constraints: List([ new Constraint.Enum([ 234 ]) ])
+        }) ])
+      ]
+      const expected = [
+        'raw',
+        'raw',
+        'raw',
+        123,
+        234
+      ]
+      const actual = inputs.map(input => __internals__.createBodyModeFromContentTypeParams(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBodyMode', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'getContentTypeParamsFromRequestOrContext').andCall((a, r, c) => {
+        return a + r + c
+      })
+      spyOn(__internals__, 'createBodyModeFromContentTypeParams').andCall(ct => ct * 2)
+
+      const inputs = [
+        [ 123, 234, 345 ]
+      ]
+      const expected = [
+        (123 + 234 + 345) * 2
+      ]
+      const actual = inputs.map(input => __internals__.createBodyMode(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertBodyParametersIntoRawParameters', () => {
+    it('should work', () => {
+      const inputs = [
+        OrderedMap(),
+        OrderedMap({
+          abc: new Parameter({
+            key: 123
+          }),
+          def: new Parameter({
+            constraints: List([ new Constraint.JSONSchema({ type: 'string', default: 'def' }) ])
+          })
+        })
+      ]
+      const expected = [
+        '',
+        '{{123}}\n' + JSON.stringify({ type: 'string', default: 'def' }, null, 2)
+      ]
+      const actual = inputs.map(
+        input => __internals__.convertBodyParametersIntoRawParameters(input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBodyFromRawMode', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertBodyParametersIntoRawParameters').andReturn(123)
+
+      const inputs = [
+        OrderedMap(),
+        OrderedMap({
+          abc: 123
+        })
+      ]
+      const expected = [
+        null,
+        { key: 'raw', value: 123 }
+      ]
+
+      const actual = inputs.map(input => __internals__.createBodyFromRawMode(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBodyFromUrlEncodedMode', () => {
+    it('should work', () => {
+      const inputs = [
+        OrderedMap(),
+        OrderedMap({
+          abc: new Parameter({
+            key: 123,
+            default: 234
+          }),
+          def: new Parameter({
+            key: 345
+          })
+        })
+      ]
+      const expected = [
+        { key: 'urlencoded', value: [] },
+        { key: 'urlencoded', value: [
+          { key: 123, value: 234, enabled: true },
+          { key: 345, value: '{{345}}', enabled: true }
+        ] }
+      ]
+      const actual = inputs.map(input => __internals__.createBodyFromUrlEncodedMode(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBodyFromFormDataMode', () => {
+    it('should work', () => {
+      const inputs = [
+        OrderedMap(),
+        OrderedMap({
+          abc: new Parameter({
+            key: 123,
+            default: 234
+          }),
+          def: new Parameter({
+            key: 345
+          })
+        })
+      ]
+      const expected = [
+        { key: 'formdata', value: [] },
+        { key: 'formdata', value: [
+          { key: 123, value: 234, enabled: true },
+          { key: 345, value: '{{345}}', enabled: true }
+        ] }
+      ]
+      const actual = inputs.map(input => __internals__.createBodyFromFormDataMode(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBodyFromMode', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createBodyFromRawMode').andCall(p => p * 2)
+      spyOn(__internals__, 'createBodyFromUrlEncodedMode').andCall(p => p * 3)
+      spyOn(__internals__, 'createBodyFromFormDataMode').andCall(p => p * 4)
+
+      const inputs = [
+        [ 123, 'raw' ],
+        [ 123, 'urlencoded' ],
+        [ 123, 'formdata' ],
+        [ 123, 'weird' ]
+      ]
+      const expected = [
+        123 * 2,
+        123 * 3,
+        123 * 4,
+        null
+      ]
+      const actual = inputs.map(input => __internals__.createBodyFromMode(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getBodyParamsFromRequest', () => {
+    it('should work', () => {
+      const inputs = [
+        [ new Api(), new Request(), null ],
+        [ new Api({
+          store: new Store({
+            parameter: OrderedMap({
+              abc: new Parameter({
+                key: 'userId',
+                default: '123'
+              })
+            })
+          })
+        }), new Request({
+          parameters: new ParameterContainer({
+            body: OrderedMap({
+              abc: new Reference({
+                type: 'parameter',
+                uuid: 'abc'
+              })
+            })
+          })
+        }), null ],
+        [ new Api({
+          store: new Store({
+            parameter: OrderedMap({
+              abc: new Parameter({
+                key: 'userId',
+                default: '123'
+              }),
+              jkl: new Parameter({
+                key: 'productId',
+                default: '123',
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([
+                      new Constraint.Enum([
+                        'application/xml'
+                      ])
+                    ])
+                  })
+                ])
+              })
+            })
+          })
+        }), new Request({
+          parameters: new ParameterContainer({
+            body: OrderedMap({
+              abc: new Reference({
+                type: 'parameter',
+                uuid: 'abc'
+              }),
+              def: new Parameter({
+                key: 'queryType',
+                default: 'serialized',
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([ new Constraint.Enum([
+                      'application/xml'
+                    ]) ])
+                  })
+                ])
+              }),
+              ghi: new Parameter({
+                key: 'limit',
+                default: '100',
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([ new Constraint.Enum([
+                      'application/json'
+                    ]) ])
+                  })
+                ])
+              }),
+              jkl: new Reference({
+                type: 'parameter',
+                uuid: 'jkl'
+              })
+            })
+          })
+        }), new Context({
+          constraints: List([ new Parameter({
+            key: 'Content-Type',
+            default: 'application/json'
+          }) ])
+        }) ]
+      ]
+      const expected = [
+        OrderedMap(),
+        OrderedMap({
+          abc: new Parameter({
+            key: 'userId',
+            default: '123'
+          })
+        }),
+        OrderedMap({
+          abc: new Parameter({
+            key: 'userId',
+            default: '123'
+          }),
+          ghi: new Parameter({
+            key: 'limit',
+            default: '100',
+            applicableContexts: List([
+              new Parameter({
+                key: 'Content-Type',
+                constraints: List([ new Constraint.Enum([
+                  'application/json'
+                ]) ])
+              })
+            ])
+          })
+        })
+      ]
+      const actual = inputs.map(input => __internals__.getBodyParamsFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createBody', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'getBodyParamsFromRequest').andCall((a, r, c) => {
+        return a + (c || 0)
+      })
+      spyOn(__internals__, 'createBodyMode').andCall((a, r, c) => {
+        return c ? c : a
+      })
+      spyOn(__internals__, 'createBodyFromMode').andCall((b, m) => {
+        return { key: b, value: m }
+      })
+
+      const inputs = [
+        [ 123, new Request() ],
+        [ 123, new Request({
+          contexts: List([ 234 ])
+        }) ]
+      ]
+      const expected = [
+        { key: 'body', value: { '123': 123, mode: 123 } },
+        { key: 'body', value: { [123 + 234 + '']: 234, mode: 234 } }
+      ]
+      const actual = inputs.map(input => __internals__.createBody(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createRequestFromRequest', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createRequestUrl').andCall((a, res, req) => {
+        return !a ? null : { key: 'url', value: a + res + (req || 0) }
+      })
+
+      spyOn(__internals__, 'createRequestAuth').andCall((a, r) => {
+        if (!a) {
+          return null
+        }
+        return r ? { key: 'auth', value: a + r } : null
+      })
+
+      spyOn(__internals__, 'createMethod').andCall(r => {
+        return r ? { key: 'method', value: r * 2 } : null
+      })
+
+      spyOn(__internals__, 'createHeader').andCall((a, r) => {
+        if (!a) {
+          return null
+        }
+        return r ? { key: 'header', value: r * 3 } : { key: 'header', value: a * 3 }
+      })
+
+      spyOn(__internals__, 'createBody').andCall((a, r) => {
+        if (!a) {
+          return null
+        }
+        return r ? { key: 'body', value: r * 4 } : { key: 'body', value: a * 4 }
+      })
+
+      const inputs = [
+        [ null, null, null ],
+        [ 123, 234, null ],
+        [ 123, 234, 345 ]
+      ]
+      const expected = [
+        null,
+        { key: 'request', value: { url: 123 + 234, header: 123 * 3, body: 123 * 4 } },
+        { key: 'request', value: {
+          url: 123 + 234 + 345,
+          auth: 123 + 345,
+          method: 345 * 2,
+          header: 345 * 3,
+          body: 345 * 4
+        } }
+      ]
+      const actual = inputs.map(input => __internals__.createRequestFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createItemFromRequest', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createItemName').andCall(r => {
+        return r ? { key: 'name', value: r * 2 } : null
+      })
+
+      spyOn(__internals__, 'createItemDescription').andCall(r => {
+        return r ? { key: 'description', value: r * 3 } : null
+      })
+
+      spyOn(__internals__, 'createRequestFromRequest').andCall((a, res, req) => {
+        if (!a) {
+          return null
+        }
+        return { key: 'request', value: a + res + (req || 0) }
+      })
+
+      const inputs = [
+        [ null, null, null ],
+        [ 123, 234, null ],
+        [ 123, 234, 345 ]
+      ]
+      const expected = [
+        {},
+        { request: 123 + 234 },
+        { name: 345 * 2, description: 345 * 3, request: 123 + 234 + 345 }
+      ]
+      const actual = inputs.map(input => __internals__.createItemFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createItemsFromResource', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createItemFromRequest').andCall((a, res, req) => {
+        return a + req
+      })
+      const inputs = [
+        [ 123, new Resource() ],
+        [ 123, new Resource({
+          methods: OrderedMap({
+            abc: 234,
+            def: 345
+          })
+        }) ]
+      ]
+      const expected = [
+        [],
+        [ 123 + 234, 123 + 345 ]
+      ]
+      const actual = inputs.map(input => __internals__.createItemsFromResource(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createItemNameFromResource', () => {
+    it('should work', () => {
+      const inputs = [
+        new Resource({
+          name: 123
+        }),
+        new Resource({
+          description: 234
+        }),
+        new Resource({
+          path: new URL({
+            url: '/some/path/{pathId}',
+            variableDelimiters: List([ '{', '}' ])
+          })
+        })
+      ]
+      const expected = [
+        { key: 'name', value: 123 },
+        { key: 'name', value: 234 },
+        { key: 'name', value: '/some/path/:pathId' }
+      ]
+      const actual = inputs.map(input => __internals__.createItemNameFromResource(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createItemGroupFromResource', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createItemsFromResource').andCall((a, r) => r)
+
+      spyOn(__internals__, 'createItemNameFromResource').andCall(r => {
+        return r === 345 ? { key: 'name', value: r * 2 } : null
+      })
+
+      spyOn(__internals__, 'createItemDescription').andCall(r => {
+        return r === 345 ? { key: 'description', value: r * 3 } : null
+      })
+
+      const inputs = [
+        [ new Api(), 'abc' ],
+        [ new Api({
+          resources: OrderedMap({
+            abc: 123
+          })
+        }), 'abc' ],
+        [ new Api({
+          resources: OrderedMap({
+            abc: 234
+          })
+        }), 'abc' ],
+        [ new Api({
+          resources: OrderedMap({
+            abc: 345
+          })
+        }), 'abc' ]
+      ]
+      const expected = [
+        null,
+        { item: 123 },
+        { item: 234 },
+        { item: 345, name: 345 * 2, description: 345 * 3 }
+      ]
+      const actual = inputs.map(input => __internals__.createItemGroupFromResource(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@mergeItemGroupsWithSameName', () => {
+    it('should work', () => {
+      const inputs = [
+        [ OrderedMap(), { name: 'abc', item: [ 123 ] } ],
+        [ OrderedMap({ abc: { name: 'abc', item: [ 123 ] } }), { name: 'abc', item: [ 234 ] } ],
+        [ OrderedMap({ abc: { name: 'abc', item: [ 123 ] } }), { name: 'def', item: [ 234 ] } ]
+      ]
+      const expected = [
+        OrderedMap({
+          abc: {
+            name: 'abc',
+            item: [ 123 ]
+          }
+        }),
+        OrderedMap({
+          abc: {
+            name: 'abc',
+            item: [ 123, 234 ]
+          }
+        }),
+        OrderedMap({
+          abc: {
+            name: 'abc',
+            item: [ 123 ]
+          },
+          def: {
+            name: 'def',
+            item: [ 234 ]
+          }
+        })
+      ]
+      const actual = inputs.map(input => __internals__.mergeItemGroupsWithSameName(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createRootItem', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createItemGroupFromResource').andCall((a, id) => {
+        if (id === 'a') {
+          return null
+        }
+
+        return { c: id }
+      })
+
+      spyOn(__internals__, 'mergeItemGroupsWithSameName').andCall((acc, { c }) => {
+        return acc.set('c', [].concat(acc.get('c', []), c))
+      })
+
+      const inputs = [
+        new Api(),
+        new Api({
+          group: new Group(),
+          resources: OrderedMap()
+        }),
+        new Api({
+          group: new Group(),
+          resources: OrderedMap({
+            a: 123,
+            b: 234,
+            c: 345
+          })
+        })
+      ]
+      const expected = [
+        { key: 'item', value: [] },
+        { key: 'item', value: [] },
+        { key: 'item', value: [ [ 'b', 'c' ] ] }
+      ]
+      const actual = inputs.map(input => __internals__.createRootItem(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertParameterIntoVariable', () => {
+    it('should work', () => {
+      const inputs = [
+        [ new Parameter(), 123 ],
+        [ new Parameter({
+          key: 'Content-Type',
+          default: 'application/json',
+          type: 'string'
+        }), 123 ]
+      ]
+      const expected = [
+        { id: 123 },
+        { id: 123, value: 'application/json', type: 'string', name: 'Content-Type' }
+      ]
+      const actual = inputs.map(input => __internals__.convertParameterIntoVariable(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createVariable', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertParameterIntoVariable').andCall(v => v % 2 ? v * 2 : null)
+
+      const inputs = [
+        new Api(),
+        new Api({
+          store: new Store({
+            parameter: OrderedMap({
+              a: 234,
+              b: 456,
+              c: 678
+            })
+          })
+        }),
+        new Api({
+          store: new Store({
+            parameter: OrderedMap({
+              a: 123,
+              b: 234,
+              c: 345
+            })
+          })
+        })
+      ]
+      const expected = [
+        null,
+        null,
+        { key: 'variable', value: [ 123 * 2, 345 * 2 ] }
+      ]
+      const actual = inputs.map(input => __internals__.createVariable(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createPostmanCollection', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createInfo').andCall(a => a ? { key: 'info', value: a * 2 } : null)
+      spyOn(__internals__, 'createRootItem').andCall(a => a ? { key: 'item', value: a * 3 } : null)
+      spyOn(__internals__, 'createVariable').andCall(a => {
+        return a ? { key: 'variable', value: a * 4 } : null
+      })
+
+      const inputs = [
+        null,
+        123
+      ]
+      const expected = [
+        {},
+        { info: 123 * 2, item: 123 * 3, variable: 123 * 4 }
+      ]
+      const actual = inputs.map(input => __internals__.createPostmanCollection(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@serialize', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createPostmanCollection').andReturn({
+        serialized: 123
+      })
+
+      const inputs = [
+        { api: 123 }
+      ]
+      const expected = [
+        JSON.stringify({ serialized: 123 }, null, 2)
+      ]
+
+      const actual = inputs.map(input => __internals__.serialize(input))
+      expect(actual).toEqual(expected)
+    })
+
+    it('should throw if postmanCollection has circular reference', () => {
+      const a = { c: 123 }
+      const b = { a }
+      a.b = b
+      spyOn(__internals__, 'createPostmanCollection').andReturn(a)
+
+      const input = { api: 123 }
+      expect(() => __internals__.serialize(input)).toThrow()
     })
   })
 })
