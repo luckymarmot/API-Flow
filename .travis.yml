@@ -1,4 +1,9 @@
 language: node_js
+node_js: 7.4
+cache:
+  yarn: true
+  directories:
+    - node_modules
 env:
   - TEST_TARGET=lint
   - TEST_TARGET=unit
