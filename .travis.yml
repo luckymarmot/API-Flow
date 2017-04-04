@@ -2,14 +2,8 @@ language: node_js
 node_js: 7.4
 cache: yarn
 env:
-  - CXX=g++-4.8 TEST_TARGET=lint
-  - CXX=g++-4.8 TEST_TARGET=unit
-  - CXX=g++-4.8 TEST_TARGET=e2e
+  - TEST_TARGET=lint
+  - TEST_TARGET=unit
+  - TEST_TARGET=e2e
 script:
   - make test
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
