@@ -6,6 +6,8 @@ import {
     Parameter
 } from './Parameter'
 
+import { flatten } from '../utils/fp-utils'
+
 /**
  * Metadata about the URLComponent Record.
  * Used for internal serialization and deserialization
@@ -97,8 +99,16 @@ methods.sectionMapper = (section, index) => {
  * NOTE: this will fail to behave correctly if the delimiters are special parts of a regex, like '$'
  */
 methods.extractSectionsFromString = (string, delimiters) => {
-  const regex = new RegExp(delimiters.join('(.+?)'))
-  return string.split(regex)
+  const regex = new RegExp(delimiters.slice(0, 2).join('(.+?)'))
+  const sections = string.split(regex)
+  if (delimiters.size <= 2) {
+    return sections
+  }
+
+  const subRegex = new RegExp(delimiters.slice(2).join('(.+?)'))
+  return sections
+    .map(section => section.split(subRegex))
+    .reduce(flatten, [])
 }
 
 /**
