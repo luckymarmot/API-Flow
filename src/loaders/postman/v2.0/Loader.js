@@ -162,7 +162,6 @@ methods.extractProtocolStringFromPostmanURLObject = (urlObject) => {
 
 methods.extractDomainStringFromPostmanURLObject = (urlObject) => {
   const domain = urlObject.domain || urlObject.host
-  console.log('domain ??', domain)
   if (typeof domain === 'string') {
     return domain || 'localhost'
   }
@@ -220,8 +219,6 @@ methods.createPostmanURLStringFromURLObject = (urlObject) => {
   if (!urlObject) {
     return 'http://localhost/'
   }
-
-  console.log('hey there', urlObject)
 
   const url = [
     methods.extractProtocolStringFromPostmanURLObject(urlObject),

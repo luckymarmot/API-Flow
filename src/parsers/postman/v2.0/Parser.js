@@ -474,7 +474,6 @@ methods.updateHostKeyWithLongestCommonPathname = ({ entries, lcPathname }, key) 
 methods.extractCommonHostsFromRequests = (items) => {
   const hosts = items
     .map(item => {
-      console.log('eCHFR', item.request.urlString)
       return {
         key: new URL({
           url: item.request.urlString,
@@ -524,8 +523,6 @@ methods.extractResourcePathFromItem = (host, item) => {
   const remainingIndex = hostPosition.index + host.length
   const path = url.slice(remainingIndex)
   const normalizedPath = (path[0] !== '/' ? '/' + path : path).split('?')[0]
-
-  console.log('normalizedPath', normalizedPath)
 
   return {
     key: 'path',
