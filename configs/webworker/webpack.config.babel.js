@@ -10,7 +10,11 @@ const config = {
   },
   module: {
     rules: [
-      { test: /\.js$/, use: 'babel-loader', include: [ path.resolve(__dirname, '../../src') ] },
+      {
+        test: /\.js$/,
+        use: 'babel-loader',
+        include: [ path.resolve(__dirname, '../../src'), __dirname ]
+      },
       { test: /\.json$/, use: 'json-loader', include: [ path.resolve(__dirname, '../../') ] }
     ],
     noParse: /node_modules\/json-schema\/lib\/validate\.js/
