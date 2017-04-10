@@ -12,6 +12,7 @@ import ParameterContainer from '../../../models/ParameterContainer'
 import Auth from '../../../models/Auth'
 import URL from '../../../models/URL'
 import Request from '../../../models/Request'
+import Constraint from '../../../models/Constraint'
 
 const methods = {}
 
@@ -131,11 +132,14 @@ methods.extractInfoVersionFromVersionString = (version) => {
 }
 
 methods.extractInfoVersionFromVersionObject = (version) => {
-  if (!version.major || !version.minor || !version.patch) {
+  if (!version.major && !version.minor && !version.patch) {
     return null
   }
 
-  const versionNumber = version.major + '.' + version.minor + '.' + version.patch
+  const versionNumber =
+    (version.major || '0') + '.' +
+    (version.minor || '0') + '.' +
+    (version.patch || '0')
   return { key: 'version', value: versionNumber }
 }
 
@@ -174,7 +178,7 @@ methods.extractInfo = (collection) => {
 methods.extractGroupId = () => null
 
 methods.extractGroupName = (itemGroup) => {
-  if (!itemGroup.name) {
+  if (!itemGroup || !itemGroup.name) {
     return null
   }
 
@@ -182,7 +186,7 @@ methods.extractGroupName = (itemGroup) => {
 }
 
 methods.extractGroupDescription = (itemGroup) => {
-  if (!itemGroup.description) {
+  if (!itemGroup || !itemGroup.description) {
     return null
   }
 
@@ -192,7 +196,7 @@ methods.extractGroupDescription = (itemGroup) => {
 methods.isItem = (itemOrItemGroup) => !!(itemOrItemGroup || {}).request
 
 methods.extractGroupResourceChildren = (item) => {
-  const id = item.id || item.name
+  const id = item.id || item.name || null
   return { key: id, value: id }
 }
 
@@ -233,7 +237,7 @@ methods.extractGroupInstance = (itemGroup) => {
 }
 
 methods.extractGroup = (collectionOrItemGroup) => {
-  const key = collectionOrItemGroup.name || 'Group'
+  const key = collectionOrItemGroup.name || 'group'
   const groupInstance = methods.extractGroupInstance(collectionOrItemGroup)
 
   return { key, value: new Group(groupInstance) }
@@ -259,7 +263,7 @@ methods.extractParameterEntryFromVariable = (variable) => {
 }
 
 methods.extractParameterTypedStore = (collection) => {
-  if (!collection || !collection.variable || !!Array.isArray(collection.variable)) {
+  if (!collection || !collection.variable || !Array.isArray(collection.variable)) {
     return null
   }
 
@@ -350,52 +354,65 @@ methods.extractOAuth2AuthFromAuth = (auth) => {
   }
 }
 
+methods.extractAuthFromPostmanAuth = (auth) => {
+  if (auth.type === 'awsv4') {
+    return methods.extractAWSSig4AuthFromAuth(auth)
+  }
+
+  if (auth.type === 'basic') {
+    return methods.extractBasicAuthFromAuth(auth)
+  }
+
+  if (auth.type === 'digest') {
+    return methods.extractDigestAuthFromAuth(auth)
+  }
+
+  if (auth.type === 'hawk') {
+    return methods.extractHawkAuthFromAuth(auth)
+  }
+
+  if (auth.type === 'noauth') {
+    return null
+  }
+
+  if (auth.type === 'oauth1') {
+    return methods.extractOAuth1AuthFromAuth(auth)
+  }
+
+  if (auth.type === 'oauth2') {
+    return methods.extractOAuth2AuthFromAuth(auth)
+  }
+
+  return null
+}
+
 methods.extractAuthTypedStore = (items) => {
   const auths = items
-    .map(item => item.request.auth)
+    .map(item => ((item || {}).request || {}).auth)
     .filter(v => !!v)
-    .map(auth => {
-      if (auth.type === 'awsv4') {
-        return methods.extractAWSSig4AuthFromAuth(auth)
-      }
-
-      if (auth.type === 'basic') {
-        return methods.extractBasicAuthFromAuth(auth)
-      }
-
-      if (auth.type === 'digest') {
-        return methods.extractDigestAuthFromAuth(auth)
-      }
-
-      if (auth.type === 'hawk') {
-        return methods.extractHawkAuthFromAuth(auth)
-      }
-
-      if (auth.type === 'noauth') {
-        return null
-      }
-
-      if (auth.type === 'oauth1') {
-        return methods.extractOAuth1AuthFromAuth(auth)
-      }
-
-      if (auth.type === 'oauth2') {
-        return methods.extractOAuth2AuthFromAuth(auth)
-      }
-
-      return null
-    })
+    .map(methods.extractAuthFromPostmanAuth)
     .filter(v => !!v)
     .reduce(convertEntryListInMap, {})
 
   return { key: 'auth', value: OrderedMap(auths) }
 }
 
+methods.extractConstraintTypedStore = (collection) => {
+  const constraints = OrderedMap(collection.globals || {}).map((_, key) => {
+    return new Constraint.JSONSchema({
+      title: key
+    })
+  })
+
+  return { key: 'constraint', value: constraints }
+}
+
 methods.extractStoreInstance = (items, endpoints, collection) => {
   const kvs = [
     methods.extractParameterTypedStore(collection),
     methods.extractEndpointTypedStore(endpoints),
-    methods.extractAuthTypedStore(items)
+    methods.extractAuthTypedStore(items),
+    methods.extractConstraintTypedStore(collection)
   ].filter(v => !!v)
 
   return kvs.reduce(convertEntryListInMap, {})
@@ -484,7 +501,7 @@ methods.extractCommonHostsFromRequests = (items) => {
     })
     .reduce(methods.addHostEntryToHostMap, {})
 
-  return new OrderedMap(hosts).map(methods.updateHostKeyWithLongestCommonPathname).valueSeq()
+  return OrderedMap(hosts).map(methods.updateHostKeyWithLongestCommonPathname).valueSeq().toList()
 }
 
 methods.createEndpointFromHost = (host, entries) => {
@@ -536,74 +553,128 @@ methods.extractResourcePathFromItem = (host, item) => {
 methods.extractResourceDescriptionFromItem = () => null
 
 methods.extractRequestNameFromItem = (item) => {
-  if (!item.name) {
+  if (!item || !item.name) {
     return null
   }
 
   return { key: 'name', value: item.name }
 }
 
-methods.extractRequestDescriptionFromItem = () => null
+methods.extractRequestDescriptionFromItem = (item) => {
+  if (!item || !(item.description || (item.request || {}).description)) {
+    return null
+  }
+
+  const description = item.description || item.request.description
+  return { key: 'description', value: description }
+}
+
+methods.extractParameterEntryFromQueryParameter = ({ key, value }) => {
+  if (!key) {
+    return null
+  }
+
+  const match = (value + '').match(/^{{([^{}]*)}}$/)
+  let constraints = List()
+  if (match) {
+    constraints = List([ new Constraint.JSONSchema({ $ref: '#/definitions/' + match[1] }) ])
+  }
+
+  const $value = new Parameter({
+    key,
+    name: key,
+    type: 'string',
+    default: value,
+    constraints
+  })
+
+  return { key, value: $value }
+}
 
 methods.extractQueryBlockFromQueryParams = (queryParams) => {
   if (!queryParams || !queryParams.length) {
     return null
   }
 
-  const block = queryParams.map(({ key, value }) => {
-    const $value = new Parameter({
-      key,
-      name: key,
-      type: 'string',
-      default: value
-    })
+  const block = queryParams
+    .map(methods.extractParameterEntryFromQueryParameter)
+    .filter(v => !!v)
+    .reduce(convertEntryListInMap, {})
 
-    return { key, value: $value }
+  return { key: 'queries', value: OrderedMap(block) }
+}
+
+methods.extractHeaderParameterFromString = (line) => {
+  const [ key = '', value = '' ] = line.split(':')
+
+  if (!key) {
+    return null
+  }
+
+  const trimmed = (value || '').trim()
+  const match = trimmed.match(/^{{([^{}]*)}}$/)
+  let constraints = List()
+  if (match) {
+    constraints = List([ new Constraint.JSONSchema({ $ref: '#/definitions/' + match[1] }) ])
+  }
+
+  const $value = new Parameter({
+    key: key.trim(),
+    name: key.trim(),
+    type: 'string',
+    default: (value || '').trim(),
+    constraints
   })
-
-  return { key: 'queries', value: OrderedMap(block.reduce(convertEntryListInMap, {})) }
+  return { key, value: $value }
 }
 
 methods.extractHeaderBlockFromHeaderString = (headerString) => {
   const lines = headerString.split('\n')
-  const block = lines.map(line => {
-    const [ key, value ] = line.split(':')
-    const $value = new Parameter({
-      key: key.trim(),
-      name: key.trim(),
-      type: 'string',
-      default: (value || '').trim()
-    })
-    return { key, value: $value }
-  })
+  const block = lines
+    .map(methods.extractHeaderParameterFromString)
+    .filter(v => !!v)
+    .reduce(convertEntryListInMap, {})
 
-  return { key: 'headers', value: OrderedMap(block.reduce(convertEntryListInMap, {})) }
+  return { key: 'headers', value: OrderedMap(block) }
+}
+
+methods.extractHeaderParameterFromObject = (header) => {
+  if (!header || !header.key) {
+    return null
+  }
+
+  const key = header.key
+  const match = (header.value + '').match(/^{{([^{}]*)}}$/)
+  let constraints = List()
+  if (match) {
+    constraints = List([ new Constraint.JSONSchema({ $ref: '#/definitions/' + match[1] }) ])
+  }
+
+  const value = new Parameter({
+    key: key.trim(),
+    name: key.trim(),
+    type: 'string',
+    default: header.value || null,
+    constraints
+  })
+  return { key, value }
+}
+
+methods.extractHeaderParameter = (header) => {
+  if (typeof header === 'string') {
+    return methods.extractHeaderParameterFromString(header)
+  }
+
+  return methods.extractHeaderParameterFromObject(header)
 }
 
 methods.extractHeaderBlockFromHeaderArray = (headerArray) => {
-  const block = headerArray.map(header => {
-    if (typeof header === 'string') {
-      const [ key, value ] = header.split(':')
-      const $value = new Parameter({
-        key: key.trim(),
-        name: key.trim(),
-        type: 'string',
-        default: (value || '').trim()
-      })
-      return { key, value: $value }
-    }
+  const block = headerArray
+    .map(methods.extractHeaderParameter)
+    .filter(v => !!v)
+    .reduce(convertEntryListInMap, {})
 
-    const key = header.key || null
-    const value = new Parameter({
-      key: key.trim(),
-      name: key.trim(),
-      type: 'string',
-      default: header.value || null
-    })
-    return { key, value }
-  })
-
-  return { key: 'headers', value: OrderedMap(block.reduce(convertEntryListInMap, {})) }
+  return { key: 'headers', value: OrderedMap(block) }
 }
 
 methods.extractHeaderBlockFromHeaders = (headers) => {
@@ -622,50 +693,71 @@ methods.extractHeaderBlockFromHeaders = (headers) => {
   return methods.extractHeaderBlockFromHeaderArray(headers)
 }
 
+methods.extractBodyParameterFromUrlEncodedOrFormDataBody = ({ key, value }) => {
+  if (!key) {
+    return null
+  }
+
+  const $value = new Parameter({
+    key,
+    name: key,
+    type: 'string',
+    default: value
+  })
+
+  return { key, value: $value }
+}
+
+methods.extractBodyBlockFromUrlEncodedOrFormDataBody = (body) => {
+  const block = (body[body.mode] || [])
+    .map(methods.extractBodyParameterFromUrlEncodedOrFormDataBody)
+    .filter(v => !!v)
+    .reduce(convertEntryListInMap, {})
+
+  return { key: 'body', value: OrderedMap(block) }
+}
+
+methods.extractBodyBlockFromFileBody = (body) => {
+  const block = {
+    file: new Parameter({ type: 'string', default: ((body || {}).file || {}).content || null })
+  }
+
+  return { key: 'body', value: OrderedMap(block) }
+}
+
+methods.extractBodyBlockFromRawBody = (body) => {
+  const block = {
+    raw: new Parameter({ type: 'string', default: (body || {}).raw || null })
+  }
+
+  return { key: 'body', value: OrderedMap(block) }
+}
+
 methods.extractBodyBlockFromBody = (body) => {
   if (!body) {
     return null
   }
 
   if (body.mode === 'urlencoded' || body.mode === 'formdata') {
-    const block = (body[body.mode] || []).map(({ key, value }) => {
-      const $value = new Parameter({
-        key,
-        name: key,
-        type: 'string',
-        default: value
-      })
-      return { key, value: $value }
-    })
-
-    return { key: 'body', value: OrderedMap(block.reduce(convertEntryListInMap, {})) }
+    return methods.extractBodyBlockFromUrlEncodedOrFormDataBody(body)
   }
 
   if (body.mode === 'file') {
-    const block = [
-      {
-        key: 'file',
-        value: new Parameter({ type: 'string', value: body.file.content })
-      }
-    ]
-    return { key: 'body', value: OrderedMap(block.reduce(convertEntryListInMap, {})) }
+    return methods.extractBodyBlockFromFileBody(body)
   }
 
-  const block = [
-    {
-      key: 'raw',
-      value: new Parameter({ type: 'string', value: body.raw })
-    }
-  ]
+  if (body.mode === 'raw') {
+    return methods.extractBodyBlockFromRawBody(body)
+  }
 
-  return { key: 'body', value: OrderedMap(block.reduce(convertEntryListInMap, {})) }
+  return null
 }
 
 methods.extractRequestParameterContainerInstanceFromItem = (item) => {
   const kvs = [
-    methods.extractQueryBlockFromQueryParams(item.request.url.query),
-    methods.extractHeaderBlockFromHeaders(item.request.header),
-    methods.extractBodyBlockFromBody(item.request.body)
+    methods.extractQueryBlockFromQueryParams((((item || {}).request || {}).url || {}).query),
+    methods.extractHeaderBlockFromHeaders(((item || {}).request || {}).header),
+    methods.extractBodyBlockFromBody(((item || {}).request || {}).body)
   ].filter(v => !!v)
 
   return kvs.reduce(convertEntryListInMap, {})
@@ -761,7 +853,7 @@ methods.extractAuthRefsFromOAuth2Auth = (auth) => {
 }
 
 methods.extractAuthsFromItem = (item) => {
-  const auth = item.request.auth
+  const auth = ((item || {}).request || {}).auth
   if (!auth) {
     return null
   }
@@ -798,7 +890,7 @@ methods.extractAuthsFromItem = (item) => {
 }
 
 methods.extractRequestMethodFromItem = (item) => {
-  const method = (item.request.method || 'get').toLowerCase()
+  const method = (((item || {}).request || {}).method || 'get').toLowerCase()
 
   return { key: 'method', value: method }
 }
@@ -867,6 +959,19 @@ methods.groupResourcesAndEndpoints = (
   return { resources: resources.concat(hostResources || []), endpoints }
 }
 
+methods.mergeResources = (resourceMap, { key, value }) => {
+  if (resourceMap[key]) {
+    const $methods = resourceMap[key].get('methods')
+    const merged = $methods.merge(value.get('methods'))
+    resourceMap[key] = resourceMap[key].set('methods', merged)
+  }
+  else {
+    resourceMap[key] = value
+  }
+
+  return resourceMap
+}
+
 methods.extractResources = (collection) => {
   const items = methods.extractItems([], collection)
 
@@ -875,7 +980,8 @@ methods.extractResources = (collection) => {
     .map(methods.convertHostIntoResources)
     .reduce(methods.groupResourcesAndEndpoints, { resources: [], endpoints: [] })
 
-  const resourceMap = OrderedMap(resources.reduce(convertEntryListInMap, {}))
+
+  const resourceMap = OrderedMap(resources.reduce(methods.mergeResources, {}))
   return { resources: resourceMap, endpoints, items }
 }
 
