@@ -196,6 +196,26 @@ describe('models/URLComponent.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with secondary delimiters', () => {
+      const string = '/{{userId}}/path/:pathId'
+      const delimiters = List([ '{{', '}}', ':' ])
+
+      const expected = [ '/', 'userId', '/path/', 'pathId' ]
+      const actual = __internals__.extractSectionsFromString(string, delimiters)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with secondary delimiters even if no primary variable', () => {
+      const string = '/users/path/:pathId'
+      const delimiters = List([ '{{', '}}', ':' ])
+
+      const expected = [ '/users/path/', 'pathId' ]
+      const actual = __internals__.extractSectionsFromString(string, delimiters)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertComplexStringToSequenceParameter', () => {

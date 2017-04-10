@@ -1,0 +1,393 @@
+{
+  "variables": [],
+  "info": {
+    "name": "Authentiq",
+    "_postman_id": "f508d2ef-0a7b-2a32-d814-85697ef419a3",
+    "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "key",
+      "description": "Folder for key",
+      "item": [
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/key",
+          "request": {
+            "url": "https://6-dot-authentiqio.appspot.com/key",
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "Authentiq ID to register"
+            },
+            "description": "Register a new ID `JWT(sub, devtoken)`\n\nv5: `JWT(sub, pk, devtoken, ...)`\n\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/key?email={{email}}&phone={{phone}}&code={{code}}",
+          "request": {
+            "url": "https://6-dot-authentiqio.appspot.com/key?email={{email}}&phone={{phone}}&code={{code}}",
+            "method": "DELETE",
+            "header": [],
+            "body": {},
+            "description": "Revoke an Authentiq ID using email & phone.\n\nIf called with `email` and `phone` only, a verification code \nwill be sent by email. Do a second call adding `code` to \ncomplete the revocation.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/key/:PK",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "key",
+                ":PK"
+              ],
+              "variable": [
+                {
+                  "value": "{{PK}}",
+                  "id": "PK"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {},
+            "description": "Get public details of an Authentiq ID.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/key/:PK",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "key",
+                ":PK"
+              ],
+              "variable": [
+                {
+                  "value": "{{PK}}",
+                  "id": "PK"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "Authentiq ID to register"
+            },
+            "description": "Update Authentiq ID by replacing the object.\n\nv4: `JWT(sub,email,phone)` to bind email/phone hash; \n\nv5: POST issuer-signed email & phone scopes\nand PUT to update registration `JWT(sub, pk, devtoken, ...)`\n\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/key/:PK",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "key",
+                ":PK"
+              ],
+              "variable": [
+                {
+                  "value": "{{PK}}",
+                  "id": "PK"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "Authentiq ID to register"
+            },
+            "description": "update properties of an Authentiq ID.\n(not operational in v4; use PUT for now)\n\nv5: POST issuer-signed email & phone scopes in\na self-signed JWT\n\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK?secret={{secret}}",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/key/:PK?secret={{secret}}",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "key",
+                ":PK"
+              ],
+              "query": [
+                {
+                  "key": "secret",
+                  "value": "{{secret}}"
+                }
+              ],
+              "variable": [
+                {
+                  "value": "{{PK}}",
+                  "id": "PK"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {},
+            "description": "Revoke an Identity (Key) with a revocation secret"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/key/:PK",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "key",
+                ":PK"
+              ],
+              "variable": [
+                {
+                  "value": "{{PK}}",
+                  "id": "PK"
+                }
+              ]
+            },
+            "method": "HEAD",
+            "header": [],
+            "body": {},
+            "description": "HEAD info on Authentiq ID\n"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "login",
+      "description": "Folder for login",
+      "item": [
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/login?callback={{callback}}",
+          "request": {
+            "url": "https://6-dot-authentiqio.appspot.com/login?callback={{callback}}",
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "Push Token."
+            },
+            "description": "push sign-in request\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "scope",
+      "description": "Folder for scope",
+      "item": [
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/scope?test={{test}}",
+          "request": {
+            "url": "https://6-dot-authentiqio.appspot.com/scope?test={{test}}",
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "Claims of scope"
+            },
+            "description": "scope verification request\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/scope/:job",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "scope",
+                ":job"
+              ],
+              "variable": [
+                {
+                  "value": "{{job}}",
+                  "id": "job"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {},
+            "description": "get the status / current content of a verification job"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/scope/:job",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "scope",
+                ":job"
+              ],
+              "variable": [
+                {
+                  "value": "{{job}}",
+                  "id": "job"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {},
+            "description": "authority updates a JWT with its signature\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/scope/:job",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "scope",
+                ":job"
+              ],
+              "variable": [
+                {
+                  "value": "{{job}}",
+                  "id": "job"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {},
+            "description": "this is a scope confirmation"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/scope/:job",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "scope",
+                ":job"
+              ],
+              "variable": [
+                {
+                  "value": "{{job}}",
+                  "id": "job"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {},
+            "description": "delete a verification job"
+          },
+          "response": []
+        },
+        {
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "request": {
+            "url": {
+              "raw": "https://6-dot-authentiqio.appspot.com/scope/:job",
+              "protocol": "https",
+              "auth": {},
+              "host": [
+                "6-dot-authentiqio",
+                "appspot",
+                "com"
+              ],
+              "path": [
+                "scope",
+                ":job"
+              ],
+              "variable": [
+                {
+                  "value": "{{job}}",
+                  "id": "job"
+                }
+              ]
+            },
+            "method": "HEAD",
+            "header": [],
+            "body": {},
+            "description": "HEAD to get the status of a verification job"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
