@@ -4,6 +4,9 @@ extensions_dir=$(HOME)/Library/Containers/com.luckymarmot.Paw/Data/Library/Appli
 
 all: configure pack
 
+clean:
+	sh "$(SCRIPTS)/clean.sh" $(BASE)
+
 configure:
 	sh "$(SCRIPTS)/configure.sh" $(BASE)
 
@@ -16,14 +19,11 @@ importers:
 generators:
 	sh "$(SCRIPTS)/generators.sh" $(BASE) $(TARGET)
 
-transfer: importers generators
+transfer: clean importers generators
 	sh "$(SCRIPTS)/transfer.sh" $(BASE) $(extensions_dir) $(TARGET)
 
-pack: importers generators
+pack: clean importers generators
 	sh "$(SCRIPTS)/pack.sh" $(BASE) $(TARGET)
-
-flow-server:
-	./node_modules/.bin/babel-node --expose-gc "$(SCRIPTS)/flow-runner.js"
 
 lint:
 	sh "$(SCRIPTS)/lint.sh" $(BASE)
