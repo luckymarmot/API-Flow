@@ -2,7 +2,7 @@ import { resolve, parse } from 'url'
 import { List } from 'immutable'
 
 import URL from '../../../models/URL'
-import { convertEntryListInMap } from '../../../utils/fp-utils'
+import { convertEntryListInMap, flatten } from '../../../utils/fp-utils'
 
 const methods = {}
 
@@ -275,6 +275,120 @@ methods.normalizeItems = (itemGroup) => {
   return itemGroup
 }
 
+methods.extractGlobalsFromUrlString = (urlString = '') => {
+  const globals = (urlString.match(/{{([^{}]*)}}/g) || [])
+    .map(t => ({ key: t.slice(2, -2) }))
+
+  return globals
+}
+
+methods.extractGlobalsFromHeaders = (headers = []) => {
+  if (typeof headers === 'string') {
+    return (headers.match(/{{([^{}]*)}}/g) || [])
+      .map(t => ({ key: t.slice(2, -2) }))
+  }
+
+  return headers
+    .map(header => {
+      if (typeof header === 'string') {
+        return (header.match(/{{([^{}]*)}}/g) || [])
+          .map(t => ({ key: t.slice(2, -2) }))
+      }
+
+      const value = (header.value + '')
+      const localGlobals = (value.match(/{{([^{}]*)}}/g) || [])
+        .map(t => ({ key: t.slice(2, -2) }))
+
+      return localGlobals
+    })
+    .reduce(flatten, [])
+}
+
+methods.extractGlobalsFromRawBody = (raw) => {
+  if (raw.match(/^{{([^{}]*)}}$/)) {
+    return [ { key: raw.slice(2, -2) } ]
+  }
+
+  return []
+}
+
+methods.extractGlobalsFromEncodedBody = (body) => {
+  if (!body || !Array.isArray(body)) {
+    return []
+  }
+
+  return body
+    .map(param => {
+      const value = param.value || ''
+      const match = value.match(/^{{([^{}]*)}}$/)
+
+      if (!match) {
+        return null
+      }
+
+      return { key: match[1] }
+    })
+    .filter(v => !!v)
+}
+
+methods.extractGlobalsFromFileBody = (body) => {
+  if (!body || !body.content || typeof body.content !== 'string') {
+    return []
+  }
+
+  const match = body.content.match(/^{{([^{}]*)}}$/)
+  if (!match) {
+    return []
+  }
+
+  return { key: match[1] }
+}
+
+methods.extractGlobalsFromBody = (body) => {
+  if (body.raw) {
+    return methods.extractGlobalsFromRawBody(body.raw)
+  }
+
+  if (body.mode === 'urlencoded' || body.mode === 'formdata') {
+    return methods.extractGlobalsFromEncodedBody(body[body.mode])
+  }
+
+  if (body.file) {
+    return methods.extractGlobalsFromFileBody(body.file)
+  }
+
+  return []
+}
+
+methods.extractGlobalsFromItem = (item) => {
+  const urlString = item.request.urlString
+  const urlGlobals = methods.extractGlobalsFromUrlString(urlString)
+  const headerGlobals = methods.extractGlobalsFromHeaders(item.request.headers)
+  const bodyGlobals = methods.extractGlobalsFromBody(item.request.body)
+
+  return [].concat(urlGlobals, headerGlobals, bodyGlobals)
+}
+
+methods.extractGlobalsFromItemGroup = (globals, itemGroup) => {
+  if (itemGroup.request) {
+    return [].concat(globals, methods.extractGlobalsFromItem(itemGroup))
+  }
+
+  if (!itemGroup.item || !Array.isArray(itemGroup.item)) {
+    return globals
+  }
+
+  return itemGroup.item.reduce(($globals, item) => {
+    return methods.extractGlobalsFromItemGroup($globals, item)
+  }, globals)
+}
+
+methods.addGlobalsToRoot = (collection) => {
+  const globals = methods.extractGlobalsFromItemGroup([], collection)
+  collection.globals = globals.reduce(convertEntryListInMap, {})
+  return collection
+}
+
 methods.fixPrimary = (options, { content }) => {
   let collection = null
   try {
@@ -290,7 +404,8 @@ methods.fixPrimary = (options, { content }) => {
 
   try {
     const normalized = methods.normalizeItems(collection)
-    return Promise.resolve({ options, item: normalized })
+    const withGlobals = methods.addGlobalsToRoot(normalized)
+    return Promise.resolve({ options, item: withGlobals })
   }
   catch (e) {
     return Promise.reject(e)

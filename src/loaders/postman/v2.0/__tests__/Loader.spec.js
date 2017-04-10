@@ -618,7 +618,7 @@ describe('loaders/postman/v2.0/Loader.js', () => {
         {
           success: ({ options, item }) => {
             expect(options).toEqual(123)
-            expect(item).toEqual({ a: 123 })
+            expect(item).toEqual({ a: 123, globals: {} })
           },
           error: (e) => { throw e || new Error('should not have failed') }
         }
