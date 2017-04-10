@@ -7,8 +7,8 @@ shift
 # iterate
 while test ${#} -gt 0
 do
-    echo "creating $1 runner"
+    echo "creating $1 lib in dist/$1"
     rm -rf "$base/dist/$1"
-    TARGET_ENV=$1 node "$base/node_modules/webpack/bin/webpack.js"
+    node "$base/node_modules/webpack/bin/webpack.js" --config "$base/configs/$1/webpack.config.babel.js"
     shift
 done
