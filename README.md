@@ -4,6 +4,22 @@
 
 A flow written in ES6 using Immutable to convert between API description formats (Swagger, etc.) and other programs such as cURL command lines.
 
+## What formats are supported and what will be in the future
+We currently support:
+- `Swagger v2.0 (in/out)`
+- `RAML v1.0 (in/out)`
+- `Postman Collection v2.0 (in/out)`
+- `Paw v3.1 (in/out)`
+
+We intend to support:
+- `Swagger v3.0`
+- `RAML v0.8`
+- `Postman Collection v1.0`
+- `Postman Dump v1.0`
+- `Insomnia v3.0`
+- `Api-Blueprint`
+- and many more.
+
 ## Installation
 ### from a cloned repository
 
@@ -41,7 +57,7 @@ make transfer TARGET="swagger raml1 postman2"
 
 ```js
 const ApiFlow = require('api-flow'); // if from npm
-const ApiFlow = require('./dist/node/api-flow.js'); // if from `make runners`
+const ApiFlow = require('./dist/node/api-flow.js'); // if from `make runners TARGET="node"`
 
 const options = {
     source: {
@@ -64,8 +80,7 @@ promise.then((data) => {
 })
 ```
 
-### Using as a CLI
-
+### Using as a CLI (coming soon)
 ```sh
 node ./bin/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
 ```
