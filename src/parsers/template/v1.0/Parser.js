@@ -18,7 +18,7 @@ export const __meta__ = {
   format: 'postman-collection'
 }
 
-export class PostmanCollectionV2Parser {
+export class TemplateParser {
   static __meta__ = __meta__
 
   static detect(content) {
@@ -881,4 +881,4 @@ methods.parse = ({ options, item }) => {
 }
 
 export const __internals__ = methods
-export default PostmanCollectionV2Parser
+export default TemplateParser
