@@ -1,3 +1,21 @@
+/**
+ * This is a template to help speed up the writing of a parser.
+ *
+ * A Parser converts a standardized file that describe an Api according to a certain format into the
+ * internal model of API-Flow. If you want to learn more about the internal model, you can find more
+ * information in `src/README.md`
+ *
+ * This template follows a very simple strategy that is not necessarily the best nor the most
+ * elegant but yields decent implementation results. The strategy is to try to follow as closely as
+ * possible the model in which the conversion should be done, which for a Parser is the internal
+ * model, and to pass along all the necessary parts of the source model to create the components
+ * of the target model. For example, if your model separates responses from requests in a resource
+ * layer, then these responses would be passed along for the creation of Requests, as Responses
+ * are a nested component of Request in the internal model.
+ *
+ * We found that working against the target model instead of from the source model yielded fewer
+ * bugs than the opposite. This is, however, just a recommendation.
+ */
 import { OrderedMap, List } from 'immutable'
 import { convertEntryListInMap } from '../../../utils/fp-utils'
 
