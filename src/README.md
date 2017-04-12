@@ -4,14 +4,15 @@ This document tries to briefly explain how API-Flow functions and how you can ex
 ## The API-Flow conversion flow
 API-Flow converts an API format into another in 4 different steps
 1. **Setup -** API-Flow sets the environment in which the conversion will be done (node, web, paw,
-  etc.). At this point, the user can set up a cache to help with the resolution of missing URIs.
+  etc.). At this point, the user can pre-populate items in a cache for later resolution of missing
+  URIs.
 2. **Loading -** API-Flow tries to resolve a URI to a file and then parses this file to look for
-  missing references, and to fix/normalize parts of the file that can be improved
-3. **Parsing -** API-Flow parses the normalized file and converts it into its internal model
+  missing references, and to fix/normalize parts of the file that can be improved.
+3. **Parsing -** API-Flow parses the normalized file and converts it into its internal model.
 4. **Serializing -** API-Flow converts the internal model representation into a target format.
 
 If you want to see what a converter would look like, you can refer yourself to the file
-`src/api-flow.js`
+[`src/api-flow.js`](https://github.com/luckymarmot/API-Flow/blob/develop/src/api-flow.js)
 
 ## Why use an internal model
 Because it's `n/2` times faster to implement than 1-to-1 conversions, where `n` is the number of
@@ -22,8 +23,8 @@ The internal model tries to describe what an API can do with as reduced set of c
 theory, should be able to describe an API as well as any API Format.
 
 ### Core Components of the API-Flow model
-In this section we expose a small group of core components as well as some of their subtleties.
-This section does not exhaustively cover all components of the API-Flow, and leaves the more trivial
+In this section, we expose a small group of core components as well as some of their subtleties.
+This section does not exhaustively cover all components of the API-Flow and leaves the more trivial
 ones to the comprehension of the reader.
 
 #### Api
@@ -41,7 +42,7 @@ that describe different aspects of an API.
   all the resources of an Api. We define a Resource in very much the same way as Swagger or RAML;
   that is, that a Resource is the ensemble of operations accessible from a given path. We do not
   impose a unicity restriction on Resources based on their path, which means that two different
-  Resources can share the same path. We however recommend to have a disjunction of the Requests
+  Resources can share the same path. We, however, recommend having a disjunction of the Requests
   based on their methods for a given Resource path. If this recommendation is not respected, the
   conversion may result in an unnecessary loss of information.
 
@@ -58,9 +59,9 @@ components of the Api, which are the following:
 - **response -** this TypedStore holds all the shared responses of the Api.
 - **auth -** this TypedStore holds all the shared authentication methods of the Api. We **require**
   that all authentication methods used in the Api be store in this TypedStore.
-- **variable -** this TypedStore holds all the the shared variables of the Api. Variables are
+- **variable -** this TypedStore holds all the shared variables of the Api. Variables are
   contextual constraints that cannot be represented by a JSON Schema. Variables change behavior
-  together based on a environment name. This is used in Paw and Postman to represent environment
+  together based on an environment name. This is used in Paw and Postman to represent environment
   variables, where you can switch between different environments.
 - **interface -** this TypedStore holds all the shared interfaces that are used throughout the Api.
   These interfaces can be used to describe features that are shared across multiple resources,
@@ -77,7 +78,7 @@ store. The two fields are `type` and `uuid`. In addition to these two fields, th
 `overlay`.
 - **type -** this field corresponds to the name of a TypedStore (e.g. `constraint`, `auth`, etc.)
 - **uuid -** this field corresponds to the id of an object inside a TypedStore. As such, there are
-  no requirements that the id be unique across all objects, but only inside the TypedStore. It is,
+  no requirements for the id to be unique across all objects, but only inside the TypedStore. It is,
   however, preferred to have it behave as a uuid.
 - **overlay -** this field is used to override part of the object that the Reference links to. If it
   is defined, it **must** always be of the same type as the underlying object. This is particularly
@@ -97,7 +98,7 @@ auth = store.getIn(ref.getLocation())
 ```
 
 #### Group
-The Group Record can be seen as a folder. It can have a name, and hold other folders. It can also
+The Group Record can be seen as a folder. It can have a name and hold other folders. It can also
 hold ID references to resources stored in the `resources` field. Note that these are not Reference
 Record but simple id strings.
 
@@ -136,18 +137,18 @@ The Request Record contains all the elements necessary to describing an operatio
 - **responses -** a Map of Responses or References to shared responses that can be returned by this
   operation.
 - **endpoints -** a Map of URLs or References to shared endpoints that is used by this
-  request. We **strongly** recommend to only have References to shared endpoints in this Map, if it
+  request. We **strongly** recommend to only have References to shared endpoints in this Map if it
   is used. If this Map is left empty, the `endpoints` field from the containing `Resource` should be
   used.
 - **interfaces -** a Map of Interfaces or References to shared Interfaces that this Request
   implements.
 
 #### Context
-Contexts are one of the more powerful and complex aspects of API-Flow, and are a generalization of
+Contexts are one of the more powerful and complex aspects of API-Flow and are a generalization of
 the concept of typed bodies in RAML. In RAML, it is possible to define different bodies
 schemas/dataTypes depending on the Content-Type, which can be particularly useful to represent the
 differences between JSON and XML schemas. In this case, each Content-Type header value would define
-a Context, and the body parameters would be filtered according to which context is applicable to
+a Context and the body parameters would be filtered according to which context is applicable to
 them.
 
 For instance, if we had the Context<Content-Type=application/json> and two body
@@ -163,7 +164,7 @@ also not limited to only describing Content-Type header values, but can be used 
 parameter-value pair, and are not limited to having a single Parameter as their set of constraints.
 This means that the API-Flow model is able to describe conditional use of parameters based on the
 values of different parameters, like, for instance, the use of the `Accept-Encoding` header only if
-the `Accept` header has a value, or a variation of accepted values for `Accept-Encoding` based on
+the `Accept` header has a value or a variation of accepted values for `Accept-Encoding` based on
 the values of `Accept-Language`. In practice, we have seen no format that allows such level of
 describability, with RAML v1.0 and swagger v3.0 being the most descriptive.
 
@@ -219,7 +220,7 @@ A Parameter is composed of the following fields:
 - **type -** the type of the Parameter (e.g. string, integer, number, boolean, etc.). The type
   `array` defines a special behavior for the Parameter, which is explained in details further below.
 - **format -** the format of the Parameter (e.g. 'datetime', etc.). This is field has not yet been
-  normalized, and is therefore unstable. Use with caution.
+  normalized and is therefore unstable. Use with caution.
 - **default -** the default value of the Parameter.
 - **superType -** the superType of the Parameter. Setting this value to something else than `null`
   signifies that this Parameter has a non-standard behavior. For instance, if the superType is set
@@ -246,7 +247,7 @@ A Parameter is composed of the following fields:
   Parameter implements.
 
 #### Constraint
-A Constraint Record is a simple representation of a constraint, and can test a value to see whether
+A Constraint Record is a simple representation of a constraint and can test a value to see whether
 it complies with the constraint.
 
 There are many different Constraint that all follow a standard pattern:
@@ -283,7 +284,7 @@ under a certain status code.
 #### Auth
 API-Flow supports multiple types of authentication methods, which are represented by the Auth
 object. These authentication methods are fairly straightforward and their definitions can be found
-in the `src/models/auths` folder.
+in the [`src/models/auths`](https://github.com/luckymarmot/API-Flow/tree/develop/src/models/auths) folder.
 
 Here is a list of the currently support authentication method:
 - `Auth.ApiKey`
