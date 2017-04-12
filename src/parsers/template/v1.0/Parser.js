@@ -14,8 +14,8 @@ import Request from '../../../models/Request'
 const methods = {}
 
 export const __meta__ = {
-  version: 'v2.0',
-  format: 'postman-collection'
+  version: 'v1.0',
+  format: 'template'
 }
 
 export class TemplateParser {
