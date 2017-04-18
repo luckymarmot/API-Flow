@@ -4,13 +4,23 @@ export const currify = (uncurried, ...params) => {
   }
 }
 
-export const keys = (obj = {}) => Object.keys(obj)
+export const keys = (obj = {}) => {
+  if (typeof obj !== 'object') {
+    return []
+  }
+
+  return Object.keys(obj)
+}
 
 export const values = (obj) => keys(obj).map(key => obj[key])
 
 export const entries = (obj) => keys(obj).map(key => ({ key, value: obj[key] }))
 
-export const convertEntryListInMap = (obj, { key, value }) => {
+export const convertEntryListInMap = (obj, { key, value } = {}) => {
+  if (typeof key === 'undefined' && typeof value === 'undefined') {
+    return obj
+  }
+
   obj[key] = value
   return obj
 }

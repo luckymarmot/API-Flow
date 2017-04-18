@@ -1,10 +1,38 @@
 /* eslint-disable max-nested-callbacks */
 import expect, { spyOn, restoreSpies } from 'expect'
 
-import { __internals__ } from '../Loader'
+import Loader, { __internals__ } from '../Loader'
 
-describe('loaders/postman/v2.0/Loader.js', () => {
+describe('loaders/template/v1.0/Loader.js', () => {
   afterEach(() => restoreSpies())
+  describe('{ Loader }', () => {
+    describe('@load', () => {
+      it('should call methods.load', () => {
+        spyOn(__internals__, 'load').andCall(({ options, uri }) => options + uri)
+        const params = { options: 123, uri: 234 }
+
+        const expected = 123 + 234
+        const actual = Loader.load(params)
+
+        expect(__internals__.load).toHaveBeenCalledWith(params)
+        expect(actual).toEqual(expected)
+      })
+    })
+
+    describe('@isParsable', () => {
+      it('should call methods.isParsable', () => {
+        spyOn(__internals__, 'isParsable').andCall((content) => content * 2)
+        const params = { content: 123 }
+
+        const expected = 123 * 2
+        const actual = Loader.isParsable(params)
+
+        expect(__internals__.isParsable).toHaveBeenCalledWith(123)
+        expect(actual).toEqual(expected)
+      })
+    })
+  })
+
   describe('@isParsable', () => {
     const cases = [
       {
@@ -100,6 +128,7 @@ describe('loaders/postman/v2.0/Loader.js', () => {
   })
 
   describe('@fixPrimary', () => {
+    const passthrough = [ true, false, 'data' ]
     const cases = [
       {
         test: 'should reject if no content',
@@ -121,6 +150,17 @@ describe('loaders/postman/v2.0/Loader.js', () => {
         expected: {
           success: (done) => () => done(new Error('should have rejected')),
           error: (done) => () => done()
+        }
+      },
+      {
+        test: 'should resolve if content is shifty',
+        input: [
+          { someOptions: 123 },
+          { get content() { return passthrough.shift() } }
+        ],
+        expected: {
+          success: (done) => () => done(),
+          error: (done) => () => done(new Error('should have resolved'))
         }
       }
     ]

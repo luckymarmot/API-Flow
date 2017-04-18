@@ -3,10 +3,38 @@ import expect, { spyOn, restoreSpies } from 'expect'
 
 import URL from '../../../../models/URL'
 
-import { __internals__ } from '../Loader'
+import Loader, { __internals__ } from '../Loader'
 
 describe('loaders/postman/v2.0/Loader.js', () => {
   afterEach(() => restoreSpies())
+  describe('{ Loader }', () => {
+    describe('@load', () => {
+      it('should call methods.load', () => {
+        spyOn(__internals__, 'load').andCall(({ options, uri }) => options + uri)
+        const params = { options: 123, uri: 234 }
+
+        const expected = 123 + 234
+        const actual = Loader.load(params)
+
+        expect(__internals__.load).toHaveBeenCalledWith(params)
+        expect(actual).toEqual(expected)
+      })
+    })
+
+    describe('@isParsable', () => {
+      it('should call methods.isParsable', () => {
+        spyOn(__internals__, 'isParsable').andCall((content) => content * 2)
+        const params = { content: 123 }
+
+        const expected = 123 * 2
+        const actual = Loader.isParsable(params)
+
+        expect(__internals__.isParsable).toHaveBeenCalledWith(123)
+        expect(actual).toEqual(expected)
+      })
+    })
+  })
+
   describe('@isParsable', () => {
     it('should work', () => {
       const inputs = [
@@ -167,11 +195,13 @@ describe('loaders/postman/v2.0/Loader.js', () => {
     it('should work', () => {
       const inputs = [
         new URL({ url: 'https://www.example.com:5050' }),
-        new URL({ url: 'https://www.example.com:5050/test' })
+        new URL({ url: 'https://www.example.com:5050/test' }),
+        (new URL({ url: 'https://www.example.com:5050' })).set('pathname', null)
       ]
       const expected = [
         { key: 'path', value: '/' },
-        { key: 'path', value: '/test' }
+        { key: 'path', value: '/test' },
+        null
       ]
       const actual = inputs.map(input => __internals__.extractPostmanURLPathFromURL(input))
       expect(actual).toEqual(expected)
@@ -392,15 +422,22 @@ describe('loaders/postman/v2.0/Loader.js', () => {
   describe('@normalizeRequestURL', () => {
     it('should work', () => {
       spyOn(__internals__, 'createPostmanURLObjectFromURLString').andCall(v => v + v)
-      spyOn(__internals__, 'createPostmanURLStringFromURLObject').andCall(v => v / 2)
+      spyOn(__internals__, 'createPostmanURLStringFromURLObject').andCall(v => {
+        if (typeof v === 'object') {
+          return v.domain / 2
+        }
+        return v / 2
+      })
 
       const inputs = [
         { request: { url: '123' } },
-        { request: { url: 234 } }
+        { request: { url: 234 } },
+        { request: { url: { host: 345 } } }
       ]
       const expected = [
         { request: { url: '123123', urlString: '123' } },
-        { request: { url: 234, urlString: 234 / 2 } }
+        { request: { url: 234, urlString: 234 / 2 } },
+        { request: { url: { host: 345, domain: 345 }, urlString: 345 / 2 } }
       ]
       const actual = inputs.map(input => __internals__.normalizeRequestURL(input))
       expect(actual).toEqual(expected)
@@ -596,17 +633,257 @@ describe('loaders/postman/v2.0/Loader.js', () => {
     })
   })
 
+  describe('@extractGlobalsFromUrlString', () => {
+    it('should work', () => {
+      const inputs = [
+        123,
+        '123',
+        '{{ref}}',
+        '{{abc}}{{def}}'
+      ]
+      const expected = [
+        [],
+        [],
+        [ { key: 'ref' } ],
+        [ { key: 'abc' }, { key: 'def' } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromUrlString(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractGlobalsFromHeader', () => {
+    it('should work', () => {
+      const inputs = [
+        123,
+        '123',
+        '{{ref}}',
+        '{{abc}}{{def}}',
+        {},
+        { value: 123 },
+        { value: '123' },
+        { value: '{{ref}}' },
+        { value: '{{abc}}{{def}}' }
+      ]
+      const expected = [
+        [],
+        [],
+        [ { key: 'ref' } ],
+        [ { key: 'abc' }, { key: 'def' } ],
+        [],
+        [],
+        [],
+        [ { key: 'ref' } ],
+        [ { key: 'abc' }, { key: 'def' } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromHeader(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractGlobalsFromHeaders', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractGlobalsFromHeader').andCall(v => [ { key: v } ])
+      const inputs = [
+        123,
+        '123',
+        '{{ref}}',
+        '{{abc}}{{def}}',
+        { a: 123 },
+        [],
+        [ 123, 234 ]
+      ]
+      const expected = [
+        [],
+        [],
+        [ { key: 'ref' } ],
+        [ { key: 'abc' }, { key: 'def' } ],
+        [],
+        [],
+        [ { key: 123 }, { key: 234 } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromHeaders(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractGlobalsFromRawBody', () => {
+    it('should work', () => {
+      const inputs = [
+        123,
+        'abc',
+        '{{abc}}'
+      ]
+      const expected = [
+        [],
+        [],
+        [ { key: 'abc' } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromRawBody(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractGlobalsFromEncodedBody', () => {
+    it('should work', () => {
+      const inputs = [
+        null,
+        {},
+        [],
+        [ 123, 234 ],
+        [ 123, { value: 234 } ],
+        [ 123, { value: '234' } ],
+        [ 123, { value: '{{ref}}' } ],
+        [ { value: '{{abc}}' }, { value: '{{def}}' } ]
+      ]
+      const expected = [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [ { key: 'ref' } ],
+        [ { key: 'abc' }, { key: 'def' } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromEncodedBody(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractGlobalsFromFileBody', () => {
+    it('should work', () => {
+      const inputs = [
+        null,
+        {},
+        { content: 123 },
+        { content: 'abc' },
+        { content: '{{ref}}' }
+      ]
+      const expected = [
+        [],
+        [],
+        [],
+        [],
+        [ { key: 'ref' } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromFileBody(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractGlobalsFromBody', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractGlobalsFromRawBody').andCall(v => [ v * 2 ])
+      spyOn(__internals__, 'extractGlobalsFromEncodedBody').andCall(v => [ v * 3 ])
+      spyOn(__internals__, 'extractGlobalsFromFileBody').andCall(v => [ v * 4 ])
+
+      const inputs = [
+        {},
+        { raw: 123 },
+        { mode: 'urlencoded', urlencoded: 234 },
+        { mode: 'formdata', formdata: 345 },
+        { mode: 'file', file: 456 }
+      ]
+      const expected = [
+        [],
+        [ 123 * 2 ],
+        [ 234 * 3 ],
+        [ 345 * 3 ],
+        [ 456 * 4 ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromBody(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractGlobalsFromItem', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractGlobalsFromUrlString').andCall(v => v ? v : [])
+      spyOn(__internals__, 'extractGlobalsFromHeaders').andCall(v => v ? v : [])
+      spyOn(__internals__, 'extractGlobalsFromBody').andCall(v => v ? v : [])
+
+      const inputs = [
+        { request: {} },
+        { request: {
+          urlString: [ 123 ],
+          headers: [ 234 ],
+          body: [ 345 ]
+        } }
+      ]
+      const expected = [
+        [],
+        [ 123, 234, 345 ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromItem(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractGlobalsFromItemGroup', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractGlobalsFromItem').andCall(v => v.request)
+
+      const inputs = [
+        [ [ 123, 234 ], { request: 345 } ],
+        [ [ 123, 234 ], {} ],
+        [ [ 123, 234 ], { item: 'some obj' } ],
+        [ [ 123, 234 ], { item: [] } ],
+        [ [ 123, 234 ], { item: [
+          { request: 456 },
+          { item: [ { request: 567 } ] }
+        ] } ]
+      ]
+
+      const expected = [
+        [ 123, 234, 345 ],
+        [ 123, 234 ],
+        [ 123, 234 ],
+        [ 123, 234 ],
+        [ 123, 234, 456, 567 ]
+      ]
+      const actual = inputs.map(input => __internals__.extractGlobalsFromItemGroup(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@addGlobalsToRoot', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractGlobalsFromItemGroup').andCall((a, c) => c.globals)
+
+      const inputs = [
+        { globals: [ { key: 'abc', value: 123 }, { key: 'def', value: 234 } ] }
+      ]
+      const expected = [
+        { globals: { abc: 123, def: 234 } }
+      ]
+      const actual = inputs.map(input => __internals__.addGlobalsToRoot(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@fixPrimary', () => {
     it('should work', (done) => {
-      spyOn(__internals__, 'normalizeItems').andCall(c => c)
+      spyOn(__internals__, 'normalizeItems').andCall(c => {
+        if (typeof c === 'object' && c.reject) {
+          throw new Error('failure in normalizeItems')
+        }
+        return c
+      })
 
       const inputs = [
         [ 123, { content: null } ],
         [ 123, { content: 'null' } ],
-        [ 123, { content: JSON.stringify({ a: 123 }, null, 2) } ]
+        [ 123, { content: { a: 123 } } ],
+        [ 123, { content: JSON.stringify({ a: 123 }, null, 2) } ],
+        [ 123, { content: JSON.stringify({ reject: true }, null, 2) } ]
       ]
 
       const expected = [
+        {
+          success: () => { throw new Error('should have failed') },
+          error: () => true
+        },
         {
           success: () => { throw new Error('should have failed') },
           error: () => true
@@ -621,6 +898,10 @@ describe('loaders/postman/v2.0/Loader.js', () => {
             expect(item).toEqual({ a: 123, globals: {} })
           },
           error: (e) => { throw e || new Error('should not have failed') }
+        },
+        {
+          success: () => { throw new Error('should not have failed') },
+          error: () => true
         }
       ]
 
@@ -642,6 +923,111 @@ describe('loaders/postman/v2.0/Loader.js', () => {
           () => done(new Error('should have been rejected')),
           () => done()
         )
+    })
+  })
+
+  describe('@validateArgs', () => {
+    it('should work', () => {
+      const inputs = [
+        {},
+        { options: true },
+        { options: {} },
+        { options: { httpResolver: true } },
+        { options: { httpResolver: {} } },
+        { options: { httpResolver: { resolve: true } } },
+        { options: { httpResolver: { resolve: () => {} } } },
+        { options: {
+          httpResolver: { resolve: () => {} },
+          fsResolver: true
+        } },
+        { options: {
+          httpResolver: { resolve: () => {} },
+          fsResolver: {}
+        } },
+        { options: {
+          httpResolver: { resolve: () => {} },
+          fsResolver: { resolve: true }
+        } },
+        { options: {
+          httpResolver: { resolve: () => {} },
+          fsResolver: { resolve: () => {} }
+        } },
+        { options: {
+          httpResolver: { resolve: () => {} },
+          fsResolver: { resolve: () => {} }
+        }, uri: 123 }
+      ]
+      const expected = [
+        new Error('missing loader argument: options'),
+        new Error('invalid loader argument: options must be an object'),
+        new Error('invalid loader argument: options.httpResolver must have a resolve method'),
+        new Error('invalid loader argument: options.httpResolver must have a resolve method'),
+        new Error('invalid loader argument: options.httpResolver must have a resolve method'),
+        new Error('invalid loader argument: options.httpResolver must have a resolve method'),
+        new Error('invalid loader argument: options.fsResolver must have a resolve method'),
+        new Error('invalid loader argument: options.fsResolver must have a resolve method'),
+        new Error('invalid loader argument: options.fsResolver must have a resolve method'),
+        new Error('invalid loader argument: options.fsResolver must have a resolve method'),
+        new Error('missing loader argument: uri'),
+        null
+      ]
+      const actual = inputs.map(input => __internals__.validateArgs(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@load', () => {
+    it('should work', (done) => {
+      spyOn(__internals__, 'validateArgs').andCall(({ options }) => {
+        if (options.error) {
+          return 123
+        }
+        return false
+      })
+
+      spyOn(__internals__, 'handleRejection').andCall(e => Promise.reject(e))
+      spyOn(__internals__, 'resolve').andCall(({ reject }) => {
+        if (reject) {
+          return Promise.reject(234)
+        }
+
+        return Promise.resolve(345)
+      })
+
+      spyOn(__internals__, 'fixPrimary').andCall(({ rejectFix }, { content }) => {
+        return rejectFix ? Promise.reject(456) : Promise.resolve(content)
+      })
+
+      const inputs = [
+        { options: { error: true } },
+        { options: { error: false, reject: true, rejectFix: true }, uri: 234 },
+        { options: { error: false, reject: false, rejectFix: true }, uri: 234 },
+        { options: { error: false, reject: false, rejectFix: false }, uri: 234 }
+      ]
+      const expected = [
+        {
+          success: () => Promise.reject(new Error('should not have succeeded #1')),
+          error: (v) => expect(v).toEqual(123)
+        },
+        {
+          success: () => Promise.reject(new Error('should not have succeeded #2')),
+          error: (v) => expect(v).toEqual(234)
+        },
+        {
+          success: () => Promise.reject(new Error('should not have succeeded #3')),
+          error: (v) => expect(v).toEqual(456)
+        },
+        {
+          success: (v) => expect(v).toEqual(345),
+          error: () => Promise.reject(new Error('should not have failed'))
+        }
+      ]
+      const actual = inputs.map((input, index) => {
+        const { success, error } = expected[index]
+        return __internals__.load(input).then(success, error)
+      })
+
+      Promise.all(actual).then(() => done(), () => done('A test failed'))
     })
   })
 })

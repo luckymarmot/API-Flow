@@ -2,10 +2,7 @@ export class Mock {
   constructor(obj, prefix = '$$_') {
     const spies = {}
     for (const field in obj) {
-      if (
-                obj.hasOwnProperty(field) &&
-                typeof obj[field] === 'function'
-            ) {
+      if (obj.hasOwnProperty(field) && typeof obj[field] === 'function') {
         spies[field] = {
           count: 0,
           calls: [],
@@ -49,8 +46,8 @@ export class Mock {
 export class ClassMock extends Mock {
   constructor(instance, prefix = '$$_') {
     const properties = Object.getOwnPropertyNames(
-            Object.getPrototypeOf(instance)
-        )
+      Object.getPrototypeOf(instance)
+    )
 
     const obj = {}
     for (const property of properties) {
