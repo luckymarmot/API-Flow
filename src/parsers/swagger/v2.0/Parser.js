@@ -50,23 +50,9 @@ export class SwaggerParser {
     return methods.getAPIName(content)
   }
 
-  static isParsable({ content }) {
-    return methods.detect(content)
-  }
-
-  static resolve() {
-    return methods.resolve(...arguments)
-  }
-
   static parse() {
     return methods.parse(...arguments)
   }
-}
-
-// TODO: implement resolve correctly so that it resolves externals dependencies
-methods.resolve = (items, item) => {
-  items.push(item)
-  return items
 }
 
 /**
@@ -137,7 +123,6 @@ methods.detect = (content) => {
     score += parsed.swagger === '2.0' ? 1 / 4 : 0
     score += parsed.info ? 1 / 4 : 0
     score += parsed.paths ? 1 / 4 : 0
-    score = score > 1 ? 1 : score
   }
 
   return methods.formatDetectionObject(score)
@@ -320,8 +305,12 @@ methods.convertReferenceArrayIntoReferenceMap = (type, refs = []) => {
  * @returns {Entry<string, SwaggerOperationObject>} the updated operation object
  */
 methods.updateOperationEntryWithSharedParameters = (params = [], { key, value }) => {
+  if (!key || typeof value !== 'object') {
+    return { key, value }
+  }
+
   const operationObject = value
-  if (params.length && !operationObject.parameters) {
+  if (params.length && !(operationObject.parameters && Array.isArray(operationObject.parameters))) {
     operationObject.parameters = params
   }
   else if (params.length) {
@@ -501,7 +490,7 @@ methods.addReferenceToContainerBlock = (container, { key, value }) => {
  * ParameterContainer
  * @returns {ParameterContainer} the corresponding parameter container
  */
-methods.createParameterContainer = (store, params, refs = []) => {
+methods.createParameterContainer = (store = new Store(), params = [], refs = []) => {
   let paramContainer = {
     headers: {},
     queries: {},
@@ -534,7 +523,7 @@ methods.createParameterContainer = (store, params, refs = []) => {
  * @returns {Auth?} the corresponding overlay, if it exists
  */
 methods.getOverlayFromRequirement = (auth, scopes = []) => {
-  if (auth instanceof Auth.OAuth2) {
+  if (auth instanceof Auth.OAuth2 && scopes.length) {
     return new Auth.OAuth2({
       scopes: List(scopes.map(scope => ({ key: scope })))
     })
@@ -773,10 +762,12 @@ methods.getResponsesForOperation = (store, operation) => {
   const responses = entries(operation.responses || {})
     .map(methods.addCodeToResponseEntry)
     .map(methods.convertResponseObjectIntoResponse)
+    .filter(v => !!v)
     .map(updateResponseEntryWithProduceParameter)
+    .filter(v => !!v)
     .reduce(convertEntryListInMap, {})
 
-  return Map(responses)
+  return OrderedMap(responses)
 }
 
 /**
