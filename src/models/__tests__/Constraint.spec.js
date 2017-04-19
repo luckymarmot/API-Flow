@@ -1,5 +1,5 @@
 /* eslint-disable max-nested-callbacks */
-import { Record } from 'immutable'
+import { Record, List } from 'immutable'
 import expect from 'expect'
 
 import Constraint from '../Constraint'
@@ -74,6 +74,17 @@ describe('models/Constraint.js', () => {
       expect(mod.evaluate(5)).toEqual(false)
       expect(mod.evaluate(5.5)).toEqual(false)
     })
+
+    describe('@toJSONSchema', () => {
+      it('should work', () => {
+        const mod = new Constraint.MultipleOf(4)
+
+        const expected = { multipleOf: 4 }
+        const actual = mod.toJSONSchema()
+
+        expect(actual).toEqual(expected)
+      })
+    })
   })
 
   describe('{ MaximumConstraint }', () => {
@@ -89,6 +100,17 @@ describe('models/Constraint.js', () => {
       expect(mod.evaluate(3)).toEqual(true)
       expect(mod.evaluate(4)).toEqual(true)
       expect(mod.evaluate(5)).toEqual(false)
+    })
+
+    describe('@toJSONSchema', () => {
+      it('should work', () => {
+        const mod = new Constraint.Maximum(4)
+
+        const expected = { maximum: 4 }
+        const actual = mod.toJSONSchema()
+
+        expect(actual).toEqual(expected)
+      })
     })
   })
 
@@ -224,6 +246,24 @@ describe('models/Constraint.js', () => {
       expect(mod.evaluate([ 1, 2 ])).toEqual(true)
       expect(mod.evaluate([ 1, 2, 3 ])).toEqual(true)
       expect(mod.evaluate([ 1, 2, 3, 4 ])).toEqual(false)
+      expect(mod.evaluate(List([ 1, 2, 3 ]))).toEqual(true)
+      expect(mod.evaluate(List([ 1, 2, 3, 4 ]))).toEqual(false)
+    })
+
+    it('should work if no value provided', () => {
+      const mod = new Constraint.MaximumItems()
+
+      expect(mod.evaluate([ 1, 2 ])).toEqual(true)
+      expect(mod.evaluate([ 1, 2, 3 ])).toEqual(true)
+      expect(mod.evaluate([ 1, 2, 3, 4 ])).toEqual(true)
+    })
+
+    it('should work if null value provided', () => {
+      const mod = new Constraint.MaximumItems(null)
+
+      expect(mod.evaluate([ 1, 2 ])).toEqual(true)
+      expect(mod.evaluate([ 1, 2, 3 ])).toEqual(true)
+      expect(mod.evaluate([ 1, 2, 3, 4 ])).toEqual(true)
     })
   })
 
@@ -237,7 +277,19 @@ describe('models/Constraint.js', () => {
     it('should work', () => {
       const mod = new Constraint.MinimumItems(3)
 
+      expect(mod.evaluate(List([ 1, 2 ]))).toEqual(false)
+      expect(mod.evaluate(List([ 1, 2, 3 ]))).toEqual(true)
       expect(mod.evaluate([ 1, 2 ])).toEqual(false)
+      expect(mod.evaluate([ 1, 2, 3 ])).toEqual(true)
+      expect(mod.evaluate([ 1, 2, 3, 4 ])).toEqual(true)
+    })
+
+    it('should work with default value', () => {
+      const mod = new Constraint.MinimumItems()
+
+      expect(mod.evaluate(List([ 1, 2 ]))).toEqual(true)
+      expect(mod.evaluate(List([ 1, 2, 3 ]))).toEqual(true)
+      expect(mod.evaluate([ 1, 2 ])).toEqual(true)
       expect(mod.evaluate([ 1, 2, 3 ])).toEqual(true)
       expect(mod.evaluate([ 1, 2, 3, 4 ])).toEqual(true)
     })
@@ -253,8 +305,18 @@ describe('models/Constraint.js', () => {
     it('should work', () => {
       const mod = new Constraint.UniqueItems(true)
 
+      expect(mod.evaluate(List([ 1, 2 ]))).toEqual(true)
+      expect(mod.evaluate(List([ 1, 2, 3, 2 ]))).toEqual(false)
       expect(mod.evaluate([ 1, 2 ])).toEqual(true)
       expect(mod.evaluate([ 1, 2, 3, 2 ])).toEqual(false)
+      expect(mod.evaluate([ 1, 2, 3, [ 1, 2, 3 ] ])).toEqual(true)
+    })
+
+    it('should work if no value provided', () => {
+      const mod = new Constraint.UniqueItems()
+
+      expect(mod.evaluate([ 1, 2 ])).toEqual(true)
+      expect(mod.evaluate([ 1, 2, 3, 2 ])).toEqual(true)
       expect(mod.evaluate([ 1, 2, 3, [ 1, 2, 3 ] ])).toEqual(true)
     })
   })
@@ -273,6 +335,22 @@ describe('models/Constraint.js', () => {
       expect(mod.evaluate({ a: 1, b: 2, c: 3 })).toEqual(true)
       expect(mod.evaluate({ a: 1, b: 2, c: 3, d: 4 })).toEqual(false)
     })
+
+    it('should work if no value provided', () => {
+      const mod = new Constraint.MaximumProperties()
+
+      expect(mod.evaluate({ a: 1, b: 2 })).toEqual(true)
+      expect(mod.evaluate({ a: 1, b: 2, c: 3 })).toEqual(true)
+      expect(mod.evaluate({ a: 1, b: 2, c: 3, d: 4 })).toEqual(true)
+    })
+
+    it('should work if null value provided', () => {
+      const mod = new Constraint.MaximumProperties(null)
+
+      expect(mod.evaluate({ a: 1, b: 2 })).toEqual(true)
+      expect(mod.evaluate({ a: 1, b: 2, c: 3 })).toEqual(true)
+      expect(mod.evaluate({ a: 1, b: 2, c: 3, d: 4 })).toEqual(true)
+    })
   })
 
   describe('{ MinimumPropertiesConstraint }', () => {
@@ -286,6 +364,14 @@ describe('models/Constraint.js', () => {
       const mod = new Constraint.MinimumProperties(3)
 
       expect(mod.evaluate({ a: 1, b: 2 })).toEqual(false)
+      expect(mod.evaluate({ a: 1, b: 2, c: 3 })).toEqual(true)
+      expect(mod.evaluate({ a: 1, b: 2, c: 3, d: 4 })).toEqual(true)
+    })
+
+    it('should work with default value', () => {
+      const mod = new Constraint.MinimumProperties()
+
+      expect(mod.evaluate({ a: 1, b: 2 })).toEqual(true)
       expect(mod.evaluate({ a: 1, b: 2, c: 3 })).toEqual(true)
       expect(mod.evaluate({ a: 1, b: 2, c: 3, d: 4 })).toEqual(true)
     })
@@ -318,7 +404,7 @@ describe('models/Constraint.js', () => {
       expect(mod).toBeA(Constraint.Constraint)
     })
 
-    xit('should work', () => {
+    it('should work', () => {
       const mod = new Constraint.JSONSchema({
         type: 'integer',
         minimum: 3,
@@ -328,6 +414,33 @@ describe('models/Constraint.js', () => {
       expect(mod.evaluate(1)).toEqual(true)
       expect(mod.evaluate(4)).toEqual(true)
       expect(mod.evaluate(7)).toEqual(true)
+    })
+
+    it('should work with default schema', () => {
+      const mod = new Constraint.JSONSchema()
+
+      expect(mod.evaluate(1)).toEqual(true)
+      expect(mod.evaluate(4)).toEqual(true)
+      expect(mod.evaluate(7)).toEqual(true)
+    })
+
+    describe('@toJSONSchema', () => {
+      it('should work', () => {
+        const mod = new Constraint.JSONSchema({
+          type: 'integer',
+          minimum: 3,
+          maximum: 6
+        })
+
+        const expected = {
+          type: 'integer',
+          minimum: 3,
+          maximum: 6
+        }
+        const actual = mod.toJSONSchema()
+
+        expect(actual).toEqual(expected)
+      })
     })
   })
 
@@ -342,7 +455,7 @@ describe('models/Constraint.js', () => {
       expect(mod).toBeA(Constraint.Constraint)
     })
 
-    xit('should work', () => {
+    it('should work', () => {
       const mod = new Constraint.XMLSchema(
         `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
           <xs:element name="userId" type="xs:string"/>
@@ -352,6 +465,33 @@ describe('models/Constraint.js', () => {
       expect(mod.evaluate('1')).toEqual(true)
       expect(mod.evaluate(4)).toEqual(true)
       expect(mod.evaluate(null)).toEqual(true)
+    })
+
+    it('should work with default value', () => {
+      const mod = new Constraint.XMLSchema()
+
+      expect(mod.evaluate('1')).toEqual(true)
+      expect(mod.evaluate(4)).toEqual(true)
+      expect(mod.evaluate(null)).toEqual(true)
+    })
+
+    describe('@toJSONSchema', () => {
+      it('should work', () => {
+        const mod = new Constraint.XMLSchema(
+          `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:element name="userId" type="xs:string"/>
+           </xs:schema>`
+        )
+
+        const expected = {
+          'x-xml': `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:element name="userId" type="xs:string"/>
+           </xs:schema>`
+        }
+        const actual = mod.toJSONSchema()
+
+        expect(actual).toEqual(expected)
+      })
     })
   })
 })

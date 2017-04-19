@@ -163,7 +163,7 @@ methods.extractProtocolStringFromPostmanURLObject = (urlObject) => {
 methods.extractDomainStringFromPostmanURLObject = (urlObject) => {
   const domain = urlObject.domain || urlObject.host
   if (typeof domain === 'string') {
-    return domain || 'localhost'
+    return domain
   }
 
   if (!Array.isArray(domain)) {
@@ -192,7 +192,7 @@ methods.extractPathStringFromPostmanURLObject = (urlObject) => {
 
   return '/' + urlObject.path.map(pathPart => {
     if (typeof pathPart === 'string') {
-      return pathPart || ''
+      return pathPart
     }
 
     return pathPart.value || ''
@@ -275,7 +275,7 @@ methods.normalizeItems = (itemGroup) => {
   return itemGroup
 }
 
-methods.extractGlobalsFromUrlString = (urlString = '') => {
+methods.extractGlobalsFromUrlString = (urlString) => {
   if (typeof urlString !== 'string') {
     return []
   }
@@ -307,7 +307,7 @@ methods.extractGlobalsFromHeader = (header) => {
   return globals
 }
 
-methods.extractGlobalsFromHeaders = (headers = []) => {
+methods.extractGlobalsFromHeaders = (headers) => {
   if (typeof headers !== 'object' && typeof headers !== 'string') {
     return []
   }
@@ -349,7 +349,7 @@ methods.extractGlobalsFromEncodedBody = (body) => {
         return null
       }
 
-      const value = param.value || ''
+      const value = param.value
       const match = value.match(/^{{([^{}]*)}}$/)
 
       if (!match) {

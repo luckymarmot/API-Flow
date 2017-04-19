@@ -191,6 +191,9 @@ methods.generate = (url, delimiters = List(), useDefault = true) => {
  * fields)
  * @param {boolean} useDefault: whether to use the default values or not
  * @returns {URL} the resolved URL
+ *
+ * IMPORTANT: the from string must be using the same delimiters format as the one provided with
+ * `delimiters`, otherwise the final result might have inconsistencies.
  */
 methods.resolve = (from, to, delimiters, useDefault = true) => {
   const fromString = methods.generate(from, delimiters, useDefault)
@@ -252,11 +255,11 @@ methods.splitPathnameInHostAndPathname = (_pathname) => {
 
   if (m) {
     const host = m[1] || null
-    const pathname = m[2] || null
+    const pathname = m[2]
     return { host, pathname }
   }
 
-  return { host: _pathname || null, pathname: null }
+  return { host: _pathname, pathname: null }
 }
 
 /**
@@ -283,7 +286,7 @@ methods.createHrefFromBaseAndHostAndPathName = (base, host, pathname) => {
     slashes: base.slashes,
     auth: base.auth || null,
     host: host || null,
-    pathname: pathname || null,
+    pathname: pathname || '/',
     search: base.search || null,
     hash: base.hash || null
   })

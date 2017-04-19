@@ -347,19 +347,23 @@ describe('loaders/postman/v2.0/Loader.js', () => {
     it('should work', () => {
       const inputs = [
         {},
+        { path: '' },
         { path: '/some/path' },
         { path: 1231231 },
         { path: [] },
         { path: [ 'some', 'path' ] },
-        { path: [ 'some', { type: 'string', value: 'path' } ] }
+        { path: [ 'some', { type: 'string', value: 'path' } ] },
+        { path: [ 'some', { type: 'string' } ] }
       ]
       const expected = [
         '/',
+        '/',
         '/some/path',
         '/',
         '/',
         '/some/path',
-        '/some/path'
+        '/some/path',
+        '/some/'
       ]
       const actual = inputs.map(input => __internals__.extractPathStringFromPostmanURLObject(input))
       expect(actual).toEqual(expected)

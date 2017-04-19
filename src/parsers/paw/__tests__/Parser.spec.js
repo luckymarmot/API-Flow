@@ -639,6 +639,34 @@ describe('parsers/paw/Parser.js', () => {
       const actual = __internals__.extractPossibleValuesFromEnvironmentVariableDV(context, input)
       expect(actual).toEqual(expected)
     })
+
+    it('should work with deprecated paw `getValue` method', () => {
+      const domain = {
+        environments: [
+          { name: 'Default' },
+          { name: 'Production' },
+          { name: 'Test' }
+        ]
+      }
+
+      const variable = {
+        domain: domain,
+        getValue: (env) => '**' + env.name
+      }
+
+      const context = {
+        getEnvironmentVariableById: () => { return variable }
+      }
+
+      const input = { EnvironmentVariable: 123 }
+      const expected = [
+        { key: 'Default', value: '**Default' },
+        { key: 'Production', value: '**Production' },
+        { key: 'Test', value: '**Test' }
+      ]
+      const actual = __internals__.extractPossibleValuesFromEnvironmentVariableDV(context, input)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@extractPossibleValuesFromDVEntry', () => {
@@ -917,6 +945,26 @@ describe('parsers/paw/Parser.js', () => {
       expect(__internals__.createPathEndpoint).toHaveBeenCalledWith(678)
       expect(actual).toEqual(expected)
     })
+
+    it('should work if obtained sequence is empty', () => {
+      spyOn(__internals__, 'convertComponentEntryIntoStringOrParam').andReturn(345)
+      spyOn(__internals__, 'mergeSequencialStrings').andReturn([])
+      spyOn(__internals__, 'createDefaultPathEndpoint').andReturn(678)
+
+      const request = { reqId: 234 }
+      const input = [ 123, 123, 123 ]
+      const expected = 678
+      const actual = __internals__.convertPathComponentsIntoPathEndpoint(request, input)
+
+      expect(__internals__.convertComponentEntryIntoStringOrParam.calls[0].arguments.slice(0, 2))
+        .toEqual([ request, 123 ])
+      expect(__internals__.mergeSequencialStrings.calls[1].arguments.slice(0, 2)).toEqual([
+        [], 345
+      ])
+
+      expect(__internals__.createDefaultPathEndpoint).toHaveBeenCalled()
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@extractResourceFromPawRequest', () => {
@@ -981,7 +1029,7 @@ describe('parsers/paw/Parser.js', () => {
   })
 
   describe('@getResourcesFromRequestEntries', () => {
-    it('should work if underlying methods are correct', () => {
+    it('should work with null hostVariable', () => {
       spyOn(__internals__, 'extractResourceFromPawRequest').andCall((c, r, v) => v * 2)
       const context = {}
       const defaultHost = 'echo.paw.cloud/users'
@@ -992,11 +1040,34 @@ describe('parsers/paw/Parser.js', () => {
         context, defaultHost, hostVariable, input
       )
       expect(actual).toEqual(expected)
+      expect(__internals__.extractResourceFromPawRequest.calls[0].arguments[1])
+        .toEqual(new Reference({
+          type: 'endpoint',
+          uuid: 'echo.paw.cloud/users'
+        }))
+    })
+
+    it('should work with hostVariable', () => {
+      spyOn(__internals__, 'extractResourceFromPawRequest').andCall((c, r, v) => v * 2)
+      const context = {}
+      const defaultHost = 'echo.paw.cloud/users'
+      const hostVariable = 678
+      const input = [ 123, 123, 123, 123 ]
+      const expected = [ 246, 246, 246, 246 ]
+      const actual = __internals__.getResourcesFromRequestEntries(
+        context, defaultHost, hostVariable, input
+      )
+      expect(actual).toEqual(expected)
+      expect(__internals__.extractResourceFromPawRequest.calls[0].arguments[1])
+        .toEqual(new Reference({
+          type: 'variable',
+          uuid: 'echo.paw.cloud/users'
+        }))
     })
   })
 
   describe('@convertHostIntoResources', () => {
-    it('should work if underlying methods are correct', () => {
+    it('should work if obtained hostVariable is null', () => {
       spyOn(__internals__, 'convertHostEntriesIntoHostVariableAndRequestEntries').andReturn({
         hostVariable: null,
         requestEntries: [ 456, 456, 456 ]
@@ -1010,6 +1081,25 @@ describe('parsers/paw/Parser.js', () => {
       const actual = __internals__.convertHostIntoResources(context, input)
       expect(actual).toEqual(expected)
     })
+
+    it('should work if obtained hostVariable is not null', () => {
+      spyOn(__internals__, 'convertHostEntriesIntoHostVariableAndRequestEntries').andReturn({
+        hostVariable: 567,
+        requestEntries: [ 456, 456, 456 ]
+      })
+      spyOn(__internals__, 'createDefaultHostEndpoint').andReturn(345)
+      spyOn(__internals__, 'getResourcesFromRequestEntries').andReturn(234)
+
+      const context = {}
+      const input = { key: 'echo.paw.cloud/users', value: [ 123, 123, 123 ] }
+      const expected = {
+        resources: 234,
+        variable: { key: 'echo.paw.cloud/users', value: 567 },
+        endpoint: null
+      }
+      const actual = __internals__.convertHostIntoResources(context, input)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getVariableFromUuid', () => {
@@ -1017,6 +1107,16 @@ describe('parsers/paw/Parser.js', () => {
       const request = { getVariableById: () => 246 }
       const input = 123
       const expected = 246
+      const actual = __internals__.getVariableFromUuid(request, input)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return null if variable not found', () => {
+      /* eslint-disable no-undefined */
+      const request = { getVariableById: () => undefined }
+      /* eslint-enable no-undefined */
+      const input = 123
+      const expected = null
       const actual = __internals__.getVariableFromUuid(request, input)
       expect(actual).toEqual(expected)
     })
@@ -1051,6 +1151,29 @@ describe('parsers/paw/Parser.js', () => {
   })
 
   describe('@convertRequestVariableDVIntoParameter', () => {
+    it('should work if variable not found', () => {
+      const request = { getVariableById: () => null }
+      const location = 'queries'
+      const contexts = List([ 567, 567 ])
+      const paramName = 'UserId'
+      const input = { variableUUID: 678 }
+      const expected = {
+        key: 'UserId',
+        value: new Parameter({
+          in: 'queries',
+          key: 'UserId',
+          name: 'UserId',
+          type: 'string',
+          applicableContexts: List([ 567, 567 ])
+        })
+      }
+
+      const actual = __internals__.convertRequestVariableDVIntoParameter(
+        request, location, contexts, input, paramName
+      )
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const variable = {
         name: 'userId',
@@ -1072,6 +1195,108 @@ describe('parsers/paw/Parser.js', () => {
           name: 'userId',
           type: 345,
           description: 456,
+          default: 123,
+          constraints: List([
+            new Constraint.JSONSchema(234)
+          ]),
+          applicableContexts: List([ 567, 567 ])
+        })
+      }
+
+      const actual = __internals__.convertRequestVariableDVIntoParameter(
+        request, location, contexts, input, paramName
+      )
+      expect(actual).toEqual(expected)
+    })
+
+    it('should use paramName if variable has no name', () => {
+      const variable = {
+        value: { getEvaluatedString: () => 123 },
+        schema: 234,
+        type: 345,
+        description: 456
+      }
+      const request = { getVariableById: () => variable }
+      const location = 'queries'
+      const contexts = List([ 567, 567 ])
+      const paramName = 'UserId'
+      const input = { variableUUID: 678 }
+      const expected = {
+        key: 'UserId',
+        value: new Parameter({
+          in: 'queries',
+          key: 'UserId',
+          name: 'UserId',
+          type: 345,
+          description: 456,
+          default: 123,
+          constraints: List([
+            new Constraint.JSONSchema(234)
+          ]),
+          applicableContexts: List([ 567, 567 ])
+        })
+      }
+
+      const actual = __internals__.convertRequestVariableDVIntoParameter(
+        request, location, contexts, input, paramName
+      )
+      expect(actual).toEqual(expected)
+    })
+
+    it('should set type to string if variable has no type', () => {
+      const variable = {
+        name: 'userId',
+        value: { getEvaluatedString: () => 123 },
+        schema: 234,
+        description: 456
+      }
+      const request = { getVariableById: () => variable }
+      const location = 'queries'
+      const contexts = List([ 567, 567 ])
+      const paramName = 'UserId'
+      const input = { variableUUID: 678 }
+      const expected = {
+        key: 'UserId',
+        value: new Parameter({
+          in: 'queries',
+          key: 'userId',
+          name: 'userId',
+          type: 'string',
+          description: 456,
+          default: 123,
+          constraints: List([
+            new Constraint.JSONSchema(234)
+          ]),
+          applicableContexts: List([ 567, 567 ])
+        })
+      }
+
+      const actual = __internals__.convertRequestVariableDVIntoParameter(
+        request, location, contexts, input, paramName
+      )
+      expect(actual).toEqual(expected)
+    })
+
+    it('should ignore description if no description in variable', () => {
+      const variable = {
+        name: 'userId',
+        value: { getEvaluatedString: () => 123 },
+        schema: 234,
+        type: 345
+      }
+      const request = { getVariableById: () => variable }
+      const location = 'queries'
+      const contexts = List([ 567, 567 ])
+      const paramName = 'UserId'
+      const input = { variableUUID: 678 }
+      const expected = {
+        key: 'UserId',
+        value: new Parameter({
+          in: 'queries',
+          key: 'userId',
+          name: 'userId',
+          type: 345,
+          description: null,
           default: 123,
           constraints: List([
             new Constraint.JSONSchema(234)
@@ -1162,11 +1387,12 @@ describe('parsers/paw/Parser.js', () => {
   describe('@isRequestBodyUrlEncoded', () => {
     it('should work', () => {
       const inputs = [
+        { getHeaderByName: () => null },
         { getHeaderByName: () => 'application/json' },
         { getHeaderByName: () => 'application/x-www-form-urlencoded' },
         { getHeaderByName: () => 'application/x-www-form-urlencoded; charset=utf-8' }
       ]
-      const expected = [ false, true, true ]
+      const expected = [ false, false, true, true ]
       const actual = inputs.map(__internals__.isRequestBodyUrlEncoded)
       expect(actual).toEqual(expected)
     })
@@ -1175,11 +1401,12 @@ describe('parsers/paw/Parser.js', () => {
   describe('@isRequestBodyMultipart', () => {
     it('should work', () => {
       const inputs = [
+        { getHeaderByName: () => null },
         { getHeaderByName: () => 'multipart/weird' },
         { getHeaderByName: () => 'multipart/form-data' },
         { getHeaderByName: () => 'multipart/form-data; charset=utf-8' }
       ]
-      const expected = [ false, true, true ]
+      const expected = [ false, false, true, true ]
       const actual = inputs.map(__internals__.isRequestBodyMultipart)
       expect(actual).toEqual(expected)
     })
@@ -1283,6 +1510,16 @@ describe('parsers/paw/Parser.js', () => {
       const actual = __internals__.createStandardBodyParameters(input)
       expect(actual).toEqual(expected)
     })
+
+    it('should work if no Body DS found', () => {
+      spyOn(__internals__, 'convertParameterDynamicStringIntoParameter').andReturn({
+        key: 234, value: 345
+      })
+      const input = { getBody: () => null }
+      const expected = OrderedMap()
+      const actual = __internals__.createStandardBodyParameters(input)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getBodyParameters', () => {
@@ -1359,12 +1596,17 @@ describe('parsers/paw/Parser.js', () => {
         {},
         { grantType: 0 },
         { grantType: 1,
-          authorizationURL: { getEvaluatedString: () => 'http://auth.paw.cloud/oauth' } }
+          authorizationURL: { getEvaluatedString: () => 'http://auth.paw.cloud/oauth' }
+        },
+        { grantType: 1,
+          authorizationURL: { getEvaluatedString: () => '' }
+        }
       ]
       const expected = [
         'oauth_2_auth',
         'oauth_2_code_auth',
-        'oauth_2_paw_implicit_auth'
+        'oauth_2_paw_implicit_auth',
+        'oauth_2_implicit_auth'
       ]
       const actual = inputs.map(__internals__.getAuthNameFromOAuth2DV)
       expect(actual).toEqual(expected)
@@ -1414,7 +1656,8 @@ describe('parsers/paw/Parser.js', () => {
         { getEvaluatedString: () => 'Hawk someVars' },
         { getEvaluatedString: () => 'AWS4-HMAC-SHA256 stuff' },
         { getEvaluatedString: () => 'OAuth version=1' },
-        { getEvaluatedString: () => 'Bearer 1251f21f21bceb123a123' }
+        { getEvaluatedString: () => 'Bearer 1251f21f21bceb123a123' },
+        { getEvaluatedString: () => 'Custom weird' }
       ]
       const expected = [
         'basic_auth',
@@ -1422,7 +1665,8 @@ describe('parsers/paw/Parser.js', () => {
         'hawk_auth',
         'aws_sig4_auth',
         'oauth_1_auth',
-        'oauth_2_auth'
+        'oauth_2_auth',
+        null
       ]
       const actual = inputs.map(__internals__.getAuthNameFromAuthString)
       expect(actual).toEqual(expected)
@@ -1532,6 +1776,9 @@ describe('parsers/paw/Parser.js', () => {
 
       const inputs = [
         {
+          grantType: 0
+        },
+        {
           authorizationURL: { getEvaluatedString: () => null },
           tokenURL: { getEvaluatedString: () => null },
           grantType: 0
@@ -1550,10 +1797,22 @@ describe('parsers/paw/Parser.js', () => {
           authorizationURL: { getEvaluatedString: () => 345 },
           tokenURL: { getEvaluatedString: () => 456 },
           grantType: 3
+        },
+        {
+          authorizationURL: { getEvaluatedString: () => 345 },
+          tokenURL: { getEvaluatedString: () => 456 },
+          grantType: 5
         }
       ]
 
       const expected = [
+        {
+          key: 567,
+          value: new Auth.OAuth2({
+            authName: 567,
+            flow: 'accessCode'
+          })
+        },
         {
           key: 567,
           value: new Auth.OAuth2({
@@ -1584,6 +1843,15 @@ describe('parsers/paw/Parser.js', () => {
             authorizationUrl: 345,
             tokenUrl: 456,
             flow: 'application'
+          })
+        },
+        {
+          key: 567,
+          value: new Auth.OAuth2({
+            authName: 567,
+            authorizationUrl: 345,
+            tokenUrl: 456,
+            flow: 'implicit'
           })
         }
       ]
@@ -1632,7 +1900,8 @@ describe('parsers/paw/Parser.js', () => {
         { getEvaluatedString: () => 'Hawk someVars' },
         { getEvaluatedString: () => 'AWS4-HMAC-SHA256 stuff' },
         { getEvaluatedString: () => 'OAuth version=1' },
-        { getEvaluatedString: () => 'Bearer 1251f21f21bceb123a123' }
+        { getEvaluatedString: () => 'Bearer 1251f21f21bceb123a123' },
+        { getEvaluatedString: () => 'Custom weird' }
       ]
       const expected = [
         { key: 'basic_auth', value: new Auth.Basic({ authName: 'basic_auth' }) },
@@ -1640,7 +1909,8 @@ describe('parsers/paw/Parser.js', () => {
         { key: 'hawk_auth', value: new Auth.Hawk({ authName: 'hawk_auth' }) },
         { key: 'aws_sig4_auth', value: new Auth.AWSSig4({ authName: 'aws_sig4_auth' }) },
         { key: 'oauth_1_auth', value: new Auth.OAuth1({ authName: 'oauth_1_auth' }) },
-        { key: 'oauth_2_auth', value: new Auth.OAuth2({ authName: 'oauth_2_auth' }) }
+        { key: 'oauth_2_auth', value: new Auth.OAuth2({ authName: 'oauth_2_auth' }) },
+        { key: null, value: null }
       ]
 
       const actual = inputs.map(__internals__.extractAuthFromAuthString)

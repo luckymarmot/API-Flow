@@ -83,7 +83,7 @@ methods.getAPIName = (content) => {
       return null
     }
 
-    return json.info.name || null
+    return json.info.name
   }
   catch (e) {
     return null
@@ -282,7 +282,7 @@ methods.extractAWSSig4AuthFromAuth = (auth) => {
   return {
     key: auth.type,
     value: new Auth.AWSSig4({
-      authName: auth.type || null,
+      authName: auth.type,
       key: authSettings.accessKey || null,
       secret: authSettings.secretKey || null,
       region: authSettings.region || null,
@@ -296,7 +296,7 @@ methods.extractBasicAuthFromAuth = (auth) => {
   return {
     key: auth.type,
     value: new Auth.Basic({
-      authName: auth.type || null,
+      authName: auth.type,
       username: authSettings.username || null,
       password: authSettings.password || null
     })
@@ -308,7 +308,7 @@ methods.extractDigestAuthFromAuth = (auth) => {
   return {
     key: auth.type,
     value: new Auth.Digest({
-      authName: auth.type || null,
+      authName: auth.type,
       username: authSettings.username || null,
       password: authSettings.password || null
     })
@@ -320,7 +320,7 @@ methods.extractHawkAuthFromAuth = (auth) => {
   return {
     key: auth.type,
     value: new Auth.Hawk({
-      authName: auth.type || null,
+      authName: auth.type,
       id: authSettings.authId || null,
       key: authSettings.authKey || null,
       algorithm: authSettings.algorithm || null
@@ -333,7 +333,7 @@ methods.extractOAuth1AuthFromAuth = (auth) => {
   return {
     key: auth.type,
     value: new Auth.OAuth1({
-      authName: auth.type || null,
+      authName: auth.type,
       consumerSecret: authSettings.consumerSecret || null,
       consumerKey: authSettings.consumerKey || null,
       token: authSettings.token || null,
@@ -347,7 +347,7 @@ methods.extractOAuth2AuthFromAuth = (auth) => {
   return {
     key: auth.type,
     value: new Auth.OAuth2({
-      authName: auth.type || null,
+      authName: auth.type,
       authorizationUrl: authSettings.authUrl || null,
       tokenUrl: authSettings.accessTokenUrl || null
     })
@@ -574,17 +574,19 @@ methods.extractParameterEntryFromQueryParameter = ({ key, value }) => {
     return null
   }
 
+  let $default = value || null
   const match = (value + '').match(/^{{([^{}]*)}}$/)
   let constraints = List()
   if (match) {
     constraints = List([ new Constraint.JSONSchema({ $ref: '#/definitions/' + match[1] }) ])
+    $default = null
   }
 
   const $value = new Parameter({
     key,
     name: key,
     type: 'string',
-    default: value,
+    default: $default,
     constraints
   })
 
@@ -605,24 +607,26 @@ methods.extractQueryBlockFromQueryParams = (queryParams) => {
 }
 
 methods.extractHeaderParameterFromString = (line) => {
-  const [ key = '', value = '' ] = line.split(':')
+  const [ key, value = '' ] = line.split(':')
 
   if (!key) {
     return null
   }
 
   const trimmed = (value || '').trim()
+  let $default = trimmed || null
   const match = trimmed.match(/^{{([^{}]*)}}$/)
   let constraints = List()
   if (match) {
     constraints = List([ new Constraint.JSONSchema({ $ref: '#/definitions/' + match[1] }) ])
+    $default = null
   }
 
   const $value = new Parameter({
     key: key.trim(),
     name: key.trim(),
     type: 'string',
-    default: (value || '').trim(),
+    default: $default,
     constraints
   })
   return { key, value: $value }
@@ -644,17 +648,19 @@ methods.extractHeaderParameterFromObject = (header) => {
   }
 
   const key = header.key
+  let $default = header.value || null
   const match = (header.value + '').match(/^{{([^{}]*)}}$/)
   let constraints = List()
   if (match) {
     constraints = List([ new Constraint.JSONSchema({ $ref: '#/definitions/' + match[1] }) ])
+    $default = null
   }
 
   const value = new Parameter({
     key: key.trim(),
     name: key.trim(),
     type: 'string',
-    default: header.value || null,
+    default: $default,
     constraints
   })
   return { key, value }

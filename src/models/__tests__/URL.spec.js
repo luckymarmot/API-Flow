@@ -340,6 +340,25 @@ describe('models/URL.js', () => {
   })
 
   describe('@convertURLComponentsToURLObject', () => {
+    it('should use default values if not provided', () => {
+      const url = new URL({
+        url: 'http://echo.paw.cloud:80/users/123'
+      })
+
+      const expected = {
+        protocol: 'http:',
+        slashes: true,
+        host: 'echo.paw.cloud:80',
+        hostname: 'echo.paw.cloud',
+        port: '80',
+        pathname: '/users/123'
+      }
+
+      const actual = __internals__.convertURLComponentsToURLObject(url)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const delimiters = List([ '{', '}' ])
       const url = new URL({
@@ -356,6 +375,54 @@ describe('models/URL.js', () => {
         hostname: '{sub}.paw.{ext}',
         port: '{port}',
         pathname: '/users/{userId}'
+      }
+
+      const actual = __internals__.convertURLComponentsToURLObject(url, newDelimiters, useDefault)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should respect `secure` constraint', () => {
+      const delimiters = List([ '{', '}' ])
+      const url = (new URL({
+        url: 'https://{sub}.paw.{ext}:{port}/users/{userId}',
+        variableDelimiters: delimiters
+      }))
+        .set('protocol', List([ 'https:', 'http:', 'ws:' ]))
+        .set('secure', true)
+      const newDelimiters = List([ '{', '}' ])
+      const useDefault = true
+
+      const expected = {
+        protocol: 'https:',
+        slashes: true,
+        host: '{sub}.paw.{ext}:{port}',
+        hostname: '{sub}.paw.{ext}',
+        port: '{port}',
+        pathname: '/users/{userId}'
+      }
+
+      const actual = __internals__.convertURLComponentsToURLObject(url, newDelimiters, useDefault)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return null for pathname if no pathname in url', () => {
+      const delimiters = List([ '{', '}' ])
+      const url = (new URL({
+        url: 'https://{sub}.paw.{ext}:{port}/users/{userId}',
+        variableDelimiters: delimiters
+      })).set('pathname', null)
+      const newDelimiters = List([ '{', '}' ])
+      const useDefault = true
+
+      const expected = {
+        protocol: 'https:',
+        slashes: true,
+        host: '{sub}.paw.{ext}:{port}',
+        hostname: '{sub}.paw.{ext}',
+        port: '{port}',
+        pathname: null
       }
 
       const actual = __internals__.convertURLComponentsToURLObject(url, newDelimiters, useDefault)
@@ -382,15 +449,29 @@ describe('models/URL.js', () => {
         .toHaveBeenCalledWith(url, delimiters, useDefault)
     })
 
-    it('should call work', () => {
+    it('should work', () => {
       const delimiters = List([ '{', '}' ])
+      const useDefault = true
       const url = new URL({
         url: 'https://{sub}.paw.{ext}/users/{userId}',
         variableDelimiters: delimiters
       })
 
       const expected = 'https://{sub}.paw.{ext}/users/{userId}'
-      const actual = __internals__.generate(url, delimiters)
+      const actual = __internals__.generate(url, delimiters, useDefault)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with defaults', () => {
+      const delimiters = List([ '{', '}' ])
+      const url = new URL({
+        url: 'https://{sub}.paw.{ext}/users/{userId}',
+        variableDelimiters: delimiters
+      })
+
+      const expected = 'https://sub.paw.ext/users/userId'
+      const actual = __internals__.generate(url)
 
       expect(actual).toEqual(expected)
     })
@@ -426,6 +507,23 @@ describe('models/URL.js', () => {
         variableDelimiters: delimiters
       })
       const actual = __internals__.resolve(from, to, delimiters, useDefault)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with defaults', () => {
+      const delimiters = List([ '{', '}' ])
+      const from = new URL({
+        url: 'https://{sub}.paw.{ext}/users/{userId}/',
+        variableDelimiters: delimiters
+      })
+      const to = './purchases/{purchaseId}'
+
+      const expected = new URL({
+        url: 'https://{sub}.paw.{ext}/users/{userId}/purchases/{purchaseId}',
+        variableDelimiters: delimiters
+      })
+      const actual = __internals__.resolve(from, to, delimiters)
 
       expect(actual).toEqual(expected)
     })
@@ -480,6 +578,15 @@ describe('models/URL.js', () => {
       const host = 'echo.paw.cloud'
 
       const expected = { hostname: 'echo.paw.cloud', port: null }
+      const actual = __internals__.splitHostInHostnameAndPort(host)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should set port and hostname to null if host is only colon', () => {
+      const host = ':'
+
+      const expected = { hostname: null, port: null }
       const actual = __internals__.splitHostInHostnameAndPort(host)
 
       expect(actual).toEqual(expected)
@@ -596,6 +703,42 @@ describe('models/URL.js', () => {
 
       const expected = 'https://jon:paw@new.host.io:443/new/awesome/path?query=true#NoHashtag'
       const actual = __internals__.createHrefFromBaseAndHostAndPathName(base, host, pathname)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with missing pathname', () => {
+      const base = {
+        protocol: 'https',
+        slashes: true,
+        auth: 'jon:paw',
+        host: 'old.host.com:8080',
+        pathname: '/old/path/to/resource',
+        search: '?query=true',
+        hash: '#NoHashtag'
+      }
+
+      const host = 'new.host.io:443'
+
+      const expected = 'https://jon:paw@new.host.io:443/?query=true#NoHashtag'
+      const actual = __internals__.createHrefFromBaseAndHostAndPathName(base, host)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with missing params', () => {
+      const base = {
+        protocol: 'https',
+        slashes: true,
+        auth: 'jon:paw',
+        host: 'old.host.com:8080',
+        pathname: '/old/path/to/resource',
+        search: '?query=true',
+        hash: '#NoHashtag'
+      }
+
+      const expected = 'https:///?query=true#NoHashtag'
+      const actual = __internals__.createHrefFromBaseAndHostAndPathName(base)
 
       expect(actual).toEqual(expected)
     })

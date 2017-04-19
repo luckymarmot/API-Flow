@@ -22,6 +22,7 @@ export class Mock {
     }
 
     for (const field in obj) {
+      // TODO maybe go up the prototype chain to spoof not-owned properties
       if (obj.hasOwnProperty(field)) {
         if (typeof obj[field] === 'function') {
           this[field] = setupFuncSpy(field)

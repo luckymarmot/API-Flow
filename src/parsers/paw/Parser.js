@@ -390,11 +390,8 @@ methods.isPartOfBaseUrl = (defaultUrl, defaultSecureUrl, urlPart) => {
 methods.findIntersection = (defaultUrl, urlPart) => {
   const match = (defaultUrl + '####' + urlPart).match(/^.*?(.*)####\1(.*)$/)
 
-  if (match) {
-    return { inside: match[1], outside: match[2] }
-  }
-
-  return { inside: '', outside: urlPart }
+  // always matches
+  return { inside: match[1], outside: match[2] }
 }
 
 /**
@@ -868,8 +865,17 @@ methods.convertHostIntoResources = (context, { key: defaultHost, value: hostEntr
     requestEntries
   } = methods.convertHostEntriesIntoHostVariableAndRequestEntries(context, defaultHost, hostEntries)
 
-  const variable = hostVariable ? { key: defaultHost, value: hostVariable } : null
-  const endpoint = hostVariable ? null : methods.createDefaultHostEndpoint(defaultHost, hostEntries)
+  let variable
+  let endpoint
+  if (hostVariable) {
+    variable = { key: defaultHost, value: hostVariable }
+    endpoint = null
+  }
+  else {
+    variable = null
+    endpoint = methods.createDefaultHostEndpoint(defaultHost, hostEntries)
+  }
+
   const resources = methods.getResourcesFromRequestEntries(
     context, defaultHost, hostVariable, requestEntries
   )
