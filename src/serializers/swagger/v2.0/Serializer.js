@@ -406,28 +406,37 @@ methods.getDefinitions = (api) => {
 }
 
 /**
+ * converts a Parameter or Reference into a SwaggerHeaderObject
+ * @param {Store} store: the store to use to resolve references
+ * @param {Parameter|Reference} parameterOrReference: the parameter or reference to convert.
+ * @returns {SwaggerHeaderObject} the corresponding header object
+ *
+ * TODO: take contexts into account.
+ */
+methods.getHeaderFromHeaderParameterOrReference = (store, parameterOrReference) => {
+  let resolved = parameterOrReference
+  if (parameterOrReference instanceof Reference) {
+    resolved = store.getIn([ 'parameter', parameterOrReference.get('uuid') ])
+  }
+
+  if (!resolved || resolved.get('key') === 'Content-Type') {
+    return null
+  }
+
+  return methods.convertParameterToHeaderObject(resolved)
+}
+
+/**
  * extracts the headers of a response, and converts them into HeaderObjects.
  * @param {Store} store: the store to use to resolve references
  * @param {Response} response: the response to get the headers of.
  * @returns {SwaggerHeadersObject} the object holding all headers of the response
  *
  * TODO: take contexts into account.
- * TODO: filter out content-type param
  */
 methods.getHeadersFromResponse = (store, response) => {
   const headers = response.getIn([ 'parameters', 'headers' ])
-    .map((param) => {
-      let resolved = param
-      if (param instanceof Reference) {
-        resolved = store.getIn([ 'parameter', param.get('uuid') ])
-      }
-
-      if (!resolved || resolved.get('key') === 'Content-Type') {
-        return null
-      }
-
-      return methods.convertParameterToHeaderObject(resolved)
-    })
+    .map((param) => methods.getHeaderFromHeaderParameterOrReference(store, param))
     .filter(v => !!v)
     .reduce(convertEntryListInMap, {})
 
@@ -783,7 +792,7 @@ methods.convertParameterToStandardParameterObject = (parameter, key) => {
 
   value.name = parameter.get('key') || undefined
   value.description = parameter.get('description') || undefined
-  value.required = parameter.get('required') !== 'null' ? parameter.get('required') : undefined
+  value.required = parameter.get('required') !== null ? parameter.get('required') : undefined
   value.in = methods.getParamLocation(parameter)
 
   if (value.type === 'array') {
@@ -1026,6 +1035,21 @@ methods.convertParameterMapToParameterObjectArray = (params) => {
 }
 
 /**
+ * tests whether a Parameter or Reference is NOT a consumes header parameter.
+ * @param {Store} store: the store to use to resolve references
+ * @param {Parameter|Reference} parameterOrReference: the parameter or reference to test
+ * @returns {boolean} false if it is a consumes header parameter, true otherwise
+ */
+methods.isParameterOrReferenceNotAConsumesHeader = (store, parameterOrReference) => {
+  let resolved = parameterOrReference
+  if (parameterOrReference instanceof Reference) {
+    resolved = store.getIn([ 'parameter', parameterOrReference.get('uuid') ])
+  }
+
+  return !methods.isConsumesHeader(resolved)
+}
+
+/**
  * extracts parameters from a request.
  * @param {Store} store: the store to use to resolve references
  * @param {Request} request: the request to get the parameters from.
@@ -1039,14 +1063,8 @@ methods.convertParameterMapToParameterObjectArray = (params) => {
  */
 methods.getParametersFromRequest = (store, request) => {
   const headers = methods.convertParameterMapToParameterObjectArray(
-    request.getIn([ 'parameters', 'headers' ]).filter(param => {
-      let resolved = param
-      if (param instanceof Reference) {
-        resolved = store.getIn([ 'parameter', param.get('uuid') ])
-      }
-
-      return !methods.isConsumesHeader(resolved)
-    })
+    request.getIn([ 'parameters', 'headers' ])
+      .filter((param) => methods.isParameterOrReferenceNotAConsumesHeader(store, param))
   )
   const queries = methods.convertParameterMapToParameterObjectArray(
     request.getIn([ 'parameters', 'queries' ])
@@ -1543,14 +1561,9 @@ methods.createSwaggerObject = ($api) => {
  * @returns {string} the corresponding swagger object, as a string
  */
 methods.serialize = ({ api }) => {
-  try {
-    const swagger = methods.createSwaggerObject(api)
-    const serialized = JSON.stringify(swagger, null, 2)
-    return serialized
-  }
-  catch (e) {
-    throw e
-  }
+  const swagger = methods.createSwaggerObject(api)
+  const serialized = JSON.stringify(swagger, null, 2)
+  return serialized
 }
 
 export const __internals__ = methods
