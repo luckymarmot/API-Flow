@@ -19,6 +19,7 @@ import ParameterContainer from '../../../../models/ParameterContainer'
 import Context from '../../../../models/Context'
 import Reference from '../../../../models/Reference'
 import Response from '../../../../models/Response'
+import Variable from '../../../../models/Variable'
 
 import Serializer, { __internals__ } from '../Serializer'
 
@@ -69,6 +70,36 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         expect(__internals__.validate).toHaveBeenCalledWith(input)
         expect(actual).toEqual(expected)
       })
+    })
+  })
+
+  describe('@getKeysFromRecord', () => {
+    it('should work', () => {
+      const inputs = [
+        [ { s: 'store', res: 'resources' }, new Api({ store: null, resources: null }) ],
+        [ { s: 'store', res: 'resources' }, new Api({ store: 345, resources: null }) ],
+        [ { s: 'store', res: 'resources' }, new Api({ store: 345, resources: 456 }) ]
+      ]
+      const expected = [
+        {},
+        { s: 345 },
+        { s: 345, res: 456 }
+      ]
+      const actual = inputs.map(input => __internals__.getKeysFromRecord(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@validate', () => {
+    it('should work', () => {
+      const inputs = [
+        null
+      ]
+      const expected = [
+        true
+      ]
+      const actual = inputs.map(input => __internals__.validate(input))
+      expect(actual).toEqual(expected)
     })
   })
 
@@ -563,6 +594,11 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
   describe('@dumpJSONIntoDataType', () => {
     it('should work', () => {
+      const circular1 = {}
+      const circular2 = { circular1 }
+      circular1.circular2 = circular2
+      const container = { a: { circular1 } }
+
       const inputs = [
         [ {}, [], OrderedMap() ],
         [ { a: 123 }, [], OrderedMap() ],
@@ -574,14 +610,16 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         [ { a: 123 }, [ '234', '345' ], OrderedMap({
           '234': { schema: 234 * 2 },
           '345': { schema: 345 * 2 }
-        }) ]
+        }) ],
+        [ container, [], OrderedMap() ]
       ]
       const expected = [
         JSON.stringify({}, null, 2),
         JSON.stringify({ a: 123 }, null, 2),
         JSON.stringify({ a: 123, definitions: { '234': {}, '345': {} } }, null, 2),
         JSON.stringify({ a: 123, definitions: { '234': {}, '345': {} } }, null, 2),
-        JSON.stringify({ a: 123, definitions: { '234': 234 * 2, '345': 345 * 2 } }, null, 2)
+        JSON.stringify({ a: 123, definitions: { '234': 234 * 2, '345': 345 * 2 } }, null, 2),
+        container
       ]
       const actual = inputs.map(input => __internals__.dumpJSONIntoDataType(...input))
       expect(actual).toEqual(expected)
@@ -666,6 +704,10 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         [ OrderedMap({
           a: { convertible: true, deps: [ '#/def/b' ] },
           b: { convertible: false }
+        }), 'a' ],
+        [ OrderedMap({
+          a: { convertible: true, deps: [ '#/def/c' ] },
+          b: { convertible: false }
         }), 'a' ]
       ]
       const expected = [
@@ -675,7 +717,8 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         true,
         true,
         true,
-        false
+        false,
+        true
       ]
       const actual = inputs.map(input => __internals__.areSchemaAndDepsConvertible(...input))
       expect(actual).toEqual(expected)
@@ -1164,6 +1207,17 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         new Api({ store: new Store() }),
         new Api({ store: new Store({ endpoint: OrderedMap() }) }),
         new Api({ store: new Store({ endpoint: OrderedMap({
+          a: new URL({
+            url: 'https://echo.paw.cloud/base',
+            variableDelimiters: List([ '{', '}' ])
+          })
+          .set('protocol', List())
+          .set('slashes', false)
+          .set('hostname', null)
+          .set('port', null)
+          .set('pathname', null)
+        }) }) }),
+        new Api({ store: new Store({ endpoint: OrderedMap({
           a: new URL({ url: 'https://echo.paw.cloud/base', variableDelimiters: List([ '{', '}' ]) })
         }) }) }),
         new Api({ store: new Store({ endpoint: OrderedMap({
@@ -1178,10 +1232,62 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         }) }) })
       ]
       const expected = [
-        null, null, null,
+        null, null, null, null,
         { key: 'baseUri', value: 'https://echo.paw.cloud/base' },
         { key: 'baseUri', value: 'http://echo.paw.cloud/base' },
         { key: 'baseUri', value: 'http://echo.paw.cloud/{v}' }
+      ]
+      const actual = inputs.map(input => __internals__.extractBaseUriFromApi(input))
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with variable', () => {
+      const inputs = [
+        new Api(),
+        new Api({ store: new Store() }),
+        new Api({ store: new Store({ variable: OrderedMap() }) }),
+        new Api({ store: new Store({ variable: OrderedMap({
+          a: new Variable({ name: 'a' })
+        }) }) }),
+        new Api({ store: new Store({ variable: OrderedMap({
+          a: new Variable({
+            name: 'a',
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base'
+            })
+          })
+        }) }) }),
+        new Api({ store: new Store({ variable: OrderedMap({
+          a: new Variable({
+            name: 'a',
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base',
+              fallback: 'http://echo.paw.cloud/fallback'
+            })
+          })
+        }) }) }),
+        new Api({ store: new Store({ variable: OrderedMap({
+          a: new Variable({
+            name: 'a',
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base',
+              fallback: 'http://echo.paw.cloud/fallback'
+            })
+          }),
+          b: new Variable({
+            name: 'b',
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/other',
+              fallback: 'http://echo.paw.cloud/otherfallback'
+            })
+          })
+        }) }) })
+      ]
+      const expected = [
+        null, null, null, null,
+        { key: 'baseUri', value: 'https://echo.paw.cloud/base' },
+        { key: 'baseUri', value: 'https://echo.paw.cloud/base' },
+        { key: 'baseUri', value: 'https://echo.paw.cloud/base' }
       ]
       const actual = inputs.map(input => __internals__.extractBaseUriFromApi(input))
       expect(actual).toEqual(expected)
@@ -1197,6 +1303,11 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           string: '/base',
           variableDelimiters: List([ '{', '}' ])
         }),
+        new URLComponent({
+          componentName: 'pathname',
+          string: '/base/{userId}',
+          variableDelimiters: List([ '{', '}' ])
+        }).set('parameter', new Parameter({ superType: 'sequence' })),
         new URLComponent({
           componentName: 'pathname',
           string: '/base/{userId}',
@@ -1235,6 +1346,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         })
       ]
       const expected = [
+        null,
         null,
         null,
         List([
@@ -1366,10 +1478,110 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       const actual = inputs.map(input => __internals__.extractBaseUriParametersFromApi(...input))
       expect(actual).toEqual(expected)
     })
+
+    it('should work with variable', () => {
+      spyOn(__internals__, 'convertParameterIntoNamedParameter').andCall(({ a }, p) => {
+        return { key: p.get('key'), value: a }
+      })
+
+      const inputs = [
+        [ { a: 123 }, new Api() ],
+        [ { a: 123 }, new Api({ store: new Store() }) ],
+        [ { a: 123 }, new Api({ store: new Store({ variable: OrderedMap() }) }) ],
+        [ { a: 123 }, new Api({ store: new Store({ variable: OrderedMap({
+          b: new Variable()
+        }) }) }) ],
+        [ { a: 123 }, new Api({ store: new Store({ variable: OrderedMap({
+          b: new Variable({
+            values: OrderedMap({ default: 'https://echo.paw.cloud/base' })
+          })
+        }) }) }) ],
+        [ { a: 123 }, new Api({ store: new Store({ variable: OrderedMap({
+          b: new Variable({
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base',
+              fallback: 'http://echo.paw.cloud/fallback'
+            })
+          })
+        }) }) }) ],
+        [ { a: 123 }, new Api({ store: new Store({ variable: OrderedMap({
+          b: new Variable({
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base'
+            })
+          }),
+          c: new Variable({
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base'
+            })
+          })
+        }) }) }) ]
+      ]
+
+      const expected = [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+
+      const actual = inputs.map(input => __internals__.extractBaseUriParametersFromApi(...input))
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@extractProtocolsFromApi', () => {
     it('should work', () => {
+      const inputs = [
+        new Api(),
+        new Api({ store: new Store() }),
+        new Api({ store: new Store({ variable: OrderedMap() }) }),
+        new Api({ store: new Store({ variable: OrderedMap({
+          b: new Variable()
+        }) }) }),
+        new Api({ store: new Store({ variable: OrderedMap({
+          b: new Variable({
+            values: OrderedMap({ default: 'https://echo.paw.cloud/base' })
+          })
+        }) }) }),
+        new Api({ store: new Store({ variable: OrderedMap({
+          b: new Variable({
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base',
+              fallback: 'http://echo.paw.cloud/fallback'
+            })
+          })
+        }) }) }),
+        new Api({ store: new Store({ variable: OrderedMap({
+          b: new Variable({
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base'
+            })
+          }),
+          c: new Variable({
+            values: OrderedMap({
+              default: 'https://echo.paw.cloud/base'
+            })
+          })
+        }) }) })
+      ]
+      const expected = [
+        null,
+        null,
+        null,
+        null,
+        { key: 'protocols', value: [ 'HTTPS' ] },
+        { key: 'protocols', value: [ 'HTTPS' ] },
+        { key: 'protocols', value: [ 'HTTPS' ] }
+      ]
+      const actual = inputs.map(input => __internals__.extractProtocolsFromApi(input))
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with enpoints', () => {
       const inputs = [
         new Api(),
         new Api({ store: new Store() }),
@@ -1431,6 +1643,44 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
     })
   })
 
+  describe('@extractMediaTypeUUIDfromApi', () => {
+    it('should work', () => {
+      const inputs = [
+        new Api(),
+        new Api({ store: new Store({ parameter: OrderedMap({
+          Irrelevant: new Parameter({
+            key: 'user',
+            default: '123'
+          })
+        }) }) }),
+        new Api({ store: new Store({ parameter: OrderedMap({
+          mediaType: new Parameter({
+            key: 'Content-Type',
+            default: '123'
+          })
+        }) }) }),
+        new Api({ store: new Store({ parameter: OrderedMap({
+          mediaType_1: new Parameter({
+            key: 'Content-Type',
+            default: '123'
+          }),
+          mediaType_2: new Parameter({
+            key: 'Content-Type',
+            default: '234'
+          })
+        }) }) })
+      ]
+      const expected = [
+        null,
+        null,
+        'mediaType',
+        null
+      ]
+      const actual = inputs.map(input => __internals__.extractMediaTypeUUIDfromApi(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@extractMediaTypeFromApi', () => {
     it('should work', () => {
       const inputs = [
@@ -1460,6 +1710,13 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
             key: 'Content-Type',
             constraints: List([ new Constraint.Enum([ 'application/json', 'application/xml' ]) ])
           })
+        }) }) }),
+        new Api({ store: new Store({ parameter: OrderedMap({
+          a: new Parameter({ key: 'Irrelevant' }),
+          b: new Parameter({
+            key: 'Content-Type',
+            constraints: List([ new Constraint.Pattern('application/.*') ])
+          })
         }) }) })
       ]
       const expected = [
@@ -1470,9 +1727,221 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         { key: 'mediaType', value: 'application/json' },
         null,
         { key: 'mediaType', value: 'application/json' },
-        { key: 'mediaType', value: [ 'application/json', 'application/xml' ] }
+        { key: 'mediaType', value: [ 'application/json', 'application/xml' ] },
+        null
       ]
       const actual = inputs.map(input => __internals__.extractMediaTypeFromApi(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractMethodBaseFromRequest', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractDisplayNameFromRequest')
+        .andCall(r => r ? { key: 'displayName', value: 123 } : null)
+      spyOn(__internals__, 'extractDescriptionFromRequest')
+        .andCall(r => r ? { key: 'description', value: 234 } : null)
+      spyOn(__internals__, 'extractQueryParametersFromRequest')
+        .andCall((c, r) => r ? { key: 'queryParameters', value: 345 } : null)
+      spyOn(__internals__, 'extractHeadersFromRequest')
+        .andCall((c, r) => r ? { key: 'headers', value: 456 } : null)
+      spyOn(__internals__, 'extractBodyFromRequest')
+        .andCall((c, r) => r ? { key: 'body', value: 567 } : null)
+      spyOn(__internals__, 'extractProtocolsFromRequest')
+        .andCall(r => r ? { key: 'protocols', value: 678 } : null)
+      spyOn(__internals__, 'extractIsFromRequest')
+        .andCall((m, r) => r ? { key: 'is', value: 789 } : null)
+      spyOn(__internals__, 'extractSecuredByFromRequest')
+        .andCall(r => r ? { key: 'securedBy', value: 890 } : null)
+      spyOn(__internals__, 'extractResponsesFromRequest')
+        .andCall((c, r) => r ? { key: 'responses', value: 901 } : null)
+
+      const inputs = [
+        [ null, null, null ],
+        [ null, null, {} ]
+      ]
+      const expected = [
+        null,
+        {
+          displayName: 123,
+          description: 234,
+          queryParameters: 345,
+          headers: 456,
+          body: 567,
+          protocols: 678,
+          is: 789,
+          securedBy: 890,
+          responses: 901
+        }
+      ]
+      const actual = inputs.map(input => __internals__.extractMethodBaseFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractTraitsFromInterfaces', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractMethodBaseFromRequest').andCall((m, c, v) => m + c + v)
+
+      const inputs = [
+        [ 123, 234, new Api() ],
+        [ 123, 234, new Api({
+          store: new Store({ interface: OrderedMap({
+            abc: new Interface({ uuid: 'abc', level: 'response' })
+          }) })
+        }) ],
+        [ 123, 234, new Api({
+          store: new Store({ interface: OrderedMap({
+            abc: new Interface({ uuid: 'abc', level: 'request' }),
+            def: new Interface({ uuid: 'def', level: 'request', underlay: 345 })
+          }) })
+        }) ]
+      ]
+      const expected = [
+        [],
+        [],
+        [ { key: 'abc', value: {} }, { key: 'def', value: 123 + 234 + 345 } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractTraitsFromInterfaces(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractMethodBaseFromParameter', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertParameterIntoNamedParameter').andCall((c) => {
+        if (!c) {
+          return null
+        }
+
+        if (c % 2 === 0) {
+          return { value: c * 3 }
+        }
+
+        return { key: c, value: c * 2 }
+      })
+      const inputs = [
+        [ null, new Parameter() ],
+        [ 123, new Parameter() ],
+        [ 123, new Parameter({ in: 'headers' }) ],
+        [ 123, new Parameter({ in: 'queries' }) ],
+        [ 123, new Parameter({ in: 'body' }) ],
+        [ 234, new Parameter({ in: 'body' }) ]
+      ]
+      const expected = [
+        null,
+        null,
+        { headers: { '123': 123 * 2 } },
+        { queryParameters: { '123': 123 * 2 } },
+        { body: { '123': 123 * 2 } },
+        { body: 234 * 3 }
+      ]
+      const actual = inputs.map(input => __internals__.extractMethodBaseFromParameter(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractTraitsFromParameters', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractMethodBaseFromParameter').andCall((c, p) => {
+        return p % 2 ? null : p + c
+      })
+
+      const inputs = [
+        [ 'globalMediaType', 123, new Api() ],
+        [ 'globalMediaType', 123, new Api({
+          store: new Store({
+            parameter: OrderedMap({
+              user: 234
+            })
+          })
+        }) ],
+        [ 'globalMediaType', 123, new Api({
+          store: new Store({
+            parameter: OrderedMap({
+              user: 234,
+              globalMediaType: 345
+            })
+          })
+        }) ],
+        [ 'globalMediaType', 123, new Api({
+          store: new Store({
+            parameter: OrderedMap({
+              user: 234,
+              removed: 345,
+              song: 456
+            })
+          })
+        }) ]
+      ]
+      const expected = [
+        [],
+        [ { key: 'user', value: 123 + 234 } ],
+        [ { key: 'user', value: 123 + 234 } ],
+        [ { key: 'user', value: 123 + 234 }, { key: 'song', value: 123 + 456 } ]
+      ]
+      const actual = inputs.map(input => __internals__.extractTraitsFromParameters(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractMethodBaseFromResponse', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractResponsesFromRequest').andCall((c, req) => {
+        if (req.getIn([ 'responses', '200' ])) {
+          return { key: '200', value: c }
+        }
+
+        return null
+      })
+
+      const inputs = [
+        [ 123, new Response() ],
+        [ 123, new Response({ code: 200 }) ]
+      ]
+      const expected = [
+        null,
+        { '200': 123 }
+      ]
+      const actual = inputs.map(input => __internals__.extractMethodBaseFromResponse(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractTraitsFromSharedResponses', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractMethodBaseFromResponse').andCall((c, r) => {
+        return r % 2 ? null : c + r
+      })
+      const inputs = [
+        [ 123, new Api() ],
+        [ 123, new Api({
+          store: new Store({
+            response: OrderedMap({
+              default: 234,
+              failure: 345
+            })
+          })
+        }) ],
+        [ 123, new Api({
+          store: new Store({
+            response: OrderedMap({
+              default: 234,
+              failure: 345,
+              internal: 456
+            })
+          })
+        }) ]
+      ]
+      const expected = [
+        [],
+        [ { key: 'response_default', value: 234 + 123 } ],
+        [
+          { key: 'response_default', value: 234 + 123 },
+          { key: 'response_internal', value: 456 + 123 }
+        ]
+      ]
+      const actual = inputs.map(input => __internals__.extractTraitsFromSharedResponses(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -1528,6 +1997,47 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         { key: 'traits', value: { b: {}, c: 123, d: 234 } }
       ]
       const actual = inputs.map(input => __internals__.extractTraitsFromApi(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractResourceTypesFromApi', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractResourceFromResourceRecord').andCall((m, c, v) => m + c + v)
+
+      const inputs = [
+        [ 123, 234, new Api() ],
+        [ 123, 234, new Api({
+          store: new Store({
+            interface: OrderedMap({
+              Irrelevant: new Interface({ level: 'response' })
+            })
+          })
+        }) ],
+        [ 123, 234, new Api({
+          store: new Store({
+            interface: OrderedMap({
+              abc: new Interface({ uuid: 'abc', level: 'resource' }),
+              def: new Interface({ uuid: 'def', level: 'resource', underlay: 345 }),
+              ghi: new Interface({ uuid: 'ghi', level: 'resource', underlay: 456 })
+            })
+          })
+        }) ]
+      ]
+
+      /* eslint-disable no-undefined */
+      const expected = [
+        null,
+        null,
+        { key: 'resourceTypes', value: {
+          abc: undefined,
+          def: 123 + 234 + 345,
+          ghi: 123 + 234 + 456
+        } }
+      ]
+      /* eslint-enable no-undefined */
+
+      const actual = inputs.map(input => __internals__.extractResourceTypesFromApi(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -1621,6 +2131,13 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           description: '123',
           authorizationUri: 'https://oauth.example.com/authorization',
           tokenCredentialsUri: 'https://oauth.example.com/renew'
+        }),
+        new Auth.OAuth1({
+          authName: 'oauth1',
+          description: '123',
+          authorizationUri: 'https://oauth.example.com/authorization',
+          tokenCredentialsUri: 'https://oauth.example.com/renew',
+          signature: 'hmac-sha1'
         })
       ]
       const expected = [
@@ -1657,6 +2174,16 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
             requestTokenUri: null,
             authorizationUri: 'https://oauth.example.com/authorization',
             tokenCredentialsUri: 'https://oauth.example.com/renew'
+          }
+        } },
+        { key: 'oauth1', value: {
+          type: 'OAuth 1.0',
+          description: '123',
+          settings: {
+            requestTokenUri: null,
+            authorizationUri: 'https://oauth.example.com/authorization',
+            tokenCredentialsUri: 'https://oauth.example.com/renew',
+            signatures: [ 'HMAC-SHA1' ]
           }
         } }
       ]
@@ -1696,6 +2223,14 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           flow: 'implicit',
           authorizationUrl: 'https://oauth.example.com/portal',
           tokenUrl: 'https://oauth.example.com/renew'
+        }),
+        new Auth.OAuth2({
+          authName: 'oauth_2',
+          description: '123',
+          flow: 'implicit',
+          authorizationUrl: 'https://oauth.example.com/portal',
+          tokenUrl: 'https://oauth.example.com/renew',
+          scopes: List([ { key: 'read:any', value: '' }, { key: 'write:self', value: '' } ])
         })
       ]
       const expected = [
@@ -1759,6 +2294,16 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
             authorizationUri: 'https://oauth.example.com/portal',
             accessTokenUri: 'https://oauth.example.com/renew',
             authorizationGrants: [ 'implicit' ]
+          }
+        } },
+        { key: 'oauth_2', value: {
+          type: 'OAuth 2.0',
+          description: '123',
+          settings: {
+            authorizationUri: 'https://oauth.example.com/portal',
+            accessTokenUri: 'https://oauth.example.com/renew',
+            authorizationGrants: [ 'implicit' ],
+            scopes: [ 'read:any', 'write:self' ]
           }
         } }
       ]
@@ -1922,6 +2467,19 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         { key: 'securitySchemes', value: { a: 123, c: 345 } }
       ]
       const actual = inputs.map(input => __internals__.extractSecuritySchemesFromApi(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractSecuredByFromApi', () => {
+    it('should work', () => {
+      const inputs = [
+        null
+      ]
+      const expected = [
+        null
+      ]
+      const actual = inputs.map(input => __internals__.extractSecuredByFromApi(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -2302,6 +2860,32 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
             ])
           })
         ],
+        // { key: 'json', value: 123 }
+        [
+          { a: 123 },
+          new ParameterContainer({
+            body: OrderedMap({
+              a: new Parameter({
+                default: null,
+                applicableContexts: List([
+                  new Parameter({
+                    key: 'Content-Type',
+                    constraints: List([ new Constraint.Enum([ 'json', 'xml' ]) ])
+                  })
+                ])
+              })
+            })
+          }),
+          new Context({
+            constraints: List([
+              new Parameter({
+                in: 'headers',
+                key: 'Content-Type',
+                default: 'json'
+              })
+            ])
+          })
+        ],
         // { key: 'json', value: { '234': 123 } }
         [
           { a: 123 },
@@ -2343,6 +2927,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         { key: '*/*', value: { '234': 123 } },
         null,
         { key: 'json', value: { '234': 123 } },
+        { key: 'json', value: 123 },
         { key: 'json', value: { '234': 123 } }
       ]
       const actual = inputs.map(
@@ -2370,6 +2955,27 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         { key: 'body', value: { '234': 123 } },
         { key: 'body', value: { '234': 123, '345': 123 } },
         { key: 'body', value: { '234': 123, '345': 123 } }
+      ]
+
+      const actual = inputs.map(
+        input => __internals__.extractBodyParamsFromRequestWithContexts(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with null single body param', () => {
+      spyOn(__internals__, 'extractBodyParamsFromRequestForContext').andCall(({ a }, p, c) => {
+        return p[c] ? { key: null, value: a } : null
+      })
+      const inputs = [
+        [ { a: 123 }, List(), { b: 234 } ],
+        [ { a: 123 }, List([ 'd' ]), { b: 234, c: 345 } ],
+        [ { a: 123 }, List([ 'b' ]), { b: 234, c: 345 } ]
+      ]
+      const expected = [
+        null,
+        null,
+        { key: 'body', value: 123 }
       ]
 
       const actual = inputs.map(
@@ -2445,6 +3051,59 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
     })
   })
 
+  describe('@extractTraitsFromRequestParameters', () => {
+    it('should work', () => {
+      const inputs = [
+        [ 'globalMediaType', new Request() ],
+        [ 'globalMediaType', new Request({
+          parameters: new ParameterContainer({
+            headers: OrderedMap({
+              a: new Parameter(),
+              b: new Reference({ uuid: 'globalMediaType' }),
+              c: new Reference({ uuid: 'someOtherRef' })
+            }),
+            queries: OrderedMap({
+              d: new Parameter(),
+              e: new Reference({ uuid: 'someAdditionalRef' })
+            }),
+            body: OrderedMap({
+              f: new Parameter(),
+              g: new Reference({ uuid: 'someFinalRef' })
+            })
+          })
+        }) ]
+      ]
+      const expected = [
+        [],
+        [ 'someOtherRef', 'someAdditionalRef', 'someFinalRef' ]
+      ]
+      const actual = inputs.map(input => __internals__.extractTraitsFromRequestParameters(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractTraitsFromResponses', () => {
+    it('should work', () => {
+      const inputs = [
+        new Request(),
+        new Request({
+          responses: OrderedMap({
+            default: new Response(),
+            generic: new Reference({ uuid: '#/responses/ErrorResponse' }),
+            internal: new Reference({ uuid: 'InternalErrorResponse' }),
+            missingUUID: new Reference()
+          })
+        })
+      ]
+      const expected = [
+        List(),
+        List([ 'response_ErrorResponse', 'response_InternalErrorResponse', 'response_' ])
+      ]
+      const actual = inputs.map(input => __internals__.extractTraitsFromResponses(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@extractIsFromRequest', () => {
     it('should work', () => {
       const inputs = [
@@ -2465,6 +3124,45 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         { key: 'is', value: [ 123, 234 ] }
       ]
       const actual = inputs.map(input => __internals__.extractIsFromRequest(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractSecuredByFromRequest', () => {
+    it('should work', () => {
+      const inputs = [
+        new Request(),
+        new Request({
+          auths: List([ new Auth.Basic() ])
+        }),
+        new Request({
+          auths: List([
+            null,
+            new Reference({ uuid: 'basic_auth' }),
+            new Reference({ uuid: 'basic_auth', overlay: new Auth.Basic({ username: 'john' }) }),
+            new Reference({ uuid: 'oauth_2_auth' }),
+            new Reference({ uuid: 'oauth_2_auth', overlay: new Auth.OAuth2({
+              flow: 'implicit'
+            }) }),
+            new Reference({ uuid: 'oauth_2_auth', overlay: new Auth.OAuth2({
+              scopes: List([ { key: 'read:any' }, { key: 'write:self' } ])
+            }) })
+          ])
+        })
+      ]
+      const expected = [
+        null,
+        null,
+        { key: 'securedBy', value: [
+          null,
+          'basic_auth',
+          'basic_auth',
+          'oauth_2_auth',
+          'oauth_2_auth',
+          { oauth_2_auth: { scopes: [ 'read:any', 'write:self' ] } }
+        ] }
+      ]
+      const actual = inputs.map(input => __internals__.extractSecuredByFromRequest(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -2586,6 +3284,11 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
           '200': new Response({ code: 200, description: 234 }),
           '400': new Response({ code: 400, description: null }),
           '404': new Response({ code: 404, description: 345 })
+        }) }) ],
+        [ 123, new Request({ responses: OrderedMap({
+          default: new Response({ code: 'default', description: 234 }),
+          '400': new Response({ code: 400, description: null }),
+          '404': new Response({ code: 404, description: 345 })
         }) }) ]
       ]
 
@@ -2594,6 +3297,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         null,
         { key: 'responses', value: { '200': 234 + 123 } },
         null,
+        { key: 'responses', value: { '200': 234 + 123, '404': 345 + 123 } },
         { key: 'responses', value: { '200': 234 + 123, '404': 345 + 123 } }
       ]
 
@@ -2769,6 +3473,36 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
     })
   })
 
+  describe('@extractUriParametersFromResource', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertParameterIntoNamedParameter').andCall((c, p) => {
+        return { key: p.get('key'), value: c }
+      })
+
+      const inputs = [
+        [ 123, new Resource() ],
+        [ 123, new Resource({
+          path: new URL({
+            url: 'https://echo.paw.cloud/users',
+            variableDelimiters: List([ '{', '}' ])
+          })
+        }) ],
+        [ 123, new Resource({
+          path: new URL({
+            url: 'https://echo.paw.cloud/users/{userId}/products',
+            variableDelimiters: List([ '{', '}' ])
+          })
+        }) ]
+      ]
+      const expected = [
+        null, null,
+        { key: 'uriParameters', value: { userId: 123 } }
+      ]
+      const actual = inputs.map(input => __internals__.extractUriParametersFromResource(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@extractResourceFromResourceRecord', () => {
     it('should work', () => {
       spyOn(__internals__, 'extractDisplayNameFromResource').andCall((r) => {
@@ -2817,6 +3551,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
       const inputs = [
         [ {}, 123, [] ],
+        [ {}, 123, [ { key: [ '' ], value: 234 } ] ],
         [ {}, 123, [ { key: [ 'paths' ], value: 234 } ] ],
         [ {}, 123, [ { key: [ 'paths', '{pathId}' ], value: 345 } ] ],
         [ {}, 123, [
@@ -2825,6 +3560,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       ]
       const expected = [
         {},
+        { '/': { '234': 123 } },
         { '/paths': { '234': 123 } },
         { '/paths': { '/{pathId}': { '345': 123 } } },
         { '/paths': { '234': 123, '/{pathId}': { '345': 123 } } }
@@ -2980,6 +3716,87 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
         }
       ]
       const actual = inputs.map(input => __internals__.createRAMLJSONModel(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@fixResponseCodes', () => {
+    it('should work', () => {
+      const inputs = [
+        `
+        #%RAML 1.0
+        title: 'whatever'
+        /users:
+          get:
+            description: some description that contains a triple digit - '123'
+        `,
+        `
+        #%RAML 1.0
+        title: 'whatever'
+        /users:
+          get:
+            responses:
+              '200':
+                description: 'some description'
+        `,
+        `
+        #%RAML 1.0
+        title: 'whatever'
+        /users:
+          get:
+            responses:
+              '200':
+                description: some description for '200' code that is not modified
+        `
+      ]
+
+      const expected = [
+        `
+        #%RAML 1.0
+        title: 'whatever'
+        /users:
+          get:
+            description: some description that contains a triple digit - '123'
+        `,
+        `
+        #%RAML 1.0
+        title: 'whatever'
+        /users:
+          get:
+            responses:
+              200:
+                description: 'some description'
+        `,
+        `
+        #%RAML 1.0
+        title: 'whatever'
+        /users:
+          get:
+            responses:
+              200:
+                description: some description for '200' code that is not modified
+        `
+      ]
+
+      const actual = inputs.map(input => __internals__.fixResponseCodes(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@serialize', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createRAMLJSONModel').andCall(a => a * 2)
+      spyOn(__internals__, 'fixResponseCodes').andCall(r => 'fixed:' + r.split('\n')[1])
+
+      const inputs = [
+        { api: 123 },
+        { api: 234 }
+      ]
+      const expected = [
+        'fixed:246',
+        'fixed:468'
+      ]
+      const actual = inputs.map(input => __internals__.serialize(input))
       expect(actual).toEqual(expected)
     })
   })

@@ -1105,9 +1105,9 @@ methods.extractTraitsFromSharedResponses = (coreInfoMap, api) => {
  * if it exists, as an Entry
  */
 methods.extractTraitsFromApi = (mediaTypeUUID, coreInfoMap, api) => {
-  const itfsTraits = methods.extractTraitsFromInterfaces(mediaTypeUUID, coreInfoMap, api) || []
-  const paramTraits = methods.extractTraitsFromParameters(mediaTypeUUID, coreInfoMap, api) || []
-  const responseTraits = methods.extractTraitsFromSharedResponses(coreInfoMap, api) || []
+  const itfsTraits = methods.extractTraitsFromInterfaces(mediaTypeUUID, coreInfoMap, api)
+  const paramTraits = methods.extractTraitsFromParameters(mediaTypeUUID, coreInfoMap, api)
+  const responseTraits = methods.extractTraitsFromSharedResponses(coreInfoMap, api)
 
   if (!itfsTraits.length && !paramTraits.length && !responseTraits.length) {
     return null
@@ -1764,6 +1764,7 @@ methods.extractTraitsFromResponses = (request) => {
     .filter(response => response instanceof Reference)
     .map(reference => 'response_' + (reference.get('uuid') || '').split('/').slice(-1))
     .valueSeq()
+    .toList()
 
   return responses
 }
@@ -1780,6 +1781,7 @@ methods.extractIsFromRequest = (mediaTypeUUID, request) => {
     .get('interfaces')
     .map(itf => itf.get('uuid'))
     .valueSeq()
+    .toList()
 
   const paramTraits = methods.extractTraitsFromRequestParameters(mediaTypeUUID, request)
   const responseTraits = methods.extractTraitsFromResponses(request)
@@ -1807,7 +1809,11 @@ methods.extractSecuredByFromRequest = (request) => {
       }
 
       const authRefName = authRef.get('uuid')
-      if (!authRef.get('overlay') || !(authRef.get('overlay') instanceof Auth.OAuth2)) {
+      if (
+        !authRef.get('overlay') ||
+        !(authRef.get('overlay') instanceof Auth.OAuth2) ||
+        !authRef.getIn([ 'overlay', 'scopes' ]).size
+      ) {
         return authRefName
       }
 
@@ -2036,7 +2042,7 @@ methods.extractUriParametersFromResource = (coreInfoMap, resource) => {
     return null
   }
 
-  const sequence = pathParam.get('value') || List()
+  const sequence = pathParam.get('value')
 
   const uriParams = sequence
     .filter(param => !!param.get('key'))
@@ -2092,11 +2098,9 @@ methods.nestResources = (mediaTypeUUID, coreInfoMap, resources) => {
 
   const relativeUris = Object.keys(subResources)
   for (const relativeUri of relativeUris) {
-    if (subResources.hasOwnProperty(relativeUri)) {
-      nested[relativeUri] = methods.nestResources(
-        mediaTypeUUID, coreInfoMap, subResources[relativeUri]
-      )
-    }
+    nested[relativeUri] = methods.nestResources(
+      mediaTypeUUID, coreInfoMap, subResources[relativeUri]
+    )
   }
 
   return nested
