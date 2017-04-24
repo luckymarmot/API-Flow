@@ -1206,7 +1206,7 @@ methods.getApplicableContextsFromLocation = (location) => {
  */
 methods.convertParameterObjectIntoParameter = (parameterEntry) => {
   const uuid = parameterEntry.key
-  const parameter = parameterEntry.value
+  const parameter = parameterEntry.value || {}
 
   const { name, description, required, type } = parameter
   const constraints = methods.getConstraintsFromParam(parameter)
@@ -1221,7 +1221,7 @@ methods.convertParameterObjectIntoParameter = (parameterEntry) => {
     name: name || null,
     description: description || null,
     required: required || false,
-    type,
+    type: type || null,
     constraints,
     applicableContexts
   }
@@ -1393,7 +1393,7 @@ methods.getSharedResponses = ({ responses = {} } = {}) => {
  * @param {SwaggerAuthObject} auth: the auth to find the type of
  * @returns {string} the type of auth.
  */
-methods.getAuthType = (auth = {}) => auth.type
+methods.getAuthType = (auth = {}) => auth.type || null
 
 /**
  * adds an Interface to an authInstance
@@ -1572,34 +1572,60 @@ methods.getSharedConstraints = ({ definitions = {} } = {}) => {
 }
 
 /**
+ * extracts tags from all the operation objects associated with a resource.
+ * @param {Object} entry: the entry holding the resource
+ * @param {SwaggerResourceObject} entry.value: the resource from which to exptract the tags
+ * @returns {Array<string>} an array of string containing all the tags this resource contains. Tags
+ * can be duplicate.
+ */
+methods.extractTagsFromPathObject = ({ value: resource }) => {
+  return methods.getMethodsFromResourceObject(resource)
+    .map(({ value: operation }) => operation.tags || [])
+    .reduce(flatten, [])
+}
+
+/**
+ * extracts tags from all the operation objects associated with all the resources of a swagger file.
+ * @param {SwaggerObject} swagger: the swagger file from which to get all the resources
+ * @param {SwaggerPathObject} swagger.paths: the object containing all the resources in a swagger
+ * file.
+ * @returns {Array<string>} an array of string containing all the tags this swagger file contains.
+ * Tags can be duplicate.
+ */
+methods.extractTagsFromPathsObject = ({ paths = {} } = {}) => {
+  const tags = entries(paths)
+    .map(methods.extractTagsFromPathObject)
+    .reduce(flatten, [])
+
+  return tags
+}
+
+/**
+ * converts a tag string into an interface representing the tag
+ * @param {string} tag: the tag string to convert
+ * @returns {Entry<string, Interface>} the corresponding Interface, as an entry.
+ */
+methods.convertTagStringIntoInterfaceEntry = (tag) => {
+  return {
+    key: tag,
+    value: new Interface({
+      name: tag,
+      uuid: tag,
+      level: 'request'
+    })
+  }
+}
+
+/**
  * creates shared tag Interfaces from a SwaggerObject
  * @param {SwaggerObject} swagger: the swagger object to extract the shared tags from
  * @returns {Object<string, Interface>} the corresponding TypedStoreInstance for interfaces
  */
 methods.getTagInterfaces = (swagger) => {
-  const pathnames = Object.keys(swagger.paths || {})
-  const tags = pathnames
-    .map(path => {
-      const resource = swagger.paths[path]
-      return methods.getMethodsFromResourceObject(resource)
-        .map(({ value: operation }) => {
-          return operation.tags || []
-        })
-        .reduce(flatten, [])
-    })
-    .reduce(flatten, [])
-
+  const tags = methods.extractTagsFromPathsObject(swagger)
   const tagSet = Array.from(new Set(tags))
-
   return tagSet
-    .map(tag => ({
-      key: tag,
-      value: new Interface({
-        name: tag,
-        uuid: tag,
-        level: 'request'
-      })
-    }))
+    .map(methods.convertTagStringIntoInterfaceEntry)
     .reduce(convertEntryListInMap, {})
 }
 
