@@ -29,6 +29,10 @@ methods.getUriFromItem = (item) => {
     return item.url
   }
 
+  if (!item.file || !item.file.path || !item.file.name) {
+    return 'file://localhost/'
+  }
+
   const uri = 'file://' + path.join(item.file.path, item.file.name)
   return uri
 }
