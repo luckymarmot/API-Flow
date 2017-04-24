@@ -69,6 +69,19 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
     })
   })
 
+  describe('@validate', () => {
+    it('should work', () => {
+      const inputs = [
+        null
+      ]
+      const expected = [
+        0
+      ]
+      const actual = inputs.map(input => __internals__.validate(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@createInfoName', () => {
     it('should work', () => {
       const inputs = [
@@ -515,6 +528,39 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       spyOn(__internals__, 'getEndpointOrReferenceFromResourceAndRequest').andCall((res, req) => {
         const value = (req || res) + 1
         return value === 1 ? null : value
+      })
+      spyOn(__internals__, 'getEndpointFromReference').andCall((a, e) => {
+        return e.get('uuid')
+      })
+
+      spyOn(__internals__, 'extractBaseUrlFromEndpoint').andCall(e => e * 2)
+      spyOn(__internals__, 'extractPathFromResource').andCall(r => (r || 100) * 3)
+      spyOn(__internals__, 'extractQueryStringFromRequest').andCall((a, r) => {
+        return (a || 0) + (r || 0)
+      })
+
+      spyOn(__internals__, 'combineUrlComponents').andCall((b, p, q) => {
+        return p + q - b
+      })
+
+      const inputs = [
+        // [ new Api(), new Resource(), new Request() ],
+        [ null, 234, 345 ],
+        [ 123, null, 345 ],
+        [ 123, 234, null ],
+        [ 123, null, null ]
+      ]
+      const expected = [
+        355, 76, 355, null
+      ]
+      const actual = inputs.map(input => __internals__.createRequestUrl(...input))
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work', () => {
+      spyOn(__internals__, 'getEndpointOrReferenceFromResourceAndRequest').andCall((res, req) => {
+        const value = (req || res) + 1
+        return value === 1 ? null : new Reference({ uuid: value })
       })
       spyOn(__internals__, 'getEndpointFromReference').andCall((a, e) => {
         return e.get('uuid')
@@ -1364,6 +1410,31 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const actual = inputs.map(input => __internals__.createBody(...input))
       expect(actual).toEqual(expected)
     })
+
+    it('should work if no body', () => {
+      spyOn(__internals__, 'getBodyParamsFromRequest').andCall((a, r, c) => {
+        return a + (c || 0)
+      })
+      spyOn(__internals__, 'createBodyMode').andCall((a, r, c) => {
+        return c ? c : a
+      })
+      spyOn(__internals__, 'createBodyFromMode').andCall(() => {
+        return null
+      })
+
+      const inputs = [
+        [ 123, new Request() ],
+        [ 123, new Request({
+          contexts: List([ 234 ])
+        }) ]
+      ]
+      const expected = [
+        null,
+        null
+      ]
+      const actual = inputs.map(input => __internals__.createBody(...input))
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@createRequestFromRequest', () => {
@@ -1540,10 +1611,68 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
     })
   })
 
+  describe('@createItemGroupFromGroupOrResource', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createItemGroup').andCall(a => a + 234)
+      spyOn(__internals__, 'createItemGroupFromResource').andCall(a => a + 345)
+
+      const inputs = [
+        [ 123, null ],
+        [ 123, new Group() ],
+        [ 123, 'someId' ]
+      ]
+      const expected = [
+        123 + 345,
+        123 + 234,
+        123 + 345
+      ]
+      const actual = inputs.map(input => __internals__.createItemGroupFromGroupOrResource(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createItemProp', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createItemGroupFromGroupOrResource')
+        .andCall((a, v) => v % 2 ? a + v : null)
+      const inputs = [
+        [ 123, new Group() ],
+        [ 123, new Group({
+          children: OrderedMap({ a: 123, b: 234, c: 345 })
+        }) ]
+      ]
+      const expected = [
+        { key: 'item', value: [] },
+        { key: 'item', value: [ 123 + 123, 123 + 345 ] }
+      ]
+      const actual = inputs.map(input => __internals__.createItemProp(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@createItemGroup', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createItemName').andCall(v => ({ key: 'name', value: v }))
+      spyOn(__internals__, 'createItemDescription')
+        .andCall(v => ({ key: 'description', value: v * 2 }))
+      spyOn(__internals__, 'createItemProp').andCall((a, v) => ({ key: 'item', value: [ a + v ] }))
+
+      const inputs = [
+        [ 123, 234 ]
+      ]
+      const expected = [
+        { name: 234, description: 234 * 2, item: [ 123 + 234 ] }
+      ]
+      const actual = inputs.map(input => __internals__.createItemGroup(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@mergeItemGroupsWithSameName', () => {
     it('should work', () => {
       const inputs = [
         [ OrderedMap(), { name: 'abc', item: [ 123 ] } ],
+        [ OrderedMap({ abc: { name: 'abc' } }), { name: 'abc' } ],
         [ OrderedMap({ abc: { name: 'abc', item: [ 123 ] } }), { name: 'abc', item: [ 234 ] } ],
         [ OrderedMap({ abc: { name: 'abc', item: [ 123 ] } }), { name: 'def', item: [ 234 ] } ]
       ]
@@ -1552,6 +1681,12 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
           abc: {
             name: 'abc',
             item: [ 123 ]
+          }
+        }),
+        OrderedMap({
+          abc: {
+            name: 'abc',
+            item: []
           }
         }),
         OrderedMap({
@@ -1618,6 +1753,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   describe('@convertParameterIntoVariable', () => {
     it('should work', () => {
       const inputs = [
+        [ new Parameter(), null ],
         [ new Parameter(), 123 ],
         [ new Parameter({
           key: 'Content-Type',
@@ -1626,6 +1762,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         }), 123 ]
       ]
       const expected = [
+        null,
         { id: 123 },
         { id: 123, value: 'application/json', type: 'string', name: 'Content-Type' }
       ]

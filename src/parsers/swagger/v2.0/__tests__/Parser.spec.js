@@ -24,29 +24,6 @@ import Parser, { __internals__ } from '../Parser'
 describe('parsers/swagger/v2.0/Parser.js', () => {
   afterEach(() => restoreSpies())
   describe('{ Parser }', () => {
-    describe('#detect', () => {
-      it('should call __internals__.detect', () => {
-        const expected = 1234
-        spyOn(__internals__, 'detect').andReturn(expected)
-
-        const actual = Parser.detect()
-
-        expect(__internals__.detect).toHaveBeenCalled()
-        expect(actual).toEqual(expected)
-      })
-
-      it('should call __internals__.detect with the correct arguments', () => {
-        const expected = 1234
-        spyOn(__internals__, 'detect').andReturn(expected)
-
-        const input = '1235124125412'
-        const actual = Parser.detect(input)
-
-        expect(__internals__.detect).toHaveBeenCalledWith(input)
-        expect(actual).toEqual(expected)
-      })
-    })
-
     describe('@detect', () => {
       it('should call __internals__.detect', () => {
         const expected = 1234
@@ -66,29 +43,6 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         const actual = Parser.detect(input)
 
         expect(__internals__.detect).toHaveBeenCalledWith(input)
-        expect(actual).toEqual(expected)
-      })
-    })
-
-    describe('#getAPIName', () => {
-      it('should call __internals__.getAPIName', () => {
-        const expected = 1234
-        spyOn(__internals__, 'getAPIName').andReturn(expected)
-
-        const actual = Parser.getAPIName()
-
-        expect(__internals__.getAPIName).toHaveBeenCalled()
-        expect(actual).toEqual(expected)
-      })
-
-      it('should call __internals__.getAPIName with the correct arguments', () => {
-        const expected = 1234
-        spyOn(__internals__, 'getAPIName').andReturn(expected)
-
-        const input = '1235124125412'
-        const actual = Parser.getAPIName(input)
-
-        expect(__internals__.getAPIName).toHaveBeenCalledWith(input)
         expect(actual).toEqual(expected)
       })
     })
@@ -309,6 +263,13 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       const expected = [ { version: 'v2.0', format: 'swagger', score } ]
       const actual = __internals__.formatDetectionObject(score)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with default score', () => {
+      const expected = [ { version: 'v2.0', format: 'swagger', score: 0 } ]
+      const actual = __internals__.formatDetectionObject()
 
       expect(actual).toEqual(expected)
     })
@@ -684,6 +645,17 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with no args', () => {
+      const expected = {
+        references: [],
+        parameters: []
+      }
+
+      const actual = __internals__.getParametersAndReferencesFromParameterArray()
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertReferenceObjectEntryIntoReferenceEntry', () => {
@@ -748,9 +720,60 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with default refs', () => {
+      const type = 'parameter'
+
+      const expected = {}
+      const actual = __internals__.convertReferenceArrayIntoReferenceMap(type)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@updateOperationEntryWithSharedParameters', () => {
+    it('should work', () => {
+      /* eslint-disable no-undefined */
+      const inputs = [
+        [ undefined, {} ],
+        [ undefined, { key: 'abc', value: 123 } ],
+        [ undefined, { key: 'abc', value: {} } ],
+        [ [], { key: 'abc', value: {} } ],
+        [ [ 123, 234 ], { key: 'abc', value: {} } ],
+        [ [ 123, 234 ], { key: 'abc', value: { parameters: 345 } } ],
+        [ [ 123, 234 ], { key: 'abc', value: { parameters: [] } } ],
+        [ [ 123, 234 ], { key: 'abc', value: { parameters: [ 345 ] } } ]
+      ]
+      const expected = [
+        { key: undefined, value: undefined },
+        { key: 'abc', value: 123 },
+        { key: 'abc', value: {} },
+        { key: 'abc', value: {} },
+        { key: 'abc', value: { parameters: [ 123, 234 ] } },
+        { key: 'abc', value: { parameters: [ 123, 234 ] } },
+        { key: 'abc', value: { parameters: [ 123, 234 ] } },
+        { key: 'abc', value: { parameters: [ 345, 123, 234 ] } }
+      ]
+      /* eslint-enable no-undefined */
+      const actual = inputs.map(
+        input => __internals__.updateOperationEntryWithSharedParameters(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getConsumesParamFromOperation', () => {
+    it('should work with defaults', () => {
+      const expected = {
+        consumeParameter: null,
+        consumeReference: null,
+        consumeInterface: null
+      }
+      const actual = __internals__.getConsumesParamFromOperation()
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should return nothing interesting if no global or local consumes', () => {
       const store = new Store()
       const operation = {}
@@ -941,8 +964,16 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@mapParamLocationToParamContainerField', () => {
-    it('should return null if no valid location', () => {
+    it('should return null if badly-typed location', () => {
       const location = 1241
+      const expected = null
+      const actual = __internals__.mapParamLocationToParamContainerField(location)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return null if no valid location', () => {
+      const location = '1241'
       const expected = null
       const actual = __internals__.mapParamLocationToParamContainerField(location)
 
@@ -1086,6 +1117,12 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@createParameterContainer', () => {
+    it('should work with defaults', () => {
+      const expected = new ParameterContainer()
+      const actual = __internals__.createParameterContainer()
+      expect(actual).toEqual(expected)
+    })
+
     it('should make expected calls for each param', () => {
       spyOn(__internals__, 'addParameterToContainerBlock').andReturn({
         headers: { '123': 321 }
@@ -1191,6 +1228,15 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should return null if no scope provided', () => {
+      const auth = new Auth.OAuth2()
+
+      const expected = null
+      const actual = __internals__.getOverlayFromRequirement(auth)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getAuthReferences', () => {
@@ -1253,9 +1299,54 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with defaults', () => {
+      const store = new Store({
+        auth: new OrderedMap({
+          petstore_auth: new Auth.OAuth2({
+            scopes: List([
+              {
+                key: 'overriden',
+                value: 'by scopes in security requirements'
+              }
+            ])
+          }),
+          basic_auth: new Auth.Basic()
+        })
+      })
+
+      const expected = List()
+      const actual = __internals__.getAuthReferences(store)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@updateParamsWithConsumeParameter', () => {
+    it('should work with defaults', () => {
+      spyOn(__internals__, 'getConsumesParamFromOperation').andReturn({})
+      const store = new Store()
+      const operation = {}
+
+      const expected = [ [], [] ]
+      const actual = __internals__.updateParamsWithConsumeParameter(store, operation)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with no consume param', () => {
+      spyOn(__internals__, 'getConsumesParamFromOperation').andReturn({})
+      const store = new Store()
+      const operation = {}
+      const parameters = [ 123, 234 ]
+      const references = [ 345, 456 ]
+
+      const expected = [ [ 123, 234 ], [ 345, 456 ] ]
+      const actual = __internals__.updateParamsWithConsumeParameter(
+        store, operation, parameters, references
+      )
+      expect(actual).toEqual(expected)
+    })
+
     it('should call getConsumesParamFromOperation', () => {
       spyOn(__internals__, 'getConsumesParamFromOperation').andReturn({})
 
@@ -1464,6 +1555,29 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work if no producesParameter', () => {
+      const producesParameter = null
+
+      const entry = {
+        key: 'someResponseRef',
+        value: new Response({
+          parameters: new ParameterContainer({
+            queries: new OrderedMap({
+              '123': 321
+            })
+          })
+        })
+      }
+
+      const expected = entry
+
+      const actual = __internals__.updateResponseRecordWithProduceParameter(
+        producesParameter, entry
+      )
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@updateResponsesWithProduceParameter', () => {
@@ -1549,6 +1663,13 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
         '123': new Interface({ name: '123', uuid: '123', level: 'request' })
       })
       const actual = __internals__.getInterfacesFromTags(tags)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with defaults', () => {
+      const expected = OrderedMap()
+      const actual = __internals__.getInterfacesFromTags()
 
       expect(actual).toEqual(expected)
     })
@@ -1643,8 +1764,90 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       expect(actual).toEqual(expected)
     })
 
+    it('should work with missing operation parameters', () => {
+      spyOn(__internals__, 'getParametersAndReferencesFromParameterArray').andReturn({
+        parameters: [ 1, 2, 3, 4 ],
+        references: [ 5 ]
+      })
+      spyOn(__internals__, 'convertParameterObjectIntoParameter').andReturn(123)
+      spyOn(__internals__, 'isMethodWithBody').andReturn(true)
+      spyOn(__internals__, 'updateParamsWithConsumeParameter').andReturn([ [ 12, 23 ], [ 34, 45 ] ])
+      spyOn(__internals__, 'createParameterContainer').andReturn(12345)
+
+      const store = new Store()
+      const operation = {}
+      const method = 'post'
+
+      const expected = 12345
+      const actual = __internals__.getParameterContainerForOperation(store, operation, method)
+
+      expect(__internals__.getParametersAndReferencesFromParameterArray).toHaveBeenCalledWith([])
+      expect(__internals__.convertParameterObjectIntoParameter.calls.length).toEqual(4)
+      expect(__internals__.isMethodWithBody).toHaveBeenCalledWith(method)
+      expect(__internals__.updateParamsWithConsumeParameter).toHaveBeenCalledWith(
+        store, operation, [ 123, 123, 123, 123 ], [ 5 ]
+      )
+      expect(__internals__.createParameterContainer).toHaveBeenCalledWith(
+        store, [ 12, 23 ], [ 34, 45 ]
+      )
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if method is not with body', () => {
+      spyOn(__internals__, 'getParametersAndReferencesFromParameterArray').andReturn({
+        parameters: [ 1, 2, 3, 4 ],
+        references: [ 5 ]
+      })
+      spyOn(__internals__, 'convertParameterObjectIntoParameter').andReturn(123)
+      spyOn(__internals__, 'isMethodWithBody').andReturn(false)
+      spyOn(__internals__, 'updateParamsWithConsumeParameter').andReturn([ [ 12, 23 ], [ 34, 45 ] ])
+      spyOn(__internals__, 'createParameterContainer').andReturn(12345)
+
+      const store = new Store()
+      const operation = {}
+      const method = 'get'
+
+      const expected = 12345
+      const actual = __internals__.getParameterContainerForOperation(store, operation, method)
+
+      expect(__internals__.getParametersAndReferencesFromParameterArray).toHaveBeenCalledWith([])
+      expect(__internals__.convertParameterObjectIntoParameter.calls.length).toEqual(4)
+      expect(__internals__.isMethodWithBody).toHaveBeenCalledWith(method)
+      expect(__internals__.updateParamsWithConsumeParameter).toNotHaveBeenCalled()
+      expect(__internals__.createParameterContainer).toHaveBeenCalledWith(
+        store, [ 123, 123, 123, 123 ], [ 5 ]
+      )
+      expect(actual).toEqual(expected)
+    })
+
     xit('it should work', () => {
       // TODO implement this test
+    })
+  })
+
+  describe('@getResponsesForOperation', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'getProducesParamFromOperation').andCall(s => ({ produceParameter: s }))
+      spyOn(__internals__, 'addCodeToResponseEntry').andCall(r => r)
+      spyOn(__internals__, 'convertResponseObjectIntoResponse').andCall(r => r.value % 2 ? r : null)
+      spyOn(__internals__, 'updateResponsesWithProduceParameter').andCall((p, r) => {
+        if (r.value === p) {
+          return null
+        }
+
+        return r
+      })
+
+      const inputs = [
+        [ 123, {} ],
+        [ 123, { responses: { a: 123, b: 234, c: 345 } } ]
+      ]
+      const expected = [
+        OrderedMap(),
+        OrderedMap({ c: 345 })
+      ]
+      const actual = inputs.map(input => __internals__.getResponsesForOperation(...input))
+      expect(actual).toEqual(expected)
     })
   })
 
@@ -1734,6 +1937,95 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       expect(__internals__.getAuthReferences).toHaveBeenCalledWith(store, [ 1, 2, 3 ])
       expect(__internals__.getResponsesForOperation).toHaveBeenCalledWith(store, operation)
       expect(__internals__.getInterfacesFromTags).toHaveBeenCalledWith([ 4, 5 ])
+      expect(__internals__.getEndpointsForOperation).toHaveBeenCalledWith(store, operation)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should call getAuthReferences with empty array if no global or local security', () => {
+      spyOn(__internals__, 'getRequestIdFromOperation').andReturn(123)
+      spyOn(__internals__, 'getParameterContainerForOperation').andReturn(321)
+      spyOn(__internals__, 'getAuthReferences').andReturn(234)
+      spyOn(__internals__, 'getResponsesForOperation').andReturn(432)
+      spyOn(__internals__, 'getInterfacesFromTags').andReturn(345)
+      spyOn(__internals__, 'getEndpointsForOperation').andReturn(543)
+
+      const description = 'some desc'
+      const summary = 'someName'
+
+      const store = new Store()
+      const operation = { description, summary, tags: [ 4, 5 ] }
+      const security = null
+      const entry = {
+        key: 'post',
+        value: operation
+      }
+
+      const expected = {
+        key: 'post',
+        value: new Request({
+          id: 123,
+          endpoints: 543,
+          name: summary,
+          description,
+          parameters: 321,
+          method: 'post',
+          auths: 234,
+          responses: 432,
+          interfaces: 345
+        })
+      }
+
+      const actual = __internals__.convertOperationIntoRequest(store, security, entry)
+
+      expect(__internals__.getRequestIdFromOperation).toHaveBeenCalledWith(operation)
+      expect(__internals__.getParameterContainerForOperation).toHaveBeenCalledWith(
+        store, operation, 'post'
+      )
+      expect(__internals__.getAuthReferences).toHaveBeenCalledWith(store, [])
+      expect(__internals__.getResponsesForOperation).toHaveBeenCalledWith(store, operation)
+      expect(__internals__.getInterfacesFromTags).toHaveBeenCalledWith([ 4, 5 ])
+      expect(__internals__.getEndpointsForOperation).toHaveBeenCalledWith(store, operation)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with minimum info', () => {
+      spyOn(__internals__, 'getRequestIdFromOperation').andReturn(123)
+      spyOn(__internals__, 'getParameterContainerForOperation').andReturn(321)
+      spyOn(__internals__, 'getAuthReferences').andReturn(234)
+      spyOn(__internals__, 'getResponsesForOperation').andReturn(432)
+      spyOn(__internals__, 'getInterfacesFromTags').andReturn(345)
+      spyOn(__internals__, 'getEndpointsForOperation').andReturn(543)
+
+      const store = new Store()
+      const operation = {}
+      const security = null
+      const entry = {
+        key: 'post',
+        value: operation
+      }
+
+      const expected = {
+        key: 'post',
+        value: new Request({
+          id: 123,
+          endpoints: 543,
+          parameters: 321,
+          method: 'post',
+          auths: 234,
+          responses: 432,
+          interfaces: 345
+        })
+      }
+
+      const actual = __internals__.convertOperationIntoRequest(store, security, entry)
+
+      expect(__internals__.getRequestIdFromOperation).toHaveBeenCalledWith(operation)
+      expect(__internals__.getParameterContainerForOperation).toHaveBeenCalledWith(
+        store, operation, 'post'
+      )
+      expect(__internals__.getAuthReferences).toHaveBeenCalledWith(store, [])
+      expect(__internals__.getResponsesForOperation).toHaveBeenCalledWith(store, operation)
+      expect(__internals__.getInterfacesFromTags).toHaveBeenCalledWith([])
       expect(__internals__.getEndpointsForOperation).toHaveBeenCalledWith(store, operation)
       expect(actual).toEqual(expected)
     })
@@ -1841,6 +2133,112 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       expect(__internals__.convertOperationIntoRequest.calls.length).toEqual(3)
       expect(actual).toEqual(expected)
     })
+
+    it('should work with minimum info', () => {
+      spyOn(__internals__, 'getMethodsFromResourceObject').andReturn([
+        {
+          key: 1,
+          value: 1
+        }, {
+          key: 2,
+          value: 2
+        }, {
+          key: 3,
+          value: 3
+        }
+      ])
+      spyOn(__internals__, 'updateOperationEntryWithSharedParameters').andReturn({
+        key: 123, value: 321
+      })
+      spyOn(__internals__, 'convertOperationIntoRequest').andReturn({
+        key: 321, value: 321
+      })
+
+      const store = new Store()
+      const security = null
+      const resourceObject = {}
+
+      const expected = { '321': 321 }
+      const actual = __internals__.getRequestsForResource(store, security, resourceObject)
+
+      expect(__internals__.getMethodsFromResourceObject).toHaveBeenCalledWith(resourceObject)
+      expect(__internals__.updateOperationEntryWithSharedParameters.calls.length).toEqual(3)
+      expect(__internals__.convertOperationIntoRequest.calls.length).toEqual(3)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@updatePathWithParametersFromOperations', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'getParameterContainerForOperation').andCall((s, v, k) => {
+        return v ?
+          new ParameterContainer({
+            path: OrderedMap({
+              [k]: new Parameter({
+                key: k,
+                default: v
+              })
+            })
+          }) :
+          new ParameterContainer()
+      })
+      const inputs = [
+        [ new Store(), new URL(), {} ],
+        [ new Store(), new URL(), { key: 'abc', value: 123 } ],
+        [
+          new Store(),
+          new URL({ url: 'https://echo.paw.cloud/user/123' }),
+          { key: 'abc', value: 123 }
+        ],
+        [
+          new Store(),
+          new URL({
+            url: 'https://echo.paw.cloud/user/{userId}',
+            variableDelimiters: List([ '{', '}' ])
+          }),
+          { key: 'abc', value: 123 }
+        ],
+        [
+          new Store(),
+          new URL({
+            url: 'https://echo.paw.cloud/user/{userId}',
+            variableDelimiters: List([ '{', '}' ])
+          }),
+          { key: 'userId', value: 123 }
+        ]
+      ]
+
+      const expected = [
+        new URL(),
+        new URL(),
+        new URL({ url: 'https://echo.paw.cloud/user/123' }),
+        new URL({
+          url: 'https://echo.paw.cloud/user/{userId}',
+          variableDelimiters: List([ '{', '}' ])
+        }),
+        (new URL({
+          url: 'https://echo.paw.cloud/user/{userId}',
+          variableDelimiters: List([ '{', '}' ])
+        })).setIn([ 'pathname', 'parameter', 'value' ], List([
+          new Parameter({
+            type: 'string',
+            default: '/user/'
+          }),
+          new Parameter({
+            key: 'userId',
+            default: 123
+          }),
+          new Parameter({
+            type: 'string',
+            default: ''
+          })
+        ]))
+      ]
+      const actual = inputs.map(
+        input => __internals__.updatePathWithParametersFromOperations(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getResource', () => {
@@ -1889,6 +2287,18 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with minimum info', () => {
+      spyOn(__internals__, 'getResource').andReturn(new Resource({ uuid: 123 }))
+
+      const store = new Store()
+
+      const expected = new OrderedMap()
+
+      const actual = __internals__.getResources(store)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@addDotsToScheme', () => {
@@ -1902,6 +2312,20 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@getSharedEndpoints', () => {
+    it('should work with minimum info', () => {
+      const expected = {
+        base: new URL({
+          url: 'http://localhost/',
+          uuid: 'base',
+          secure: false,
+          variableDelimiters: List([ '{', '}' ])
+        })
+      }
+      const actual = __internals__.getSharedEndpoints()
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const swagger = {
         schemes: [ 'https:' ],
@@ -2014,6 +2438,16 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with minimum info', () => {
+      const expected = {
+        consumesParams: {},
+        consumeInterfaces: {}
+      }
+      const actual = __internals__.getParamsFromConsumes()
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getParamsFromProduces', () => {
@@ -2055,6 +2489,16 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with minimum info', () => {
+      const expected = {
+        consumesParams: {},
+        consumeInterfaces: {}
+      }
+      const actual = __internals__.getParamsFromProduces()
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@formatConstraint', () => {
@@ -2075,6 +2519,23 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       expect(actual).toEqual(expected)
     })
 
+    it('should work with exclusiveMinimum = false', () => {
+      const param = {
+        minimum: 123,
+        exclusiveMinimum: false
+      }
+
+      const entry = {
+        key: 'exclusiveMinimum',
+        value: false
+      }
+
+      const expected = new Constraint.Minimum(123)
+      const actual = __internals__.formatConstraint(param, entry)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work with exclusiveMaximum', () => {
       const param = {
         maximum: 123,
@@ -2087,6 +2548,39 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       }
 
       const expected = new Constraint.ExclusiveMaximum(123)
+      const actual = __internals__.formatConstraint(param, entry)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with exclusiveMaximum = false', () => {
+      const param = {
+        maximum: 123,
+        exclusiveMaximum: false
+      }
+
+      const entry = {
+        key: 'exclusiveMaximum',
+        value: false
+      }
+
+      const expected = new Constraint.Maximum(123)
+      const actual = __internals__.formatConstraint(param, entry)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should preserve unknown constraints', () => {
+      const param = {
+        custom: 234
+      }
+
+      const entry = {
+        key: 'custom',
+        value: 234
+      }
+
+      const expected = new Constraint.JSONSchema({ custom: 234 })
       const actual = __internals__.formatConstraint(param, entry)
 
       expect(actual).toEqual(expected)
@@ -2226,6 +2720,34 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
   })
 
+  describe('@getApplicableContextsFromLocation', () => {
+    it('should work', () => {
+      const inputs = [
+        null,
+        'application/json',
+        'formData'
+      ]
+      const expected = [
+        List(),
+        List(),
+        List([
+          new Parameter({
+            key: 'Content-Type',
+            in: 'headers',
+            constraints: List([
+              new Constraint.Enum([
+                'application/x-www-form-urlencoded',
+                'multipart/form-data'
+              ])
+            ])
+          })
+        ])
+      ]
+      const actual = inputs.map(input => __internals__.getApplicableContextsFromLocation(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@convertParameterObjectIntoParameter', () => {
     it('should work', () => {
       const entry = {
@@ -2318,9 +2840,84 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with minimum info', () => {
+      spyOn(__internals__, 'getConstraintsFromParam').andReturn(890)
+
+      const inputs = [
+        { key: null, value: null },
+        { key: 123, value: {} },
+        { key: 123, value: { name: 234, description: 345, required: 456, type: 567 } },
+        { key: 123, value: { name: 234, description: 345, required: 456, type: 567, in: 'query' } },
+        { key: 123, value: {
+          name: 234, description: 345, required: 456, type: 567, in: 678, default: 789
+        } },
+        { key: 123, value: {
+          name: 234, description: 345, required: 456, type: 567, in: 'body', default: 789
+        } }
+      ]
+      const expected = [
+        { key: null,
+          value: new Parameter({
+            uuid: null, key: null, name: null,
+            description: null, in: null, required: false,
+            type: null, default: null,
+            constraints: 890, applicableContexts: List()
+          })
+        },
+        { key: 123,
+          value: new Parameter({
+            uuid: 123, key: null, name: null,
+            description: null, in: null, required: false,
+            type: null, default: null,
+            constraints: 890, applicableContexts: List()
+          })
+        },
+        { key: 123,
+          value: new Parameter({
+            uuid: 123, key: 234, name: 234,
+            description: 345, in: null, required: 456,
+            type: 567, default: null,
+            constraints: 890, applicableContexts: List()
+          })
+        },
+        { key: 123,
+          value: new Parameter({
+            uuid: 123, key: 234, name: 234,
+            description: 345, in: 'queries', required: 456,
+            type: 567, default: null,
+            constraints: 890, applicableContexts: List()
+          })
+        },
+        { key: 123,
+          value: new Parameter({
+            uuid: 123, key: 234, name: 234,
+            description: 345, in: null, required: 456,
+            type: 567, default: 789,
+            constraints: 890, applicableContexts: List()
+          })
+        },
+        { key: 123,
+          value: new Parameter({
+            uuid: 123, key: null, name: 234,
+            description: 345, in: 'body', required: 456,
+            type: 567, default: 789,
+            constraints: 890, applicableContexts: List()
+          })
+        }
+      ]
+      const actual = inputs.map(input => __internals__.convertParameterObjectIntoParameter(input))
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertParameterObjectArrayIntoParameterMap', () => {
+    it('should work with minimum info', () => {
+      const expected = {}
+      const actual = __internals__.convertParameterObjectArrayIntoParameterMap()
+      expect(actual).toEqual(expected)
+    })
+
     it('should call convertParameterObjectIntoParameter for each entry', () => {
       spyOn(__internals__, 'convertParameterObjectIntoParameter').andReturn({
         key: '123',
@@ -2348,7 +2945,11 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       })
       spyOn(__internals__, 'convertParameterObjectArrayIntoParameterMap').andReturn({ c: 234 })
 
-      const swagger = {}
+      const swagger = {
+        consumes: [],
+        produces: [],
+        parameters: {}
+      }
 
       const expected = {
         sharedParameters: { a: 123, b: 321, c: 234 },
@@ -2356,6 +2957,26 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       }
       const actual = __internals__.getSharedParameters(swagger)
 
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with defaults', () => {
+      spyOn(__internals__, 'getParamsFromConsumes').andReturn({
+        consumesParams: {},
+        consumeInterfaces: {}
+      })
+      spyOn(__internals__, 'getParamsFromProduces').andReturn({
+        producesParams: {},
+        produceInterfaces: {}
+      })
+      spyOn(__internals__, 'convertParameterObjectArrayIntoParameterMap').andReturn({})
+
+      const expected = {
+        sharedParameters: {},
+        parameterInterfaces: {}
+      }
+
+      const actual = __internals__.getSharedParameters()
       expect(actual).toEqual(expected)
     })
   })
@@ -2378,6 +2999,27 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       }
       const actual = __internals__.convertSchemaIntoParameterEntry(schema)
 
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@addUsedInResponseToParam', () => {
+    it('should work', () => {
+      const inputs = [
+        123,
+        null,
+        new Parameter(),
+        new Parameter({ usedIn: 'something' }),
+        new Parameter({ key: 123, name: 234, usedIn: 'something' })
+      ]
+      const expected = [
+        123,
+        null,
+        new Parameter({ usedIn: 'response' }),
+        new Parameter({ usedIn: 'response' }),
+        new Parameter({ key: 123, name: 234, usedIn: 'response' })
+      ]
+      const actual = inputs.map(input => __internals__.addUsedInResponseToParam(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -2431,6 +3073,28 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       expect(actual).toEqual(expected)
     })
 
+    it('should work with reference and no code', () => {
+      const entry = {
+        key: 123,
+        value: {
+          $ref: 321
+        }
+      }
+
+      const expected = {
+        key: 123,
+        value: new Reference({
+          type: 'response',
+          uuid: 321,
+          overlay: null
+        })
+      }
+
+      const actual = __internals__.convertResponseObjectIntoResponse(entry)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work with response', () => {
       const entry = {
         key: 123,
@@ -2452,9 +3116,36 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with response with no code', () => {
+      const entry = {
+        key: 123,
+        value: {}
+      }
+
+      const expected = {
+        key: 123,
+        value: new Response({
+          code: null,
+          description: null
+        })
+      }
+
+      const actual = __internals__.convertResponseObjectIntoResponse(entry)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getSharedResponses', () => {
+    it('should work with defaults', () => {
+      const expected = {}
+
+      const actual = __internals__.getSharedResponses()
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'convertResponseObjectIntoResponse').andReturn({
         key: '321',
@@ -2478,6 +3169,13 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@getAuthType', () => {
+    it('should work with defaults', () => {
+      const expected = null
+      const actual = __internals__.getAuthType()
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const auth = {
         type: 'basic'
@@ -2514,6 +3212,20 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@convertBasicAuth', () => {
+    it('should work with minimum info', () => {
+      const itf = null
+
+      const authName = 'basic_auth'
+
+      const expected = new Auth.Basic({
+        authName: 'basic_auth'
+      })
+
+      const actual = __internals__.convertBasicAuth(itf, authName)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const itf = new Interface({
         name: 'someName'
@@ -2540,6 +3252,20 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@convertApiKeyAuth', () => {
+    it('should work with minimum info', () => {
+      const itf = null
+
+      const authName = 'apikey_auth'
+
+      const expected = new Auth.ApiKey({
+        authName: 'apikey_auth'
+      })
+
+      const actual = __internals__.convertApiKeyAuth(itf, authName)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const itf = new Interface({
         name: 'someName'
@@ -2568,6 +3294,20 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@convertOAuth2Auth', () => {
+    it('should work with minimum info', () => {
+      const itf = null
+
+      const authName = 'oauth2_auth'
+
+      const expected = new Auth.OAuth2({
+        authName: 'oauth2_auth'
+      })
+
+      const actual = __internals__.convertOAuth2Auth(itf, authName)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const itf = new Interface({
         name: 'someName'
@@ -2600,6 +3340,25 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@convertAuthObjectIntoAuth', () => {
+    it('should work with unknown authType', () => {
+      const itfs = []
+      const entry = {
+        key: 'petstore_auth',
+        value: {
+          type: 'x-custom'
+        }
+      }
+
+      const expected = {
+        key: 'petstore_auth',
+        value: null
+      }
+
+      const actual = __internals__.convertAuthObjectIntoAuth(itfs, entry)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const itfs = []
       const entry = {
@@ -2644,6 +3403,23 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@convertSecurityRequirementEntryIntoInterfaceEntry', () => {
+    it('should work with underlay', () => {
+      const entry = { key: 123, value: [ 234, 345 ] }
+      const expected = {
+        key: 123,
+        value: new Interface({
+          name: 123,
+          uuid: 123,
+          level: 'auth',
+          underlay: new Auth.OAuth2({
+            scopes: List([ { key: 234, value: '' }, { key: 345, value: '' } ])
+          })
+        })
+      }
+      const actual = __internals__.convertSecurityRequirementEntryIntoInterfaceEntry(entry)
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const entry = { key: 123 }
       const expected = {
@@ -2660,6 +3436,13 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@getSharedAuthInterfaces', () => {
+    it('should work with minimum info', () => {
+      const expected = {}
+      const actual = __internals__.getSharedAuthInterfaces()
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'convertSecurityRequirementEntryIntoInterfaceEntry').andReturn({
         key: '123',
@@ -2681,7 +3464,139 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
     })
   })
 
+  describe('@convertDefinitionIntoConstraint', () => {
+    it('should work', () => {
+      const inputs = [
+        { key: null, value: null },
+        { key: 123, value: null },
+        { key: 123, value: { type: 'string' } }
+      ]
+      const expected = [
+        { key: null, value: new Constraint.JSONSchema(null) },
+        { key: 123, value: new Constraint.JSONSchema(null) },
+        { key: 123, value: new Constraint.JSONSchema({ type: 'string' }) }
+      ]
+      const actual = inputs.map(input => __internals__.convertDefinitionIntoConstraint(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getSharedConstraints', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertDefinitionIntoConstraint').andCall(({ key, value }) => {
+        return { key, value: value * 2 }
+      })
+      /* eslint-disable no-undefined */
+      const inputs = [
+        undefined,
+        {},
+        { definitions: {} },
+        { definitions: { a: 123, b: 234, c: 345 } }
+      ]
+      /* eslint-enable no-undefined */
+      const expected = [
+        {},
+        {},
+        {},
+        { a: 123 * 2, b: 234 * 2, c: 345 * 2 }
+      ]
+      const actual = inputs.map(input => __internals__.getSharedConstraints(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractTagsFromPathObject', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'getMethodsFromResourceObject').andCall(v => [
+        { value: { tags: v } }, { value: { tags: [ 234, 345 ] } }
+      ])
+      const inputs = [
+        { value: null },
+        { value: [ 123, 234 ] }
+      ]
+      const expected = [
+        [ 234, 345 ],
+        [ 123, 234, 234, 345 ]
+      ]
+      const actual = inputs.map(input => __internals__.extractTagsFromPathObject(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractTagsFromPathsObject', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractTagsFromPathObject').andCall(({ value }) => value)
+      /* eslint-disable no-undefined */
+      const inputs = [
+        undefined,
+        {},
+        { paths: {} },
+        { paths: { a: [ 123, 234 ], b: [ 234 ], c: [ 123 ] } }
+      ]
+      /* eslint-enable no-undefined */
+      const expected = [
+        [],
+        [],
+        [],
+        [ 123, 234, 234, 123 ]
+      ]
+      const actual = inputs.map(input => __internals__.extractTagsFromPathsObject(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@convertTagStringIntoInterfaceEntry', () => {
+    it('should work', () => {
+      const inputs = [
+        null,
+        'abc'
+      ]
+      const expected = [
+        { key: null, value: new Interface({ name: null, uuid: null, level: 'request' }) },
+        { key: 'abc', value: new Interface({ name: 'abc', uuid: 'abc', level: 'request' }) }
+      ]
+      const actual = inputs.map(input => __internals__.convertTagStringIntoInterfaceEntry(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getTagInterfaces', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractTagsFromPathsObject').andCall(v => v)
+      spyOn(__internals__, 'convertTagStringIntoInterfaceEntry').andCall(v => {
+        return { key: v, value: v }
+      })
+      const inputs = [
+        [ 123, 234, 345 ],
+        [ 123, 234, 345, 234, 123 ]
+      ]
+      const expected = [
+        { '123': 123, '234': 234, '345': 345 },
+        { '123': 123, '234': 234, '345': 345 }
+      ]
+      const actual = inputs.map(input => __internals__.getTagInterfaces(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@getSimpleStore', () => {
+    it('should work with minimum info', () => {
+      const expected = new Store({
+        endpoint: OrderedMap({
+          base: new URL({
+            url: 'http://localhost/',
+            variableDelimiters: List([ '{', '}' ])
+          })
+          .set('secure', false)
+          .set('uuid', 'base')
+        })
+      })
+
+      const actual = __internals__.getSimpleStore()
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work if underlying calls are correct', () => {
       spyOn(__internals__, 'getSharedEndpoints').andReturn({ a: 123 })
       spyOn(__internals__, 'getSharedParameters').andReturn({

@@ -2,8 +2,11 @@
 import { OrderedMap, List } from 'immutable'
 import expect, { spyOn, restoreSpies } from 'expect'
 
+import Info from '../../../../models/Info'
+import Constraint from '../../../../models/Constraint'
 import Group from '../../../../models/Group'
 import Parameter from '../../../../models/Parameter'
+import ParameterContainer from '../../../../models/ParameterContainer'
 import Auth from '../../../../models/Auth'
 import Store from '../../../../models/Store'
 import URL from '../../../../models/URL'
@@ -12,10 +15,160 @@ import Request from '../../../../models/Request'
 import Resource from '../../../../models/Resource'
 import Api from '../../../../models/Api'
 
-import { __internals__ } from '../Parser'
+import Parser, { __internals__ } from '../Parser'
 
 describe('parsers/postman/v2.0/Parser.js', () => {
   afterEach(() => restoreSpies())
+  describe('{ Parser }', () => {
+    describe('@detect', () => {
+      it('should call __internals__.detect', () => {
+        const expected = 1234
+        spyOn(__internals__, 'detect').andReturn(expected)
+
+        const actual = Parser.detect()
+
+        expect(__internals__.detect).toHaveBeenCalled()
+        expect(actual).toEqual(expected)
+      })
+
+      it('should call __internals__.detect with the correct arguments', () => {
+        const expected = 1234
+        spyOn(__internals__, 'detect').andReturn(expected)
+
+        const content = 'some content'
+        const actual = Parser.detect(content)
+
+        expect(__internals__.detect).toHaveBeenCalledWith(content)
+        expect(actual).toEqual(expected)
+      })
+    })
+
+    describe('@getAPIName', () => {
+      it('should call __internals__.getAPIName', () => {
+        const expected = 1234
+        spyOn(__internals__, 'getAPIName').andReturn(expected)
+
+        const actual = Parser.getAPIName()
+
+        expect(__internals__.getAPIName).toHaveBeenCalled()
+        expect(actual).toEqual(expected)
+      })
+
+      it('should call __internals__.getAPIName with the correct arguments', () => {
+        const expected = 1234
+        spyOn(__internals__, 'getAPIName').andReturn(expected)
+
+        const content = 'some content'
+        const actual = Parser.getAPIName(content)
+
+        expect(__internals__.getAPIName).toHaveBeenCalledWith(content)
+        expect(actual).toEqual(expected)
+      })
+    })
+
+    describe('@parse', () => {
+      it('should call __internals__.parse', () => {
+        const expected = 1234
+        spyOn(__internals__, 'parse').andReturn(expected)
+
+        const actual = Parser.parse()
+
+        expect(__internals__.parse).toHaveBeenCalled()
+        expect(actual).toEqual(expected)
+      })
+
+      it('should call __internals__.parse with the correct arguments', () => {
+        const expected = 1234
+        spyOn(__internals__, 'parse').andReturn(expected)
+
+        const options = { context: 123, items: 321, options: 234 }
+        const actual = Parser.parse({ options })
+
+        expect(__internals__.parse).toHaveBeenCalledWith({ options })
+        expect(actual).toEqual(expected)
+      })
+    })
+  })
+
+  describe('@detect', () => {
+    it('should work', () => {
+      const inputs = [
+        'some weird content',
+        JSON.stringify({}),
+        JSON.stringify({ info: 123 }),
+        JSON.stringify({ item: 234 }),
+        JSON.stringify({ info: 123, item: 234 }),
+        JSON.stringify({ info: { name: 345 }, item: 234 }),
+        JSON.stringify({ info: { schema: 456 }, item: 234 }),
+        JSON.stringify({ info: { name: 345, schema: 456 }, item: 234 })
+      ]
+      const expected = [
+        [ {
+          format: 'postman-collection',
+          version: 'v2.0',
+          score: 0
+        } ],
+        [ {
+          format: 'postman-collection',
+          version: 'v2.0',
+          score: 0
+        } ],
+        [ {
+          format: 'postman-collection',
+          version: 'v2.0',
+          score: 0
+        } ],
+        [ {
+          format: 'postman-collection',
+          version: 'v2.0',
+          score: 0
+        } ],
+        [ {
+          format: 'postman-collection',
+          version: 'v2.0',
+          score: 0
+        } ],
+        [ {
+          format: 'postman-collection',
+          version: 'v2.0',
+          score: 0
+        } ],
+        [ {
+          format: 'postman-collection',
+          version: 'v2.0',
+          score: 0
+        } ],
+        [ {
+          format: 'postman-collection',
+          version: 'v2.0',
+          score: 1
+        } ]
+      ]
+      const actual = inputs.map(input => __internals__.detect(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getAPIName', () => {
+    it('should work', () => {
+      const inputs = [
+        'some weird content',
+        JSON.stringify({}),
+        JSON.stringify({ info: 123 }),
+        JSON.stringify({ item: 234 }),
+        JSON.stringify({ info: 123, item: 234 }),
+        JSON.stringify({ info: { name: 345 }, item: 234 }),
+        JSON.stringify({ info: { schema: 456 }, item: 234 }),
+        JSON.stringify({ info: { name: 345, schema: 456 }, item: 234 })
+      ]
+      const expected = [
+        null, null, null, null, null, null, null,
+        345
+      ]
+      const actual = inputs.map(input => __internals__.getAPIName(input))
+      expect(actual).toEqual(expected)
+    })
+  })
 
   describe('@extractInfoTitle', () => {
     it('should work', () => {
@@ -196,6 +349,21 @@ describe('parsers/postman/v2.0/Parser.js', () => {
     })
   })
 
+  describe('@extractInfo', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractInfoInstance').andCall(v => v)
+
+      const inputs = [
+        { title: 123 }
+      ]
+      const expected = [
+        { key: 'info', value: new Info({ title: 123 }) }
+      ]
+      const actual = inputs.map(input => __internals__.extractInfo(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@extractGroupId', () => {
     it('should work', () => {
       const inputs = [
@@ -306,11 +474,13 @@ describe('parsers/postman/v2.0/Parser.js', () => {
       const inputs = [
         {},
         { item: 123 },
-        { item: [ 123, 234, 345 ] }
+        { item: [ 123, 234, 345 ] },
+        { item: [ 234 ] }
       ]
       const expected = [
         null, null,
-        { key: 'children', value: OrderedMap({ '123': 123, '345': 345 }) }
+        { key: 'children', value: OrderedMap({ '123': 123, '345': 345 }) },
+        null
       ]
       const actual = inputs.map(input => __internals__.extractGroupChildren(input))
       expect(actual).toEqual(expected)
@@ -604,7 +774,7 @@ describe('parsers/postman/v2.0/Parser.js', () => {
 
       const inputs = [
         [],
-        [ {}, { request: {} }, { request: '123123' } ],
+        [ null, {}, { request: {} }, { request: '123123' } ],
         [ { request: { auth: 123 } }, { request: { auth: 234 } }, { request: { auth: 345 } } ]
       ]
       const expected = [
@@ -616,6 +786,30 @@ describe('parsers/postman/v2.0/Parser.js', () => {
         }) }
       ]
       const actual = inputs.map(input => __internals__.extractAuthTypedStore(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractConstraintTypedStore', () => {
+    it('should work', () => {
+      const inputs = [
+        {},
+        { globals: {} },
+        { globals: { abc: 123, def: 234 } }
+      ]
+      const expected = [
+        { key: 'constraint', value: OrderedMap() },
+        { key: 'constraint', value: OrderedMap() },
+        { key: 'constraint', value: OrderedMap({
+          abc: new Constraint.JSONSchema({
+            title: 'abc'
+          }),
+          def: new Constraint.JSONSchema({
+            title: 'def'
+          })
+        }) }
+      ]
+      const actual = inputs.map(input => __internals__.extractConstraintTypedStore(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -741,6 +935,13 @@ describe('parsers/postman/v2.0/Parser.js', () => {
       const inputs = [
         {
           key: new URL({
+            url: 'http://echo.paw.cloud:8080/users/456',
+            variableDelimiters: List([ '{{', '}}', ':' ])
+          }),
+          value: 456
+        },
+        {
+          key: new URL({
             url: 'http://echo.paw.cloud/users/123',
             variableDelimiters: List([ '{{', '}}', ':' ])
           }),
@@ -755,6 +956,18 @@ describe('parsers/postman/v2.0/Parser.js', () => {
         }
       ]
       const expected = {
+        'echo.paw.cloud:8080': {
+          entries: [
+            {
+              key: new URL({
+                url: 'http://echo.paw.cloud:8080/users/456',
+                variableDelimiters: List([ '{{', '}}', ':' ])
+              }),
+              value: 456
+            }
+          ],
+          lcPathname: [ '', 'users', '456' ]
+        },
         'echo.paw.cloud': {
           entries: [
             {
@@ -985,10 +1198,20 @@ describe('parsers/postman/v2.0/Parser.js', () => {
   describe('@extractRequestDescriptionFromItem', () => {
     it('should work', () => {
       const inputs = [
-        'whatever'
+        'whatever',
+        {},
+        { description: 123 },
+        { request: {} },
+        { request: { description: 234 } },
+        { description: 123, request: { description: 234 } }
       ]
       const expected = [
-        null
+        null,
+        null,
+        { key: 'description', value: 123 },
+        null,
+        { key: 'description', value: 234 },
+        { key: 'description', value: 123 }
       ]
       const actual = inputs.map(input => __internals__.extractRequestDescriptionFromItem(input))
       expect(actual).toEqual(expected)
@@ -999,7 +1222,9 @@ describe('parsers/postman/v2.0/Parser.js', () => {
     it('should work', () => {
       const inputs = [
         {},
-        { key: 123, value: 234 }
+        { key: 123 },
+        { key: 123, value: 234 },
+        { key: 123, value: '{{ref}}' }
       ]
       const expected = [
         null,
@@ -1009,7 +1234,26 @@ describe('parsers/postman/v2.0/Parser.js', () => {
             key: 123,
             name: 123,
             type: 'string',
+            default: null
+          })
+        },
+        {
+          key: 123,
+          value: new Parameter({
+            key: 123,
+            name: 123,
+            type: 'string',
             default: 234
+          })
+        },
+        {
+          key: 123,
+          value: new Parameter({
+            key: 123,
+            name: 123,
+            type: 'string',
+            default: null,
+            constraints: List([ new Constraint.JSONSchema({ $ref: '#/definitions/ref' }) ])
           })
         }
       ]
@@ -1042,7 +1286,9 @@ describe('parsers/postman/v2.0/Parser.js', () => {
     it('should work', () => {
       const inputs = [
         '',
-        'Content-Type: application/json'
+        'Content-Type:',
+        'Content-Type: application/json',
+        'Content-Type: {{cType}}'
       ]
       const expected = [
         null,
@@ -1052,7 +1298,26 @@ describe('parsers/postman/v2.0/Parser.js', () => {
             key: 'Content-Type',
             name: 'Content-Type',
             type: 'string',
+            default: null
+          })
+        },
+        {
+          key: 'Content-Type',
+          value: new Parameter({
+            key: 'Content-Type',
+            name: 'Content-Type',
+            type: 'string',
             default: 'application/json'
+          })
+        },
+        {
+          key: 'Content-Type',
+          value: new Parameter({
+            key: 'Content-Type',
+            name: 'Content-Type',
+            type: 'string',
+            default: null,
+            constraints: List([ new Constraint.JSONSchema({ $ref: '#/definitions/cType' }) ])
           })
         }
       ]
@@ -1096,7 +1361,8 @@ describe('parsers/postman/v2.0/Parser.js', () => {
         null,
         {},
         { key: '123' },
-        { key: '123', value: 234 }
+        { key: '123', value: 234 },
+        { key: '123', value: '{{ref}}' }
       ]
       const expected = [
         null, null,
@@ -1104,6 +1370,16 @@ describe('parsers/postman/v2.0/Parser.js', () => {
         {
           key: '123',
           value: new Parameter({ key: '123', name: '123', type: 'string', default: 234 })
+        },
+        {
+          key: '123',
+          value: new Parameter({
+            key: '123',
+            name: '123',
+            type: 'string',
+            default: null,
+            constraints: List([ new Constraint.JSONSchema({ $ref: '#/definitions/ref' }) ])
+          })
         }
       ]
       const actual = inputs.map(input => __internals__.extractHeaderParameterFromObject(input))
@@ -1215,11 +1491,13 @@ describe('parsers/postman/v2.0/Parser.js', () => {
   describe('@extractBodyBlockFromFileBody', () => {
     it('should work', () => {
       const inputs = [
+        null,
         {},
         { file: {} },
         { file: { content: 123 } }
       ]
       const expected = [
+        { key: 'body', value: OrderedMap({ file: new Parameter({ type: 'string' }) }) },
         { key: 'body', value: OrderedMap({ file: new Parameter({ type: 'string' }) }) },
         { key: 'body', value: OrderedMap({ file: new Parameter({ type: 'string' }) }) },
         {
@@ -1235,10 +1513,12 @@ describe('parsers/postman/v2.0/Parser.js', () => {
   describe('@extractBodyBlockFromRawBody', () => {
     it('should work', () => {
       const inputs = [
+        null,
         {},
         { raw: 123 }
       ]
       const expected = [
+        { key: 'body', value: OrderedMap({ raw: new Parameter({ type: 'string' }) }) },
         { key: 'body', value: OrderedMap({ raw: new Parameter({ type: 'string' }) }) },
         {
           key: 'body',
@@ -1287,16 +1567,36 @@ describe('parsers/postman/v2.0/Parser.js', () => {
         .andCall(v => v ? { key: 'body', value: v } : null)
 
       const inputs = [
+        null,
         {},
+        { request: {} },
+        { request: { url: {}, header: 234, body: 345 } },
         { request: { url: { query: 123 }, header: 234, body: 345 } }
       ]
       const expected = [
         {},
+        {},
+        {},
+        { headers: 234, body: 345 },
         { queries: 123, headers: 234, body: 345 }
       ]
       const actual = inputs.map(
         input => __internals__.extractRequestParameterContainerInstanceFromItem(input)
       )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractRequestParametersFromItem', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractRequestParameterContainerInstanceFromItem').andCall(v => v)
+      const inputs = [
+        { body: 123, headers: 234 }
+      ]
+      const expected = [
+        { key: 'parameters', value: new ParameterContainer({ body: 123, headers: 234 }) }
+      ]
+      const actual = inputs.map(input => __internals__.extractRequestParametersFromItem(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -1456,6 +1756,7 @@ describe('parsers/postman/v2.0/Parser.js', () => {
       spyOn(__internals__, 'extractAuthRefsFromOAuth2Auth').andReturn(789)
 
       const inputs = [
+        null,
         {},
         { request: { auth: { type: 'awsv4' } } },
         { request: { auth: { type: 'basic' } } },
@@ -1468,6 +1769,7 @@ describe('parsers/postman/v2.0/Parser.js', () => {
       ]
       const expected = [
         null,
+        null,
         123, 234, 345, 456, 567, 678, 789,
         null
       ]
@@ -1479,11 +1781,13 @@ describe('parsers/postman/v2.0/Parser.js', () => {
   describe('@extractRequestMethodFromItem', () => {
     it('should work', () => {
       const inputs = [
+        null,
         {},
         { request: {} },
         { request: { method: 'PUT' } }
       ]
       const expected = [
+        { key: 'method', value: 'get' },
         { key: 'method', value: 'get' },
         { key: 'method', value: 'get' },
         { key: 'method', value: 'put' }
@@ -1634,12 +1938,41 @@ describe('parsers/postman/v2.0/Parser.js', () => {
         [
           { resources: [ 123 ], endpoints: [ 'abc' ] },
           { resources: [ 234, 345 ], endpoint: 'def' }
+        ],
+        [
+          { resources: [ 123 ], endpoints: [ 'abc' ] },
+          { resources: null, endpoint: 'def' }
         ]
       ]
       const expected = [
-        { resources: [ 123, 234, 345 ], endpoints: [ 'abc', 'def' ] }
+        { resources: [ 123, 234, 345 ], endpoints: [ 'abc', 'def' ] },
+        { resources: [ 123 ], endpoints: [ 'abc', 'def' ] }
       ]
       const actual = inputs.map(input => __internals__.groupResourcesAndEndpoints(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@mergeResources', () => {
+    it('should work', () => {
+      const inputs = [
+        [
+          { abc: new Resource({ methods: OrderedMap({ get: 123, put: 234 }) }) },
+          { key: 'abc', value: new Resource({ methods: OrderedMap({ post: 345 }) }) }
+        ],
+        [
+          { abc: new Resource({ methods: OrderedMap({ get: 123, put: 234 }) }) },
+          { key: 'def', value: new Resource({ methods: OrderedMap({ post: 345 }) }) }
+        ]
+      ]
+      const expected = [
+        { abc: new Resource({ methods: OrderedMap({ get: 123, put: 234, post: 345 }) }) },
+        {
+          abc: new Resource({ methods: OrderedMap({ get: 123, put: 234 }) }),
+          def: new Resource({ methods: OrderedMap({ post: 345 }) })
+        }
+      ]
+      const actual = inputs.map(input => __internals__.mergeResources(...input))
       expect(actual).toEqual(expected)
     })
   })

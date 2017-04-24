@@ -17,12 +17,59 @@ import Response from '../../../../models/Response'
 import Request from '../../../../models/Request'
 import Resource from '../../../../models/Resource'
 import Info from '../../../../models/Info'
+import Api from '../../../../models/Api'
 
 import Parser, { __internals__ } from '../Parser'
 
 describe('parsers/raml/v1.0/Parser.js', () => {
   afterEach(() => restoreSpies())
   describe('{ Parser }', () => {
+    describe('@detect', () => {
+      it('should call __internals__.detect', () => {
+        const expected = 1234
+        spyOn(__internals__, 'detect').andReturn(expected)
+
+        const actual = Parser.detect()
+
+        expect(__internals__.detect).toHaveBeenCalled()
+        expect(actual).toEqual(expected)
+      })
+
+      it('should call __internals__.detect with the correct arguments', () => {
+        const expected = 1234
+        spyOn(__internals__, 'detect').andReturn(expected)
+
+        const content = 'some content'
+        const actual = Parser.detect(content)
+
+        expect(__internals__.detect).toHaveBeenCalledWith(content)
+        expect(actual).toEqual(expected)
+      })
+    })
+
+    describe('@getAPIName', () => {
+      it('should call __internals__.getAPIName', () => {
+        const expected = 1234
+        spyOn(__internals__, 'getAPIName').andReturn(expected)
+
+        const actual = Parser.getAPIName()
+
+        expect(__internals__.getAPIName).toHaveBeenCalled()
+        expect(actual).toEqual(expected)
+      })
+
+      it('should call __internals__.getAPIName with the correct arguments', () => {
+        const expected = 1234
+        spyOn(__internals__, 'getAPIName').andReturn(expected)
+
+        const content = 'some content'
+        const actual = Parser.getAPIName(content)
+
+        expect(__internals__.getAPIName).toHaveBeenCalledWith(content)
+        expect(actual).toEqual(expected)
+      })
+    })
+
     describe('@parse', () => {
       it('should call __internals__.parse', () => {
         const expected = 1234
@@ -68,6 +115,35 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       const input = 'title: toto\nsomething: else'
       const expected = 'toto'
       const actual = __internals__.getAPIName(input)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return null if empty title', () => {
+      const input = 'title: \nsomething else'
+      const expected = null
+      const actual = __internals__.getAPIName(input)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return null if no match', () => {
+      const input = 'something else'
+      const expected = null
+      const actual = __internals__.getAPIName(input)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@addKey', () => {
+    it('should work', () => {
+      const inputs = [
+        [ { a: 123 }, { name: () => 'User' } ],
+        [ { a: 123 }, { name: () => 'User' }, 'AuthLib' ]
+      ]
+      const expected = [
+        { a: 123, $key: 'User' },
+        { a: 123, $key: 'AuthLib.User' }
+      ]
+      const actual = inputs.map(input => __internals__.addKey(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -283,12 +359,14 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@convertInPlaceTypeDeclaration', () => {
     it('should work', () => {
       const inputs = [
-        'User'
+        [ 'User' ],
+        [ 'User', 'AuthLib' ]
       ]
       const expected = [
-        [ { $ref: '#/definitions/User' } ]
+        [ { $ref: '#/definitions/User' } ],
+        [ { $ref: '#/definitions/AuthLib.User' } ]
       ]
-      const actual = inputs.map(input => __internals__.convertInPlaceTypeDeclaration(input))
+      const actual = inputs.map(input => __internals__.convertInPlaceTypeDeclaration(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -428,9 +506,11 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@addRequiredKeyToSchema', () => {
     it('should work', () => {
       const inputs = [
+        [ { a: 123 }, [ { required: false, key: 123 }, { required: false, key: 234 } ] ],
         [ { a: 123 }, [ { required: false, key: 123 }, { required: true, key: 234 } ] ]
       ]
       const expected = [
+        { a: 123 },
         { a: 123, required: [ 234 ] }
       ]
       const actual = inputs.map(input => __internals__.addRequiredKeyToSchema(...input))
@@ -618,14 +698,14 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@getSchemaFromReferenceType', () => {
     it('should work', () => {
       const inputs = [
-        'User',
-        'Song'
+        [ 'User' ],
+        [ 'Song', 'AuthLib' ]
       ]
       const expected = [
         { $ref: '#/definitions/User' },
-        { $ref: '#/definitions/Song' }
+        { $ref: '#/definitions/AuthLib.Song' }
       ]
-      const actual = inputs.map(input => __internals__.getSchemaFromReferenceType(input))
+      const actual = inputs.map(input => __internals__.getSchemaFromReferenceType(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -696,10 +776,12 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       spyOn(__internals__, 'getSchemaFromType').andCall(v => v)
 
       const inputs = [
+        null,
         [ 123, 234 ],
         [ 345, 456 ]
       ]
       const expected = [
+        [],
         [ 123, 234 ],
         [ 345, 456 ]
       ]
@@ -712,6 +794,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@convertMultipleInheritanceObject', () => {
     it('should work', () => {
       const inputs = [
+        null,
         [ 'User[]' ],
         [ 'User', 'Resident' ],
         [ 'array', 'Songs' ],
@@ -719,6 +802,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         [ 'array', '(Visitor|Resident)[]' ]
       ]
       const expected = [
+        {},
         { type: 'array', items: { $ref: '#/definitions/User' } },
         { allOf: [ { $ref: '#/definitions/User' }, { $ref: '#/definitions/Resident' } ] },
         { type: 'array', allOf: [ { $ref: '#/definitions/Songs' } ] },
@@ -1069,10 +1153,25 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     })
   })
 
+  describe('@convertBooleanTypeDeclaration', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'addInheritedTypes').andCall((s, n, o) => Object.assign(s, { v: n + o }))
+      const inputs = [
+        [ 123, 234 ]
+      ]
+      const expected = [
+        [ { v: 123 + 234 } ]
+      ]
+      const actual = inputs.map(input => __internals__.convertBooleanTypeDeclaration(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@convertDateOnlyTypeDeclaration', () => {
     it('should work', () => {
       const inputs = [
-        null
+        null,
+        'AuthLib'
       ]
       const expected = [
         [
@@ -1082,6 +1181,18 @@ describe('parsers/raml/v1.0/Parser.js', () => {
           },
           {
             $key: '$DateOnly',
+            type: 'string',
+            pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$',
+            description: 'full-date as defined in RFC#3339'
+          }
+        ],
+        [
+          {
+            type: 'string',
+            $ref: '#/definitions/AuthLib.$DateOnly'
+          },
+          {
+            $key: 'AuthLib.$DateOnly',
             type: 'string',
             pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$',
             description: 'full-date as defined in RFC#3339'
@@ -1096,7 +1207,8 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@convertTimeOnlyTypeDeclaration', () => {
     it('should work', () => {
       const inputs = [
-        null
+        null,
+        'AuthLib'
       ]
       const expected = [
         [
@@ -1106,6 +1218,18 @@ describe('parsers/raml/v1.0/Parser.js', () => {
           },
           {
             $key: '$TimeOnly',
+            type: 'string',
+            pattern: '^([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$',
+            description: 'full-time as defined in RFC#3339'
+          }
+        ],
+        [
+          {
+            type: 'string',
+            $ref: '#/definitions/AuthLib.$TimeOnly'
+          },
+          {
+            $key: 'AuthLib.$TimeOnly',
             type: 'string',
             pattern: '^([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$',
             description: 'full-time as defined in RFC#3339'
@@ -1120,7 +1244,8 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@convertDateTimeOnlyTypeDeclaration', () => {
     it('should work', () => {
       const inputs = [
-        null
+        null,
+        'AuthLib'
       ]
       const expected = [
         [
@@ -1130,6 +1255,19 @@ describe('parsers/raml/v1.0/Parser.js', () => {
           },
           {
             $key: '$DateTimeOnly',
+            type: 'string',
+            pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T' +
+              '([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$',
+            description: 'full-time as defined in RFC#3339'
+          }
+        ],
+        [
+          {
+            type: 'string',
+            $ref: '#/definitions/AuthLib.$DateTimeOnly'
+          },
+          {
+            $key: 'AuthLib.$DateTimeOnly',
             type: 'string',
             pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T' +
               '([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$',
@@ -1145,7 +1283,8 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@convertDateTimeTypeDeclaration', () => {
     it('should work', () => {
       const inputs = [
-        null
+        null,
+        'AuthLib'
       ]
       const expected = [
         [
@@ -1155,6 +1294,17 @@ describe('parsers/raml/v1.0/Parser.js', () => {
           },
           {
             $key: '$DateTime',
+            type: 'string',
+            description: 'datetime'
+          }
+        ],
+        [
+          {
+            type: 'string',
+            $ref: '#/definitions/AuthLib.$DateTime'
+          },
+          {
+            $key: 'AuthLib.$DateTime',
             type: 'string',
             description: 'datetime'
           }
@@ -1168,7 +1318,8 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@convertFileTypeDeclaration', () => {
     it('should work', () => {
       const inputs = [
-        null
+        null,
+        'AuthLib'
       ]
       const expected = [
         [
@@ -1178,6 +1329,18 @@ describe('parsers/raml/v1.0/Parser.js', () => {
           },
           {
             $key: '$File',
+            type: 'string',
+            description: 'file',
+            pattern: '^[^\u0000]*\u0000$'
+          }
+        ],
+        [
+          {
+            type: 'string',
+            $ref: '#/definitions/AuthLib.$File'
+          },
+          {
+            $key: 'AuthLib.$File',
             type: 'string',
             description: 'file',
             pattern: '^[^\u0000]*\u0000$'
@@ -1383,10 +1546,12 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     it('should work', () => {
       spyOn(__internals__, 'getGlobalContentTypeParameter').andCall(v => v * 2)
       const inputs = [
-        123
+        123,
+        0
       ]
       const expected = [
-        OrderedMap({ globalMediaType: 246 })
+        OrderedMap({ globalMediaType: 246 }),
+        OrderedMap()
       ]
       const actual = inputs.map(input => __internals__.extractParameterStore(input))
       expect(actual).toEqual(expected)
@@ -1431,6 +1596,25 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         null
       ]
       const actual = inputs.map(input => __internals__.extractFlowFromOAuth2Settings(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractAuthorizationUrlFromOAuth2Settings', () => {
+    it('should work', () => {
+      const inputs = [
+        { authorizationUri: () => null },
+        { authorizationUri: () => ({ value: () => '' }) },
+        { authorizationUri: () => ({ value: () => 123 }) }
+      ]
+      const expected = [
+        null,
+        null,
+        123
+      ]
+      const actual = inputs.map(
+        input => __internals__.extractAuthorizationUrlFromOAuth2Settings(input)
+      )
       expect(actual).toEqual(expected)
     })
   })
@@ -1688,6 +1872,22 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     })
   })
 
+  describe('@convertRAMLAuthIntoCustomAuthEntry', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractAuthNameFromAuthScheme').andCall(({ a }) => a)
+      spyOn(__internals__, 'extractDescription').andCall(({ b }) => b)
+
+      const inputs = [
+        { a: 123, b: 234 }
+      ]
+      const expected = [
+        { key: 123, value: new Auth.Custom({ authName: 123, description: 234 }) }
+      ]
+      const actual = inputs.map(input => __internals__.convertRAMLAuthIntoCustomAuthEntry(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@convertRAMLAuthIntoAuthEntry', () => {
     it('should work', () => {
       spyOn(__internals__, 'convertRAMLAuthIntoOAuth2AuthEntry').andReturn(123)
@@ -1695,6 +1895,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       spyOn(__internals__, 'convertRAMLAuthIntoApiKeyAuthEntry').andReturn(345)
       spyOn(__internals__, 'convertRAMLAuthIntoBasicAuthEntry').andReturn(456)
       spyOn(__internals__, 'convertRAMLAuthIntoDigestAuthEntry').andReturn(567)
+      spyOn(__internals__, 'convertRAMLAuthIntoCustomAuthEntry').andReturn(678)
 
       const inputs = [
         { kind: () => null },
@@ -1703,14 +1904,61 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         { kind: () => 'PassThroughSecurityScheme' },
         { kind: () => 'BasicSecurityScheme' },
         { kind: () => 'DigestSecurityScheme' },
+        { kind: () => 'AbstractSecurityScheme' },
         { kind: () => 'CustomSecurityScheme' }
       ]
       const expected = [
         null,
-        123, 234, 345, 456, 567,
+        123, 234, 345, 456, 567, 678,
         null
       ]
       const actual = inputs.map(input => __internals__.convertRAMLAuthIntoAuthEntry(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractAuthsFromRAMLLibrary', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertRAMLAuthIntoAuthEntry').andCall(v => {
+        if (v % 2) {
+          return { key: v, value: v }
+        }
+
+        return null
+      })
+
+      const inputs = [
+        { ast: () => ({ securitySchemes: () => null }) },
+        { ast: () => ({ securitySchemes: () => [] }) },
+        { ast: () => ({ securitySchemes: () => [ 123, 234, 345 ] }), key: () => 'lib' }
+      ]
+      const expected = [
+        [],
+        [],
+        [ { key: 'lib.123', value: 123 }, { key: 'lib.345', value: 345 } ]
+      ]
+
+      const actual = inputs.map(input => __internals__.extractAuthsFromRAMLLibrary(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractAuthsFromRAMLApi', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractAuthsFromRAMLLibrary').andCall(v => [ v ])
+      spyOn(__internals__, 'convertRAMLAuthIntoAuthEntry').andCall(v => v)
+
+      const inputs = [
+        { securitySchemes: () => null, uses: () => null },
+        { securitySchemes: () => [], uses: () => [] },
+        { securitySchemes: () => [ 123 ], uses: () => [ 234 ] }
+      ]
+      const expected = [
+        [],
+        [],
+        [ 123, 234 ]
+      ]
+      const actual = inputs.map(input => __internals__.extractAuthsFromRAMLApi(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -1913,6 +2161,156 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         OrderedMap({ '123': 123, '234': 234, '345': 345, '456': 456 })
       ]
       const actual = inputs.map(input => __internals__.extractInterfaceStore(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@updateURLComponentWithUriParameters', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertSchemaIntoParameterEntry')
+        .andCall((n, c, { value }) => ({ value }))
+
+      const inputs = [
+        [ new URL({ url: 'https://echo.paw.cloud' }), 'hostname', [ { $key: 'userId' } ] ],
+        [
+          (new URL({ url: 'https://echo.paw.cloud' })).set('pathname', null),
+          'pathname',
+          [ { $key: 'userId' } ]
+        ],
+        [
+          new URL({
+            url: 'https://echo.paw.cloud/user/{userId}',
+            variableDelimiters: List([ '{', '}' ])
+          }),
+          'pathname',
+          [ { $key: 'userId', value: 123 } ]
+        ]
+      ]
+      const expected = [
+        new URLComponent({
+          componentName: 'hostname',
+          string: 'echo.paw.cloud',
+          parameter: new Parameter({
+            key: 'hostname',
+            name: 'hostname',
+            type: 'string',
+            default: 'echo.paw.cloud'
+          })
+        }),
+        null,
+        new URLComponent({
+          componentName: 'pathname',
+          string: '/user/{userId}',
+          parameter: new Parameter({
+            key: 'pathname',
+            name: 'pathname',
+            type: 'string',
+            superType: 'sequence',
+            value: List([
+              new Parameter({
+                type: 'string',
+                default: '/user/'
+              }),
+              123,
+              new Parameter({
+                type: 'string',
+                default: ''
+              })
+            ])
+          }),
+          variableDelimiters: List([ '{', '}' ])
+        })
+      ]
+      const actual = inputs.map(
+        input => __internals__.updateURLComponentWithUriParameters(...input)
+      )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@updateEndpointWithUriParameters', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'updateURLComponentWithUriParameters').andCall((e, c) => c)
+
+      const inputs = [
+        new URL({ url: 'https://echo.paw.cloud:8080/users/123' })
+      ]
+      const expected = [
+        (new URL({ url: 'https://echo.paw.cloud:8080/users/123' }))
+          .set('hostname', 'hostname')
+          .set('port', 'port')
+          .set('pathname', 'pathname')
+      ]
+      const actual = inputs.map(input => __internals__.updateEndpointWithUriParameters(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractBaseUriWithParameters', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createSchema').andCall(v => [ v ])
+      spyOn(__internals__, 'normalizeSchema').andCall(v => v)
+      spyOn(__internals__, 'updateEndpointWithUriParameters').andCall((e, a) => {
+        return e.set('secure', a)
+      })
+
+      const inputs = [
+        [
+          { value: () => 'https://echo.paw.cloud/users' },
+          { protocols: () => null, baseUriParameters: () => null }
+        ],
+        [
+          { value: () => 'https://echo.paw.cloud/users' },
+          { protocols: () => [], baseUriParameters: () => null }
+        ],
+        [
+          { value: () => 'https://echo.paw.cloud/users' },
+          { protocols: () => [ 'HTTP', 'HTTPS:' ], baseUriParameters: () => null }
+        ],
+        [
+          { value: () => 'https://echo.paw.cloud/users' },
+          { protocols: () => null, baseUriParameters: () => [] }
+        ],
+        [
+          { value: () => 'https://echo.paw.cloud/users' },
+          { protocols: () => null, baseUriParameters: () => [ 123, 234 ] }
+        ],
+        [
+          { value: () => 'https://echo.paw.cloud/users' },
+          { protocols: () => [ 'HTTP:', 'HTTPS' ], baseUriParameters: () => [ 123, 234 ] }
+        ]
+      ]
+
+      const expected = [
+        new URL({ url: 'https://echo.paw.cloud/users', variableDelimiters: List([ '{', '}' ]) }),
+        new URL({ url: 'https://echo.paw.cloud/users', variableDelimiters: List([ '{', '}' ]) }),
+        (new URL({ url: 'https://echo.paw.cloud/users', variableDelimiters: List([ '{', '}' ]) }))
+          .set('protocol', List([ 'http:', 'https:' ])),
+        new URL({ url: 'https://echo.paw.cloud/users', variableDelimiters: List([ '{', '}' ]) }),
+        (new URL({ url: 'https://echo.paw.cloud/users', variableDelimiters: List([ '{', '}' ]) }))
+          .set('secure', [ 123, 234 ]),
+        (new URL({ url: 'https://echo.paw.cloud/users', variableDelimiters: List([ '{', '}' ]) }))
+          .set('protocol', List([ 'http:', 'https:' ]))
+          .set('secure', [ 123, 234 ])
+      ]
+      const actual = inputs.map(input => __internals__.extractBaseUriWithParameters(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@extractEndpointStore', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractBaseUriWithParameters').andCall(v => v)
+
+      const inputs = [
+        { baseUri: () => null },
+        { baseUri: () => 123 }
+      ]
+      const expected = [
+        OrderedMap({ base: new URL() }),
+        OrderedMap({ base: 123 })
+      ]
+      const actual = inputs.map(input => __internals__.extractEndpointStore(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -2706,13 +3104,15 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   describe('@getGlobalContentTypeParameterReference', () => {
     it('should work', () => {
       const inputs = [
+        null,
         { mediaType: () => null },
         { mediaType: () => [] },
         { mediaType: () => [ { value: () => null } ] },
         { mediaType: () => [ { value: () => 123 }, { value: () => 234 } ] }
       ]
       const expected = [
-        null, null, null, new Reference({ type: 'parameter', uuid: 'globalMediaType' })
+        null, null, null, null,
+        new Reference({ type: 'parameter', uuid: 'globalMediaType' })
       ]
       const actual = inputs.map(
         input => __internals__.getGlobalContentTypeParameterReference(input)
@@ -3088,9 +3488,32 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     })
   })
 
+  describe('@areProtocolsEqual', () => {
+    it('should work', () => {
+      const inputs = [
+        [ null, null ],
+        [ [], {} ],
+        [ [ 'HTTP', 'HTTPS' ], {} ],
+        [ [ 'HTTP' ], { value: () => null } ],
+        [ [ 'HTTP' ], { value: () => 'https://echo.paw.cloud' } ],
+        [ [ 'HTTP' ], { value: () => 'http://echo.paw.cloud' } ]
+      ]
+      const expected = [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+      const actual = inputs.map(input => __internals__.areProtocolsEqual(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@convertRAMLMethodBaseIntoRequestInstance', () => {
     it('should work', () => {
-      spyOn(__internals__, 'areProtocolsEquals').andCall((f, s) => f && s && f[0] === s[0])
+      spyOn(__internals__, 'areProtocolsEqual').andCall((f, s) => f && s && f[0] === s[0])
       spyOn(__internals__, 'extractDescription').andCall(({ desc }) => desc)
       spyOn(__internals__, 'extractContextsFromRequest').andCall(({ ctx }) => ctx)
       spyOn(__internals__, 'extractParameterContainerFromRequest').andCall(
@@ -3123,6 +3546,11 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         } ],
         [ { a: 123, baseUri: () => null }, {
           protocols: () => [ '234', '345' ],
+          displayName: () => 456,
+          desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
+        } ],
+        [ { a: 123, baseUri: () => null }, {
+          protocols: () => [ '234:', '345' ],
           displayName: () => 456,
           desc: 'abc', ctx: 'def', params: 'ghi', auths: 'jkl', res: 'mno', itfs: 'pqr'
         } ]
@@ -3182,6 +3610,22 @@ describe('parsers/raml/v1.0/Parser.js', () => {
               type: 'endpoint',
               uuid: 'base',
               overlay: null
+            })
+          }),
+          name: 456,
+          description: 'abc',
+          contexts: 'def',
+          parameters: 'ghi',
+          auths: 'jkl',
+          responses: 'mno',
+          interfaces: 'pqr'
+        },
+        {
+          endpoints: OrderedMap({
+            base: new Reference({
+              type: 'endpoint',
+              uuid: 'base',
+              overlay: new URL().set('protocol', List([ '234:', '345:' ]))
             })
           }),
           name: 456,
@@ -3277,6 +3721,29 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       const actual = inputs.map(
         input => __internals__.convertRAMLResourceBaseIntoResourceInstance(...input)
       )
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getNameFromResource', () => {
+    it('should work', () => {
+      const inputs = [
+        { displayName: () => null, relativeUri: () => null },
+        { displayName: () => null, relativeUri: () => ({ value: () => null }) },
+        { displayName: () => null, relativeUri: () => ({ value: () => '' }) },
+        { displayName: () => null, relativeUri: () => ({ value: () => 'abc' }) },
+        { displayName: () => 'abc', relativeUri: () => ({ value: () => 'abc' }) },
+        { displayName: () => 'abc', relativeUri: () => ({ value: () => 'def' }) }
+      ]
+      const expected = [
+        null,
+        null,
+        null,
+        null,
+        null,
+        'abc'
+      ]
+      const actual = inputs.map(input => __internals__.getNameFromResource(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -3430,6 +3897,30 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         new Info({ title: 234, description: 234 * 2, version: 234 * 3 })
       ]
       const actual = inputs.map(input => __internals__.extractInfo(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@parse', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createGroups').andCall(v => v * 2)
+      spyOn(__internals__, 'getAllResourcesFromApi').andReturn(100)
+      spyOn(__internals__, 'convertRAMLResourceListIntoResourceMap').andCall((v, b) => v * 3 + b)
+      spyOn(__internals__, 'extractStore').andCall(v => v * 4)
+      spyOn(__internals__, 'extractInfo').andCall(v => v * 5)
+
+      const inputs = [
+        { options: 123, item: 234 }
+      ]
+      const expected = [
+        { options: 123, api: new Api({
+          group: 234 * 2,
+          resources: 234 * 3 + 100,
+          store: 234 * 4,
+          info: 234 * 5
+        }) }
+      ]
+      const actual = inputs.map(input => __internals__.parse(input))
       expect(actual).toEqual(expected)
     })
   })

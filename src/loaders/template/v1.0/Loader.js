@@ -124,11 +124,11 @@ methods.resolve = (options, uri, { $ref = '' } = {}) => {
  * where the `options` field is the options initially passed to the loader, and the `item` field
  * contains the normalized item (parsed, without dependencies, etc.).
  */
-methods.fixPrimary = (options, { content }) => {
-  if (!content || content) {
+methods.fixPrimary = (options, resolved) => {
+  if (!resolved.content || resolved.content) {
     return Promise.reject(new Error('this method needs to be implemented'))
   }
-  return Promise.resolve({ options, item: content })
+  return Promise.resolve({ options, item: resolved.content })
 }
 
 /**

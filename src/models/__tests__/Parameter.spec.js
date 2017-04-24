@@ -224,6 +224,15 @@ describe('models/Parameter.js', () => {
   })
 
   describe('@inferType', () => {
+    it('should return string if type is badly-typed (e.g. type=123)', () => {
+      const input = 123
+
+      const expected = 'string'
+      const actual = __internals__.inferType(input)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should return number if type is double or float', () => {
       const expected = 'number'
       let actual
@@ -1018,6 +1027,22 @@ describe('models/Parameter.js', () => {
 
       expect(__internals__.replaceRefs.calls.length).toEqual(4)
     })
+
+    it('should call ignoring keys from the prototype chain if it is an object', () => {
+      spyOn(__internals__, 'replaceRefs').andCallThrough()
+      function A() {
+        this.a = 1
+        this.b = 2
+        this.c = 3
+      }
+      A.prototype.d = 4
+      A.prototype.e = 5
+
+      const input = new A()
+      __internals__.replaceRefs(input)
+
+      expect(__internals__.replaceRefs.calls.length).toEqual(4)
+    })
   })
 
   describe('@simplifyRefs', () => {
@@ -1064,6 +1089,22 @@ describe('models/Parameter.js', () => {
 
       expect(__internals__.simplifyRefs.calls.length).toEqual(4)
     })
+
+    it('should call ignoring keys from the prototype chain if it is an object', () => {
+      spyOn(__internals__, 'simplifyRefs').andCallThrough()
+      function A() {
+        this.a = 1
+        this.b = 2
+        this.c = 3
+      }
+      A.prototype.d = 4
+      A.prototype.e = 5
+
+      const input = new A()
+      __internals__.simplifyRefs(input)
+
+      expect(__internals__.simplifyRefs.calls.length).toEqual(4)
+    })
   })
 
   describe('@isSimpleParameter', () => {
@@ -1104,6 +1145,17 @@ describe('models/Parameter.js', () => {
     it('should return false otherwise', () => {
       const input = new Parameter({
         type: 'qwirqwfhqow'
+      })
+
+      const actual = __internals__.isSimpleParameter(input)
+
+      expect(actual).toBeFalsy()
+    })
+
+    it('should return false if param has a superType', () => {
+      const input = new Parameter({
+        superType: 'sequence',
+        type: 'string'
       })
 
       const actual = __internals__.isSimpleParameter(input)

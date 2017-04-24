@@ -17,6 +17,7 @@ import Response from '../../../../models/Response'
 import Auth from '../../../../models/Auth'
 import Interface from '../../../../models/Interface'
 import Request from '../../../../models/Request'
+import Variable from '../../../../models/Variable'
 
 import Serializer, { __internals__ } from '../Serializer'
 
@@ -478,6 +479,180 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work return null if reference not found', () => {
+      const api = new Api({
+        resources: new OrderedMap({
+          a: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '321': new Reference({ uuid: '321' })
+            })
+          }),
+          b: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '234': new Reference({ uuid: '234' })
+            })
+          }),
+          c: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '234': new Reference({ uuid: '234' })
+            })
+          }),
+          d: new Resource({
+            endpoints: new OrderedMap({
+              '432': new Reference({ uuid: '432' }),
+              '321': new Reference({ uuid: '321' })
+            })
+          })
+        }),
+        store: new Store({
+          variable: new OrderedMap({
+            // missing '123' reference
+            '321': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            }),
+            '234': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            }),
+            '432': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            })
+          })
+        })
+      })
+
+      const expected = null
+      const actual = __internals__.getMostCommonEndpoint(api)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should return null if selected variable has no value', () => {
+      const api = new Api({
+        resources: new OrderedMap({
+          a: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '321': new Reference({ uuid: '321' })
+            })
+          }),
+          b: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '234': new Reference({ uuid: '234' })
+            })
+          }),
+          c: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '234': new Reference({ uuid: '234' })
+            })
+          }),
+          d: new Resource({
+            endpoints: new OrderedMap({
+              '432': new Reference({ uuid: '432' }),
+              '321': new Reference({ uuid: '321' })
+            })
+          })
+        }),
+        store: new Store({
+          variable: new OrderedMap({
+            '123': new Variable({
+              values: OrderedMap()
+            }),
+            '321': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            }),
+            '234': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            }),
+            '432': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            })
+          })
+        })
+      })
+
+      const expected = null
+      const actual = __internals__.getMostCommonEndpoint(api)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with variables', () => {
+      const api = new Api({
+        resources: new OrderedMap({
+          a: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '321': new Reference({ uuid: '321' })
+            })
+          }),
+          b: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '234': new Reference({ uuid: '234' })
+            })
+          }),
+          c: new Resource({
+            endpoints: new OrderedMap({
+              '123': new Reference({ uuid: '123' }),
+              '234': new Reference({ uuid: '234' })
+            })
+          }),
+          d: new Resource({
+            endpoints: new OrderedMap({
+              '432': new Reference({ uuid: '432' }),
+              '321': new Reference({ uuid: '321' })
+            })
+          })
+        }),
+        store: new Store({
+          variable: new OrderedMap({
+            '123': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud'
+              })
+            }),
+            '321': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            }),
+            '234': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            }),
+            '432': new Variable({
+              values: OrderedMap({
+                default: 'https://echo.paw.cloud/invalid'
+              })
+            })
+          })
+        })
+      })
+
+      const expected = new URL({ url: 'https://echo.paw.cloud' })
+      const actual = __internals__.getMostCommonEndpoint(api)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@removeDotsFromProtocol', () => {
@@ -514,6 +689,20 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         host: 'echo.paw.cloud',
         basePath: '/base'
       }
+      const actual = __internals__.getHostAndBasePathFromEndpoint(endpoint)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with mininum info', () => {
+      const endpoint = new URL()
+
+      /* eslint-disable no-undefined */
+      const expected = {
+        host: undefined,
+        basePath: undefined
+      }
+      /* eslint-enable no-undefined */
       const actual = __internals__.getHostAndBasePathFromEndpoint(endpoint)
 
       expect(actual).toEqual(expected)
@@ -557,6 +746,25 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work if no endpoint', () => {
+      spyOn(__internals__, 'getMostCommonEndpoint').andReturn(null)
+      spyOn(__internals__, 'getSchemesFromEndpoint').andReturn([ 'wss' ])
+      spyOn(__internals__, 'getHostAndBasePathFromEndpoint').andReturn({
+        host: 'someHost',
+        basePath: '/path'
+      })
+
+      const input = new Api()
+      const expected = {}
+      const actual = __internals__.getEndpointRelatedObjects(input)
+
+      expect(__internals__.getMostCommonEndpoint).toHaveBeenCalled()
+      expect(__internals__.getSchemesFromEndpoint).toNotHaveBeenCalled()
+      expect(__internals__.getHostAndBasePathFromEndpoint).toNotHaveBeenCalled()
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getDefinitions', () => {
@@ -579,28 +787,75 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work if no definitions', () => {
+      const api = new Api()
+
+      /* eslint-disable no-undefined */
+      const expected = undefined
+      /* eslint-enable no-undefined */
+      const actual = __internals__.getDefinitions(api)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getHeaderFromHeaderParameterOrReference', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertParameterToHeaderObject').andCall(p => p.get('default'))
+      const inputs = [
+        [ new Store(), new Parameter({ default: 123 }) ],
+        [ new Store(), new Reference({ uuid: 123 }) ],
+        [ new Store({
+          parameter: OrderedMap({
+            '123': new Parameter({ key: 'Content-Type' })
+          })
+        }), new Reference({ uuid: '123' }) ],
+        [ new Store({
+          parameter: OrderedMap({
+            '123': new Parameter({ key: 'Accept', default: 234 })
+          })
+        }), new Reference({ uuid: '123' }) ]
+      ]
+      const expected = [
+        123,
+        null,
+        null,
+        234
+      ]
+
+      const actual = inputs
+        .map(input => __internals__.getHeaderFromHeaderParameterOrReference(...input))
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getHeadersFromResponse', () => {
-    it('should work if underlying methods are correct', () => {
-      spyOn(__internals__, 'convertParameterToHeaderObject').andReturn({
-        key: 123,
-        value: 321
+    it('should work', () => {
+      spyOn(__internals__, 'getHeaderFromHeaderParameterOrReference').andCall((s, v) => {
+        return v % 2 ? null : { key: v, value: s + v }
       })
 
-      const store = new Store()
-      const response = new Response({
-        parameters: new ParameterContainer({
-          headers: new OrderedMap({
-            userId: new Parameter(),
-            petId: new Parameter()
+      const inputs = [
+        [ 123, new Response() ],
+        [ 123, new Response({
+          parameters: new ParameterContainer({
+            headers: OrderedMap({
+              a: 234,
+              b: 345,
+              c: 456
+            })
           })
-        })
-      })
+        }) ]
+      ]
 
-      const expected = { '123': 321 }
-      const actual = __internals__.getHeadersFromResponse(store, response)
-
+      /* eslint-disable no-undefined */
+      const expected = [
+        undefined,
+        { '234': 123 + 234, '456': 123 + 456 }
+      ]
+      /* eslint-enable no-undefined */
+      const actual = inputs.map(input => __internals__.getHeadersFromResponse(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -676,6 +931,53 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       */
       expect(JSON.stringify(actual)).toEqual(JSON.stringify(expected))
     })
+
+    it('should work with description', () => {
+      const store = new Store()
+      const entry = {
+        key: 123,
+        value: new Response({
+          description: 'some description',
+          parameters: new ParameterContainer({
+            headers: new OrderedMap({
+              userId: new Parameter({ key: 'userId', type: 'string' }),
+              petId: new Parameter({ key: 'petId', type: 'number' })
+            }),
+            body: new OrderedMap({
+              '123': new Parameter({
+                constraints: new List([
+                  new Constraint.JSONSchema({ type: 'string', maxLength: '140' })
+                ])
+              })
+            })
+          })
+        })
+      }
+
+      const expectedValue = {
+        description: 'some description',
+        headers: {
+          userId: { type: 'string' },
+          petId: { type: 'number' }
+        },
+        schema: {
+          type: 'string',
+          maxLength: '140'
+        }
+      }
+
+      const expected = {
+        key: 123,
+        value: expectedValue
+      }
+
+      const actual = __internals__.convertResponseRecordToResponseObject(store, entry)
+
+      /* the objects are not really equal, as the actual object has many undefined fields, like
+      * maximum
+      */
+      expect(JSON.stringify(actual)).toEqual(JSON.stringify(expected))
+    })
   })
 
   describe('@getResponseDefinitions', () => {
@@ -694,6 +996,15 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const actual = __internals__.getResponseDefinitions(input)
       expect(actual).toEqual(expected)
     })
+
+    it('should work if no responses', () => {
+      const input = new Api()
+      /* eslint-disable no-undefined */
+      const expected = undefined
+      /* eslint-enable no-undefined */
+      const actual = __internals__.getResponseDefinitions(input)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertBasicAuth', () => {
@@ -707,6 +1018,22 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         value: {
           type: 'basic',
           description: 'basic auth desc'
+        }
+      }
+
+      const actual = __internals__.convertBasicAuth(input)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with no description', () => {
+      const input = new Auth.Basic({
+        authName: 'basic_auth'
+      })
+      const expected = {
+        key: 'basic_auth',
+        value: {
+          type: 'basic'
         }
       }
 
@@ -770,35 +1097,45 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
     })
   })
 
+  describe('@convertAuthToSecurityRequirementEntry', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertBasicAuth').andReturn(123)
+      spyOn(__internals__, 'convertApiKeyAuth').andReturn(234)
+      spyOn(__internals__, 'convertOAuth2Auth').andReturn(345)
+
+      const inputs = [
+        new Auth.Basic(),
+        new Auth.ApiKey(),
+        new Auth.OAuth2(),
+        new Auth.Hawk()
+      ]
+      const expected = [
+        123, 234, 345, null
+      ]
+      const actual = inputs.map(input => __internals__.convertAuthToSecurityRequirementEntry(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@getSecurityDefinitions', () => {
     it('should work', () => {
-      const input = new Api({
-        store: new Store({
-          auth: new OrderedMap({
-            basic_auth: new Auth.Basic({ authName: 'basic_auth' }),
-            api_key_auth: new Auth.ApiKey({
-              authName: 'api_key_auth',
-              name: 'Api-Key',
-              in: 'header'
-            }),
-            hawk_auth: new Auth.Hawk({ authName: 'hawk_auth' })
-          })
-        })
+      spyOn(__internals__, 'convertAuthToSecurityRequirementEntry').andCall(v => {
+        return v % 2 ? { key: v, value: v * 2 } : null
       })
 
-      const expected = {
-        basic_auth: {
-          type: 'basic'
-        },
-        api_key_auth: {
-          type: 'apiKey',
-          name: 'Api-Key',
-          in: 'header'
-        }
-      }
+      const inputs = [
+        new Api(),
+        new Api({ store: new Store({ auth: OrderedMap({ a: 123, b: 234, c: 345 }) }) })
+      ]
 
-      const actual = __internals__.getSecurityDefinitions(input)
+      /* eslint-disable no-undefined */
+      const expected = [
+        undefined,
+        { '123': 123 * 2, '345': 345 * 2 }
+      ]
+      /* eslint-enable no-undefined */
 
+      const actual = inputs.map(input => __internals__.getSecurityDefinitions(input))
       expect(actual).toEqual(expected)
     })
   })
@@ -869,6 +1206,27 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const actual = __internals__.isBodyParameter(input)
       expect(actual).toEqual(expected)
     })
+
+    it('should return false if param is in body and has no ctxs that validate formData', () => {
+      const input = new Parameter({
+        in: 'body',
+        applicableContexts: List([
+          new Parameter({
+            key: 'Content-Type',
+            constraints: List([
+              new Constraint.Enum([
+                'application/json',
+                'application/xml'
+              ])
+            ])
+          })
+        ])
+      })
+
+      const expected = true
+      const actual = __internals__.isBodyParameter(input)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getParamLocation', () => {
@@ -888,6 +1246,15 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   })
 
   describe('@getCommonFieldsFromParameter', () => {
+    it('should work if no parameter', () => {
+      const input = null
+
+      const expected = {}
+
+      const actual = __internals__.getCommonFieldsFromParameter(input)
+      expect(actual).toEqual(expected)
+    })
+
     it('should work', () => {
       const input = new Parameter({
         type: 'string',
@@ -929,6 +1296,48 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const actual = __internals__.getCommonFieldsFromParameter(input)
       expect(actual).toEqual(expected)
     })
+
+    it('should work with type object', () => {
+      const input = new Parameter({
+        type: 'object',
+        default: { example: 'test' },
+        constraints: List([
+          new Constraint.ExclusiveMinimum(12),
+          new Constraint.ExclusiveMaximum(42),
+          new Constraint.MultipleOf(3),
+          new Constraint.MinimumLength(3),
+          new Constraint.MaximumLength(8),
+          new Constraint.Pattern('[12]{5}'),
+          new Constraint.MinimumItems(4),
+          new Constraint.MaximumItems(6),
+          new Constraint.UniqueItems(true),
+          new Constraint.Enum([ 1, 2, 3, 4 ])
+        ])
+      })
+
+      /* eslint-disable no-undefined */
+      const expected = {
+        type: 'string',
+        minimum: 12,
+        exclusiveMinimum: true,
+        maximum: 42,
+        exclusiveMaximum: true,
+        multipleOf: 3,
+        minLength: 3,
+        maxLength: 8,
+        pattern: '[12]{5}',
+        minItems: 4,
+        maxItems: 6,
+        uniqueItems: true,
+        enum: [ 1, 2, 3, 4 ],
+        default: { example: 'test' },
+        'x-real-type': 'object'
+      }
+      /* eslint-enable no-undefined */
+
+      const actual = __internals__.getCommonFieldsFromParameter(input)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertParameterToItemsObject', () => {
@@ -938,6 +1347,18 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const input = '123'
       const expected = {
         value: 123
+      }
+      const actual = __internals__.convertParameterToItemsObject(input)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with References', () => {
+      spyOn(__internals__, 'getCommonFieldsFromParameter').andReturn(123)
+
+      const input = new Reference({ uuid: 'User' })
+      const expected = {
+        value: '#/parameters/User'
       }
       const actual = __internals__.convertParameterToItemsObject(input)
 
@@ -968,6 +1389,29 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   })
 
   describe('@convertParameterToStandardParameter', () => {
+    it('should work with minimum info', () => {
+      spyOn(__internals__, 'getCommonFieldsFromParameter').andReturn({ a: 321 })
+
+      const parameter = new Parameter({ required: null })
+      const key = 123
+
+      /* eslint-disable no-undefined */
+      const expected = {
+        key,
+        value: {
+          a: 321,
+          description: undefined,
+          name: undefined,
+          required: undefined,
+          in: undefined
+        }
+      }
+      /* eslint-disable no-undefined */
+
+      const actual = __internals__.convertParameterToStandardParameterObject(parameter, key)
+      expect(actual).toEqual(expected)
+    })
+
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'getCommonFieldsFromParameter').andReturn({ a: 321 })
 
@@ -987,6 +1431,37 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
           name: 'someParamName',
           required: true,
           in: 'header'
+        }
+      }
+
+      const actual = __internals__.convertParameterToStandardParameterObject(parameter, key)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with type array', () => {
+      spyOn(__internals__, 'getCommonFieldsFromParameter').andReturn({ a: 321, type: 'array' })
+      spyOn(__internals__, 'convertParameterToItemsObject').andCall(v => ({ value: v }))
+
+      const parameter = new Parameter({
+        key: 'someParamName',
+        description: 'test',
+        required: true,
+        type: 'array',
+        value: 234,
+        in: 'headers'
+      })
+      const key = 123
+
+      const expected = {
+        key,
+        value: {
+          a: 321,
+          type: 'array',
+          description: 'test',
+          name: 'someParamName',
+          required: true,
+          in: 'header',
+          items: 234
         }
       }
 
@@ -1026,6 +1501,25 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   })
 
   describe('@getParameterDefinitions', () => {
+    it('should work if no parameters', () => {
+      spyOn(__internals__, 'isConsumesHeader').andReturn(false)
+      spyOn(__internals__, 'isProducesHeader').andReturn(false)
+      spyOn(__internals__, 'convertParameterToParameterObject').andReturn({
+        key: 123,
+        value: 321
+      })
+
+      const input = new Api()
+
+      /* eslint-disable no-undefined */
+      const expected = undefined
+      /* eslint-enable no-undefined */
+
+      const actual = __internals__.getParameterDefinitions(input)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'isConsumesHeader').andReturn(false)
       spyOn(__internals__, 'isProducesHeader').andReturn(false)
@@ -1076,6 +1570,20 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       const expected = {
         name: 'someItf',
+        description: 'some desc'
+      }
+      const actual = __internals__.convertInterfaceToTagObject(input)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with unnamed tags', () => {
+      const input = new Interface({
+        description: 'some desc'
+      })
+
+      const expected = {
+        name: 'unnamedTag',
         description: 'some desc'
       }
       const actual = __internals__.convertInterfaceToTagObject(input)
@@ -1178,6 +1686,18 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const operation = { tags: [ 234, 432 ] }
 
       const expected = { tags: [ 234, 432, 123, 321 ] }
+      const actual = __internals__.addTagsToOperation(request, operation)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with empty tags field', () => {
+      spyOn(__internals__, 'getTagStrings').andReturn([ 123, 321 ])
+
+      const request = new Request()
+      const operation = {}
+
+      const expected = { tags: [ 123, 321 ] }
       const actual = __internals__.addTagsToOperation(request, operation)
 
       expect(actual).toEqual(expected)
@@ -1345,6 +1865,27 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
     })
   })
 
+  describe('@isParameterOrReferenceNotAConsumesHeader', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'isConsumesHeader').andCall(v => v ? v % 2 : false)
+      const inputs = [
+        [ new Store(), 123 ],
+        [ new Store(), new Reference({ uuid: 'abc' }) ],
+        [ new Store({ parameter: OrderedMap({ abc: 234 }) }), new Reference({ uuid: 'abc' }) ],
+        [ new Store({ parameter: OrderedMap({ abc: 345 }) }), new Reference({ uuid: 'abc' }) ]
+      ]
+      const expected = [
+        false,
+        true,
+        true,
+        false
+      ]
+      const actual = inputs
+        .map(input => __internals__.isParameterOrReferenceNotAConsumesHeader(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@getParametersFromRequest', () => {
     it('should call convertParameterMapToParameterObjectArray for each container block', () =>{
       const test = { default: 123, in: 'formData' }
@@ -1382,6 +1923,28 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const expected = [ buffer, buffer, { a: 123, in: 'body' } ]
       const actual = __internals__.getParametersFromRequest(store, request)
 
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work', () =>{
+      const test = { default: 123, in: 'formData' }
+      spyOn(__internals__, 'convertParameterMapToParameterObjectArray')
+        .andCall(v => v.valueSeq().toJS())
+      spyOn(__internals__, 'isParameterOrReferenceNotAConsumesHeader').andReturn(true)
+
+      const store = new Store()
+      const request = new Request({
+        parameters: new ParameterContainer({
+          headers: OrderedMap({
+            a: { default: 123, in: 'formData' }
+          })
+        })
+      })
+
+      const expected = [ test ]
+      const actual = __internals__.getParametersFromRequest(store, request)
+
+      expect(__internals__.convertParameterMapToParameterObjectArray.calls.length).toEqual(3)
       expect(actual).toEqual(expected)
     })
   })
@@ -1521,6 +2084,18 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       const expected = {
         petstore_auth: [ 'write:self' ]
+      }
+      const actual = __internals__.getSecurityRequirementForOAuth2Auth(name, reference)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with no overlay', () => {
+      const name = 'petstore_auth'
+      const reference = new Reference()
+
+      const expected = {
+        petstore_auth: []
       }
       const actual = __internals__.getSecurityRequirementForOAuth2Auth(name, reference)
 
@@ -1682,6 +2257,50 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
     })
   })
 
+  describe('@addPathParametersToOperation', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertReferenceOrParameterToParameterObject').andCall(p => {
+        return { value: {
+          name: p.get('key'),
+          in: 'path',
+          default: p.get('default')
+        } }
+      })
+      const inputs = [
+        [ null, { a: 123 } ],
+        [ new Parameter(), { a: 123 } ],
+        [ new Parameter({ superType: 'sequence' }), { a: 123 } ],
+        [ new Parameter({
+          superType: 'sequence',
+          value: List([
+            new Parameter({ key: null, default: '/users/' }),
+            new Parameter({ key: 'userId', default: '123' })
+          ])
+        }), { a: 123 } ],
+        [ new Parameter({
+          superType: 'sequence',
+          value: List([
+            new Parameter({ key: null, default: '/users/' }),
+            new Parameter({ key: 'userId', default: '123' })
+          ])
+        }), { a: 123, value: { parameters: [ 123, 234 ] } } ]
+      ]
+      const expected = [
+        { a: 123 },
+        { a: 123 },
+        { a: 123, value: { parameters: [] } },
+        { a: 123, value: { parameters: [
+          { name: 'userId', in: 'path', required: true, default: '123' }
+        ] } },
+        { a: 123, value: { parameters: [
+          123, 234, { name: 'userId', in: 'path', required: true, default: '123' }
+        ] } }
+      ]
+      const actual = inputs.map(input => __internals__.addPathParametersToOperation(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@convertResourceToPathItemObject', () => {
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'getPathFromResource').andReturn('/some/path')
@@ -1724,6 +2343,23 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
         }
       }
       const actual = __internals__.convertResourceToPathItemObject(store, globalInfo, resource)
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@mergeResourceObjects', () => {
+    it('should work', () => {
+      const inputs = [
+        [ { a: { b: 123, c: 234 } }, { key: 'a', value: { c: 345, d: 456 } } ],
+        [ { a: { b: 123, c: 234 } }, { key: 'a', value: { d: 345, e: 456 } } ],
+        [ { a: { b: 123, c: 234 } }, { key: 'b', value: { c: 345, d: 456 } } ]
+      ]
+      const expected = [
+        { a: { b: 123, c: 345, d: 456 } },
+        { a: { b: 123, c: 234, d: 345, e: 456 } },
+        { a: { b: 123, c: 234 }, b: { c: 345, d: 456 } }
+      ]
+      const actual = inputs.map(input => __internals__.mergeResourceObjects(...input))
       expect(actual).toEqual(expected)
     })
   })
@@ -1817,6 +2453,47 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with default', () => {
+      const param = new Parameter({
+        constraints: List([
+          new Constraint.JSONSchema({ default: '123' })
+        ])
+      })
+
+      const expected = [ '123' ]
+      const actual = __internals__.extractContentTypesFromParam(param)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if no enum or default', () => {
+      const param = new Parameter({
+        constraints: List([
+          new Constraint.JSONSchema({ pattern: '123.*' })
+        ])
+      })
+
+      const expected = []
+      const actual = __internals__.extractContentTypesFromParam(param)
+
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe('@getContentTypeFromFilteredParams', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'extractContentTypesFromParam').andCall(v => [ v ])
+
+      const inputs = [
+        [ OrderedMap({ a: 123, b: 234, c: 345 }), (v) => v % 2 ]
+      ]
+      const expected = [
+        [ 123, 345 ]
+      ]
+      const actual = inputs.map(input => __internals__.getContentTypeFromFilteredParams(...input))
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getGlobalConsumes', () => {
@@ -1829,6 +2506,18 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work if no consumes header', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([])
+
+      const api = new Api()
+      /* eslint-disable no-undefined */
+      const expected = undefined
+      /* eslint-enable no-undefined */
+      const actual = __internals__.getGlobalConsumes(api)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getGlobalProduces', () => {
@@ -1837,6 +2526,18 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       const api = new Api()
       const expected = [ 123 ]
+      const actual = __internals__.getGlobalProduces(api)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if no produces header', () => {
+      spyOn(__internals__, 'getContentTypeFromFilteredParams').andReturn([])
+
+      const api = new Api()
+      /* eslint-disable no-undefined */
+      const expected = undefined
+      /* eslint-enable no-undefined */
       const actual = __internals__.getGlobalProduces(api)
 
       expect(actual).toEqual(expected)

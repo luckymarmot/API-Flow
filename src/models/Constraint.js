@@ -388,7 +388,7 @@ export class EnumConstraint extends Constraint {
  * TODO: implement evaluate
  */
 export class JSONSchemaConstraint extends Constraint {
-  constructor(value = []) {
+  constructor(value = {}) {
     const obj = {
       _model: new Model({
         name: 'json.constraint.models',
@@ -414,7 +414,7 @@ export class JSONSchemaConstraint extends Constraint {
  * TODO: implement evaluate
  */
 export class XMLSchemaConstraint extends Constraint {
-  constructor(value = []) {
+  constructor(value = '') {
     const obj = {
       _model: new Model({
         name: 'xml.constraint.models',

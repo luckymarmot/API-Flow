@@ -1,3 +1,4 @@
+/* istanbul ignore next */
 if (
     typeof registerImporter === 'undefined' ||
     typeof DynamicValue === 'undefined' ||

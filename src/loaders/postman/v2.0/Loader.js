@@ -163,7 +163,7 @@ methods.extractProtocolStringFromPostmanURLObject = (urlObject) => {
 methods.extractDomainStringFromPostmanURLObject = (urlObject) => {
   const domain = urlObject.domain || urlObject.host
   if (typeof domain === 'string') {
-    return domain || 'localhost'
+    return domain
   }
 
   if (!Array.isArray(domain)) {
@@ -192,7 +192,7 @@ methods.extractPathStringFromPostmanURLObject = (urlObject) => {
 
   return '/' + urlObject.path.map(pathPart => {
     if (typeof pathPart === 'string') {
-      return pathPart || ''
+      return pathPart
     }
 
     return pathPart.value || ''
@@ -275,36 +275,62 @@ methods.normalizeItems = (itemGroup) => {
   return itemGroup
 }
 
-methods.extractGlobalsFromUrlString = (urlString = '') => {
+methods.extractGlobalsFromUrlString = (urlString) => {
+  if (typeof urlString !== 'string') {
+    return []
+  }
+
   const globals = (urlString.match(/{{([^{}]*)}}/g) || [])
     .map(t => ({ key: t.slice(2, -2) }))
 
   return globals
 }
 
-methods.extractGlobalsFromHeaders = (headers = []) => {
+methods.extractGlobalsFromHeader = (header) => {
+  if (typeof header !== 'object' && typeof header !== 'string') {
+    return []
+  }
+
+  if (typeof header === 'string') {
+    return (header.match(/{{([^{}]*)}}/g) || [])
+      .map(t => ({ key: t.slice(2, -2) }))
+  }
+
+  if (typeof header.value !== 'string') {
+    return []
+  }
+
+  const value = (header.value + '')
+  const globals = (value.match(/{{([^{}]*)}}/g) || [])
+    .map(t => ({ key: t.slice(2, -2) }))
+
+  return globals
+}
+
+methods.extractGlobalsFromHeaders = (headers) => {
+  if (typeof headers !== 'object' && typeof headers !== 'string') {
+    return []
+  }
+
   if (typeof headers === 'string') {
     return (headers.match(/{{([^{}]*)}}/g) || [])
       .map(t => ({ key: t.slice(2, -2) }))
   }
 
+  if (!Array.isArray(headers)) {
+    return []
+  }
+
   return headers
-    .map(header => {
-      if (typeof header === 'string') {
-        return (header.match(/{{([^{}]*)}}/g) || [])
-          .map(t => ({ key: t.slice(2, -2) }))
-      }
-
-      const value = (header.value + '')
-      const localGlobals = (value.match(/{{([^{}]*)}}/g) || [])
-        .map(t => ({ key: t.slice(2, -2) }))
-
-      return localGlobals
-    })
+    .map(methods.extractGlobalsFromHeader)
     .reduce(flatten, [])
 }
 
 methods.extractGlobalsFromRawBody = (raw) => {
+  if (typeof raw !== 'string') {
+    return []
+  }
+
   if (raw.match(/^{{([^{}]*)}}$/)) {
     return [ { key: raw.slice(2, -2) } ]
   }
@@ -319,7 +345,11 @@ methods.extractGlobalsFromEncodedBody = (body) => {
 
   return body
     .map(param => {
-      const value = param.value || ''
+      if (typeof param !== 'object' || typeof param.value !== 'string') {
+        return null
+      }
+
+      const value = param.value
       const match = value.match(/^{{([^{}]*)}}$/)
 
       if (!match) {
@@ -341,7 +371,7 @@ methods.extractGlobalsFromFileBody = (body) => {
     return []
   }
 
-  return { key: match[1] }
+  return [ { key: match[1] } ]
 }
 
 methods.extractGlobalsFromBody = (body) => {
@@ -416,7 +446,42 @@ methods.handleRejection = (error) => {
   return Promise.reject(error)
 }
 
+methods.validateArgs = ({ options, uri }) => {
+  if (!options) {
+    return new Error('missing loader argument: options')
+  }
+
+  if (typeof options !== 'object') {
+    return new Error('invalid loader argument: options must be an object')
+  }
+
+  if (
+    typeof options.httpResolver !== 'object' ||
+    typeof options.httpResolver.resolve !== 'function'
+  ) {
+    return new Error('invalid loader argument: options.httpResolver must have a resolve method')
+  }
+
+  if (
+    typeof options.fsResolver !== 'object' ||
+    typeof options.fsResolver.resolve !== 'function'
+  ) {
+    return new Error('invalid loader argument: options.fsResolver must have a resolve method')
+  }
+
+  if (typeof uri === 'undefined') {
+    return new Error('missing loader argument: uri')
+  }
+
+  return null
+}
+
 methods.load = ({ options, uri }) => {
+  const error = methods.validateArgs({ options, uri })
+  if (error) {
+    return methods.handleRejection(error)
+  }
+
   const primaryPromise = methods.resolve(options, uri)
 
   return primaryPromise

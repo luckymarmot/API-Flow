@@ -138,7 +138,7 @@ methods.inferType = (type) => {
     return 'string'
   }
 
-  return type || null
+  return type
 }
 
 /**
@@ -368,6 +368,7 @@ methods.unescapeURIFragment = (uriFragment) => {
 }
 
 /**
+ * @deprecated (use at your own risk)
  * replaces References in a pseudo-schema with default values to make it a simple schema
  * @param {object} obj: the pseudo-schema to transform in a schema
  * @returns {schema} the corresponding schema
@@ -378,10 +379,6 @@ methods.replaceRefs = (obj) => {
   }
 
   if (obj.$ref) {
-    if (obj.$ref instanceof Reference) {
-      obj.$ref = obj.$ref.get('relative') || obj.$ref.get('uri')
-    }
-
     obj.default = methods
           .unescapeURIFragment(obj.$ref.split('/').slice(-1)[0])
     obj.type = 'string'

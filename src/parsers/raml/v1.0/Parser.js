@@ -37,14 +37,6 @@ export class RAMLParser {
     return methods.getAPIName(content)
   }
 
-  static isParsable({ content }) {
-    return methods.detect(content)
-  }
-
-  static resolve() {
-    return methods.resolve(...arguments)
-  }
-
   static parse() {
     return methods.parse(...arguments)
   }
@@ -83,12 +75,6 @@ methods.getAPIName = (content) => {
   }
 
   return null
-}
-
-// TODO: implement this (& document it)
-methods.resolve = (items, item) => {
-  items.push(item)
-  return items
 }
 
 /**
@@ -1339,11 +1325,11 @@ methods.extractLocationAndKeyFromApiKeyScheme = (scheme) => {
   const queries = describedBy.queryParameters()
 
   if (headers && headers.length) {
-    return { key: headers[0].name() || null, location: 'header' }
+    return { key: headers[0].name(), location: 'header' }
   }
 
   if (queries && queries.length) {
-    return { key: queries[0].name() || null, location: 'query' }
+    return { key: queries[0].name(), location: 'query' }
   }
 
   return { key: null, location: null }
@@ -1447,6 +1433,27 @@ methods.convertRAMLAuthIntoAuthEntry = (scheme) => {
 }
 
 /**
+ * extracts all security schemes from a RAML Library and stores them in an array of entries
+ * @param {RAMLLibrary} lib: the library from which to get the security schemes
+ * @returns {Array<Entry<string, Auth>>} the corresponding array of Auth as Entries
+ */
+methods.extractAuthsFromRAMLLibrary = (lib) => {
+  const schemes = lib.ast().securitySchemes()
+
+  if (!schemes || !schemes.length) {
+    return []
+  }
+
+  return schemes
+    .map(methods.convertRAMLAuthIntoAuthEntry)
+    .filter(v => !!v)
+    .map(({ key, value }) => {
+      const libKey = lib.key() + '.' + key
+      return { key: libKey, value }
+    })
+}
+
+/**
  * extracts all security schemes from a RAML Api and stores them in an array of entries
  * @param {RAMLApi} api: the api from which to get the security schemes
  * @returns {Array<Entry<string, Auth>>} the corresponding array of Auth as Entries
@@ -1454,21 +1461,7 @@ methods.convertRAMLAuthIntoAuthEntry = (scheme) => {
 methods.extractAuthsFromRAMLApi = (api) => {
   const securitySchemes = api.securitySchemes() || []
   const authsFromLibs = (api.uses() || [])
-    .map(lib => {
-      const schemes = lib.ast().securitySchemes()
-
-      if (!schemes || !schemes.length) {
-        return []
-      }
-
-      return schemes
-        .map(methods.convertRAMLAuthIntoAuthEntry)
-        .filter(v => !!v)
-        .map(({ key, value }) => {
-          const libKey = lib.key() + '.' + key
-          return { key: libKey, value }
-        })
-    })
+    .map(methods.extractAuthsFromRAMLLibrary)
     .reduce(flatten, [])
 
   const auths = securitySchemes
@@ -2551,7 +2544,7 @@ methods.extractInterfacesFromRequest = (request) => {
  * @returns {boolean} true iff first is of length 1 and its first protocol is equal to the protocol
  * from the baseUri.
  */
-methods.areProtocolsEquals = (first, baseUri) => {
+methods.areProtocolsEqual = (first, baseUri) => {
   if (!first || !baseUri || first.length !== 1) {
     return false
   }
@@ -2577,7 +2570,7 @@ methods.areProtocolsEquals = (first, baseUri) => {
  */
 methods.convertRAMLMethodBaseIntoRequestInstance = (api, methodBase) => {
   const overlay = methodBase.protocols() && api &&
-    !methods.areProtocolsEquals(methodBase.protocols(), api.baseUri()) ?
+    !methods.areProtocolsEqual(methodBase.protocols(), api.baseUri()) ?
     new URL().set('protocol', List(methodBase.protocols().map(protocol => {
       if (protocol[protocol.length - 1] !== ':') {
         return protocol.toLowerCase() + ':'
