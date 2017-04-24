@@ -994,12 +994,23 @@ methods.createItemGroupFromResource = (api, id) => {
     { key: 'item', value: methods.createItemsFromResource(api, resource) }
   ].filter(v => !!v)
 
-  if (!kvs.length) {
-    return null
-  }
-
   const result = kvs.reduce(convertEntryListInMap, {})
   return result
+}
+
+/**
+ * extracts a PostmanItem property as an entry from an Api and a Group or a Resource
+ * @param {Api} api: the api to use to resolve shared objects
+ * @param {Group|Resource} groupOrResource: the group or resource to convert into a
+ * PostmanItemGroup
+ * @returns {Entry<string, PostmanItemGroup>} the corresponding entry, if it exists
+ */
+methods.createItemGroupFromGroupOrResource = (api, groupOrResource) => {
+  if (groupOrResource instanceof Group) {
+    return methods.createItemGroup(api, groupOrResource)
+  }
+
+  return methods.createItemGroupFromResource(api, groupOrResource)
 }
 
 /**
@@ -1009,13 +1020,9 @@ methods.createItemGroupFromResource = (api, id) => {
  * @returns {Entry<string, PostmanItemGroupProperty>} the corresponding entry, if it exists
  */
 methods.createItemProp = (api, group) => {
-  const items = group.get('children').map(child => {
-    if (child instanceof Group) {
-      return methods.createItemGroup(api, child)
-    }
-
-    return methods.createItemGroupFromResource(api, child)
-  }).filter(v => !!v)
+  const items = group.get('children')
+    .map(child => methods.createItemGroupFromGroupOrResource(api, child))
+    .filter(v => !!v)
 
   return { key: 'item', value: items.valueSeq().toJS() }
 }
