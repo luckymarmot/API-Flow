@@ -18,6 +18,7 @@ import ParameterContainer from '../../../models/ParameterContainer'
 import Context from '../../../models/Context'
 import Request from '../../../models/Request'
 import Resource from '../../../models/Resource'
+import Group from '../../../models/Group'
 
 import Serializer, { __internals__ } from '../Serializer'
 
@@ -126,6 +127,22 @@ describe('serializers/paw/Serializer.js', () => {
     })
   })
 
+  describe('@createMultiSelectorDv', () => {
+    it('should work', () => {
+      const inputs = [
+        [ 123, 234, 345 ]
+      ]
+      const expected = [
+        new DynamicValue('me.elliotchance.MultiSelectorDynamicValue', {
+          choices: [ 123, 234, 345 ],
+          separator: ','
+        })
+      ]
+      const actual = inputs.map(input => __internals__.createMultiSelectorDv(input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@getTitleFromApi', () => {
     it('should work', () => {
       const api = new Api({
@@ -135,6 +152,19 @@ describe('serializers/paw/Serializer.js', () => {
       })
 
       const expected = 'this should work'
+      const actual = __internals__.getTitleFromApi(api)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if no title', () => {
+      const api = new Api({
+        info: new Info({
+          title: null
+        })
+      })
+
+      const expected = 'Imports'
       const actual = __internals__.getTitleFromApi(api)
 
       expect(actual).toEqual(expected)
@@ -334,6 +364,22 @@ describe('serializers/paw/Serializer.js', () => {
     })
   })
 
+  describe('@convertProtocolIntoRecordParameter', () => {
+    it('should work', () => {
+      const inputs = [
+        [ 'http', 0 ],
+        [ 'https:', 1 ]
+      ]
+      const expected = [
+        new RecordParameter('http', ', ', true),
+        new RecordParameter('https', ', ', false)
+      ]
+
+      const actual = inputs.map(input => __internals__.convertProtocolIntoRecordParameter(...input))
+      expect(actual).toEqual(expected)
+    })
+  })
+
   describe('@createProtocolDV', () => {
     it('should work if no protocol', () => {
       const protocol = null
@@ -392,6 +438,24 @@ describe('serializers/paw/Serializer.js', () => {
         '://',
         'echo.paw.cloud',
         '', '',
+        '/{version}/users'
+      )
+      const actual = __internals__.createEndpointDynamicString(endpoint)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with port and dirty path', () => {
+      const endpoint = new URL({
+        url: 'https://echo.paw.cloud:8080/{version}/users/',
+        variableDelimiters: List([ '{', '}' ])
+      })
+
+      const expected = new DynamicString(
+        'https',
+        '://',
+        'echo.paw.cloud',
+        ':', '8080',
         '/{version}/users'
       )
       const actual = __internals__.createEndpointDynamicString(endpoint)
@@ -511,6 +575,18 @@ describe('serializers/paw/Serializer.js', () => {
       const actual = __internals__.convertBasicAuthIntoDynamicValue(auth)
       expect(actual).toEqual(expected)
     })
+
+    it('should work with defaults', () => {
+      const auth = new Auth.Basic()
+
+      const expected = new DynamicValue('com.luckymarmot.BasicAuthDynamicValue', {
+        username: '',
+        password: ''
+      })
+
+      const actual = __internals__.convertBasicAuthIntoDynamicValue(auth)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertDigestAuthIntoDynamicValue', () => {
@@ -523,6 +599,18 @@ describe('serializers/paw/Serializer.js', () => {
       const expected = new DynamicValue('com.luckymarmot.PawExtensions.DigestAuthDynamicValue', {
         username: 'user',
         password: 'pass'
+      })
+
+      const actual = __internals__.convertDigestAuthIntoDynamicValue(auth)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with defaults', () => {
+      const auth = new Auth.Digest()
+
+      const expected = new DynamicValue('com.luckymarmot.PawExtensions.DigestAuthDynamicValue', {
+        username: '',
+        password: ''
       })
 
       const actual = __internals__.convertDigestAuthIntoDynamicValue(auth)
@@ -559,6 +647,25 @@ describe('serializers/paw/Serializer.js', () => {
       const actual = __internals__.convertOAuth1AuthIntoDynamicValue(auth)
       expect(actual).toEqual(expected)
     })
+
+    it('should work with default', () => {
+      const auth = new Auth.OAuth1()
+
+      const expected = new DynamicValue('com.luckymarmot.OAuth1HeaderDynamicValue', {
+        callback: '',
+        consumerSecret: '',
+        tokenSecret: '',
+        consumerKey: '',
+        algorithm: '',
+        nonce: '',
+        additionalParameters: '',
+        timestamp: '',
+        token: ''
+      })
+
+      const actual = __internals__.convertOAuth1AuthIntoDynamicValue(auth)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertOAuth2AuthIntoDynamicValue', () => {
@@ -575,6 +682,20 @@ describe('serializers/paw/Serializer.js', () => {
         accessTokenURL: 'https://echo.paw.cloud/token-portal',
         grantType: 1,
         scopes: 'write:self'
+      })
+
+      const actual = __internals__.convertOAuth2AuthIntoDynamicValue(auth)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with defaults', () => {
+      const auth = new Auth.OAuth2()
+
+      const expected = new DynamicValue('com.luckymarmot.OAuth2DynamicValue', {
+        authorizationURL: '',
+        accessTokenURL: '',
+        grantType: 0,
+        scopes: ''
       })
 
       const actual = __internals__.convertOAuth2AuthIntoDynamicValue(auth)
@@ -760,6 +881,34 @@ describe('serializers/paw/Serializer.js', () => {
       expect(variable.setValue).toHaveBeenCalledWith(value, 432)
       expect(actual).toEqual(expected)
     })
+
+    it('should work if env already exists', () => {
+      const domain = {
+        getEnvironmentByName: () => {},
+        createEnvironment: () => {}
+      }
+
+      const variable = {
+        setValue: () => {}
+      }
+
+      const value = '123'
+      const envName = '321'
+
+      spyOn(domain, 'getEnvironmentByName').andReturn(432)
+      spyOn(domain, 'createEnvironment').andReturn(null)
+      spyOn(variable, 'setValue').andReturn(345)
+
+      const expected = variable
+      const actual = __internals__.updateEnvironmentVariableWithEnvironmentValue(
+        domain, variable, value, envName
+      )
+
+      expect(domain.getEnvironmentByName).toHaveBeenCalled()
+      expect(domain.createEnvironment).toNotHaveBeenCalled()
+      expect(variable.setValue).toHaveBeenCalledWith(value, 432)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertVariableIntoEnvironmentVariable', () => {
@@ -814,7 +963,7 @@ describe('serializers/paw/Serializer.js', () => {
     })
   })
 
-  describe('@createEnvironment', () => {
+  describe('@createEnvironments', () => {
     it('should work', () => {
       spyOn(__internals__, 'needsStandardEnvironmentDomain').andReturn(true)
       spyOn(__internals__, 'createStandardEnvironmentDomain').andReturn(123)
@@ -846,6 +995,30 @@ describe('serializers/paw/Serializer.js', () => {
         variable: 432
       })
 
+      const actual = __internals__.createEnvironments(context, api)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if api does not need env domains', () => {
+      spyOn(__internals__, 'needsStandardEnvironmentDomain').andReturn(false)
+
+      spyOn(__internals__, 'needsVariableEnvironmentDomain').andReturn(false)
+
+      const context = {}
+
+      const api = new Api({
+        store: new Store({
+          constraint: OrderedMap({
+            a: 123
+          }),
+          variable: OrderedMap({
+            b: 321
+          })
+        })
+      })
+
+      const expected = new Store()
       const actual = __internals__.createEnvironments(context, api)
 
       expect(actual).toEqual(expected)
@@ -984,6 +1157,29 @@ describe('serializers/paw/Serializer.js', () => {
       expect(actual).toEqual(expected)
     })
 
+    it('should work is endpoint is reference and variable does not exist', () => {
+      const variable = {
+        createDynamicString: () => {}
+      }
+
+      spyOn(variable, 'createDynamicString').andReturn(123)
+
+      const store = new Store({
+        endpoint: OrderedMap({
+          b: variable
+        })
+      })
+
+      const endpoint = new Reference({
+        uuid: 'a'
+      })
+
+      const expected = null
+      const actual = __internals__.convertEndpointOrReferenceIntoDS(store, endpoint)
+
+      expect(actual).toEqual(expected)
+    })
+
     it('should work is endpoint is url', () => {
       spyOn(__internals__, 'createEndpointDynamicString').andReturn(123)
 
@@ -1060,24 +1256,81 @@ describe('serializers/paw/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work if defaultValue is string', () => {
+      const param = new Parameter({
+        default: '123'
+      })
+
+      const expected = '123'
+      const actual = __internals__.getDefaultValueFromParameter(param)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if defaultValue is null', () => {
+      const param = new Parameter({
+        default: null
+      })
+
+      const expected = ''
+      const actual = __internals__.getDefaultValueFromParameter(param)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@getVariableArgumentsFromParameter', () => {
-    spyOn(__internals__, 'getDefaultValueFromParameter').andReturn('123')
-    const param = new Parameter({
-      key: 'userId',
-      description: 'some userid desc',
-      default: 123
+    it('should work', () => {
+      spyOn(__internals__, 'getDefaultValueFromParameter').andReturn('123')
+      const param = new Parameter({
+        key: 'userId',
+        description: 'some userid desc',
+        default: 123
+      })
+
+      const expected = {
+        name: 'userId',
+        value: '123',
+        description: 'some userid desc'
+      }
+      const actual = __internals__.getVariableArgumentsFromParameter(param)
+
+      expect(actual).toEqual(expected)
     })
 
-    const expected = {
-      name: 'userId',
-      value: '123',
-      description: 'some userid desc'
-    }
-    const actual = __internals__.getVariableArgumentsFromParameter(param)
+    it('should work if minimum info', () => {
+      spyOn(__internals__, 'getDefaultValueFromParameter').andReturn('123')
+      const param = new Parameter({
+        default: 123
+      })
 
-    expect(actual).toEqual(expected)
+      const expected = {
+        name: '',
+        value: '123',
+        description: ''
+      }
+      const actual = __internals__.getVariableArgumentsFromParameter(param)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if description in schema', () => {
+      spyOn(__internals__, 'getDefaultValueFromParameter').andReturn('123')
+      const param = new Parameter({
+        default: 123,
+        constraints: List([ new Constraint.JSONSchema({ description: 'some desc' }) ])
+      })
+
+      const expected = {
+        name: '',
+        value: '123',
+        description: 'some desc'
+      }
+      const actual = __internals__.getVariableArgumentsFromParameter(param)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertParameterFromReference', () => {
@@ -1111,6 +1364,41 @@ describe('serializers/paw/Serializer.js', () => {
       })
 
       const expected = { key: 321, value: 123 }
+      const actual = __internals__.convertParameterFromReference(pawReq, store, reference)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if parameter is not found', () => {
+      spyOn(__internals__, 'getVariableArgumentsFromParameter').andReturn({
+        name: 321,
+        value: 345,
+        description: 543
+      })
+      const variable = {
+        createDynamicString: () => {}
+      }
+      spyOn(variable, 'createDynamicString').andReturn(123)
+
+      const pawReq = {
+        addVariable: () => {}
+      }
+      spyOn(pawReq, 'addVariable').andReturn(variable)
+
+      const store = new Store({
+        parameter: OrderedMap({
+          b: {
+            parameter: 234,
+            variable: 432
+          }
+        })
+      })
+
+      const reference = new Reference({
+        uuid: 'a'
+      })
+
+      const expected = { key: '', value: '' }
       const actual = __internals__.convertParameterFromReference(pawReq, store, reference)
 
       expect(actual).toEqual(expected)
@@ -1441,7 +1729,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@setFormDataBody', () => {
-    it('should work', () => {
+    it('should work with urlEncoded', () => {
       const pawReq = {}
       const store = new Store()
       const params = [ 123, 321, 234, 432 ]
@@ -1470,6 +1758,36 @@ describe('serializers/paw/Serializer.js', () => {
       expect(__internals__.wrapDV).toHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
+
+    it('should work with multipart', () => {
+      const pawReq = {}
+      const store = new Store()
+      const params = [ 123, 321, 234, 432 ]
+      const context = new Context()
+
+      spyOn(__internals__, 'convertReferenceOrParameterToDsEntry').andReturn(123)
+      spyOn(__internals__, 'addEntryToRecordParameterArray').andReturn([ 123, 234, 345, 456, 567 ])
+
+      spyOn(__internals__, 'isContextWithUrlEncoded').andReturn(false)
+      spyOn(__internals__, 'isContextWithMultiPart').andReturn(true)
+
+      spyOn(__internals__, 'createMultipartBodyDV').andReturn(678)
+      spyOn(__internals__, 'wrapDV').andReturn('test')
+
+      const expected = {
+        body: 'test'
+      }
+
+      const actual = __internals__.setFormDataBody(pawReq, store, params, context)
+
+      expect(__internals__.convertReferenceOrParameterToDsEntry.calls.length).toEqual(4)
+      expect(__internals__.addEntryToRecordParameterArray.calls.length).toEqual(4)
+      expect(__internals__.isContextWithUrlEncoded).toHaveBeenCalled()
+      expect(__internals__.isContextWithMultiPart).toHaveBeenCalled()
+      expect(__internals__.createMultipartBodyDV).toHaveBeenCalled()
+      expect(__internals__.wrapDV).toHaveBeenCalled()
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@addBodyToRequest', () => {
@@ -1494,7 +1812,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(actual).toEqual(expected)
     })
 
-    it('should work with raw body params', () => {
+    it('should work with formdata body params', () => {
       const pawReq = {}
       const store = new Store()
       const container = new ParameterContainer({
@@ -1512,6 +1830,45 @@ describe('serializers/paw/Serializer.js', () => {
       const actual = __internals__.addBodyToRequest(pawReq, store, container, context)
 
       expect(__internals__.setFormDataBody).toHaveBeenCalled()
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with formdata body params and no context', () => {
+      const pawReq = {}
+      const store = new Store()
+      const container = new ParameterContainer({
+        body: OrderedMap({
+          a: 123,
+          b: 321
+        })
+      })
+      const context = null
+
+      spyOn(__internals__, 'isBodyParameter').andReturn(false)
+      spyOn(__internals__, 'setFormDataBody').andReturn(123)
+
+      const expected = pawReq
+      const actual = __internals__.addBodyToRequest(pawReq, store, container, context)
+
+      expect(__internals__.setFormDataBody).toNotHaveBeenCalled()
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with no formdata body params and context', () => {
+      const pawReq = {}
+      const store = new Store()
+      const container = new ParameterContainer({
+        body: OrderedMap()
+      })
+      const context = new Context()
+
+      spyOn(__internals__, 'isBodyParameter').andReturn(false)
+      spyOn(__internals__, 'setFormDataBody').andReturn(123)
+
+      const expected = pawReq
+      const actual = __internals__.addBodyToRequest(pawReq, store, container, context)
+
+      expect(__internals__.setFormDataBody).toNotHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
   })
@@ -1756,9 +2113,52 @@ describe('serializers/paw/Serializer.js', () => {
     })
   })
 
-  describe('@createGroups', () => {
-    xit('it should work, but Im burnt out', () => {
+  describe('@createPawGroupFromGroup', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createGroups').andCall((_, __, v) => {
+        return v % 2 ? v : null
+      })
+      const children = []
+      const inputs = [
+        [ {}, {}, new Group(), 'abc' ],
+        [ {}, {}, new Group({ name: 'def', children: OrderedMap({ a: 123, b: 234 }) }), 'abc' ],
+        [ {
+          createRequestGroup: (name) => {
+            return {
+              name, children, appendChild: (v) => children.push(v)
+            }
+          }
+        }, {}, new Group({ name: 'def', children: OrderedMap({ a: 123, b: 234, c: 345 }) }) ]
+      ]
 
+      const expected = [
+        null,
+        123,
+        { name: 'def', children: [ 123, 345 ], appendChild: (v) => children.push(v) }
+      ]
+
+      const actual = inputs.map(input => __internals__.createPawGroupFromGroup(...input))
+      expect(JSON.stringify(actual)).toEqual(JSON.stringify(expected))
+    })
+  })
+
+  describe('@createGroups', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'createPawGroupFromGroup').andCall((c, r, g, gn) => {
+        return gn
+      })
+
+      const inputs = [
+        [ {}, OrderedMap(), null, 'abc' ],
+        [ {}, OrderedMap(), 'some weird group', 'abc' ],
+        [ {}, OrderedMap(), new Group(), 'abc' ]
+      ]
+      const expected = [
+        null, null, 'abc'
+      ]
+
+      const actual = inputs.map(input => __internals__.createGroups(...input))
+      expect(actual).toEqual(expected)
     })
   })
 
@@ -1776,6 +2176,13 @@ describe('serializers/paw/Serializer.js', () => {
       expect(__internals__.createEnvironments).toHaveBeenCalledWith(context, api)
       expect(__internals__.createRequests).toHaveBeenCalledWith(context, 123, api)
       expect(__internals__.createGroups).toHaveBeenCalledWith(context, 321, null, 'someTitle')
+    })
+
+    it('should work with minimum info', () => {
+      const expected = true
+      const actual = __internals__.serialize()
+
+      expect(actual).toEqual(expected)
     })
   })
 })

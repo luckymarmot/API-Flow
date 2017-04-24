@@ -5,6 +5,7 @@
 import { List } from 'immutable'
 import { DynamicValue, DynamicString, RecordParameter } from '../../mocks/PawShims'
 
+import Api from '../../models/Api'
 import Store from '../../models/Store'
 import Auth from '../../models/Auth'
 import Reference from '../../models/Reference'
@@ -983,6 +984,8 @@ methods.addBodyToRequest = (pawRequest, store, container, context) => {
   if (formDataParams.size > 0 && context) {
     return methods.setFormDataBody(pawRequest, store, formDataParams, context)
   }
+
+  return pawRequest
 }
 
 /**
@@ -1129,41 +1132,48 @@ methods.createRequests = (context, store, api) => {
 }
 
 /**
+ * converts a group into a PawRequestGroup
+ * @param {PawContext} context: the paw context in which this group should be constructed
+ * @param {OrderedMap<*, PawRequestGroup>} resources: the map of requests groups to insert
+ * @param {Group} group: the group to convert into a PawRequestGroup
+ * @param {string?} groupName: the name that should be used for the group. if no name is provided,
+ * it will default to the name of the Group Record.
+ * @returns {PawRequestGroup?} the corresponding paw request group, if it makes sense to create it.
+ */
+methods.createPawGroupFromGroup = (context, resources, group, groupName) => {
+  const name = groupName || group.get('name')
+  const children = group.get('children')
+    .map((groupOrRef) => methods.createGroups(context, resources, groupOrRef))
+    .filter(value => !!value)
+
+  if (children.size > 1) {
+    const pawGroup = context.createRequestGroup(name)
+    children.forEach(child => pawGroup.appendChild(child))
+    return pawGroup
+  }
+
+  if (children.size === 1) {
+    return children.valueSeq().get(0)
+  }
+
+  return null
+}
+
+/**
  * creates a layout of nested request groups based on the structure inside Group Records.
  * @param {PawContext} context: the paw context in which this layout should be constructed
  * @param {OrderedMap<*, PawRequestGroup>} resources: the map of requests groups to insert
  * @param {Group|PawRequestGroup} group: the group to process to set the layout up.
- * @param {string} groupName: the name that should be used for the group
+ * @param {string?} groupName: the name that should be used for the group. if no name is provided,
+ * it will default to the name of the Group Record.
  * @returns {PawRequestGroup?} the corresponding layout of nested paw request groups
  */
 methods.createGroups = (context, resources, group, groupName) => {
-  if (!group) {
+  if (!group || !(group instanceof Group)) {
     return null
   }
 
-  if (group instanceof Group) {
-    const name = groupName || group.get('name')
-    const children = group.get('children')
-      .map((groupOrRef) => {
-        return methods.createGroups(context, resources, groupOrRef)
-      })
-      .filter(value => !!value)
-
-    if (children.size > 1) {
-      const pawGroup = context.createRequestGroup(name)
-      children.forEach(child => pawGroup.appendChild(child))
-      return pawGroup
-    }
-
-    if (children.size === 1) {
-      return children.valueSeq().get(0)
-    }
-
-    return null
-  }
-
-  const resourceGroup = resources.get(group)
-  return resourceGroup
+  return methods.createPawGroupFromGroup(context, resources, group, groupName)
 }
 
 /**
@@ -1175,7 +1185,7 @@ methods.createGroups = (context, resources, group, groupName) => {
  * importing in paw.
  * @returns {boolean} whether the import was successful or not
  */
-methods.serialize = ({ options: { context } = {}, api } = {}) => {
+methods.serialize = ({ options: { context } = {}, api = new Api() } = {}) => {
   const store = methods.createEnvironments(context, api)
   const resources = methods.createRequests(context, store, api)
   methods.createGroups(context, resources, api.get('group'), methods.getTitleFromApi(api))
