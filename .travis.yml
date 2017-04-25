@@ -5,10 +5,10 @@ cache:
   directories:
     - node_modules
 env:
+  - TEST_TARGET=cov
   - TEST_TARGET=lint
   - TEST_TARGET=unit
   - TEST_TARGET=e2e
-  - TEST_TARGET=cov
 script:
   - make test
 addons:
