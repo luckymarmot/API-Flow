@@ -67,6 +67,19 @@ methods.compareUris = (first, second, base) => {
   return $first.split('#')[0] === $second.split('#')[0]
 }
 
+methods.traverseObject = (hash, toTraverse) => {
+  const path = hash.split('/').slice(1)
+  let traversed = toTraverse
+  while (path.length > 0) {
+    traversed = traversed[path.shift()]
+    if (!traversed) {
+      return {}
+    }
+  }
+
+  return traversed
+}
+
 methods.traverse = (content, { $ref = '#/' } = {}) => {
   const toTraverse = methods.parseJSONorYAML(content)
 
@@ -80,16 +93,7 @@ methods.traverse = (content, { $ref = '#/' } = {}) => {
     return toTraverse
   }
 
-  const path = hash.split('/').slice(1)
-  let traversed = toTraverse
-  while (path.length > 0) {
-    traversed = traversed[path.shift()]
-    if (!traversed) {
-      return {}
-    }
-  }
-
-  return traversed
+  return methods.traverseObject(hash, toTraverse)
 }
 
 methods.resolve = (options, uri, { $ref = '' } = {}) => {

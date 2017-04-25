@@ -796,6 +796,7 @@ methods.getRequestIdFromOperation = ({ operationId }) => {
 }
 
 // TODO deal with externalDocs
+/* eslint-disable max-statements */
 /**
  * converts a Swagger Operation Object into a Request Record.
  * @param {Store} store: the store from which to get shared values that may be used by the Request.
@@ -830,6 +831,7 @@ methods.convertOperationIntoRequest = (store, security, { key, value }) => {
 
   return { key: method, value: new Request(requestInstance) }
 }
+/* eslint-enable max-statements */
 
 /**
  * creates references for endpoints saved in a store.
@@ -1196,6 +1198,7 @@ methods.getApplicableContextsFromLocation = (location) => {
   ])
 }
 
+/* eslint-disable max-statements */
 /**
  * converts a swagger parameter object into a Parameter Object
  * @param {Entry<string, SwaggerParameterObject>} parameterEntry: the entry to convert
@@ -1241,6 +1244,7 @@ methods.convertParameterObjectIntoParameter = (parameterEntry) => {
     value: param
   }
 }
+/* eslint-enable max-statements */
 
 /**
  * converts a List of entries of swagger parameters into a map of Parameters using the entry key

@@ -15,6 +15,7 @@ methods.extractVersion = (version) => {
   }
 }
 
+/* eslint-disable max-statements */
 methods.getNewestSerializerByFormat = (format) => {
   const newest = serializers
     .filter(serializer => serializer.format === format)
@@ -53,6 +54,7 @@ methods.getNewestSerializerByFormat = (format) => {
 
   return null
 }
+/* eslint-enable max-statements */
 
 methods.getSerializerByFormatAndVersion = ({ format, version }) => {
   return serializers.filter(serializer => {

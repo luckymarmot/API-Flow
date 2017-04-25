@@ -230,6 +230,7 @@ methods.extractLicense = (obj) => {
   return new License(obj)
 }
 
+/* eslint-disable max-statements */
 methods.extractParameter = (obj) => {
   const { usedIn, uuid, key, name, description, type, format, required, superType } = obj || {}
   const location = obj.in
@@ -261,6 +262,7 @@ methods.extractParameter = (obj) => {
     examples, constraints, applicableContexts, interfaces, value
   })
 }
+/* eslint-enable max-statements */
 
 methods.extractParameterContainer = (obj) => {
   const headers = OrderedMap(obj.headers).map(methods.extract)

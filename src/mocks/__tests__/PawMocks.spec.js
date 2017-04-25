@@ -126,6 +126,7 @@ describe('mocks/PawMocks.js', () => {
   })
 
   describe('{ PawContextMock }', () => {
+    /* eslint-disable max-statements */
     describe('~constructor', () => {
       it('should merge 1st param into Mock', () => {
         const params = [ { a: 123, b: 234, c: 345 } ]
@@ -254,9 +255,11 @@ describe('mocks/PawMocks.js', () => {
         expect(actual.createEnvironmentDomain()).toNotExist()
       })
     })
+    /* eslint-enable max-statements */
   })
 
   describe('{ PawRequestMock }', () => {
+    /* eslint-disable max-statements */
     describe('~constructor', () => {
       it('should merge 1st param into Mock', () => {
         const params = [ { a: 123, b: 234, c: 345 } ]
@@ -484,6 +487,7 @@ describe('mocks/PawMocks.js', () => {
         expect(actual.getLastExchange()).toNotExist()
       })
     })
+    /* eslint-enable max-statements */
   })
 
   describe('{ DynamicValue }', () => {
@@ -518,6 +522,7 @@ describe('mocks/PawMocks.js', () => {
   })
 
   describe('{ DynamicString }', () => {
+    /* eslint-disable max-statements */
     describe('~constructor', () => {
       it('should expose params as `components` field', () => {
         const params = [ 123, { b: 234, c: 345 } ]
@@ -601,6 +606,7 @@ describe('mocks/PawMocks.js', () => {
         expect(actual.appendDynamicString()).toNotExist()
       })
     })
+    /* eslint-enable max-statements */
   })
 
   describe('{ InputField }', () => {
@@ -632,6 +638,7 @@ describe('mocks/PawMocks.js', () => {
   })
 
   describe('{ NetworkHTTPRequest }', () => {
+    /* eslint-disable max-statements */
     describe('~constructor', () => {
       it('should expose `requestUrl` field', () => {
         const actual = new NetworkHTTPRequest()
@@ -696,6 +703,7 @@ describe('mocks/PawMocks.js', () => {
         expect(actual.send()).toNotExist()
       })
     })
+    /* eslint-enable max-statements */
   })
 
   describe('{ RecordParameter }', () => {

@@ -86,6 +86,7 @@ methods.parseJSONorYAML = (str) => {
   return parsed
 }
 
+/* eslint-disable max-statements */
 /**
  * looks (simplistically) at a Swagger file and gives it a quality score between 0 and 1.
  * @param {SwaggerObject} swagger: the swagger file to analyze (here deconstructed)
@@ -124,6 +125,7 @@ methods.getQualityScore = ({
   score = Math.min(Math.max(score, 0), 1)
   return score
 }
+/* eslint-enable max-statements */
 
 /**
  * returns a quality score for a content string wrt. to the swagger v2 format.
@@ -220,6 +222,7 @@ methods.getLicenseObject = ($info) => {
   return methods.getKeysFromRecord(keyMap, $license)
 }
 
+/* eslint-disable max-statements */
 /**
  * extracts the swagger Info object from an api.
  * @param {Api} $api: the api to get the info from.
@@ -258,6 +261,7 @@ methods.getInfoObject = ($api) => {
 
   return info
 }
+/* eslint-enable max-statements */
 
 /**
  * tests whether a Record is a Reference or not
@@ -282,6 +286,25 @@ methods.getEnpointsSharedByResource = (resource) => {
  */
 methods.getUuidOfReference = (reference) => reference.get('uuid')
 
+methods.getEndpointFromBestEntry = (api, { key }) => {
+  const sharedEndpoint = api.getIn([ 'store', 'endpoint', key ])
+  if (sharedEndpoint) {
+    return sharedEndpoint
+  }
+
+  const sharedVariable = api.getIn([ 'store', 'variable', key ])
+  if (!sharedVariable) {
+    return null
+  }
+
+  const firstValueInVariable = sharedVariable.get('values').valueSeq().get(0)
+  if (!firstValueInVariable) {
+    return null
+  }
+
+  return new URL({ url: firstValueInVariable })
+}
+
 /**
  * searches for the most used common endpoint.
  * @param {Api} api: the api to fnid the most common endpoint of.
@@ -298,22 +321,7 @@ methods.getMostCommonEndpoint = (api) => {
     .countBy(v => v)
     .reduce((best, value, key) => best.value > value ? best : { key, value }, {})
 
-  const sharedEndpoint = api.getIn([ 'store', 'endpoint', bestEntry.key ])
-  if (sharedEndpoint) {
-    return sharedEndpoint
-  }
-
-  const sharedVariable = api.getIn([ 'store', 'variable', bestEntry.key ])
-  if (!sharedVariable) {
-    return null
-  }
-
-  const firstValueInVariable = sharedVariable.get('values').valueSeq().get(0)
-  if (!firstValueInVariable) {
-    return null
-  }
-
-  return new URL({ url: firstValueInVariable })
+  return methods.getEndpointFromBestEntry(api, bestEntry)
 }
 
 /**
@@ -1244,6 +1252,7 @@ methods.getSecurityRequirementsFromRequest = (store, request) => {
   return securityReqs
 }
 
+/* eslint-disable max-statements */
 /**
  * converts a Request into an operation object.
  * @param {Store} store: the store used to resolve shared objecst.
@@ -1309,6 +1318,7 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
   const value = operation
   return { key, value }
 }
+/* eslint-enable max-statements */
 
 /**
  * adds path parameters to an operation object
@@ -1516,6 +1526,7 @@ methods.getGlobalProduces = (api) => {
   return produces
 }
 
+/* eslint-disable max-statements */
 /**
  * converts an Api Record into a swagger v2 object, then stringifies it.
  * @param {Api} $api: the api to convert in a swagger v2 object
@@ -1554,6 +1565,7 @@ methods.createSwaggerObject = ($api) => {
     tags
   }
 }
+/* eslint-enable max-statements */
 
 /**
  * serializes an Api into a Swagger formatted string

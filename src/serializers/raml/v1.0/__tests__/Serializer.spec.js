@@ -940,6 +940,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
   })
 
   describe('@extractDataTypeFromCoreInformation', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       spyOn(__internals__, 'areSchemaAndDepsConvertible').andCall((v, n) => n === 'a')
       spyOn(__internals__, 'unmarkSchemas').andCall(c => c)
@@ -969,6 +970,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       const actual = inputs.map(input => __internals__.extractDataTypeFromCoreInformation(...input))
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@extractDataTypesFromApi', () => {
@@ -1736,6 +1738,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
   })
 
   describe('@extractMethodBaseFromRequest', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       spyOn(__internals__, 'extractDisplayNameFromRequest')
         .andCall(r => r ? { key: 'displayName', value: 123 } : null)
@@ -1777,6 +1780,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       const actual = inputs.map(input => __internals__.extractMethodBaseFromRequest(...input))
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@extractTraitsFromInterfaces', () => {
@@ -2407,6 +2411,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
   })
 
   describe('@extractSecuritySchemeFromAuth', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       spyOn(__internals__, 'extractSecuritySchemeFromBasicAuth').andReturn('Basic')
       spyOn(__internals__, 'extractSecuritySchemeFromDigestAuth').andReturn('Digest')
@@ -2439,6 +2444,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       const actual = inputs.map(input => __internals__.extractSecuritySchemeFromAuth(input))
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@extractSecuritySchemesFromApi', () => {
@@ -3307,6 +3313,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
   })
 
   describe('@extractMethodFromRequest', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       spyOn(__internals__, 'extractDisplayNameFromRequest').andCall((r) => {
         const key = 'displayName'
@@ -3371,6 +3378,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       const actual = inputs.map(input => __internals__.extractMethodFromRequest(...input))
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@extractMethodEntryFromRequest', () => {
@@ -3604,6 +3612,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
   })
 
   describe('@createRAMLJSONModel', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       spyOn(__internals__, 'extractCoreInformationMapFromApi').andCall(a => {
         const key = 'coreInfo'
@@ -3718,6 +3727,7 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       const actual = inputs.map(input => __internals__.createRAMLJSONModel(input))
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@fixResponseCodes', () => {

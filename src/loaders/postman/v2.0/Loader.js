@@ -26,27 +26,37 @@ export class PostmanCollectionV2Loader {
   }
 }
 
-methods.isParsable = (content) => {
-  let parsed = null
+methods.parseContent = (content) => {
   try {
-    parsed = JSON.parse(content)
+    const parsed = JSON.parse(content)
+    return parsed
   }
   catch (e) {
-    return false
+    return null
   }
+}
+
+methods.scoreCollection = (collection) => {
+  let score = 0
+  score += collection.info ? 1 / 5 : 0
+  score += (collection.info || {}).schema ? 1 / 5 : 0
+  if ((collection.info || {}).schema === 'https://schema.getpostman.com/json/collection/v2.0.0/') {
+    score += 1 / 5
+  }
+  score += Array.isArray(collection.item) ? 1 / 2 : 0
+  score = score > 1 ? 1 : score
+
+  return score
+}
+
+methods.isParsable = (content) => {
+  const parsed = methods.parseContent(content)
 
   if (!parsed) {
     return false
   }
 
-  let score = 0
-  score += parsed.info ? 1 / 5 : 0
-  score += (parsed.info || {}).schema ? 1 / 5 : 0
-  score += (parsed.info || {}).schema === 'https://schema.getpostman.com/json/collection/v2.0.0/' ?
-    1 / 5 : 0
-  score += Array.isArray(parsed.item) ? 1 / 2 : 0
-  score = score > 1 ? 1 : score
-
+  const score = methods.scoreCollection(parsed)
   return score > 0.85
 }
 
@@ -423,6 +433,17 @@ methods.addGlobalsToRoot = (collection) => {
   return collection
 }
 
+methods.normalizeCollection = (options, collection) => {
+  try {
+    const normalized = methods.normalizeItems(collection)
+    const withGlobals = methods.addGlobalsToRoot(normalized)
+    return Promise.resolve({ options, item: withGlobals })
+  }
+  catch (e) {
+    return Promise.reject(e)
+  }
+}
+
 methods.fixPrimary = (options, { content }) => {
   let collection = null
   try {
@@ -436,21 +457,14 @@ methods.fixPrimary = (options, { content }) => {
     return Promise.reject(new Error('Attempting to parse the Postman file yielded `null`'))
   }
 
-  try {
-    const normalized = methods.normalizeItems(collection)
-    const withGlobals = methods.addGlobalsToRoot(normalized)
-    return Promise.resolve({ options, item: withGlobals })
-  }
-  catch (e) {
-    return Promise.reject(e)
-  }
+  return methods.normalizeCollection(options, collection)
 }
 
 methods.handleRejection = (error) => {
   return Promise.reject(error)
 }
 
-methods.validateArgs = ({ options, uri }) => {
+methods.areOptionsInvalid = (options) => {
   if (!options) {
     return new Error('missing loader argument: options')
   }
@@ -471,6 +485,15 @@ methods.validateArgs = ({ options, uri }) => {
     typeof options.fsResolver.resolve !== 'function'
   ) {
     return new Error('invalid loader argument: options.fsResolver must have a resolve method')
+  }
+
+  return null
+}
+
+methods.validateArgs = ({ options, uri }) => {
+  const invalidOptions = methods.areOptionsInvalid(options)
+  if (invalidOptions) {
+    return invalidOptions
   }
 
   if (typeof uri === 'undefined') {

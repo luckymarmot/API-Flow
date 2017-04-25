@@ -488,6 +488,7 @@ methods.createRequestAuthFromOAuth2Auth = (auth) => {
   return { type: 'oauth2', oauth2: kvs.reduce(convertEntryListInMap, {}) }
 }
 
+/* eslint-disable max-statements */
 /**
  * converts an Auth into a postmanAuth
  * @param {Auth} auth: the auth to convert
@@ -525,6 +526,7 @@ methods.createRequestAuthFromAuth = (auth) => {
 
   return { key: 'auth', value: postmanAuth }
 }
+/* eslint-enable max-statements */
 
 /**
  * converts the Auths from a request into a postmanAuth
@@ -547,11 +549,7 @@ methods.createRequestAuth = (api, request) => {
   const authData = api.getIn([ 'store', 'auth', auth.get('uuid') ])
   const postmanAuth = methods.createRequestAuthFromAuth(authData)
 
-  if (!postmanAuth) {
-    return null
-  }
-
-  return postmanAuth
+  return postmanAuth || null
 }
 
 /**

@@ -61,15 +61,7 @@ export class URL extends Record(URLSpec) {
     }
 
     const { url, uuid, secure, variableDelimiters, description } = props
-    let urlComponents = url
-    if (typeof url === 'string') {
-      const urlObject = parse(url)
-      urlComponents = methods.convertURLObjectToURLComponents(urlObject, variableDelimiters)
-    }
-
-    if (url && typeof url === 'object' && !(url.host instanceof URLComponent)) {
-      urlComponents = methods.convertURLObjectToURLComponents(url, variableDelimiters)
-    }
+    const urlComponents = methods.getURLComponents(url, variableDelimiters)
 
     super({ ...urlComponents, secure, uuid, variableDelimiters, description })
     return this
@@ -86,6 +78,19 @@ export class URL extends Record(URLSpec) {
   toURLObject(delimiters, useDefault) {
     return methods.convertURLComponentsToURLObject(this, delimiters, useDefault)
   }
+}
+
+methods.getURLComponents = (url, variableDelimiters) => {
+  if (typeof url === 'string') {
+    const urlObject = parse(url)
+    return methods.convertURLObjectToURLComponents(urlObject, variableDelimiters)
+  }
+
+  if (url && typeof url === 'object' && !(url.host instanceof URLComponent)) {
+    return methods.convertURLObjectToURLComponents(url, variableDelimiters)
+  }
+
+  return url
 }
 
 /**

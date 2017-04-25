@@ -354,6 +354,7 @@ methods.extractOAuth2AuthFromAuth = (auth) => {
   }
 }
 
+/* eslint-disable max-statements */
 methods.extractAuthFromPostmanAuth = (auth) => {
   if (auth.type === 'awsv4') {
     return methods.extractAWSSig4AuthFromAuth(auth)
@@ -385,6 +386,7 @@ methods.extractAuthFromPostmanAuth = (auth) => {
 
   return null
 }
+/* eslint-enable max-statements */
 
 methods.extractAuthTypedStore = (items) => {
   const auths = items
@@ -606,14 +608,8 @@ methods.extractQueryBlockFromQueryParams = (queryParams) => {
   return { key: 'queries', value: OrderedMap(block) }
 }
 
-methods.extractHeaderParameterFromString = (line) => {
-  const [ key, value = '' ] = line.split(':')
-
-  if (!key) {
-    return null
-  }
-
-  const trimmed = (value || '').trim()
+methods.extractDefaultAndConstraintsValuesFromHeaderString = (value) => {
+  const trimmed = ((value || '') + '').trim()
   let $default = trimmed || null
   const match = trimmed.match(/^{{([^{}]*)}}$/)
   let constraints = List()
@@ -621,6 +617,21 @@ methods.extractHeaderParameterFromString = (line) => {
     constraints = List([ new Constraint.JSONSchema({ $ref: '#/definitions/' + match[1] }) ])
     $default = null
   }
+
+  return { default: $default, constraints }
+}
+
+methods.extractHeaderParameterFromString = (line) => {
+  const [ key, value = '' ] = line.split(':')
+
+  if (!key) {
+    return null
+  }
+
+  const {
+    default: $default,
+    constraints
+  } = methods.extractDefaultAndConstraintsValuesFromHeaderString(value)
 
   const $value = new Parameter({
     key: key.trim(),
@@ -648,13 +659,10 @@ methods.extractHeaderParameterFromObject = (header) => {
   }
 
   const key = header.key
-  let $default = header.value || null
-  const match = (header.value + '').match(/^{{([^{}]*)}}$/)
-  let constraints = List()
-  if (match) {
-    constraints = List([ new Constraint.JSONSchema({ $ref: '#/definitions/' + match[1] }) ])
-    $default = null
-  }
+  const {
+    default: $default,
+    constraints
+  } = methods.extractDefaultAndConstraintsValuesFromHeaderString(header.value)
 
   const value = new Parameter({
     key: key.trim(),
@@ -858,6 +866,7 @@ methods.extractAuthRefsFromOAuth2Auth = (auth) => {
   }
 }
 
+/* eslint-disable max-statements */
 methods.extractAuthsFromItem = (item) => {
   const auth = ((item || {}).request || {}).auth
   if (!auth) {
@@ -894,6 +903,7 @@ methods.extractAuthsFromItem = (item) => {
 
   return null
 }
+/* eslint-enable max-statements */
 
 methods.extractRequestMethodFromItem = (item) => {
   const method = (((item || {}).request || {}).method || 'get').toLowerCase()

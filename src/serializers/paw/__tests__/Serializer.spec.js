@@ -306,6 +306,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@addConstraintToDomain', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       const domain = { createEnvironmentVariable: () => {} }
       const environment = {}
@@ -328,6 +329,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(variable.setValue).toHaveBeenCalledWith('123', environment)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@addConstraintsToDomain', () => {
@@ -465,6 +467,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@addEndpointToDomain', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       const domain = { createEnvironmentVariable: () => {} }
       const environment = {}
@@ -487,6 +490,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(variable.setValue).toHaveBeenCalledWith('123', environment)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@addEndpointsToDomain', () => {
@@ -513,6 +517,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@addParameterToDomain', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       const domain = { createEnvironmentVariable: () => {} }
       const environment = {}
@@ -535,6 +540,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(variable.setValue).toHaveBeenCalledWith('123', environment)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@addParametersToDomain', () => {
@@ -726,6 +732,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@addAuthToDomain', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       const domain = { createEnvironmentVariable: () => {} }
       const environment = {}
@@ -747,6 +754,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(variable.setValue).toHaveBeenCalledWith('123', environment)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@addAuthsToDomain', () => {
@@ -773,6 +781,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@addVariablesToStandardDomain', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       const domain = { createEnvironment: () => {} }
       spyOn(domain, 'createEnvironment').andReturn('env')
@@ -800,6 +809,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(__internals__.addAuthsToDomain).toHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@getVariableEnvironmentDomainSize', () => {
@@ -854,6 +864,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@updateEnvironmentVariableWithEnvironmentValue', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       const domain = {
         getEnvironmentByName: () => {},
@@ -909,6 +920,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(variable.setValue).toHaveBeenCalledWith(value, 432)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@convertVariableIntoEnvironmentVariable', () => {
@@ -964,6 +976,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@createEnvironments', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       spyOn(__internals__, 'needsStandardEnvironmentDomain').andReturn(true)
       spyOn(__internals__, 'createStandardEnvironmentDomain').andReturn(123)
@@ -999,6 +1012,7 @@ describe('serializers/paw/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
 
     it('should work if api does not need env domains', () => {
       spyOn(__internals__, 'needsStandardEnvironmentDomain').andReturn(false)
@@ -1064,6 +1078,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(actual).toEqual(expected)
     })
 
+    /* eslint-disable max-statements */
     it('should create variable otherwise', () => {
       const pawReq = {
         addVariable: () => {}
@@ -1097,6 +1112,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(variable.createDynamicString).toHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@convertPathnameIntoDynamicString', () => {
@@ -1729,6 +1745,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@setFormDataBody', () => {
+    /* eslint-disable max-statements */
     it('should work with urlEncoded', () => {
       const pawReq = {}
       const store = new Store()
@@ -1788,6 +1805,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(__internals__.wrapDV).toHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@addBodyToRequest', () => {
@@ -2034,6 +2052,7 @@ describe('serializers/paw/Serializer.js', () => {
   })
 
   describe('@convertRequestIntoPawRequest', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       const context = {
         createRequest: () => {}
@@ -2066,9 +2085,11 @@ describe('serializers/paw/Serializer.js', () => {
       expect(__internals__.addAuthsToRequest).toHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@convertResourceIntoGroup', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       const context = { createRequestGroup: () => {} }
       const group = { appendChild: () => {} }
@@ -2095,6 +2116,7 @@ describe('serializers/paw/Serializer.js', () => {
       expect(group.appendChild.calls.length).toEqual(3)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@createRequests', () => {

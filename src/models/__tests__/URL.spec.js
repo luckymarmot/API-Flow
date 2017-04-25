@@ -15,6 +15,7 @@ describe('models/URL.js', () => {
       expect(instance).toBeA(Record)
     })
 
+    /* eslint-disable max-statements */
     describe('#fields', () => {
       it('should have a `protocol` field', () => {
         const key = 'protocol'
@@ -198,6 +199,7 @@ describe('models/URL.js', () => {
         expect(instance.get(key)).toEqual(value)
       })
     })
+    /* eslint-enable max-statements */
 
     describe('-methods', () => {
       describe('@generate', () => {
