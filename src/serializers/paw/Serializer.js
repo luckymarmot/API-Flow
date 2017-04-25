@@ -927,15 +927,7 @@ methods.addEntryToRecordParameterArray = (kvList, { key, value }) => {
   return kvList
 }
 
-/**
- * sets the body of a request to a urlEncoded or multipart body
- * @param {PawRequest} pawRequest: the paw request to update
- * @param {Store} store: the store used to resolve potential references in the params
- * @param {Parameter|Reference} params: the parameters to add to the body
- * @param {Context} context: the context in which the body params are set
- * @returns {PawRequest} the update paw request
- */
-methods.setFormDataBody = (pawRequest, store, params, context) => {
+methods.getFormDataBody = (pawRequest, store, params, context) => {
   const convertBodyParamOrRef = currify(
     methods.convertReferenceOrParameterToDsEntry,
     pawRequest, store
@@ -948,14 +940,27 @@ methods.setFormDataBody = (pawRequest, store, params, context) => {
     .map(convertBodyParamOrRef)
     .reduce(methods.addEntryToRecordParameterArray, [])
 
-  let body = ''
   if (isFormData) {
-    body = methods.createMultipartBodyDV(keyValues)
+    return methods.createMultipartBodyDV(keyValues)
   }
 
   if (isUrlEncoded) {
-    body = methods.createUrlEncodedBodyDV(keyValues)
+    return methods.createUrlEncodedBodyDV(keyValues)
   }
+
+  return ''
+}
+
+/**
+ * sets the body of a request to a urlEncoded or multipart body
+ * @param {PawRequest} pawRequest: the paw request to update
+ * @param {Store} store: the store used to resolve potential references in the params
+ * @param {Parameter|Reference} params: the parameters to add to the body
+ * @param {Context} context: the context in which the body params are set
+ * @returns {PawRequest} the update paw request
+ */
+methods.setFormDataBody = (pawRequest, store, params, context) => {
+  const body = methods.getFormDataBody(pawRequest, store, params, context)
 
   pawRequest.body = methods.wrapDV(body)
   return pawRequest
@@ -1062,6 +1067,7 @@ methods.addAuthsToRequest = (pawRequest, store, request) => {
     .reduce(methods.addAuthToRequest, pawRequest)
 }
 
+/* eslint-disable max-statements */
 /**
  * converts a request into a paw request
  * @param {PawContext} context: the paw context in which to create the paw request.
@@ -1090,6 +1096,7 @@ methods.convertRequestIntoPawRequest = (context, store, path, request) => {
   pawRequest.url = url
   return pawRequest
 }
+/* eslint-enable max-statements */
 
 // NOTE: not sure this is the best idea
 /**

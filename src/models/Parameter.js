@@ -367,6 +367,24 @@ methods.unescapeURIFragment = (uriFragment) => {
   return uriFragment.replace(/~1/g, '/').replace(/~0/g, '~')
 }
 
+methods.replaceRefsInArray = (obj) => {
+  for (let i = 0; i < obj.length; i += 1) {
+    const content = obj[i]
+    obj[i] = methods.replaceRefs(content)
+  }
+  return obj
+}
+
+methods.replaceRefsInObject = (obj) => {
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      obj[key] = methods.replaceRefs(obj[key])
+    }
+  }
+
+  return obj
+}
+
 /**
  * @deprecated (use at your own risk)
  * replaces References in a pseudo-schema with default values to make it a simple schema
@@ -386,16 +404,25 @@ methods.replaceRefs = (obj) => {
   }
 
   if (Array.isArray(obj)) {
-    for (let i = 0; i < obj.length; i += 1) {
-      const content = obj[i]
-      obj[i] = methods.replaceRefs(content)
-    }
+    return methods.replaceRefsInArray(obj)
   }
-  else {
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        obj[key] = methods.replaceRefs(obj[key])
-      }
+
+  return methods.replaceRefsInObject(obj)
+}
+
+methods.simplifyRefsInArray = (obj) => {
+  for (let i = 0; i < obj.length; i += 1) {
+    const content = obj[i]
+    obj[i] = methods.simplifyRefs(content)
+  }
+
+  return obj
+}
+
+methods.simplifyRefsInObject = (obj) => {
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      obj[key] = methods.simplifyRefs(obj[key])
     }
   }
 
@@ -417,20 +444,10 @@ methods.simplifyRefs = (obj) => {
   }
 
   if (Array.isArray(obj)) {
-    for (let i = 0; i < obj.length; i += 1) {
-      const content = obj[i]
-      obj[i] = methods.simplifyRefs(content)
-    }
-  }
-  else {
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        obj[key] = methods.simplifyRefs(obj[key])
-      }
-    }
+    return methods.simplifyRefsInArray(obj)
   }
 
-  return obj
+  return methods.simplifyRefsInObject(obj)
 }
 
 /**
@@ -498,6 +515,26 @@ methods.isReferenceParameter = (
   return superType === 'reference'
 }
 
+methods.getRawJSONSchema = (parameter, useFaker) => {
+  if (methods.isSimpleParameter(parameter)) {
+    return methods.getJSONSchemaFromSimpleParameter(parameter)
+  }
+
+  if (methods.isSequenceParameter(parameter)) {
+    return methods.getJSONSchemaFromSequenceParameter(parameter, useFaker)
+  }
+
+  if (methods.isArrayParameter(parameter)) {
+    return methods.getJSONSchemaFromArrayParameter(parameter, useFaker)
+  }
+
+  if (methods.isReferenceParameter(parameter)) {
+    return methods.getJSONSchemaFromReferenceParameter(parameter)
+  }
+
+  return {}
+}
+
 /**
  * transforms a Parameter into a JSON Schema
  * @param {Parameter} parameter: the parameter to transform
@@ -511,27 +548,7 @@ methods.getJSONSchema = (
     useFaker = false,
     replaceRefs = false
 ) => {
-  let schema = {}
-
-  const isSimple = methods.isSimpleParameter(parameter)
-  if (isSimple) {
-    schema = methods.getJSONSchemaFromSimpleParameter(parameter)
-  }
-
-  const isSequence = methods.isSequenceParameter(parameter)
-  if (isSequence) {
-    schema = methods.getJSONSchemaFromSequenceParameter(parameter, useFaker)
-  }
-
-  const isArray = methods.isArrayParameter(parameter)
-  if (isArray) {
-    schema = methods.getJSONSchemaFromArrayParameter(parameter, useFaker)
-  }
-
-  const isReference = methods.isReferenceParameter(parameter)
-  if (isReference) {
-    schema = methods.getJSONSchemaFromReferenceParameter(parameter)
-  }
+  let schema = methods.getRawJSONSchema(parameter, useFaker)
 
   if (useFaker) {
     schema = methods.updateSchemaWithFaker(parameter, schema)

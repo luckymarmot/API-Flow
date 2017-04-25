@@ -259,6 +259,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   })
 
   describe('@addDescriptiveFields', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       const merge = (...toAssign) => Object.assign({}, ...toAssign)
 
@@ -282,6 +283,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
         { a: 123, b: 234, c: 345, d: 456 }, node
       )
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@isMaybeJSON', () => {
@@ -1353,6 +1355,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   })
 
   describe('@createSchema', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       const merge = (...sources) => Object.assign({}, ...sources)
 
@@ -1433,6 +1436,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       const actual = inputs.map(input => __internals__.createSchema(input))
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@addSchemaToDefinitionsReducer', () => {
@@ -3512,6 +3516,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
   })
 
   describe('@convertRAMLMethodBaseIntoRequestInstance', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       spyOn(__internals__, 'areProtocolsEqual').andCall((f, s) => f && s && f[0] === s[0])
       spyOn(__internals__, 'extractDescription').andCall(({ desc }) => desc)
@@ -3659,6 +3664,7 @@ describe('parsers/raml/v1.0/Parser.js', () => {
       )
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@convertRAMLMethodIntoRequestEntry', () => {

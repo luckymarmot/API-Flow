@@ -411,6 +411,7 @@ methods.extractSharedOAuth2AuthFromAuth = (auth) => {
   }
 }
 
+/* eslint-disable max-statements */
 /**
  * extracts a shared auth as a key-value entry
  * @param {ItemPart} auth - a part of the file that is relevant to the extraction of an auth.
@@ -450,6 +451,7 @@ methods.extractSharedAuthFromItemAuth = (auth) => {
 
   return null
 }
+/* eslint-enable max-statements */
 
 /**
  * extracts all shared auth as a key-value pair for a TypedStore (aka OrderedMap)

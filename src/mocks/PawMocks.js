@@ -1,37 +1,45 @@
+const setupFuncSpy = ($this, field, prefix) => {
+  return (...args) => {
+    $this[prefix + 'spy'][field].count += 1
+    $this[prefix + 'spy'][field].calls.push(args)
+    return $this[prefix + 'spy'][field].func.apply($this, args)
+  }
+}
+
+const createSpies = (spies, obj) => {
+  for (const field in obj) {
+    if (obj.hasOwnProperty(field) && typeof obj[field] === 'function') {
+      spies[field] = {
+        count: 0,
+        calls: [],
+        func: obj[field]
+      }
+    }
+  }
+
+  return spies
+}
+
+const bindSpies = ($this, obj, prefix) => {
+  for (const field in obj) {
+    // TODO maybe go up the prototype chain to spoof not-owned properties
+    if (obj.hasOwnProperty(field)) {
+      if (typeof obj[field] === 'function') {
+        $this[field] = setupFuncSpy($this, field, prefix)
+      }
+      else {
+        $this[field] = obj[field]
+      }
+    }
+  }
+}
+
 export class Mock {
   constructor(obj, prefix = '$$_') {
-    const spies = {}
-    for (const field in obj) {
-      if (obj.hasOwnProperty(field) && typeof obj[field] === 'function') {
-        spies[field] = {
-          count: 0,
-          calls: [],
-          func: obj[field]
-        }
-      }
-    }
-
+    const spies = createSpies({}, obj)
     this[prefix + 'spy'] = spies
 
-    const setupFuncSpy = (field) => {
-      return (...args) => {
-        this[prefix + 'spy'][field].count += 1
-        this[prefix + 'spy'][field].calls.push(args)
-        return this[prefix + 'spy'][field].func.apply(this, args)
-      }
-    }
-
-    for (const field in obj) {
-      // TODO maybe go up the prototype chain to spoof not-owned properties
-      if (obj.hasOwnProperty(field)) {
-        if (typeof obj[field] === 'function') {
-          this[field] = setupFuncSpy(field)
-        }
-        else {
-          this[field] = obj[field]
-        }
-      }
-    }
+    bindSpies(this, obj, prefix)
 
     this[prefix + 'spyOn'] = (field, func) => {
       this[prefix + 'spy'][field].func = func

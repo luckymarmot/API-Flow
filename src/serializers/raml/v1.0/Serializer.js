@@ -204,6 +204,7 @@ methods.isNumberType = (schema) => {
     typeof schema.multipleOf !== 'undefined'
 }
 
+/* eslint-disable max-statements */
 /**
  * extracts the RAML Basic type from a schema, infering it if necessary
  * @param {Object} schema: the schema to extract the type of
@@ -236,6 +237,7 @@ methods.getType = (schema) => {
 
   return 'any'
 }
+/* eslint-enable max-statements */
 
 /**
  * converts the items array of schemas of an array-typed schema into an array of DataTypes
@@ -710,30 +712,38 @@ methods.extractVersionFromApi = (api) => {
   return { key: 'version', value: version }
 }
 
+methods.getBaseUriEndpoint = (api) => {
+  const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
+
+  if (endpoint) {
+    return endpoint
+  }
+
+  const variable = api.getIn([ 'store', 'variable' ]).valueSeq().get(0)
+  if (!variable) {
+    return null
+  }
+
+  const firstValue = variable.get('values').valueSeq().get(0)
+  if (!firstValue) {
+    return null
+  }
+
+  return new URL({ url: firstValue })
+}
+
 /**
  * extract the baseUri from an Api
  * @param {Api} api: the api from which to get the baseUri
  * @returns {Entry<string, string>?} the corresponding baseUri, if it exists, in Entry format
  */
 methods.extractBaseUriFromApi = (api) => {
-  const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
-
-  let baseUriEndpoint = endpoint
+  const endpoint = methods.getBaseUriEndpoint(api)
   if (!endpoint) {
-    const variable = api.getIn([ 'store', 'variable' ]).valueSeq().get(0)
-    if (!variable) {
-      return null
-    }
-
-    const firstValue = variable.get('values').valueSeq().get(0)
-    if (!firstValue) {
-      return null
-    }
-
-    baseUriEndpoint = new URL({ url: firstValue })
+    return null
   }
 
-  const url = baseUriEndpoint.generate(List([ '{', '}' ]))
+  const url = endpoint.generate(List([ '{', '}' ]))
 
   if (!url) {
     return null
@@ -809,26 +819,14 @@ methods.convertParameterIntoNamedParameter = (coreInfoMap, param) => {
  * in Entry format.
  */
 methods.extractBaseUriParametersFromApi = (coreInfoMap, api) => {
-  const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
-
-  let baseUriEndpoint = endpoint
+  const endpoint = methods.getBaseUriEndpoint(api)
   if (!endpoint) {
-    const variable = api.getIn([ 'store', 'variable' ]).valueSeq().get(0)
-    if (!variable) {
-      return null
-    }
-
-    const firstValue = variable.get('values').valueSeq().get(0)
-    if (!firstValue) {
-      return null
-    }
-
-    baseUriEndpoint = new URL({ url: firstValue })
+    return null
   }
 
   const urlComponentNames = [ 'hostname', 'port', 'pathname' ]
   const params = urlComponentNames
-    .map(name => methods.extractParametersFromURLComponent(baseUriEndpoint.get(name)))
+    .map(name => methods.extractParametersFromURLComponent(endpoint.get(name)))
     .filter(v => !!v)
     .reduce(flatten, [])
     .map((param) => methods.convertParameterIntoNamedParameter(coreInfoMap, param))
@@ -850,24 +848,12 @@ methods.extractBaseUriParametersFromApi = (coreInfoMap, api) => {
  * format
  */
 methods.extractProtocolsFromApi = (api) => {
-  const endpoint = api.getIn([ 'store', 'endpoint' ]).valueSeq().get(0)
-
-  let baseUriEndpoint = endpoint
+  const endpoint = methods.getBaseUriEndpoint(api)
   if (!endpoint) {
-    const variable = api.getIn([ 'store', 'variable' ]).valueSeq().get(0)
-    if (!variable) {
-      return null
-    }
-
-    const firstValue = variable.get('values').valueSeq().get(0)
-    if (!firstValue) {
-      return null
-    }
-
-    baseUriEndpoint = new URL({ url: firstValue })
+    return null
   }
 
-  const protocols = baseUriEndpoint.get('protocol')
+  const protocols = endpoint.get('protocol')
   if (!protocols || !protocols.size) {
     return null
   }
@@ -903,6 +889,20 @@ methods.extractMediaTypeUUIDfromApi = (api) => {
   return uuid
 }
 
+methods.extractMediaTypeFromContentTypeParameter = (contentTypeParam) => {
+  const defaultValue = contentTypeParam.get('default')
+  if (defaultValue) {
+    return { key: 'mediaType', value: defaultValue }
+  }
+
+  const enumValue = contentTypeParam.getJSONSchema().enum
+  if (enumValue) {
+    return { key: 'mediaType', value: [].concat(enumValue) }
+  }
+
+  return null
+}
+
 /**
  * extracts the shared media type from an Api. This media type is defined iff there is exactly
  * one shared Content-Type header for requests in the whole Api.
@@ -920,17 +920,7 @@ methods.extractMediaTypeFromApi = (api) => {
   }
 
   const contentTypeParam = contentTypeParams.valueSeq().get(0)
-  const defaultValue = contentTypeParam.get('default')
-  if (defaultValue) {
-    return { key: 'mediaType', value: defaultValue }
-  }
-
-  const enumValue = contentTypeParam.getJSONSchema().enum
-  if (enumValue) {
-    return { key: 'mediaType', value: [].concat(enumValue) }
-  }
-
-  return null
+  return methods.extractMediaTypeFromContentTypeParameter(contentTypeParam)
 }
 
 /**
@@ -993,6 +983,7 @@ methods.extractTraitsFromInterfaces = (mediaTypeUUID, coreInfoMap, api) => {
   return traits.valueSeq().toJS()
 }
 
+/* eslint-disable max-statements */
 /**
  * extracts a RAMLMethodBase from a Parameter, with the help of a coreInfo map and of the global
  * mediaTypeUUID. This is done to represent shared Parameters (which do not have an exact match in
@@ -1029,6 +1020,7 @@ methods.extractMethodBaseFromParameter = (coreInfoMap, parameter) => {
 
   return null
 }
+/* eslint-disable max-statements */
 
 /**
  * extracts Traits from shared Parameters, with the help of a coreInfo map and of the global

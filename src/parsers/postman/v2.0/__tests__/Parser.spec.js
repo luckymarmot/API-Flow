@@ -1388,7 +1388,7 @@ describe('parsers/postman/v2.0/Parser.js', () => {
         { key: '123', value: new Parameter({ key: '123', name: '123', type: 'string' }) },
         {
           key: '123',
-          value: new Parameter({ key: '123', name: '123', type: 'string', default: 234 })
+          value: new Parameter({ key: '123', name: '123', type: 'string', default: '234' })
         },
         {
           key: '123',
@@ -1765,6 +1765,7 @@ describe('parsers/postman/v2.0/Parser.js', () => {
   })
 
   describe('@extractAuthsFromItem', () => {
+    /* eslint-disable max-statements */
     it('should work', () => {
       spyOn(__internals__, 'extractAuthRefsFromAWSV4Auth').andReturn(123)
       spyOn(__internals__, 'extractAuthRefsFromBasicAuth').andReturn(234)
@@ -1795,6 +1796,7 @@ describe('parsers/postman/v2.0/Parser.js', () => {
       const actual = inputs.map(input => __internals__.extractAuthsFromItem(input))
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@extractRequestMethodFromItem', () => {

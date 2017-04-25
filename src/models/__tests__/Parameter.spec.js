@@ -234,25 +234,15 @@ describe('models/Parameter.js', () => {
     })
 
     it('should return number if type is double or float', () => {
-      const expected = 'number'
-      let actual
+      const inputs = [
+        'double',
+        'float',
+        'DoUble',
+        'FloAt'
+      ]
 
-      const input1 = 'double'
-      const input2 = 'float'
-
-      const input3 = 'DoUble'
-      const input4 = 'FloAt'
-
-      actual = __internals__.inferType(input1)
-      expect(actual).toEqual(expected)
-
-      actual = __internals__.inferType(input2)
-      expect(actual).toEqual(expected)
-
-      actual = __internals__.inferType(input3)
-      expect(actual).toEqual(expected)
-
-      actual = __internals__.inferType(input4)
+      const expected = [ 'number', 'number', 'number', 'number' ]
+      const actual = inputs.map(input => __internals__.inferType(input))
       expect(actual).toEqual(expected)
     })
 
@@ -283,42 +273,28 @@ describe('models/Parameter.js', () => {
 
   describe('@addTypeFromParameterToSchema', () => {
     it('should add type to schema if javascript type', () => {
-      const schema = {}
+      const inputs = [
+        [ new Parameter({ type: 'integer' }), {} ],
+        [ new Parameter({ type: 'number' }), {} ],
+        [ new Parameter({ type: 'array' }), {} ],
+        [ new Parameter({ type: 'string' }), {} ],
+        [ new Parameter({ type: 'object' }), {} ],
+        [ new Parameter({ type: 'boolean' }), {} ],
+        [ new Parameter({ type: 'null' }), {} ]
+      ]
 
-      const param1 = new Parameter({ type: 'integer' })
-      const expected1 = { type: 'integer' }
-      const actual1 = __internals__.addTypeFromParameterToSchema(param1, schema)
-      expect(actual1).toEqual(expected1)
+      const expected = [
+        { type: 'integer' },
+        { type: 'number' },
+        { type: 'array' },
+        { type: 'string' },
+        { type: 'object' },
+        { type: 'boolean' },
+        { type: 'null' }
+      ]
 
-      const param2 = new Parameter({ type: 'number' })
-      const expected2 = { type: 'number' }
-      const actual2 = __internals__.addTypeFromParameterToSchema(param2, schema)
-      expect(actual2).toEqual(expected2)
-
-      const param3 = new Parameter({ type: 'array' })
-      const expected3 = { type: 'array' }
-      const actual3 = __internals__.addTypeFromParameterToSchema(param3, schema)
-      expect(actual3).toEqual(expected3)
-
-      const param4 = new Parameter({ type: 'string' })
-      const expected4 = { type: 'string' }
-      const actual4 = __internals__.addTypeFromParameterToSchema(param4, schema)
-      expect(actual4).toEqual(expected4)
-
-      const param5 = new Parameter({ type: 'object' })
-      const expected5 = { type: 'object' }
-      const actual5 = __internals__.addTypeFromParameterToSchema(param5, schema)
-      expect(actual5).toEqual(expected5)
-
-      const param6 = new Parameter({ type: 'boolean' })
-      const expected6 = { type: 'boolean' }
-      const actual6 = __internals__.addTypeFromParameterToSchema(param6, schema)
-      expect(actual6).toEqual(expected6)
-
-      const param7 = new Parameter({ type: 'null' })
-      const expected7 = { type: 'null' }
-      const actual7 = __internals__.addTypeFromParameterToSchema(param7, schema)
-      expect(actual7).toEqual(expected7)
+      const actual = inputs.map(input => __internals__.addTypeFromParameterToSchema(...input))
+      expect(actual).toEqual(expected)
     })
 
     it('should call inferType if type if not standard', () => {
@@ -1172,6 +1148,13 @@ describe('models/Parameter.js', () => {
       expect(actual).toBeTruthy()
     })
 
+    it('should return false if superType is not set', () => {
+      const input = new Parameter()
+
+      const actual = __internals__.isSequenceParameter(input)
+      expect(actual).toBeFalsy()
+    })
+
     it('should return false otherwise', () => {
       const input = new Parameter({ superType: 'qowqwbq' })
       const actual = __internals__.isSequenceParameter(input)
@@ -1185,6 +1168,13 @@ describe('models/Parameter.js', () => {
 
       const actual = __internals__.isArrayParameter(input)
       expect(actual).toBeTruthy()
+    })
+
+    it('should return false if superType is not set', () => {
+      const input = new Parameter()
+
+      const actual = __internals__.isArrayParameter(input)
+      expect(actual).toBeFalsy()
     })
 
     it('should return false otherwise', () => {
@@ -1202,6 +1192,13 @@ describe('models/Parameter.js', () => {
       expect(actual).toBeTruthy()
     })
 
+    it('should return false if superType is not set', () => {
+      const input = new Parameter()
+
+      const actual = __internals__.isReferenceParameter(input)
+      expect(actual).toBeFalsy()
+    })
+
     it('should return false otherwise', () => {
       const input = new Parameter({ superType: 'qowqwbq' })
       const actual = __internals__.isReferenceParameter(input)
@@ -1209,81 +1206,43 @@ describe('models/Parameter.js', () => {
     })
   })
 
+  describe('@getRawJSONSchema', () => {
+    /* eslint-disable max-statements */
+    it('should work', () => {
+      spyOn(__internals__, 'isSimpleParameter').andCall(({ simple }) => !!simple)
+      spyOn(__internals__, 'getJSONSchemaFromSimpleParameter').andCall(({ simple }) => simple)
+      spyOn(__internals__, 'isSequenceParameter').andCall(({ sequence }) => !!sequence)
+      spyOn(__internals__, 'getJSONSchemaFromSequenceParameter').andCall(({ sequence }) => sequence)
+      spyOn(__internals__, 'isArrayParameter').andCall(({ array }) => !!array)
+      spyOn(__internals__, 'getJSONSchemaFromArrayParameter').andCall(({ array }) => array)
+      spyOn(__internals__, 'isReferenceParameter').andCall(({ reference }) => !!reference)
+      spyOn(__internals__, 'getJSONSchemaFromReferenceParameter')
+        .andCall(({ reference }) => reference)
+
+      const inputs = [
+        [ { simple: 123 }, false ],
+        [ { sequence: 234 }, false ],
+        [ { array: 345 }, false ],
+        [ { reference: 456 }, false ],
+        [ { other: 567 }, false ]
+      ]
+      const expected = [
+        123, 234, 345, 456, {}
+      ]
+      const actual = inputs.map(input => __internals__.getRawJSONSchema(...input))
+      expect(actual).toEqual(expected)
+    })
+    /* eslint-enable max-statements */
+  })
+
   describe('@getJSONSchema', () => {
-    it('should call isSimpleParameter', () => {
-      spyOn(__internals__, 'isSimpleParameter').andReturn(false)
+    it('should call getRawJSONSchema', () => {
+      spyOn(__internals__, 'getRawJSONSchema').andReturn({})
       const param = new Parameter()
 
       __internals__.getJSONSchema(param)
 
-      expect(__internals__.isSimpleParameter).toHaveBeenCalled()
-    })
-
-    it('should call isSequenceParameter', () => {
-      spyOn(__internals__, 'isSequenceParameter').andReturn(false)
-      const param = new Parameter()
-
-      __internals__.getJSONSchema(param)
-
-      expect(__internals__.isSequenceParameter).toHaveBeenCalled()
-    })
-
-    it('should call isArrayParameter', () => {
-      spyOn(__internals__, 'isArrayParameter').andReturn(false)
-      const param = new Parameter()
-
-      __internals__.getJSONSchema(param)
-
-      expect(__internals__.isArrayParameter).toHaveBeenCalled()
-    })
-
-    it('should call isReferenceParameter', () => {
-      spyOn(__internals__, 'isReferenceParameter').andReturn(false)
-      const param = new Parameter()
-
-      __internals__.getJSONSchema(param)
-
-      expect(__internals__.isReferenceParameter).toHaveBeenCalled()
-    })
-
-    it('should call getJSONSchemaFromSimpleParameter if isSimple', () => {
-      spyOn(__internals__, 'isSimpleParameter').andReturn(true)
-      spyOn(__internals__, 'getJSONSchemaFromSimpleParameter').andReturn({})
-      const param = new Parameter()
-
-      __internals__.getJSONSchema(param)
-
-      expect(__internals__.getJSONSchemaFromSimpleParameter).toHaveBeenCalled()
-    })
-
-    it('should call getJSONSchemaFromSequenceParameter if isSequence', () => {
-      spyOn(__internals__, 'isSequenceParameter').andReturn(true)
-      spyOn(__internals__, 'getJSONSchemaFromSequenceParameter').andReturn({})
-      const param = new Parameter()
-
-      __internals__.getJSONSchema(param)
-
-      expect(__internals__.getJSONSchemaFromSequenceParameter).toHaveBeenCalled()
-    })
-
-    it('should call getJSONSchemaFromArrayParameter if isArray', () => {
-      spyOn(__internals__, 'isArrayParameter').andReturn(true)
-      spyOn(__internals__, 'getJSONSchemaFromArrayParameter').andReturn({})
-      const param = new Parameter()
-
-      __internals__.getJSONSchema(param)
-
-      expect(__internals__.getJSONSchemaFromArrayParameter).toHaveBeenCalled()
-    })
-
-    it('should call getJSONSchemaFromReferenceParameter if isReference', () => {
-      spyOn(__internals__, 'isReferenceParameter').andReturn(true)
-      spyOn(__internals__, 'getJSONSchemaFromReferenceParameter').andReturn({})
-      const param = new Parameter()
-
-      __internals__.getJSONSchema(param)
-
-      expect(__internals__.getJSONSchemaFromReferenceParameter).toHaveBeenCalled()
+      expect(__internals__.getRawJSONSchema).toHaveBeenCalled()
     })
 
     it('should call updateSchemaWithFaker if useFaker', () => {
@@ -1470,6 +1429,7 @@ describe('models/Parameter.js', () => {
       expect(actual).toEqual(expected)
     })
 
+    /* eslint-disable max-statements */
     it('should call validate for applicableContexts with same key until one is valid', () => {
       const ext1 = new Parameter({ key: 'test', default: 'ext1' })
       const ext2 = new Parameter({ key: 'test', default: 'ext2' })
@@ -1583,5 +1543,6 @@ describe('models/Parameter.js', () => {
       actual = __internals__.isValid(source, validInput)
       expect(actual).toEqual(true)
     })
+    /* eslint-enable max-statements */
   })
 })

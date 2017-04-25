@@ -1212,21 +1212,27 @@ methods.extractParameterContainerFromRequest = (request) => {
   })
 }
 
+methods.updateIdentifiersWithAuthURL = (identifiers, authURL) => {
+  const host = authURL.getEvaluatedString().split('/')[2]
+  const hostArray = host ? host.split('.') : []
+  const domain = hostArray[hostArray.length - 2]
+  if (domain) {
+    identifiers.push(domain)
+  }
+
+  return identifiers
+}
+
 /**
  * extracts an authName from an OAuth2 DynamicValue.
  * @param {DynamicValue} authDV: the oauth2 DynamicValue
  * @returns {string} the authName
  */
 methods.getAuthNameFromOAuth2DV = (authDV) => {
-  const identifiers = [ 'oauth_2' ]
+  let identifiers = [ 'oauth_2' ]
   const authURL = authDV.authorizationURL
   if (authURL) {
-    const host = authURL.getEvaluatedString().split('/')[2]
-    const hostArray = host ? host.split('.') : []
-    const domain = hostArray[hostArray.length - 2]
-    if (domain) {
-      identifiers.push(domain)
-    }
+    identifiers = methods.updateIdentifiersWithAuthURL(identifiers, authURL)
   }
 
   const grantMap = {
@@ -1395,20 +1401,8 @@ methods.groupResourcesVariablesAndEndpoints = (
   }
 }
 
-/**
- * extracts an Auth record from an OAuth2 DynamicValue
- * @param {PawContext} context: the context in which to resolve environment variables
- * @param {PawRequest} request: the request in which to resolve request variables
- * @param {DynamicString} authDS: the authentication DynamicString
- * @param {DynamicValue} authDV: the authentication DynamicValue
- * @return {Entry<string, Auth>} the corresponding Auth record
- */
-methods.extractAuthFromOAuth2DV = (context, request, authDS, authDV) => {
+methods.addAuthorizationAndTokenUrlToOAuth2Auth = (authDV) => {
   const authInstance = {}
-
-  const authName = methods.getAuthNameFromAuth(context, request, authDS)
-  authInstance.authName = authName
-
   const authURL = authDV.authorizationURL
   if (authURL) {
     authInstance.authorizationUrl = authURL.getEvaluatedString()
@@ -1418,6 +1412,23 @@ methods.extractAuthFromOAuth2DV = (context, request, authDS, authDV) => {
   if (tokenURL) {
     authInstance.tokenUrl = tokenURL.getEvaluatedString()
   }
+
+  return authInstance
+}
+
+/**
+ * extracts an Auth record from an OAuth2 DynamicValue
+ * @param {PawContext} context: the context in which to resolve environment variables
+ * @param {PawRequest} request: the request in which to resolve request variables
+ * @param {DynamicString} authDS: the authentication DynamicString
+ * @param {DynamicValue} authDV: the authentication DynamicValue
+ * @return {Entry<string, Auth>} the corresponding Auth record
+ */
+methods.extractAuthFromOAuth2DV = (context, request, authDS, authDV) => {
+  const authInstance = methods.addAuthorizationAndTokenUrlToOAuth2Auth(authDV)
+
+  const authName = methods.getAuthNameFromAuth(context, request, authDS)
+  authInstance.authName = authName
 
   const grantMap = {
     '0': 'accessCode',

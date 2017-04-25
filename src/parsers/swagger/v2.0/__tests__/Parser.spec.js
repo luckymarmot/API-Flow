@@ -1731,6 +1731,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@getParameterContainerForOperation', () => {
+    /* eslint-disable max-statements */
     it('should call all the expected methods', () => {
       spyOn(__internals__, 'getParametersAndReferencesFromParameterArray').andReturn({
         parameters: [ 1, 2, 3, 4 ],
@@ -1819,6 +1820,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       )
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
 
     xit('it should work', () => {
       // TODO implement this test
@@ -1894,6 +1896,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@convertOperationIntoRequest', () => {
+    /* eslint-disable max-statements */
     it('should call all expected methods', () => {
       spyOn(__internals__, 'getRequestIdFromOperation').andReturn(123)
       spyOn(__internals__, 'getParameterContainerForOperation').andReturn(321)
@@ -2076,6 +2079,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       expect(__internals__.getEndpointsForOperation).toHaveBeenCalledWith(store, operation)
       expect(actual).toEqual(expected)
     })
+
+    /* eslint-enable max-statements */
   })
 
   describe('@createReferencesForEndpoints', () => {
@@ -2099,6 +2104,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
   })
 
   describe('@getRequestsForResource', () => {
+    /* eslint-disable max-statements */
     it('should call all expected methods', () => {
       spyOn(__internals__, 'getMethodsFromResourceObject').andReturn([
         {
@@ -2166,6 +2172,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       expect(__internals__.convertOperationIntoRequest.calls.length).toEqual(3)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@updatePathWithParametersFromOperations', () => {

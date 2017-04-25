@@ -922,6 +922,7 @@ describe('parsers/paw/Parser.js', () => {
   })
 
   describe('@convertPathComponentsIntoPathEndpoint', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'convertComponentEntryIntoStringOrParam').andReturn(345)
       spyOn(__internals__, 'mergeSequencialStrings').andReturn([ 456, 456, 456 ])
@@ -965,6 +966,7 @@ describe('parsers/paw/Parser.js', () => {
       expect(__internals__.createDefaultPathEndpoint).toHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@extractResourceFromPawRequest', () => {
@@ -1351,6 +1353,7 @@ describe('parsers/paw/Parser.js', () => {
   })
 
   describe('@convertParameterDynamicStringIntoParameter', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct (request variable)', () => {
       spyOn(__internals__, 'isRequestVariableDS').andReturn(true)
       spyOn(__internals__, 'convertRequestVariableDSIntoParameter').andReturn(567)
@@ -1382,6 +1385,7 @@ describe('parsers/paw/Parser.js', () => {
         request, location, contexts, input, paramName)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@isRequestBodyUrlEncoded', () => {
@@ -1523,6 +1527,7 @@ describe('parsers/paw/Parser.js', () => {
   })
 
   describe('@getBodyParameters', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       const urlEncoded = [ true, false, false ]
       const multipart = [ true, false ]
@@ -1538,6 +1543,7 @@ describe('parsers/paw/Parser.js', () => {
       const actual = inputs.map(__internals__.getBodyParameters)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@getHeadersMapFromRequest', () => {
@@ -1614,6 +1620,7 @@ describe('parsers/paw/Parser.js', () => {
   })
 
   describe('@getAuthNameFromAuthDV', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       const envVar = [ false, false, false, true ]
       const reqVar = [ false, false, true, false ]
@@ -1646,6 +1653,7 @@ describe('parsers/paw/Parser.js', () => {
       })
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@getAuthNameFromAuthString', () => {
@@ -1864,6 +1872,7 @@ describe('parsers/paw/Parser.js', () => {
   })
 
   describe('@extractAuthFromDV', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       const envVars = [ false, false, false, true ]
       const reqVars = [ false, false, true, false ]
@@ -1890,6 +1899,7 @@ describe('parsers/paw/Parser.js', () => {
       })
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@extractAuthFromAuthString', () => {

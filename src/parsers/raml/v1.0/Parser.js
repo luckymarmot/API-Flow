@@ -598,6 +598,19 @@ methods.getSchemaListFromTypes = (types, offsetKey) => {
   return types.map((type) => methods.getSchemaFromType(type, offsetKey))
 }
 
+methods.convertMultipleInheritanceObjectWithSingleType = (schemas, $type) => {
+  const type = $type.type
+  const allOf = schemas.filter((schema) => !schema.type)
+  const schema = { type }
+  if (type === 'array' && $type.items) {
+    schema.items = $type.items
+  }
+  if (allOf.length) {
+    schema.allOf = allOf
+  }
+  return schema
+}
+
 /**
  * converts a multiple inheritance object into a schema from an array of types
  * @param {Array<string>} types: the array of types of the multiple inheritance object
@@ -610,16 +623,7 @@ methods.convertMultipleInheritanceObject = (types, offsetKey) => {
   const $types = schemas.filter(schema => !!schema.type)
 
   if ($types.length === 1) {
-    const type = $types[0].type
-    const allOf = schemas.filter((schema) => !schema.type)
-    const schema = { type }
-    if (type === 'array' && $types[0].items) {
-      schema.items = $types[0].items
-    }
-    if (allOf.length) {
-      schema.allOf = allOf
-    }
-    return schema
+    return methods.convertMultipleInheritanceObjectWithSingleType(schemas, $types[0])
   }
 
   if (schemas.length === 0) {
@@ -1009,6 +1013,7 @@ methods.convertFileTypeDeclaration = (offsetKey) => {
   return [ schema, FileSchema ]
 }
 
+/* eslint-disable max-statements */
 /**
  * converts a node into an array of schemas
  * @param {RAMLNode} node: the node to convert
@@ -1062,6 +1067,7 @@ methods.createSchema = (node, offsetKey) => {
 
   return [ schema, ...otherSchemas ]
 }
+/* eslint-enable max-statements */
 
 /**
  * updates a definitions object with a schema
@@ -1397,6 +1403,7 @@ methods.convertRAMLAuthIntoCustomAuthEntry = (scheme) => {
   return { key: authName, value: new Auth.Custom(authInstance) }
 }
 
+/* eslint-disable max-statements */
 /**
  * converts a RAML Security Scheme into an Auth Record
  * @param {RAMLSecurityScheme} scheme: the security scheme to convert
@@ -1431,6 +1438,7 @@ methods.convertRAMLAuthIntoAuthEntry = (scheme) => {
 
   return null
 }
+/* eslint-enable max-statements */
 
 /**
  * extracts all security schemes from a RAML Library and stores them in an array of entries
@@ -2561,23 +2569,25 @@ methods.areProtocolsEqual = (first, baseUri) => {
     (first[0].toLowerCase() === protocol.toLowerCase() + ':')
 }
 
-/**
- * converts a RAML methodBase into a Request instance
- * @param {RAMLApi} api: the api from which to get the global contentType, if needed
- * @param {RAMLMethodBase | RAMLMethod} methodBase: the method base from which to get most elements
- * of a request instance (like, name, description, contexts, ... But not the method name - 'get')
- * @returns {RequestInstance} the corresponding RequestInstance object
- */
-methods.convertRAMLMethodBaseIntoRequestInstance = (api, methodBase) => {
-  const overlay = methodBase.protocols() && api &&
-    !methods.areProtocolsEqual(methodBase.protocols(), api.baseUri()) ?
-    new URL().set('protocol', List(methodBase.protocols().map(protocol => {
+methods.createOverlayForMethodBaseEndpoint = (api, methodBase) => {
+  if (
+    methodBase.protocols() &&
+    api &&
+    !methods.areProtocolsEqual(methodBase.protocols(), api.baseUri())
+  ) {
+    return new URL().set('protocol', List(methodBase.protocols().map(protocol => {
       if (protocol[protocol.length - 1] !== ':') {
         return protocol.toLowerCase() + ':'
       }
       return protocol.toLowerCase()
-    }))) :
-    null
+    })))
+  }
+
+  return null
+}
+
+methods.extractMethodBaseEndpoints = (api, methodBase) => {
+  const overlay = methods.createOverlayForMethodBaseEndpoint(api, methodBase)
 
   const endpoints = OrderedMap({
     base: new Reference({
@@ -2587,6 +2597,18 @@ methods.convertRAMLMethodBaseIntoRequestInstance = (api, methodBase) => {
     })
   })
 
+  return endpoints
+}
+
+/**
+ * converts a RAML methodBase into a Request instance
+ * @param {RAMLApi} api: the api from which to get the global contentType, if needed
+ * @param {RAMLMethodBase | RAMLMethod} methodBase: the method base from which to get most elements
+ * of a request instance (like, name, description, contexts, ... But not the method name - 'get')
+ * @returns {RequestInstance} the corresponding RequestInstance object
+ */
+methods.convertRAMLMethodBaseIntoRequestInstance = (api, methodBase) => {
+  const endpoints = methods.extractMethodBaseEndpoints(api, methodBase)
   const name = methodBase.displayName() || null
   const description = methods.extractDescription(methodBase)
   const contexts = methods.extractContextsFromRequest(methodBase)

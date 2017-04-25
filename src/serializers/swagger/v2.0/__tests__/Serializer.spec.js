@@ -2191,6 +2191,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   })
 
   describe('@convertRequestToOperationObject', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'getTagStrings').andReturn([ 'pet', 'store' ])
       spyOn(__internals__, 'getKeysFromRecord').andReturn({
@@ -2255,6 +2256,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@addPathParametersToOperation', () => {
@@ -2545,6 +2547,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
   })
 
   describe('@createSwaggerObject', () => {
+    /* eslint-disable max-statements */
     it('should work if underlying methods are correct', () => {
       spyOn(__internals__, 'getSwaggerFormatObject').andReturn(123)
       spyOn(__internals__, 'getInfoObject').andReturn(321)
@@ -2581,6 +2584,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       const actual = __internals__.createSwaggerObject(api)
       expect(actual).toEqual(expected)
     })
+    /* eslint-enable max-statements */
   })
 
   describe('@serialize', () => {
