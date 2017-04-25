@@ -1148,6 +1148,13 @@ describe('models/Parameter.js', () => {
       expect(actual).toBeTruthy()
     })
 
+    it('should return false if superType is not set', () => {
+      const input = new Parameter()
+
+      const actual = __internals__.isSequenceParameter(input)
+      expect(actual).toBeFalsy()
+    })
+
     it('should return false otherwise', () => {
       const input = new Parameter({ superType: 'qowqwbq' })
       const actual = __internals__.isSequenceParameter(input)
@@ -1163,6 +1170,13 @@ describe('models/Parameter.js', () => {
       expect(actual).toBeTruthy()
     })
 
+    it('should return false if superType is not set', () => {
+      const input = new Parameter()
+
+      const actual = __internals__.isArrayParameter(input)
+      expect(actual).toBeFalsy()
+    })
+
     it('should return false otherwise', () => {
       const input = new Parameter({ type: 'qowqwbq' })
       const actual = __internals__.isArrayParameter(input)
@@ -1176,6 +1190,13 @@ describe('models/Parameter.js', () => {
 
       const actual = __internals__.isReferenceParameter(input)
       expect(actual).toBeTruthy()
+    })
+
+    it('should return false if superType is not set', () => {
+      const input = new Parameter()
+
+      const actual = __internals__.isReferenceParameter(input)
+      expect(actual).toBeFalsy()
     })
 
     it('should return false otherwise', () => {

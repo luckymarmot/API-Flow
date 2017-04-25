@@ -1805,6 +1805,34 @@ describe('serializers/paw/Serializer.js', () => {
       expect(__internals__.wrapDV).toHaveBeenCalled()
       expect(actual).toEqual(expected)
     })
+
+    it('should work with no valid content type', () => {
+      const pawReq = {}
+      const store = new Store()
+      const params = [ 123, 321, 234, 432 ]
+      const context = new Context()
+
+      spyOn(__internals__, 'convertReferenceOrParameterToDsEntry').andReturn(123)
+      spyOn(__internals__, 'addEntryToRecordParameterArray').andReturn([ 123, 234, 345, 456, 567 ])
+
+      spyOn(__internals__, 'isContextWithUrlEncoded').andReturn(false)
+      spyOn(__internals__, 'isContextWithMultiPart').andReturn(false)
+
+      spyOn(__internals__, 'wrapDV').andReturn('test')
+
+      const expected = {
+        body: 'test'
+      }
+
+      const actual = __internals__.setFormDataBody(pawReq, store, params, context)
+
+      expect(__internals__.convertReferenceOrParameterToDsEntry.calls.length).toEqual(4)
+      expect(__internals__.addEntryToRecordParameterArray.calls.length).toEqual(4)
+      expect(__internals__.isContextWithUrlEncoded).toHaveBeenCalled()
+      expect(__internals__.isContextWithMultiPart).toHaveBeenCalled()
+      expect(__internals__.wrapDV).toHaveBeenCalled()
+      expect(actual).toEqual(expected)
+    })
     /* eslint-enable max-statements */
   })
 
