@@ -953,6 +953,13 @@ describe('parsers/postman/v2.0/Parser.js', () => {
             variableDelimiters: List([ '{{', '}}', ':' ])
           }),
           value: 321
+        },
+        {
+          key: new URL({
+            url: 'https:///users/321',
+            variableDelimiters: List([ '{{', '}}', ':' ])
+          }),
+          value: 321
         }
       ]
       const expected = {
@@ -992,6 +999,18 @@ describe('parsers/postman/v2.0/Parser.js', () => {
             {
               key: new URL({
                 url: 'https://beta.paw.cloud/users/321',
+                variableDelimiters: List([ '{{', '}}', ':' ])
+              }),
+              value: 321
+            }
+          ],
+          lcPathname: [ '', 'users', '321' ]
+        },
+        '': {
+          entries: [
+            {
+              key: new URL({
+                url: 'https:///users/321',
                 variableDelimiters: List([ '{{', '}}', ':' ])
               }),
               value: 321
