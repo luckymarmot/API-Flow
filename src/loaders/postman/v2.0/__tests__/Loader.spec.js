@@ -783,6 +783,7 @@ describe('loaders/postman/v2.0/Loader.js', () => {
       spyOn(__internals__, 'extractGlobalsFromFileBody').andCall(v => [ v * 4 ])
 
       const inputs = [
+        null,
         {},
         { raw: 123 },
         { mode: 'urlencoded', urlencoded: 234 },
@@ -790,6 +791,7 @@ describe('loaders/postman/v2.0/Loader.js', () => {
         { mode: 'file', file: 456 }
       ]
       const expected = [
+        [],
         [],
         [ 123 * 2 ],
         [ 234 * 3 ],

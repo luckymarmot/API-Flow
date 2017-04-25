@@ -375,6 +375,10 @@ methods.extractGlobalsFromFileBody = (body) => {
 }
 
 methods.extractGlobalsFromBody = (body) => {
+  if (!body) {
+    return []
+  }
+
   if (body.raw) {
     return methods.extractGlobalsFromRawBody(body.raw)
   }
