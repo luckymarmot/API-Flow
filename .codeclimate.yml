@@ -3,11 +3,8 @@ engines:
     enabled: true
     config:
       config: ./linting/eslint_base.yaml
-  duplication:
+  fixme:
     enabled: true
-    config:
-      languages:
-      - javascript:
 exclude_paths:
   - "scripts/"
   - "testing/"
