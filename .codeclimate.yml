@@ -7,3 +7,7 @@ exclude_paths:
   - "scripts/"
   - "testing/"
   - "configs/"
+  - "src/**/*.spec.js"
+ratings:
+  paths:
+    - "src/**/*.js"
