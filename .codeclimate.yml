@@ -6,3 +6,4 @@ engines:
 exclude_paths:
   - "scripts/"
   - "testing/"
+  - "configs/"
