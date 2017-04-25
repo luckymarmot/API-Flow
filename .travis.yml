@@ -11,3 +11,6 @@ env:
   - TEST_TARGET=cov
 script:
   - make test
+addons:
+  code_climate:
+    repo_token: b05fe54c72e82d5ec82bd3d44c43af6a6aa13792e4769c6d6b4bfeee72256dcb
