@@ -35,14 +35,30 @@ const methods = {}
  * The ParameterContainer Record
  */
 export class ParameterContainer extends Record(ParameterContainerSpec) {
+  /**
+   * gets a set of headers from a ParameterContainer
+   * @returns {OrderedMap} the set of headers
+   */
   getHeadersSet() {
     return methods.getHeadersSet(this)
   }
 
+  /**
+   * resolves all the References the ParameterContainer contains to their corresponding object in
+   * a given store
+   * @param {Store} store: the store to use to resolve Reference
+   * @returns {ParameterContainer} a ParameterContainer with as few References as possible
+   */
   resolve(store) {
     return methods.resolve(this, store)
   }
 
+  /**
+   * filters a ParameterContainer based on a set of constraint Parameter from a Context
+   * @param {List<Parameter>} contextContraints: a List of constraint Parameters from a Context
+   * @returns {ParameterContainer} a ParameterContainer that respects all the constraints from a
+   * Context.
+   */
   filter(contextContraints) {
     return methods.filter(this, contextContraints)
   }

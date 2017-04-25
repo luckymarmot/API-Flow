@@ -32,6 +32,10 @@ const methods = {}
  * The Context Record
  */
 export class Context extends Record(ContextSpec) {
+  /**
+   * @param {ParameterContainer} paramContainer: the parameter container to filter
+   * @returns {ParameterContainer} the filtered parameter container
+   */
   filter(paramContainer) {
     return methods.filter(this, paramContainer)
   }

@@ -30,17 +30,34 @@ export const __meta__ = {
   format: 'internal'
 }
 
+/**
+ * A Parser that converts a dump of an Api Record into an actual Api Record
+ */
 class InternalParser {
   static __meta__ = __meta__
 
+  /**
+   * evaluates if the file is parsable by giving a score to the file depending on a few criteria.
+   * @param {string} content: the content of the file to evaluate
+   * @returns {number} the corresponding score, between 0 and 1
+   */
   static detect(...args) {
     return methods.detect(...args)
   }
 
+  /**
+   * tries to extract a title from a RAML file
+   * @param {string} content: the file to get the api title from
+   * @returns {string?} the title, if it was found
+   */
   static getAPIName(...args) {
     return methods.getAPIName(...args)
   }
 
+  /**
+   * converts an item into an intermediate model representation
+   * @returns {Api} the corresponding Api Record
+   */
   static parse(...args) {
     return methods.parse(...args)
   }

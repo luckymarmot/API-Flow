@@ -26,6 +26,9 @@ const __meta__ = {
 
 const methods = {}
 
+/**
+ * A Parser that converts a PawContext and an array of items into an Api Record
+ */
 export class PawParser {
   static __meta__ = __meta__
   static identifier =
@@ -36,6 +39,10 @@ export class PawParser {
   static languageHighlighter = null
   static fileExtension = null
 
+  /**
+   * converts an item into an intermediate model representation
+   * @returns {Api} the corresponding Api Record
+   */
   static parse({ options } = {}) {
     return methods.parse({ options })
   }

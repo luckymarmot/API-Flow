@@ -41,20 +41,33 @@ const __meta__ = {
 
 const methods = {}
 
+/**
+ * A Serializer to convert Api Records into Postman collections v2.
+ */
 export class PostmanSerializer {
   static __meta__ = __meta__
 
+  /**
+   * serializes an Api into a Postman collection v2 formatted string
+   * @param {Api} api: the api to convert
+   * @returns {string} the corresponding postman collection, as a string
+   */
   static serialize(api) {
     return methods.serialize(api)
   }
 
+  /**
+   * returns a quality score for a content string wrt. to the collection v2 format.
+   * @param {String} content: the content of the file to analyze
+   * @returns {number} the quality of the content
+   */
   static validate(content) {
     return methods.validate(content)
   }
 }
 
 /**
- * returns a quality score for a content string wrt. to the swagger v2 format.
+ * returns a quality score for a content string wrt. to the collection v2 format.
  * @param {String} content: the content of the file to analyze
  * @returns {number} the quality of the content
  */

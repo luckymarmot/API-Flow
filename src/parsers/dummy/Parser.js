@@ -15,13 +15,6 @@ import ParameterContainer from '../../models/ParameterContainer'
 import Context from '../../models/Context'
 import Group from '../../models/Group'
 
-/*
-import Contact from '../../../models/Contact'
-import License from '../../../models/License'
-import Interface from '../../../models/Interface'
-import Response from '../../../models/Response'
-*/
-
 import { genUuid } from '../../utils/gen-utils'
 
 const methods = {
@@ -33,38 +26,44 @@ export const __meta__ = {
   format: 'dummy'
 }
 
+/**
+ * a DummyParser. It contains a static Api Record.
+ */
 export class DummyParser {
   static __meta__ = __meta__
 
+  /**
+   * evaluates if the file is parsable by giving a score to the file depending on a few criteria.
+   * @param {string} content: the content of the file to evaluate
+   * @returns {number} the corresponding score, between 0 and 1
+   */
   static detect(content) {
     return methods.detect(content)
   }
 
+  /**
+   * tries to extract a title from a RAML file
+   * @param {string} content: the file to get the api title from
+   * @returns {string?} the title, if it was found
+   */
   static getAPIName(content) {
     return methods.getAPIName(content)
   }
 
+  /**
+   * evaluates if the file is parsable by giving a score to the file depending on a few criteria.
+   * @param {Object} item: the content of the file to evaluate
+   * @returns {boolean} true if parsable, false otherwise
+   */
   static isParsable(item) {
     return methods.isParsable(item)
   }
 
-  detect() {
-    return methods.detect(...arguments)
-  }
-
-  getAPIName() {
-    return methods.getAPIName(...arguments)
-  }
-
-  isParsable() {
-    return methods.isParsable(...arguments)
-  }
-
-  resolve() {
-    return methods.resolve(...arguments)
-  }
-
-  parse() {
+  /**
+   * converts an item into an intermediate model representation
+   * @returns {Api} the corresponding Api Record
+   */
+  static parse() {
     return methods.parse(...arguments)
   }
 }

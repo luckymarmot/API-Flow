@@ -29,10 +29,17 @@ const ConstraintSpec = {
  * The base Constraint class
  */
 export class Constraint extends Immutable.Record(ConstraintSpec) {
+  /**
+   * @param {any} d: a value to test against the expression of this Constraint
+   * @returns {boolean} true if the value is valid against the expression.
+   */
   evaluate(d) {
     return this.get('expression')(d)
   }
 
+  /**
+   * @returns {Object} the JSON Schema corresponding to this Constraint
+   */
   toJSONSchema() {
     const obj = {}
     const key = this.get('name')
@@ -48,6 +55,10 @@ export class Constraint extends Immutable.Record(ConstraintSpec) {
  * the value passed to the constructor
  */
 export class MultipleOfConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -70,6 +81,10 @@ export class MultipleOfConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class MaximumConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -92,6 +107,10 @@ export class MaximumConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class ExclusiveMaximumConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -107,6 +126,9 @@ export class ExclusiveMaximumConstraint extends Constraint {
     super(obj)
   }
 
+  /**
+   * @returns {Object} the JSON Schema corresponding to this Constraint
+   */
   toJSONSchema() {
     const obj = {}
     const key = this.get('name')
@@ -123,6 +145,10 @@ export class ExclusiveMaximumConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class MinimumConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -145,6 +171,10 @@ export class MinimumConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class ExclusiveMinimumConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -160,6 +190,9 @@ export class ExclusiveMinimumConstraint extends Constraint {
     super(obj)
   }
 
+  /**
+   * @returns {Object} the JSON Schema corresponding to this Constraint
+   */
   toJSONSchema() {
     const obj = {}
     const key = this.get('name')
@@ -176,6 +209,10 @@ export class ExclusiveMinimumConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class MaximumLengthConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -198,6 +235,10 @@ export class MaximumLengthConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class MinimumLengthConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -220,6 +261,10 @@ export class MinimumLengthConstraint extends Constraint {
  * the pattern passed to the constructor
  */
 export class PatternConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {string} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -242,6 +287,10 @@ export class PatternConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class MaximumItemsConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -267,6 +316,10 @@ export class MaximumItemsConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class MinimumItemsConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value = 0) {
     const obj = {
       _model: new Model({
@@ -289,6 +342,10 @@ export class MinimumItemsConstraint extends Constraint {
  * unique values
  */
 export class UniqueItemsConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {boolean} value: the value to use as a basis for the Constraint
+   */
   constructor(value = false) {
     const obj = {
       _model: new Model({
@@ -319,6 +376,10 @@ export class UniqueItemsConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class MaximumPropertiesConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value) {
     const obj = {
       _model: new Model({
@@ -344,6 +405,10 @@ export class MaximumPropertiesConstraint extends Constraint {
  * the value passed to the constructor
  */
 export class MinimumPropertiesConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {number} value: the value to use as a basis for the Constraint
+   */
   constructor(value = 0) {
     const obj = {
       _model: new Model({
@@ -366,6 +431,10 @@ export class MinimumPropertiesConstraint extends Constraint {
  * the list of values passed to the constructor
  */
 export class EnumConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {Array} value: the value to use as a basis for the Constraint
+   */
   constructor(value = []) {
     const obj = {
       _model: new Model({
@@ -388,6 +457,10 @@ export class EnumConstraint extends Constraint {
  * TODO: implement evaluate
  */
 export class JSONSchemaConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {Object} value: the value to use as a basis for the Constraint
+   */
   constructor(value = {}) {
     const obj = {
       _model: new Model({
@@ -403,6 +476,9 @@ export class JSONSchemaConstraint extends Constraint {
     super(obj)
   }
 
+  /**
+   * @returns {Object} the JSON Schema corresponding to this Constraint
+   */
   toJSONSchema() {
     return this.get('value')
   }
@@ -414,6 +490,10 @@ export class JSONSchemaConstraint extends Constraint {
  * TODO: implement evaluate
  */
 export class XMLSchemaConstraint extends Constraint {
+  /**
+   * @constructor
+   * @param {string} value: the value to use as a basis for the Constraint
+   */
   constructor(value = '') {
     const obj = {
       _model: new Model({
@@ -429,6 +509,9 @@ export class XMLSchemaConstraint extends Constraint {
     super(obj)
   }
 
+  /**
+   * @returns {Object} the JSON Schema corresponding to this Constraint
+   */
   toJSONSchema() {
     return {
       'x-xml': this.get('value')

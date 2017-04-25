@@ -1,4 +1,5 @@
 /* eslint-disable max-nested-callbacks */
+/* eslint-disable require-jsdoc */
 import expect, { spyOn, restoreSpies } from 'expect'
 import { OrderedMap, List } from 'immutable'
 
@@ -3931,3 +3932,4 @@ describe('parsers/raml/v1.0/Parser.js', () => {
     })
   })
 })
+/* eslint-enable require-jsdoc */

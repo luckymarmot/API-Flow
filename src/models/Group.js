@@ -32,10 +32,24 @@ const methods = {}
  * The Group Record
  */
 export class Group extends Record(GroupSpec) {
+  /**
+   * Returns the list of all request Ids in the group and its sub groups
+   * @returns {List<(string | number)>} a List with all the request Ids from the group
+   * and its sub groups
+   */
   getRequestIds() {
     return methods.getRequestIds(this)
   }
 
+  /**
+   * Returns the list of all Requests in the group and its sub groups, if they are
+   * present in a Request Map
+   * WARNING: numerical ids are cast to strings
+   * @param {?Map<Request>} requestMap: the Map from which to get the requests by
+   * their ids
+   * @returns {List<Request>} a List with all the existing Request from the group
+   * and its sub groups
+   */
   getRequests(requestMap) {
     return methods.getRequests(this, requestMap)
   }

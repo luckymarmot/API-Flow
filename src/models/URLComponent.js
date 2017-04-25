@@ -38,6 +38,10 @@ const methods = {}
  * The URLComponent Record
  */
 export class URLComponent extends Record(URLComponentSpec) {
+  /**
+   * @constructor
+   * @param {Object} component: the url component to represent as a URLComponent Record.
+   */
   constructor(component) {
     if (component && component.string && !component.parameter) {
       component.parameter = methods.convertStringToParameter(
@@ -51,10 +55,23 @@ export class URLComponent extends Record(URLComponentSpec) {
     return this
   }
 
+  /**
+   * adds a constraint to the parameter of a URLComponent
+   * @param {Constraint} constraint: the constraint to add
+   * @returns {URLComponent} the updated URLComponent
+   */
   addConstraint(constraint) {
     return methods.addConstraintToURLComponent(this, constraint)
   }
 
+  /**
+   * generates a string representing a URLComponent, with variables wrapped based on the
+   * variableDelimiters.
+   * @param {List<string>} variableDelimiters: the variable delimiters. like List([ '{{', '}}' ])
+   * @param {boolean} useDefault: whether to use the default value or to generate from the JSON
+   * schema
+   * @returns {Parameter} the updated Parameter
+   */
   generate(variableDelimiters = List(), useDefault = true) {
     return methods.generateURLComponent(this, variableDelimiters, useDefault)
   }

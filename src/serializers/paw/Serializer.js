@@ -22,12 +22,24 @@ const __meta__ = {
 
 const methods = {}
 
+/**
+ * A Serializer to import Api Records into Paw.
+ */
 export class PawSerializer {
   static fileExtensions = [];
 
   static __meta__ = __meta__
   static inputs = __inputs__
 
+  /**
+   * imports an Api into a PawContext
+   * @param {PawContext} context: the paw context in which the api should be imported
+   * @param {Api} api: the api to convert
+   * @param {Array<Items>} items: the list of items that was passed to the serializer
+   * @param {PawOptions} options: contains a few options that can improve the user experience when
+   * importing in paw.
+   * @returns {boolean} whether the import was successful or not
+   */
   static serialize({ options, api } = {}) {
     return methods.serialize({ options, api })
   }
