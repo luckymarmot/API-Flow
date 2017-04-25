@@ -2,6 +2,10 @@ export const __internals__ = {
   date: null
 }
 
+/**
+ * generates a random uuid
+ * @returns {string} a uuid-v4 formatted string
+ */
 export const genUuid = () => {
   let d = __internals__.date ? __internals__.date : new Date().getTime()
   const $uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'

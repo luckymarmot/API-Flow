@@ -21,13 +21,26 @@ methods.getKeysFromRecord = (keyMap, record) => {
     .reduce(convertEntryListInMap, {})
 }
 
+/**
+ * A Serializer to convert Api Records into RAML v1.0.
+ */
 export class RAMLSerializer {
   static __meta__ = __meta__
 
+  /**
+   * serializes an Api into a RAML v1.0 formatted string
+   * @param {Api} api: the api to convert
+   * @returns {string} the corresponding postman collection, as a string
+   */
   static serialize(api) {
     return methods.serialize(api)
   }
 
+  /**
+   * returns a quality score for a content string wrt. to the RAML v1.0 format.
+   * @param {String} content: the content of the file to analyze
+   * @returns {number} the quality of the content
+   */
   static validate(content) {
     return methods.validate(content)
   }

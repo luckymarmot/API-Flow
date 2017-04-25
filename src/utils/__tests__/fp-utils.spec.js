@@ -1,3 +1,4 @@
+/* eslint-disable require-jsdoc */
 import expect, { spyOn, restoreSpies } from 'expect'
 import { __internals__ } from '../fp-utils'
 
@@ -138,3 +139,4 @@ describe('utils/fp-utils', () => {
     })
   })
 })
+/* eslint-enable require-jsdoc */

@@ -13,4 +13,7 @@ const ItemSpec = {
   content: null
 }
 
+/**
+ * The Item Record
+ */
 export class Item extends Record(ItemSpec) { }

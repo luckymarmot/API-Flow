@@ -12,15 +12,39 @@ const __meta__ = {
   format: 'postman-collection'
 }
 
+/**
+ * @class PostmanCollectionV2Loader
+ * @description The loader associated with postman collection v2 formats.
+ * It holds all the necessary methods used to load a file representing a postman collection v2.
+ */
 export class PostmanCollectionV2Loader {
   static extensions = __meta__.extensions
   static parsable = __meta__.parsable
   static format = __meta__.format
 
+  /**
+   * Resolves a URI and fixes it if necessary.
+   * @param {Object} namedParams - an object holding the named parameters used for the resolution of
+   * the URI.
+   * @param {Object} namedParams.options - an object holding all the settings necessary for
+   * resolving, loading, parsing and serializing a uri and its dependencies.
+   * @param {string} uri - the URI to resolve to a file that will be used as the primary file for
+   * this loader
+   * @returns {Promise} a Promise containing the `options` and normalized `item` in an object. See
+   * `methods.fixPrimary` for more information.
+   * @static
+   */
   static load({ options, uri }) {
     return methods.load({ options, uri })
   }
 
+  /**
+   * Tests whether the content of a file is parsable by this loader and associated parser. This is
+   * used to tell which loader/parser combo should be used.
+   * @param {string?} content - the content of the file to test
+   * @returns {boolean} whether it is parsable or not
+   * @static
+   */
   static isParsable({ content }) {
     return methods.isParsable(content)
   }

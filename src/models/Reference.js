@@ -39,10 +39,21 @@ const ReferenceSpec = {
  * The Reference Record
  */
 export class Reference extends Record(ReferenceSpec) {
+  /**
+   * returns the path of a reference in a store
+   * @returns {List<string>} the path to use with store.getIn()
+   */
   getLocation() {
     return methods.getLocation(this)
   }
 
+  /**
+   * resolves a Reference against a Store. (finds what is located in the store at the location
+   * described by the Reference)
+   * @param {Store} store: the Store to search in
+   * @returns {any} the object found in the Store at the location provided by the Reference. returns
+   * undefined if not found
+   */
   resolve(store) {
     return methods.resolve(this, store)
   }

@@ -252,3 +252,10 @@ rules:
   no-bitwise: 0
   no-plusplus: 2
   prefer-const: 2
+  require-jsdoc:
+  - 1
+  - require:
+      FunctionDeclaration: true
+      MethodDefinition: true
+      ClassDeclaration: true
+      ArrowFunctionExpression: true

@@ -7,39 +7,130 @@ import { currify } from './utils/fp-utils'
 
 const methods = {}
 
+/**
+ * @class DefaultApiFlow
+ * @description The default core class of API-Flow.
+ * It holds all the necessary methods used to convert a file from one format to another.
+ */
 export class DefaultApiFlow {
+  /**
+   * detects the format of a given content
+   * @param {string} content: the content whose format needs to be found
+   * @returns {{format: string, version: string}} the corresponding format object
+   * @static
+   */
   static detectFormat(content) {
+    // TODO implement this
     return methods.detect(content)
   }
 
+  /**
+   * detects the name of a given API from a given content
+   * @param {string} content: the content whose name needs to be guessed
+   * @returns {string?} the corresponding API name, if it exists
+   * @static
+   */
   static detectName(content) {
+    // TODO implement this
     return methods.detectName(content)
   }
 
+  /**
+   * updates an environment cache with a set of resolved uris
+   * @param {Object<URIString, string>} cache: an object where each key-value pair is a uri string
+   * and its associated content
+   * @returns {void}
+   * @static
+   */
   static setCache(cache) {
     environment.setCache(cache)
   }
 
+  /**
+   * sets an environment up based on options
+   * @param {Object} args: the named args of this method
+   * @param {Object} args.options: a set of options containing settings relevant to the set-up of
+   * the converter
+   * @returns {void}
+   * @static
+   */
   static setup({ options } = {}) {
+    // TODO implement this
     return methods.setup({ options })
   }
 
+  /**
+   * finds a primaryUri from an array of multiple items. A primaryUri is the root uri from which
+   * all the other files are resolved. For instance, in a RAML document, there exists a root
+   * document (with the header `#%RAML 1.0`) which can refer to multiple other subcomponents such as
+   * RAML libraries. The root document's uri would be the primary uri.
+   * @param {Object} args: the named args of this method
+   * @param {Object} args.options: a set of options containing settings relevant to the behavior of
+   * the converter
+   * @param {Array<{uri: string}>} items: an array of uris from which one should be chosen as the
+   * Primary URI
+   * @returns {string?} the corresponding API name, if it exists
+   * @static
+   */
   static findPrimaryUri({ options, items }) {
     return methods.findPrimaryUri({ options, items })
   }
 
+  /**
+   * resolves a uri to a file and normalizes it based on the loader selected from the options object
+   * @param {Object} args: the named args of this method
+   * @param {Object} args.options: a set of options containing settings relevant to the loading of
+   * the uri and it's normalization
+   * @param {Object} args.uri: the uri to resolve
+   * @returns {Promise} a promise that resolves if the uri is successfully loaded and normalized.
+   * It resolves to the object { options, item }, where options are the options passed to the load
+   * method, and item contains the normalized content of the uri.
+   * @static
+   */
   static load({ options, uri }) {
     return methods.load({ options, uri })
   }
 
+  /**
+   * converts a normalized item in a specific format into the intermediate model.
+   * @param {Object} args: the named args of this method
+   * @param {Object} args.options: a set of options containing settings relevant to the parsing of
+   * the item
+   * @param {Object} args.item: the item to parse
+   * @returns {Promise} a promise that resolves if the item is successfully parsed.
+   * It resolves to the object { options, api }, where options are the options passed to the parse
+   * method, and api contains the intermediate model representing the item.
+   * @static
+   */
   static parse({ options, item }) {
     return methods.parse({ options, item })
   }
 
+  /**
+   * converts an intermediate model api into a specific format.
+   * @param {Object} args: the named args of this method
+   * @param {Object} args.options: a set of options containing settings relevant to the
+   * serialization of the model
+   * @param {Object} args.api: the model to serialize
+   * @returns {Promise} a promise that resolves if the item is successfully parsed.
+   * It resolves to the string representation of the api in the target format
+   * @static
+   */
   static serialize({ options, api }) {
     return methods.serialize({ options, api })
   }
 
+  /**
+   * resolves a uri to a file, loads, parses and converts it based on the provided options object.
+   * It is a shorthand method for the successive calls of `load`, `parse` and `serialize`.
+   * @param {Object} args: the named args of this method
+   * @param {Object} args.options: a set of options containing settings relevant to the conversion
+   * of the file at the given uri
+   * @param {Object} args.uri: the uri of the file to convert
+   * @returns {Promise} a promise that resolves if the uri is successfully loaded and converted.
+   * It resolves to the string representation of the api in the target format.
+   * @static
+   */
   static transform({ options, uri }) {
     return methods.transform({ options, uri })
   }

@@ -1,4 +1,5 @@
 /* eslint-disable max-nested-callbacks */
+/* eslint-disable require-jsdoc */
 import expect from 'expect'
 
 import {
@@ -763,3 +764,5 @@ describe('mocks/PawMocks.js', () => {
     })
   })
 })
+/* eslint-enable require-jsdoc */
+/* eslint-enable max-nested-callbacks */

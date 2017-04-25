@@ -54,6 +54,17 @@ const methods = {}
  * The URL Record
  */
 export class URL extends Record(URLSpec) {
+  /**
+   * @constructor
+   * @param {Object} props: the properties of this URL Record
+   * @param {string|Object} props.url: a representation of the url this Record needs to reflect.
+   * The string representation of the url is preferred.
+   * @param {List<string>} props.variableDelimiters: a List of delimiters for variables present in
+   * the url.
+   * @param {string?} props.description: an optional description of the purpose of this URL.
+   * @param {string?} props.uuid: an optional uuid field
+   * @param {boolean?} props.secure: an optional field to tell whether a URL is secure or not.
+   */
   constructor(props) {
     if (!props) {
       super()
@@ -67,14 +78,39 @@ export class URL extends Record(URLSpec) {
     return this
   }
 
+  /**
+   * generates an href from a URL
+   * @param {List<string>} delimiters: the variable delimiters (needed to format variables in the
+   * fields)
+   * @param {boolean} useDefault: whether to use the default values or not
+   * @returns {string} the url.href
+   */
   generate(delimiters = List(), useDefault = true) {
     return methods.generate(this, delimiters, useDefault)
   }
 
+  /**
+   * generates a URL from a URL and a url string
+   * @param {string} url: the url to reach
+   * @param {List<string>} delimiters: the variable delimiters (needed to format variables in the
+   * fields)
+   * @param {boolean} useDefault: whether to use the default values or not
+   * @returns {URL} the resolved URL
+   *
+   * IMPORTANT: the from string must be using the same delimiters format as the one provided with
+   * `delimiters`, otherwise the final result might have inconsistencies.
+   */
   resolve(url, delimiters = List(), useDefault = true) {
     return methods.resolve(this, url, delimiters, useDefault)
   }
 
+  /**
+   * converts a URL Record into a urlObject
+   * @param {List<string>} delimiters: the variable delimiters (needed to format variables in the
+   * fields)
+   * @param {boolean} useDefault: whether to use the default values or not
+   * @returns {Object} the corresponding urlObject
+   */
   toURLObject(delimiters, useDefault) {
     return methods.convertURLComponentsToURLObject(this, delimiters, useDefault)
   }

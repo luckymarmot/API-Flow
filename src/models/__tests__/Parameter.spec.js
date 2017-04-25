@@ -1,4 +1,5 @@
 /* eslint-disable max-nested-callbacks */
+/* eslint-disable require-jsdoc */
 import { Record, List } from 'immutable'
 import expect, { spyOn, restoreSpies } from 'expect'
 
@@ -1543,6 +1544,7 @@ describe('models/Parameter.js', () => {
       actual = __internals__.isValid(source, validInput)
       expect(actual).toEqual(true)
     })
-    /* eslint-enable max-statements */
   })
 })
+/* eslint-enable require-jsdoc */
+/* eslint-enable max-statements */

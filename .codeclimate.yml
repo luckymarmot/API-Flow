@@ -3,7 +3,13 @@ engines:
     enabled: true
     config:
       config: ./linting/eslint_base.yaml
+  fixme:
+    enabled: true
 exclude_paths:
   - "scripts/"
   - "testing/"
   - "configs/"
+  - "src/**/*.spec.js"
+ratings:
+  paths:
+    - "src/**/*.js"

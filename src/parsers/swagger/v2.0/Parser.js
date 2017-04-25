@@ -39,17 +39,34 @@ export const __meta__ = {
   format: 'swagger'
 }
 
+/**
+ * A Parser that converts Swagger v2.0 formatted objects into Api Records
+ */
 export class SwaggerParser {
   static __meta__ = __meta__
 
+  /**
+   * evaluates if the file is parsable by giving a score to the file depending on a few criteria.
+   * @param {string} content: the content of the file to evaluate
+   * @returns {number} the corresponding score, between 0 and 1
+   */
   static detect(content) {
     return methods.detect(content)
   }
 
+  /**
+   * tries to extract a title from a RAML file
+   * @param {string} content: the file to get the api title from
+   * @returns {string?} the title, if it was found
+   */
   static getAPIName(content) {
     return methods.getAPIName(content)
   }
 
+  /**
+   * converts an item into an intermediate model representation
+   * @returns {Api} the corresponding Api Record
+   */
   static parse() {
     return methods.parse(...arguments)
   }

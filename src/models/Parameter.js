@@ -75,18 +75,43 @@ const methods = {}
  * The Parameter Record
  */
 export class Parameter extends Record(ParameterSpec) {
+  /**
+   * transforms a Parameter into a JSON Schema
+   * @param {boolean} useFaker: whether to use Faker or not
+   * @param {boolean} replaceRefs: whether to replace refs with simple strings or to replace them
+   * with $refs
+   * @returns {schema} the corresponding schema
+   */
   getJSONSchema(useFaker = false, replaceRefs = false) {
     return methods.getJSONSchema(this, useFaker, replaceRefs)
   }
 
+  /**
+   * generates a value from a Parameter or a JSON Schema.
+   * @param {boolean} useDefault: whether to use the default value or not
+   * @param {schema} _constraintSet: an optional schema to generate from. If this schema is
+   * provided, the calling Parameter is ignored.
+   * @returns {any} the generated value
+   */
   generate(useDefault, _constraintSet) {
     return methods.generate(this, useDefault, _constraintSet)
   }
 
+  /**
+   * validates a value against the constraints of a Parameter
+   * @param {any} value: the value to test
+   * @returns {boolean} whether the value respects all the constraints of the Parameter or not
+   */
   validate(value) {
     return methods.validate(this, value)
   }
 
+  /**
+   * tests whether there is an applicableContext in which the param is validated
+   * @param {Parameter} param: the param to validate
+   * @returns {boolean} whether the param respects all the constraints of one of the
+   * applicableContexts or not
+   */
   isValid(param) {
     return methods.isValid(this, param)
   }
