@@ -14,7 +14,7 @@ methods.setCache = ($cache) => {
 }
 
 methods.fsResolve = (uri) => {
-  const cleanUri = uri.split('#')[0]
+  const cleanUri = decodeURIComponent(uri.split('#')[0])
 
   if (cache[cleanUri]) {
     return Promise.resolve(cache[cleanUri])
