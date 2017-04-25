@@ -245,7 +245,10 @@ rules:
   max-params:
   - 2
   - 6
-  max-statements: 0
+  max-statements:
+  - 2
+  - max: 10
+  - ignoreTopLevelFunctions: true
   no-bitwise: 0
   no-plusplus: 2
   prefer-const: 2
