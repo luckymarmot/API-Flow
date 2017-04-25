@@ -1,7 +1,13 @@
 language: node_js
-before_script:
-- make lint
-install:
-- make configure
-test:
-- make test
+node_js: 7.4
+cache:
+  yarn: true
+  directories:
+    - node_modules
+env:
+  - TEST_TARGET=lint
+  - TEST_TARGET=unit
+  - TEST_TARGET=e2e
+  - TEST_TARGET=cov
+script:
+  - make test

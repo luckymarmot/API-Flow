@@ -1,0 +1,1783 @@
+{
+  "_model": {
+    "name": "api.core.models",
+    "version": "0.1.0"
+  },
+  "resources": {
+    "https://6-dot-authentiqio.appspot.com/key": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": null,
+      "uuid": null,
+      "endpoints": {
+        "6-dot-authentiqio.appspot.com/": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "6-dot-authentiqio.appspot.com/",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/key",
+        "path": "/key",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/key",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/key",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{{",
+          "}}",
+          ":"
+        ]
+      },
+      "methods": {
+        "post": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/key",
+          "description": "Register a new ID `JWT(sub, devtoken)`\n\nv5: `JWT(sub, pk, devtoken, ...)`\n\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n",
+          "method": "post",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {
+              "raw": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "Authentiq ID to register",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": null,
+      "interfaces": {}
+    },
+    "https://6-dot-authentiqio.appspot.com/key?email={{email}}&phone={{phone}}&code={{code}}": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": null,
+      "uuid": null,
+      "endpoints": {
+        "6-dot-authentiqio.appspot.com/": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "6-dot-authentiqio.appspot.com/",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/key",
+        "path": "/key",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/key",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/key",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{{",
+          "}}",
+          ":"
+        ]
+      },
+      "methods": {
+        "delete": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/key?email={{email}}&phone={{phone}}&code={{code}}",
+          "description": "Revoke an Authentiq ID using email & phone.\n\nIf called with `email` and `phone` only, a verification code \nwill be sent by email. Do a second call adding `code` to \ncomplete the revocation.\n",
+          "method": "delete",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {
+              "email": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "email",
+                "name": "email",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "$ref": "#/definitions/email"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              "phone": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "phone",
+                "name": "phone",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "$ref": "#/definitions/phone"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              "code": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "code",
+                "name": "code",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "$ref": "#/definitions/code"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": null,
+      "interfaces": {}
+    },
+    "https://6-dot-authentiqio.appspot.com/key/:PK": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": null,
+      "uuid": null,
+      "endpoints": {
+        "6-dot-authentiqio.appspot.com/": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "6-dot-authentiqio.appspot.com/",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/key/:PK",
+        "path": "/key/:PK",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/key/:PK",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": null,
+            "required": false,
+            "superType": "sequence",
+            "value": [
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "/key/",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "PK",
+                "name": "PK",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "PK",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            ],
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{{",
+          "}}",
+          ":"
+        ]
+      },
+      "methods": {
+        "get": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "description": "Get public details of an Authentiq ID.\n",
+          "method": "get",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "put": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "description": "Update Authentiq ID by replacing the object.\n\nv4: `JWT(sub,email,phone)` to bind email/phone hash; \n\nv5: POST issuer-signed email & phone scopes\nand PUT to update registration `JWT(sub, pk, devtoken, ...)`\n\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n",
+          "method": "put",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {
+              "raw": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "Authentiq ID to register",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "post": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "description": "update properties of an Authentiq ID.\n(not operational in v4; use PUT for now)\n\nv5: POST issuer-signed email & phone scopes in\na self-signed JWT\n\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n",
+          "method": "post",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {
+              "raw": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "Authentiq ID to register",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "head": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "description": "HEAD info on Authentiq ID\n",
+          "method": "head",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": null,
+      "interfaces": {}
+    },
+    "https://6-dot-authentiqio.appspot.com/key/:PK?secret={{secret}}": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": null,
+      "uuid": null,
+      "endpoints": {
+        "6-dot-authentiqio.appspot.com/": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "6-dot-authentiqio.appspot.com/",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/key/:PK",
+        "path": "/key/:PK",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/key/:PK",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": null,
+            "required": false,
+            "superType": "sequence",
+            "value": [
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "/key/",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "PK",
+                "name": "PK",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "PK",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            ],
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{{",
+          "}}",
+          ":"
+        ]
+      },
+      "methods": {
+        "delete": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/key/:PK?secret={{secret}}",
+          "description": "Revoke an Identity (Key) with a revocation secret",
+          "method": "delete",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {
+              "secret": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "secret",
+                "name": "secret",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "$ref": "#/definitions/secret"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": null,
+      "interfaces": {}
+    },
+    "https://6-dot-authentiqio.appspot.com/login?callback={{callback}}": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": null,
+      "uuid": null,
+      "endpoints": {
+        "6-dot-authentiqio.appspot.com/": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "6-dot-authentiqio.appspot.com/",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/login",
+        "path": "/login",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/login",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/login",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{{",
+          "}}",
+          ":"
+        ]
+      },
+      "methods": {
+        "post": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/login?callback={{callback}}",
+          "description": "push sign-in request\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n",
+          "method": "post",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {
+              "callback": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "callback",
+                "name": "callback",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "$ref": "#/definitions/callback"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "body": {
+              "raw": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "Push Token.",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": null,
+      "interfaces": {}
+    },
+    "https://6-dot-authentiqio.appspot.com/scope?test={{test}}": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": null,
+      "uuid": null,
+      "endpoints": {
+        "6-dot-authentiqio.appspot.com/": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "6-dot-authentiqio.appspot.com/",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/scope",
+        "path": "/scope",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/scope",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/scope",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{{",
+          "}}",
+          ":"
+        ]
+      },
+      "methods": {
+        "post": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/scope?test={{test}}",
+          "description": "scope verification request\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n",
+          "method": "post",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {
+              "test": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "test",
+                "name": "test",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": null,
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [
+                  {
+                    "_model": {
+                      "name": "json.constraint.models",
+                      "version": "0.1.0"
+                    },
+                    "name": "json",
+                    "value": {
+                      "$ref": "#/definitions/test"
+                    }
+                  }
+                ],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "body": {
+              "raw": {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "Claims of scope",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            },
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": null,
+      "interfaces": {}
+    },
+    "https://6-dot-authentiqio.appspot.com/scope/:job": {
+      "_model": {
+        "name": "resource.models",
+        "version": "0.1.0"
+      },
+      "name": null,
+      "uuid": null,
+      "endpoints": {
+        "6-dot-authentiqio.appspot.com/": {
+          "_model": {
+            "name": "reference.models",
+            "version": "0.1.0"
+          },
+          "type": "endpoint",
+          "uuid": "6-dot-authentiqio.appspot.com/",
+          "overlay": null
+        }
+      },
+      "path": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          null
+        ],
+        "slashes": null,
+        "auth": null,
+        "host": null,
+        "port": null,
+        "hostname": null,
+        "href": "/scope/:job",
+        "path": "/scope/:job",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/scope/:job",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": null,
+            "required": false,
+            "superType": "sequence",
+            "value": [
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": null,
+                "name": null,
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "/scope/",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              },
+              {
+                "_model": {
+                  "name": "parameter.core.models",
+                  "version": "0.1.0"
+                },
+                "in": null,
+                "usedIn": "request",
+                "uuid": null,
+                "key": "job",
+                "name": "job",
+                "description": null,
+                "examples": [],
+                "type": "string",
+                "format": null,
+                "default": "job",
+                "required": false,
+                "superType": null,
+                "value": null,
+                "constraints": [],
+                "applicableContexts": [],
+                "interfaces": {}
+              }
+            ],
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{{",
+          "}}",
+          ":"
+        ]
+      },
+      "methods": {
+        "get": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "description": "get the status / current content of a verification job",
+          "method": "get",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "put": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "description": "authority updates a JWT with its signature\nSee: https://github.com/skion/authentiq/wiki/JWT-Examples\n",
+          "method": "put",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "post": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "description": "this is a scope confirmation",
+          "method": "post",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "delete": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "description": "delete a verification job",
+          "method": "delete",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        },
+        "head": {
+          "_model": {
+            "name": "request.models",
+            "version": "0.1.0"
+          },
+          "id": null,
+          "endpoints": {
+            "6-dot-authentiqio.appspot.com/": {
+              "_model": {
+                "name": "reference.models",
+                "version": "0.1.0"
+              },
+              "type": "endpoint",
+              "uuid": "6-dot-authentiqio.appspot.com/",
+              "overlay": null
+            }
+          },
+          "name": "https://6-dot-authentiqio.appspot.com/scope/:job",
+          "description": "HEAD to get the status of a verification job",
+          "method": "head",
+          "parameters": {
+            "_model": {
+              "name": "parameter-container.core.models",
+              "version": "0.1.0"
+            },
+            "headers": {},
+            "queries": {},
+            "body": {},
+            "path": {}
+          },
+          "contexts": [],
+          "auths": [],
+          "responses": {},
+          "timeout": null,
+          "tags": [],
+          "interfaces": {}
+        }
+      },
+      "description": null,
+      "interfaces": {}
+    }
+  },
+  "group": {
+    "_model": {
+      "name": "group.models",
+      "version": "0.1.0"
+    },
+    "id": null,
+    "name": null,
+    "description": null,
+    "children": {
+      "key": {
+        "_model": {
+          "name": "group.models",
+          "version": "0.1.0"
+        },
+        "id": null,
+        "name": "key",
+        "description": "Folder for key",
+        "children": {
+          "https://6-dot-authentiqio.appspot.com/key": "https://6-dot-authentiqio.appspot.com/key",
+          "https://6-dot-authentiqio.appspot.com/key?email={{email}}&phone={{phone}}&code={{code}}": "https://6-dot-authentiqio.appspot.com/key?email={{email}}&phone={{phone}}&code={{code}}",
+          "https://6-dot-authentiqio.appspot.com/key/:PK": "https://6-dot-authentiqio.appspot.com/key/:PK",
+          "https://6-dot-authentiqio.appspot.com/key/:PK?secret={{secret}}": "https://6-dot-authentiqio.appspot.com/key/:PK?secret={{secret}}"
+        }
+      },
+      "login": {
+        "_model": {
+          "name": "group.models",
+          "version": "0.1.0"
+        },
+        "id": null,
+        "name": "login",
+        "description": "Folder for login",
+        "children": {
+          "https://6-dot-authentiqio.appspot.com/login?callback={{callback}}": "https://6-dot-authentiqio.appspot.com/login?callback={{callback}}"
+        }
+      },
+      "scope": {
+        "_model": {
+          "name": "group.models",
+          "version": "0.1.0"
+        },
+        "id": null,
+        "name": "scope",
+        "description": "Folder for scope",
+        "children": {
+          "https://6-dot-authentiqio.appspot.com/scope?test={{test}}": "https://6-dot-authentiqio.appspot.com/scope?test={{test}}",
+          "https://6-dot-authentiqio.appspot.com/scope/:job": "https://6-dot-authentiqio.appspot.com/scope/:job"
+        }
+      }
+    }
+  },
+  "store": {
+    "_model": {
+      "name": "store.models",
+      "version": "0.1.0"
+    },
+    "variable": {},
+    "constraint": {
+      "email": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "title": "email"
+        }
+      },
+      "phone": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "title": "phone"
+        }
+      },
+      "code": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "title": "code"
+        }
+      },
+      "secret": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "title": "secret"
+        }
+      },
+      "callback": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "title": "callback"
+        }
+      },
+      "test": {
+        "_model": {
+          "name": "json.constraint.models",
+          "version": "0.1.0"
+        },
+        "name": "json",
+        "value": {
+          "title": "test"
+        }
+      }
+    },
+    "endpoint": {
+      "6-dot-authentiqio.appspot.com/": {
+        "_model": {
+          "name": "url.models",
+          "version": "0.1.0"
+        },
+        "protocol": [
+          "https:"
+        ],
+        "slashes": true,
+        "auth": null,
+        "host": "6-dot-authentiqio.appspot.com",
+        "port": null,
+        "hostname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "hostname",
+          "string": "6-dot-authentiqio.appspot.com",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "hostname",
+            "name": "hostname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "6-dot-authentiqio.appspot.com",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "href": "http://6-dot-authentiqio.appspot.com/",
+        "path": "/",
+        "pathname": {
+          "_model": {
+            "name": "url-component.models",
+            "version": "0.1.0"
+          },
+          "componentName": "pathname",
+          "string": "/",
+          "parameter": {
+            "_model": {
+              "name": "parameter.core.models",
+              "version": "0.1.0"
+            },
+            "in": null,
+            "usedIn": "request",
+            "uuid": null,
+            "key": "pathname",
+            "name": "pathname",
+            "description": null,
+            "examples": [],
+            "type": "string",
+            "format": null,
+            "default": "/",
+            "required": false,
+            "superType": null,
+            "value": null,
+            "constraints": [],
+            "applicableContexts": [],
+            "interfaces": {}
+          },
+          "variableDelimiters": [
+            "{{",
+            "}}",
+            ":"
+          ]
+        },
+        "query": null,
+        "search": null,
+        "hash": null,
+        "variableDelimiters": [
+          "{{",
+          "}}",
+          ":"
+        ]
+      }
+    },
+    "parameter": {},
+    "response": {},
+    "auth": {},
+    "interface": {}
+  },
+  "info": {
+    "_model": {
+      "name": "info.utils.models",
+      "version": "0.1.0"
+    },
+    "title": "Authentiq",
+    "description": null,
+    "tos": null,
+    "contact": null,
+    "license": null,
+    "version": null
+  }
+}

@@ -3,12 +3,16 @@ env:
   browser: true
   node: true
   es6: true
+  mocha: true
 parser: babel-eslint
 globals:
   ga: true
   mixpanel: true
   olark: true
   Raven: true
+settings:
+  flowtype:
+    onlyFilesWithFlowAnnotation: true
 ecmaFeatures:
   arrowFunctions: true
   binaryLiterals: true
@@ -125,7 +129,7 @@ rules:
   no-use-before-define: 2
   indent:
   - 1
-  - 4
+  - 2
   - SwitchCase: 1
   brace-style:
   - 1
@@ -171,7 +175,7 @@ rules:
   no-ternary: 0
   no-trailing-spaces: 1
   no-underscore-dangle: 0
-  no-extra-parens: 1
+  no-extra-parens: 0
   one-var:
   - 1
   - never
@@ -182,6 +186,7 @@ rules:
   quote-props:
   - 1
   - as-needed
+  - numbers: true
   quotes:
   - 1
   - single
@@ -235,11 +240,22 @@ rules:
   - 4
   max-len:
   - 2
-  - 80
+  - 100
   - 2
   max-params:
   - 2
   - 6
-  max-statements: 0
+  max-statements:
+  - 2
+  - max: 10
+  - ignoreTopLevelFunctions: true
   no-bitwise: 0
   no-plusplus: 2
+  prefer-const: 2
+  require-jsdoc:
+  - 1
+  - require:
+      FunctionDeclaration: true
+      MethodDefinition: true
+      ClassDeclaration: true
+      ArrowFunctionExpression: true

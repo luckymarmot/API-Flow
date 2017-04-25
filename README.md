@@ -1,29 +1,37 @@
 [![Build Status](https://travis-ci.org/luckymarmot/API-Flow.svg?branch=master)](https://travis-ci.org/luckymarmot/API-Flow)
 
-# API Flow
+# API-Flow
 
 A flow written in ES6 using Immutable to convert between API description formats (Swagger, etc.) and other programs such as cURL command lines.
 
-## Installation
+## What formats are supported and what will be in the future
+We currently support:
+- `Swagger v2.0 (in/out)`
+- `RAML v1.0 (in/out)`
+- `Postman Collection v2.0 (in/out)`
+- `Paw v3.1 (in/out)`
 
+We intend to support:
+- `Swagger v3.0`
+- `RAML v0.8`
+- `Postman Collection v1.0`
+- `Postman Dump v1.0`
+- `Insomnia v3.0`
+- `Api-Blueprint`
+- and many more.
+
+## Installation
 ### from a cloned repository
 
 just run
 
 ```sh
 git clone https://github.com/luckymarmot/API-Flow.git
+cd API-Flow
 make install
 ```
 
-This will install the node module dependencies and create the lib folder from which you will be able to run the cli.
-
-### from npm (not yet available)
-
-just run
-
-```sh
-npm install api-flow
-```
+This will install the node module dependencies
 
 ## Building the different libraries
 ### node, web, and webworker
@@ -41,35 +49,38 @@ You can use the following command to add the different extensions to Paw
 
 ```sh
 # use TARGET="swagger" if you only want the swagger bindings
-make transfer TARGET="curl swagger raml postman"
+make transfer TARGET="swagger raml1 postman2"
 ```
 
 ## Using the npm module
 ### as a standard library
 
 ```js
-const Flow = require('api-flow').default; // if from npm
-const Flow = require('./dist/node/api-flow.js').default; // if from `make runners`
+const ApiFlow = require('api-flow'); // if from npm
+const ApiFlow = require('./dist/node/api-flow.js'); // if from `make runners TARGET="node"`
 
 const options = {
-    parser: {
-        name: 'raml'
+    source: {
+        format: 'swagger',
+        version: 'v2.0'
     },
-    serializer: {
-        name: 'swagger'
+    target: {
+        format: 'raml',
+        version: 'v1.0'
     }
 }
 
-const converter = new Flow()
-const promise = converter.transform('my_super_raml.yml', options)
+const promise = ApiFlow.transform({
+  options,
+  uri: path.resolve(__dirname, './my_super_swagger.yml')
+})
 
 promise.then((data) => {
-    // do some cool stuff with the data
+  // do some cool stuff with the data
 })
 ```
 
-### Using as a CLI
-
+### Using as a CLI (coming soon)
 ```sh
 node ./bin/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
 ```
