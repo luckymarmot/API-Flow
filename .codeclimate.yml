@@ -3,3 +3,6 @@ engines:
     enabled: true
     config:
       config: ./linting/eslint_base.yaml
+exclude_paths:
+  - "scripts/"
+  - "testing/"
