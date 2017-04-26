@@ -49,6 +49,7 @@
     "babel-register": "6.3.13",
     "chai": "3.4.1",
     "chokidar": "^1.6.1",
+    "codeclimate-test-reporter": "^0.4.1",
     "colors": "^1.1.2",
     "cross-env": "^4.0.0",
     "diff": "^3.2.0",
