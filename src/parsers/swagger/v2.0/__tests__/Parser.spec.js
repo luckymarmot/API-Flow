@@ -2189,7 +2189,9 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           }) :
           new ParameterContainer()
       })
+      /* eslint-disable no-undefined */
       const inputs = [
+        [ new Store(), new URL(), undefined ],
         [ new Store(), new URL(), {} ],
         [ new Store(), new URL(), { key: 'abc', value: 123 } ],
         [
@@ -2214,8 +2216,10 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           { key: 'userId', value: 123 }
         ]
       ]
+      /* eslint-enable no-undefined */
 
       const expected = [
+        new URL(),
         new URL(),
         new URL(),
         new URL({ url: 'https://echo.paw.cloud/user/123' }),
