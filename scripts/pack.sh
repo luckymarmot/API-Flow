@@ -11,9 +11,13 @@ do
   echo "extension: $extension"
   if [ -d "$extension" ]
   then
+    cd "$extension/.."
+    echo "in $extension --- $(ls)"
     package=$(echo "$extension" | sed -E 's-.*/([^/]+)-\1-')
-    zip -r "$package.zip" "$extension/";
+    echo "package --- $package"
+    zip -r "$package.zip" "./$package";
     mv "./$package.zip" "$base/releases/paw/";
+    cd "$base"
   fi;
 done;
 cd "$base"
