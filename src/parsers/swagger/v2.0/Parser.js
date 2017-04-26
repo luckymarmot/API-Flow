@@ -89,7 +89,9 @@ methods.handleUnkownFormat = () => {
  * @returns {void}
  */
 methods.handleInvalidSwagger = () => {
-  const message = 'Invalid Swagger File (invalid schema / version < 2.0)\n' + tv4.error
+  const message = 'Invalid Swagger File (invalid schema / version < 2.0)\n' +
+    tv4.error + '\n' +
+    'Potential culprit: ' + tv4.error.dataPath
   const error = new __errors__.NotASwaggerV2(message)
   throw error
 }
