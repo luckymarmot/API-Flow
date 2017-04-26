@@ -21,6 +21,7 @@ export const serializers = [
 export const source = {
   identifier: 'com.luckymarmot.PawExtensions.SwaggerImporter',
   title: 'SwaggerImporter',
+  humanTitle: 'Swagger v2.0 Importer',
   format: SwaggerV2Parser.__meta__.format,
   version: SwaggerV2Parser.__meta__.version
 }
