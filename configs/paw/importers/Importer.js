@@ -11,7 +11,7 @@ const methods = {}
 @registerImporter // eslint-disable-line
 class SwaggerImporter {
   static identifier = source.identifier
-  static title = source.title
+  static title = source.humanTitle
 
   static fileExtensions = [];
 

@@ -21,7 +21,7 @@ export const serializers = [
 export const target = {
   identifier: 'com.luckymarmot.PawExtensions.PostmanCollectionGenerator',
   title: 'PostmanCollectionGenerator',
-  humanTitle: 'Postman Collection v2.0',
+  humanTitle: 'Postman Collection 2.0',
   format: PostmanV2Serializer.__meta__.format,
   version: PostmanV2Serializer.__meta__.version
 }
