@@ -499,8 +499,52 @@ describe('parsers/paw/Parser.js', () => {
     })
   })
 
+  describe('@convertSingleRequestIntoRequestEntry', () => {
+    it('should work', () => {
+      const inputs = [
+        { getUrlBase: () => '' },
+        { getUrlBase: () => 'http://paw.cloud/base/users' },
+        { getUrlBase: () => 'file:///base/users' },
+        { getUrlBase: () => 'urn:paw.cloud/base/users' }
+      ]
+      const expected = [
+        [ { key: '', value: { getUrlBase: () => null } } ],
+        [ { key: 'http://paw.cloud', value: { getUrlBase: () => 'http://paw.cloud/base/users' } } ],
+        [ { key: 'file://', value: { getUrlBase: () => 'file:///base/users' } } ],
+        [ { key: 'urn:paw.cloud', value: { getUrlBase: () => 'urn:paw.cloud/base/users' } } ]
+      ]
+      const actual = inputs.map(input => __internals__.convertSingleRequestIntoRequestEntry(input))
+      expect(JSON.stringify(actual, null, 2)).toEqual(JSON.stringify(expected, null, 2))
+    })
+  })
+
+  describe('@convertRequestsIntoRequestEntries', () => {
+    it('should work', () => {
+      spyOn(__internals__, 'convertSingleRequestIntoRequestEntry').andCall(r => {
+        return [ { key: r.getUrlBase() * 2, value: r } ]
+      })
+
+      const inputs = [
+        [],
+        [ { getUrlBase: () => 123 } ],
+        [ { getUrlBase: () => 123 }, { getUrlBase: () => 234 } ]
+      ]
+      const expected = [
+        [],
+        [ { key: 123 * 2, value: { getUrlBase: () => 123 } } ],
+        [
+          { key: 123, value: { getUrlBase: () => 123 } },
+          { key: 234, value: { getUrlBase: () => 234 } }
+        ]
+      ]
+      const actual = inputs.map(input => __internals__.convertRequestsIntoRequestEntries(input))
+      expect(JSON.stringify(actual, null, 2)).toEqual(JSON.stringify(expected, null, 2))
+    })
+  })
+
   describe('@extractCommonHostsFromRequests', () => {
     it('should work if underlying methods are correct', () => {
+      spyOn(__internals__, 'convertRequestsIntoRequestEntries').andCall(v => v)
       spyOn(__internals__, 'addHostEntryToHostMap').andReturn({ a: 321, b: 321, c: 321 })
       spyOn(__internals__, 'updateHostKeyWithLongestCommonPathname').andReturn(123)
       const req1 = { getUrlBase: () => {} }
@@ -1303,6 +1347,74 @@ describe('parsers/paw/Parser.js', () => {
           default: 123,
           constraints: List([
             new Constraint.JSONSchema(234)
+          ]),
+          applicableContexts: List([ 567, 567 ])
+        })
+      }
+
+      const actual = __internals__.convertRequestVariableDVIntoParameter(
+        request, location, contexts, input, paramName
+      )
+      expect(actual).toEqual(expected)
+    })
+
+    it('should prefer schema default over value', () => {
+      const variable = {
+        name: 'userId',
+        value: { getEvaluatedString: () => 123 },
+        schema: { default: '' },
+        type: 345
+      }
+      const request = { getVariableById: () => variable }
+      const location = 'queries'
+      const contexts = List([ 567, 567 ])
+      const paramName = 'UserId'
+      const input = { variableUUID: 678 }
+      const expected = {
+        key: 'UserId',
+        value: new Parameter({
+          in: 'queries',
+          key: 'userId',
+          name: 'userId',
+          type: 345,
+          description: null,
+          default: '',
+          constraints: List([
+            new Constraint.JSONSchema({ default: '' })
+          ]),
+          applicableContexts: List([ 567, 567 ])
+        })
+      }
+
+      const actual = __internals__.convertRequestVariableDVIntoParameter(
+        request, location, contexts, input, paramName
+      )
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if no schema', () => {
+      const variable = {
+        name: 'userId',
+        value: { getEvaluatedString: () => 123 },
+        schema: null,
+        type: 345
+      }
+      const request = { getVariableById: () => variable }
+      const location = 'queries'
+      const contexts = List([ 567, 567 ])
+      const paramName = 'UserId'
+      const input = { variableUUID: 678 }
+      const expected = {
+        key: 'UserId',
+        value: new Parameter({
+          in: 'queries',
+          key: 'userId',
+          name: 'userId',
+          type: 345,
+          description: null,
+          default: 123,
+          constraints: List([
+            new Constraint.JSONSchema(null)
           ]),
           applicableContexts: List([ 567, 567 ])
         })

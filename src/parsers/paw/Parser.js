@@ -355,16 +355,44 @@ methods.updateHostKeyWithLongestCommonPathname = ({ entries, lcPathname }, key) 
 }
 
 /**
+ * converts a PawRequest into an array of entries of size 1 where the key is the extracted origin of
+ * the urlBase of the requests.
+ * @param {Array<PawRequest>} request: the requests to group by host
+ * @returns {Array<Entry<string, PawRequest>>} the corresponding sequence of entries.
+ */
+methods.convertSingleRequestIntoRequestEntry = (request) => {
+  const baseUrl = request.getUrlBase()
+  const numberOfSlashes = parse(baseUrl).slashes ? 3 : 1
+  const origin = baseUrl.split('/').slice(0, numberOfSlashes).join('/')
+  return [
+    { key: origin, value: request }
+  ]
+}
+
+/**
+ * converts an array of PawRequests into an array of entries where the keys are the urlBase of the
+ * requests, except if there is only one request.
+ * @param {Array<PawRequest>} requests: the requests to group by host
+ * @returns {Array<Entry<string, PawRequest>>} the corresponding sequence of entries.
+ */
+methods.convertRequestsIntoRequestEntries = (requests) => {
+  if (requests.length === 1) {
+    return methods.convertSingleRequestIntoRequestEntry(requests[0])
+  }
+
+  return requests.map(request => {
+    return { key: request.getUrlBase(), value: request }
+  })
+}
+
+/**
  * extracts common hosts from a list of requests, and assigns each request to its corresponding host
  * @param {Array<PawRequest>} requests: the requests to group by host
  * @returns {Seq<Entry<string, *>>} the corresponding sequence of entries.
  */
 methods.extractCommonHostsFromRequests = (requests) => {
-  const hosts = requests
-    .map((request) => {
-      return { key: request.getUrlBase(), value: request }
-    })
-    .reduce(methods.addHostEntryToHostMap, {})
+  const requestEntries = methods.convertRequestsIntoRequestEntries(requests)
+  const hosts = requestEntries.reduce(methods.addHostEntryToHostMap, {})
 
   return new OrderedMap(hosts).map(methods.updateHostKeyWithLongestCommonPathname).valueSeq()
 }
@@ -944,7 +972,11 @@ methods.convertRequestVariableDVIntoParameter = (
     }) }
   }
 
-  const { name, value, schema, type, description } = variable
+  const { name, value, required, schema, type, description } = variable
+
+  const defaultValue = typeof (schema || {}).default !== 'undefined' ?
+    schema.default :
+    value.getEvaluatedString()
 
   const param = new Parameter({
     in: location,
@@ -952,7 +984,8 @@ methods.convertRequestVariableDVIntoParameter = (
     name: name || paramName,
     type: type || 'string',
     description: description || null,
-    default: value.getEvaluatedString(),
+    required: required || false,
+    default: defaultValue,
     constraints: List([
       new Constraint.JSONSchema(schema)
     ]),
