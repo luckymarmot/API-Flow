@@ -10,6 +10,7 @@ import Reference from '../../../../models/Reference'
 import Parameter from '../../../../models/Parameter'
 import Resource from '../../../../models/Resource'
 import URL from '../../../../models/URL'
+import URLComponent from '../../../../models/URLComponent'
 import Store from '../../../../models/Store'
 import Constraint from '../../../../models/Constraint'
 import ParameterContainer from '../../../../models/ParameterContainer'
@@ -1643,6 +1644,24 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
           url: '/my/path/{pathId}',
           variableDelimiters: List([ '{', '}' ])
         })
+      })
+
+      const expected = '/my/path/{pathId}'
+      const actual = __internals__.getPathFromResource(input)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work even if path not starting with /', () => {
+      const input = new Resource({
+        path: new URL().set(
+          'pathname',
+          new URLComponent({
+            componentName: 'pathname',
+            string: 'my/path/{pathId}',
+            variableDelimiters: List([ '{', '}' ])
+          })
+        )
       })
 
       const expected = '/my/path/{pathId}'

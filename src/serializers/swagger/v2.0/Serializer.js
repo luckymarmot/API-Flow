@@ -918,6 +918,11 @@ methods.getTagDefinitions = (api) => {
  */
 methods.getPathFromResource = (resource) => {
   const path = resource.get('path').toURLObject(List([ '{', '}' ])).pathname
+
+  if (path[0] !== '/') {
+    return '/' + path
+  }
+
   return path
 }
 
@@ -1329,7 +1334,7 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
   }
 
   const value = operation
-  return { key, value }
+  return { key: key.toLowerCase(), value }
 }
 /* eslint-enable max-statements */
 
