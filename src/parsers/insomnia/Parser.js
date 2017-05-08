@@ -28,7 +28,7 @@ import Resource from '../../models/Resource'
 import ParameterContainer from '../../models/ParameterContainer'
 import Auth from '../../models/Auth'
 import Request from '../../models/Request'
-import Constraint from '../../../models/Constraint'
+import Constraint from '../../models/Constraint'
 import Parameter from '../../models/Parameter'
 import URL from '../../models/URL'
 
@@ -87,18 +87,18 @@ methods.detect = (content) => {
   try {
     const json = JSON.parse(content)
     if (!json.info || !json.item) {
-      return [detection]
+      return [ detection ]
     }
 
     if (!json.info.name || !json.info.schema) {
-      return [detection]
+      return [ detection ]
     }
 
     detection.score = 1
-    return [detection]
+    return [ detection ]
   }
   catch (e) {
-    return [detection]
+    return [ detection ]
   }
 }
 
@@ -126,80 +126,118 @@ methods.getAPIName = (content) => {
 }
 
 // ** BEGIN INFO **
+
 /**
  * extracts an Info `title` field as a key-value entry, if it is extractable
- * @param {ItemPart} itemOrSubItem - a part of the file that is relevant to the extraction of a
+ * @param {object} data - a part of the file that is relevant to the extraction of a
  * `title` field.
- * @returns {{key: 'title', value: string}?} the corresponding title field, as a key-value pair
+ * @returns {{key: 'title', value: string}|null} the corresponding title field, as a key-value pair
  */
-methods.extractInfoTitle = () => null
+methods.extractInfoTitle = (data) => {
+  if (!data || !data.info || !data.info.name) {
+    return null
+  }
+
+  return { key: 'title', value: data.info.name }
+}
 
 /**
  * extracts an Info `description` field as a key-value entry, if it is extractable
- * @param {ItemPart} itemOrSubItem - a part of the file that is relevant to the extraction of a
+ * @param {object} data - a part of the file that is relevant to the extraction of a
  * `description` field.
- * @returns {{key: 'description', value: string}?} the corresponding description field, as a
+ * @returns {{key: 'description', value: string}|null} the corresponding description field, as a
  * key-value pair
  */
-methods.extractInfoDescription = () => null
+methods.extractInfoDescription = (data) => {
+  if (!data || !data.info || !data.info.description) {
+    return null
+  }
+
+  return { key: 'description', value: data.info.description }
+}
 
 /**
  * extracts an Info `termsOfService` field as a key-value entry, if it is extractable
- * @param {ItemPart} itemOrSubItem - a part of the file that is relevant to the extraction of a
+ * @param {object} data - a part of the file that is relevant to the extraction of a
  * `termsOfService` field.
- * @returns {{key: 'termsOfService', value: string}?} the corresponding termsOfService field, as a
- * key-value pair
+ * @returns {{key: 'termsOfService', value: string}|null} the corresponding termsOfService field,
+ * as a key-value pair
  */
-methods.extractInfoTermsOfService = () => null
+methods.extractInfoTermsOfService = (data) => {
+  if (!data || !data.info || !data.info.tos) {
+    return null
+  }
+
+  return { key: 'termsOfService', value: data.info.tos }
+}
 
 /**
  * extracts an Info `contact` field as a key-value entry, if it is extractable
- * @param {ItemPart} itemOrSubItem - a part of the file that is relevant to the extraction of a
+ * @param {object} data - a part of the file that is relevant to the extraction of a
  * `contact` field.
- * @returns {{key: 'contact', value: Contact}?} the corresponding contact field, as a key-value
- * pair
+ * @returns {{key: 'contact', value: Contact}|null} the corresponding contact field, as
+ * a key-value pair
  *
  * Note that the contact field should be a Contact Record if it exists
  */
-methods.extractInfoContact = () => null
+methods.extractInfoContact = (data) => {
+  if (!data || !data.info || !data.info.contact) {
+    return null
+  }
+
+  return { key: 'contact', value: data.info.contact }
+}
 
 /**
  * extracts an Info `license` field as a key-value entry, if it is extractable
- * @param {ItemPart} itemOrSubItem - a part of the file that is relevant to the extraction of a
+ * @param {object} data - a part of the file that is relevant to the extraction of a
  * `license` field.
- * @returns {{key: 'license', value: Contact}?} the corresponding license field, as a key-value
- * pair
+ * @returns {{key: 'license', value: Contact}|null} the corresponding license field, as
+ * a key-value pair
  *
  * Note that the license field should be a License Record if it exists
  */
-methods.extractInfoLicense = () => null
+methods.extractInfoLicense = (data) => {
+  if (!data || !data.info || !data.info.license) {
+    return null
+  }
+
+  return { key: 'license', value: data.info.contact }
+}
 
 /**
  * extracts an Info `version` field as a key-value entry, if it is extractable
- * @param {ItemPart} itemOrSubItem - a part of the file that is relevant to the extraction of a
+ * @param {object} data - a part of the file that is relevant to the extraction of a
  * `version` field.
- * @returns {{key: 'version', value: string}?} the corresponding version field, as a key-value pair
+ * @returns {{key: 'version', value: string}|null} the corresponding version field, as a
+ * key-value pair
  *
  * Note that this refers to the version of the Api that is being converted, not the version of the
  * parser used to parse it.
  */
-methods.extractInfoVersion = () => null
+methods.extractInfoVersion = (data) => {
+  if (!data || !data.__export_format) {
+    return null
+  }
+
+  return { key: 'version', value: data.__export_format + '' }
+}
 
 /**
  * creates all the fields that are needed to fully construct an Info Record.
- * @param {ItemPart} itemOrSubItem - a part of the file that is relevant to the extraction of an
+ * @param {object} data - a part of the file that is relevant to the extraction of an
  * Info Record.
- * @returns {InfoInstance} an object holding all the information necessary to the instantiation of
- * an Info Record.
+ * @returns {Info} an object holding all the information necessary to the
+ * instantiation of an Info Record.
  */
-methods.extractInfoInstance = (itemOrSubItem) => {
+methods.extractInfoInstance = (data) => {
   const kvs = [
-    methods.extractInfoTitle(itemOrSubItem),
-    methods.extractInfoDescription(itemOrSubItem),
-    methods.extractInfoTermsOfService(itemOrSubItem),
-    methods.extractInfoContact(itemOrSubItem),
-    methods.extractInfoLicense(itemOrSubItem),
-    methods.extractInfoVersion(itemOrSubItem)
+    methods.extractInfoTitle(data),
+    methods.extractInfoDescription(data),
+    methods.extractInfoTermsOfService(data),
+    methods.extractInfoContact(data),
+    methods.extractInfoLicense(data),
+    methods.extractInfoVersion(data)
   ].filter(v => !!v)
 
   return kvs.reduce(convertEntryListInMap, {})
@@ -207,17 +245,17 @@ methods.extractInfoInstance = (itemOrSubItem) => {
 
 /**
  * extracts an Api `info` field as a key-value entry, if it is extractable
- * @param {ItemPart} itemOrSubItem - a part of the file that is relevant to the extraction of a
+ * @param {object} data - a part of the file that is relevant to the extraction of a
  * `info` field.
  * @returns {{key: 'info', value: Info}} the corresponding info field, as a key-value
  * pair
  *
  * Note that the info field should be an Info Record
  */
-methods.extractInfo = (itemOrSubItem) => {
-  const infoInstance = methods.extractInfoInstance(itemOrSubItem)
+methods.extractInfo = (data) => {
+  const instanceData = methods.extractInfoInstance(data)
 
-  return { key: 'info', value: new Info(infoInstance) }
+  return { key: 'info', value: new Info(instanceData) }
 }
 // ** END INFO **
 
