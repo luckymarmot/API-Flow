@@ -38,13 +38,15 @@ function runSuite() {
   }
 }
 
+const blob = process.env.BLOB || 'src/**/*.spec.js'
+
 /**
  * Chokidar watches all the files for any kind of change and calls the run function
  * from above. Read more: https://github.com/paulmillr/chokidar
  * @param {string} glob: a glob of files to watch
  * @param {object} settings
  */
-chokidar.watch('src/**/*.spec.js', { persistent: true })
+chokidar.watch(blob, { persistent: true })
   .on('add', path => fileList.push(path))
   .on('change', () => runSuite())
   .on('ready', () => runSuite())
