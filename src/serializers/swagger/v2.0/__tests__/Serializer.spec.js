@@ -2275,6 +2275,71 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work if underlying methods are correct and with request method', () => {
+      spyOn(__internals__, 'getTagStrings').andReturn([ 'pet', 'store' ])
+      spyOn(__internals__, 'getKeysFromRecord').andReturn({
+        summary: 'update a Pet',
+        description: 'updates a pet with some params',
+        operationId: 'updatePet'
+      })
+
+      spyOn(__internals__, 'getConsumesEntry').andReturn([ 'application/json' ])
+      spyOn(__internals__, 'getProducesEntry').andReturn([ 'application/xml' ])
+      spyOn(__internals__, 'getParametersFromRequest').andReturn([ {
+        in: 'query',
+        name: 'petId',
+        type: 'string'
+      } ])
+      spyOn(__internals__, 'getSchemesFromRequestEndpointOverlay').andReturn([ 'https' ])
+      spyOn(__internals__, 'getSecurityRequirementsFromRequest').andReturn([
+        {
+          petstore_auth: [ 'write:self' ]
+        }
+      ])
+      spyOn(__internals__, 'getResponsesFromRequest').andReturn({
+        '200': {
+          description: 'this method should return 200'
+        }
+      })
+
+      const store = new Store()
+      const globalInfo = {}
+      const request = new Request({ method: 'Get' })
+      const key = 'put'
+
+      const expectedValue = {
+        tags: [ 'pet', 'store' ],
+        summary: 'update a Pet',
+        description: 'updates a pet with some params',
+        operationId: 'updatePet',
+        consumes: [ 'application/json' ],
+        produces: [ 'application/xml' ],
+        parameters: [
+          {
+            in: 'query',
+            name: 'petId',
+            type: 'string'
+          }
+        ],
+        schemes: [ 'https' ],
+        security: [
+          {
+            petstore_auth: [ 'write:self' ]
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'this method should return 200'
+          }
+        }
+      }
+
+      const expected = { key: 'get', value: expectedValue }
+      const actual = __internals__.convertRequestToOperationObject(store, globalInfo, request, key)
+
+      expect(actual).toEqual(expected)
+    })
     /* eslint-enable max-statements */
   })
 

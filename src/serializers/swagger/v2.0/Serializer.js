@@ -693,7 +693,7 @@ methods.isBodyParameter = (parameter) => {
   const isUrlEncoded = parameter.isValid(
     new Parameter({
       key: 'Content-Type',
-      default: 'multipart/form-data'
+      default: 'application/x-www-form-urlencoded'
     })
   )
 
@@ -1334,7 +1334,8 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
   }
 
   const value = operation
-  return { key: key.toLowerCase(), value }
+  const method = request.get('method') || key
+  return { key: method.toLowerCase(), value }
 }
 /* eslint-enable max-statements */
 
