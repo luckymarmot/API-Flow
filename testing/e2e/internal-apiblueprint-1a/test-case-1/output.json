@@ -1,0 +1,861 @@
+FORMAT: 1A
+HOST: http://{environment}.musicapi.com/{version}
+
+# World Music API
+This is an example of a music API.
+
+## Group Resources
+
+### /api{?queryString}
+
+#### GET
+
+This was loaded from api-library
+
++ Parameters
+    + queryString (object, optional)
+```
+        {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "number"
+            },
+            "page-size": {
+              "type": "number"
+            }
+          },
+          "x-title": "queryString"
+        }
+```
+
++ Response 200
+
+#### POST
+
+This is an awesome description
+
++ Request (application/json)
+    + Schema
+```
+        {
+          "$ref": "#/definitions/ApiLib.RamlDataType"
+        }
+```
+
++ Response 200
+
+### /entry
+
+#### POST
+
++ Request
+    + Headers
+```
+        Content-Type: application/json
+```
+
++ Response 200 (application/json)
+    + Schema
+```
+        {
+          "$ref": "#/definitions/AnotherEntry"
+        }
+```
+
+#### GET
+
+returns a list of entry
+
++ Response 200 (application/json)
+    + Schema
+```
+        {
+          "type": "object"
+        }
+```
+
+### /songs{?genre,access_token}
+
+Access to all songs inside the music world library.
+
+#### GET
+
+This was loaded from songs-library
+
++ Parameters
+    + genre (string, optional) - filter the songs by genre
+```
+        {
+          "type": "string",
+          "description": "filter the songs by genre",
+          "x-title": "genre"
+        }
+```
+
+    + access_token (string, optional)
+```
+        {
+          "type": "string",
+          "x-title": "access_token"
+        }
+```
+
++ Response 200
+
+#### POST
+
++ Parameters
+    + access_token (string, optional)
+```
+        {
+          "type": "string",
+          "x-title": "access_token"
+        }
+```
+
++ Request
+    + Headers
+```
+        Content-Type: application/json
+```
+
++ Response 200
+
+### /songs/{songId}
+
+#### GET
+
++ Parameters
+    + songId (string, optional)
+```
+        {
+          "type": "string",
+          "x-title": "songId"
+        }
+```
+
++ Response 200 (application/json)
+    + Schema
+```
+        {
+          "$ref": "#/definitions/SongsLib.Song"
+        }
+```
+
+# Data Structures
+
+## Entry (array)
+```
+    {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Song"
+      }
+    }
+```
+
+## Song (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "artist": {
+          "type": "string"
+        }
+      }
+    }
+```
+
+## AnotherEntry (object)
+```
+    {
+      "$ref": "#/definitions/Entry",
+      "description": "# This is in Markdown\nThis is to see what the representation of this ~~Markdown~~ string is.\n## SubTitle\nThis is just another entry to **simulate** that you can add facets also on JSON\nschema defined types. Although you can only add documentation-based facets.\n"
+    }
+```
+
+## SpecialEntry (string)
+```
+    {
+      "type": "string",
+      "pattern": "^.{12}$"
+    }
+```
+
+## Toy (object)
+```
+    {
+      "type": "object",
+      "minProperties": 2,
+      "maxProperties": 8,
+      "discriminator": "name",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "soft": {
+          "type": "boolean",
+          "x-examples": [
+            true
+          ]
+        },
+        "squiky": {
+          "type": "boolean"
+        },
+        "heavy": {
+          "type": "boolean"
+        },
+        "clean": {
+          "type": "boolean"
+        },
+        "purchaseDate": {
+          "type": "string",
+          "$ref": "#/definitions/$DateOnly"
+        },
+        "more": {
+          "type": "string",
+          "$ref": "#/definitions/$DateTime"
+        },
+        "final": {
+          "type": "string",
+          "$ref": "#/definitions/$DateTimeOnly"
+        }
+      },
+      "required": [
+        "name",
+        "soft",
+        "squiky",
+        "heavy",
+        "clean",
+        "purchaseDate",
+        "more",
+        "final"
+      ]
+    }
+```
+
+## $DateOnly (string)
+```
+    {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+      "description": "full-date as defined in RFC#3339"
+    }
+```
+
+## $DateTime (string)
+```
+    {
+      "type": "string",
+      "description": "datetime"
+    }
+```
+
+## $DateTimeOnly (string)
+```
+    {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$",
+      "description": "full-time as defined in RFC#3339"
+    }
+```
+
+## Ball (object)
+```
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Toy"
+        }
+      ],
+      "discriminatorValue": "ball",
+      "properties": {
+        "bouncinessFactor": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "bouncinessFactor"
+      ]
+    }
+```
+
+## Rope (object)
+```
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Toy"
+        }
+      ],
+      "discriminatorValue": "rope",
+      "properties": {
+        "length": {
+          "type": "integer",
+          "enum": [
+            "10",
+            "20",
+            "50",
+            "100"
+          ],
+          "x-examples": [
+            10
+          ]
+        }
+      },
+      "required": [
+        "length"
+      ]
+    }
+```
+
+## CommonToy (object)
+```
+    {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Ball"
+        },
+        {
+          "$ref": "#/definitions/Rope"
+        }
+      ]
+    }
+```
+
+## Treat (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "tastiness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "name",
+        "tastiness"
+      ]
+    }
+```
+
+## Pet (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "claws": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "color": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "size": {
+          "type": "number",
+          "multipleOf": 5
+        },
+        "weigth": {
+          "type": "number"
+        },
+        "mostActiveAt": {
+          "type": "string",
+          "$ref": "#/definitions/$TimeOnly"
+        },
+        "owner": {
+          "$ref": "#/definitions/User"
+        },
+        "toys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Toy"
+          }
+        }
+      },
+      "required": [
+        "claws",
+        "color",
+        "size",
+        "weigth",
+        "mostActiveAt",
+        "owner",
+        "toys"
+      ]
+    }
+```
+
+## $TimeOnly (string)
+```
+    {
+      "type": "string",
+      "pattern": "^([01][0-9]|20|21|22|23):[0-5][0-9]:([0-5][0-9]|60)(.[0-9]+)?$",
+      "description": "full-time as defined in RFC#3339"
+    }
+```
+
+## Resident (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "address"
+      ]
+    }
+```
+
+## Wild (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "location": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ]
+    }
+```
+
+## FarmPet (object)
+```
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Pet"
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Resident"
+            },
+            {
+              "$ref": "#/definitions/Wild"
+            }
+          ]
+        }
+      ],
+      "title": "Farm Pet"
+    }
+```
+
+## ToyBox (array)
+```
+    {
+      "type": "array",
+      "uniqueItems": false,
+      "minItems": 1,
+      "maxItems": 15,
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/Toy"
+          },
+          {
+            "$ref": "#/definitions/Treat"
+          }
+        ]
+      }
+    }
+```
+
+## BigToyBox (object)
+```
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ToyBox"
+        }
+      ],
+      "maxItems": 100
+    }
+```
+
+## Photo (string)
+```
+    {
+      "type": "string",
+      "$ref": "#/definitions/$File"
+    }
+```
+
+## $File (string)
+```
+    {
+      "type": "string",
+      "description": "file",
+      "pattern": "^[^\u0000]*\u0000$"
+    }
+```
+
+## Album (array)
+```
+    {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Photo"
+      }
+    }
+```
+
+## Weird (object)
+```
+    {}
+```
+
+## Habitats (array)
+```
+    {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/Resident"
+          },
+          {
+            "$ref": "#/definitions/Wild"
+          }
+        ]
+      }
+    }
+```
+
+## SeparateKinds (object)
+```
+    {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Resident"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Wild"
+          }
+        }
+      ]
+    }
+```
+
+## User (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "firstname": {
+          "type": "string"
+        },
+        "lastname": {
+          "type": "string",
+          "x-examples": [
+            "Doe"
+          ]
+        },
+        "pets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FarmPet"
+          }
+        },
+        "box": {
+          "$ref": "#/definitions/ToyBox"
+        },
+        "albums": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Album"
+          }
+        }
+      },
+      "required": [
+        "firstname"
+      ],
+      "x-examples": [
+        {
+          "firstname": "John"
+        }
+      ]
+    }
+```
+
+## SongsLib.Song (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "length": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "title",
+        "length"
+      ],
+      "x-examples": [
+        {
+          "title": "My Song",
+          "length": 12
+        },
+        {
+          "title": "Last",
+          "length": 3
+        }
+      ]
+    }
+```
+
+## SongsLib.Album (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "songs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SongsLib.Song"
+          }
+        }
+      },
+      "required": [
+        "title",
+        "songs"
+      ]
+    }
+```
+
+## SongsLib.Musician (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "discography": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SongsLib.Song"
+              },
+              {
+                "$ref": "#/definitions/SongsLib.Album"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "name",
+        "discography"
+      ]
+    }
+```
+
+## ApiLib.RamlDataType (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "propString": {
+          "type": "string"
+        },
+        "propStringArray1": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ideas": {
+          "type": "array"
+        },
+        "extIdeas": {
+          "properties": {
+            "createdBy": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "createdBy"
+          ]
+        },
+        "feedback": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[a-zA-Z\\s]*",
+          "x-examples": [
+            "very well made"
+          ]
+        },
+        "propNumber": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 32,
+          "multipleOf": 2
+        },
+        "propInteger": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 5,
+          "multipleOf": 1
+        },
+        "propBoolean": {
+          "type": "boolean"
+        },
+        "propDate": {
+          "type": "string",
+          "$ref": "#/definitions/ApiLib.$DateOnly",
+          "x-examples": [
+            "2015-05-23"
+          ]
+        },
+        "userPicture": {
+          "type": "string",
+          "$ref": "#/definitions/ApiLib.$File"
+        },
+        "NilValue": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "comment": {
+              "$ref": "#/definitions/ApiLib.string?"
+            }
+          },
+          "required": [
+            "name",
+            "comment"
+          ]
+        },
+        "CatOrDog": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ApiLib.Cat"
+            },
+            {
+              "$ref": "#/definitions/ApiLib.Dog"
+            }
+          ]
+        },
+        "CatAndDog": {
+          "$ref": "#/definitions/ApiLib.Dog"
+        },
+        "PossibleMeetingDate": {
+          "type": "string",
+          "$ref": "#/definitions/ApiLib.$DateOnly"
+        }
+      },
+      "required": [
+        "propString",
+        "propStringArray1",
+        "ideas",
+        "extIdeas",
+        "feedback",
+        "propNumber",
+        "propInteger",
+        "propBoolean",
+        "propDate",
+        "userPicture",
+        "NilValue",
+        "CatOrDog",
+        "CatAndDog",
+        "CatAndDog",
+        "PossibleMeetingDate"
+      ]
+    }
+```
+
+## ApiLib.$DateOnly (string)
+```
+    {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+      "description": "full-date as defined in RFC#3339"
+    }
+```
+
+## ApiLib.$File (string)
+```
+    {
+      "type": "string",
+      "description": "file",
+      "pattern": "^[^\u0000]*\u0000$"
+    }
+```
+
+## ApiLib.Cat (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "color"
+      ]
+    }
+```
+
+## ApiLib.Dog (object)
+```
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "fangs": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "fangs"
+      ]
+    }
+```
+
+## ApiLib.CustomDate (string)
+```
+    {
+      "type": "string",
+      "$ref": "#/definitions/ApiLib.$DateOnly"
+    }
+```

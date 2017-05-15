@@ -29,7 +29,11 @@ This is a fairly long description about the API request /pets with Method POST
         }
 ```
 
-+ Response 200
++ Response 405
+    + Headers
+```
+        Content-Type: application/json
+```
 
 #### Update an existing pet [PUT]
 
@@ -45,7 +49,23 @@ This is a fairly long description about the API request /pets with Method POST
         }
 ```
 
-+ Response 200
++ Response 400
+    + Headers
+```
+        Content-Type: application/xml
+```
+
++ Response 404
+    + Headers
+```
+        Content-Type: application/xml
+```
+
++ Response 405
+    + Headers
+```
+        Content-Type: application/xml
+```
 
 ### /pets/findByStatus{?status}
 
@@ -66,6 +86,25 @@ Multiple status values can be provided with comma seperated strings
 ```
 
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
+    + Schema
+```
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Pet"
+          }
+        }
+```
+
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /pets/findByTags{?tags}
 
@@ -86,6 +125,25 @@ Muliple tags can be provided with comma seperated strings. Use tag1, tag2, tag3 
 ```
 
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
+    + Schema
+```
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Pet"
+          }
+        }
+```
+
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /pets/{petId}
 
@@ -93,9 +151,49 @@ Muliple tags can be provided with comma seperated strings. Use tag1, tag2, tag3 
 
 Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error conditions
 
++ Parameters
+    + petId (integer, required) - ID of pet that needs to be fetched
+```
+        {
+          "type": "integer",
+          "x-title": "petId"
+        }
+```
+
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
+    + Schema
+```
+        {
+          "$ref": "#/definitions/Pet"
+        }
+```
+
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
+
++ Response 404
+    + Headers
+```
+        Content-Type: application/json
+```
 
 #### Updates a pet in the store with form data [POST]
+
++ Parameters
+    + petId (integer, required) - ID of pet that needs to be fetched
+```
+        {
+          "type": "integer",
+          "x-title": "petId"
+        }
+```
 
 + Request
     + Headers
@@ -119,9 +217,22 @@ Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error cond
         }
 ```
 
-+ Response 200
++ Response 405
+    + Headers
+```
+        Content-Type: application/json
+```
 
 #### Deletes a pet [DELETE]
+
++ Parameters
+    + petId (integer, required) - ID of pet that needs to be fetched
+```
+        {
+          "type": "integer",
+          "x-title": "petId"
+        }
+```
 
 + Request
     + Headers
@@ -130,7 +241,11 @@ Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error cond
         Content-Type: application/json
 ```
 
-+ Response 200
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /stores/order
 
@@ -149,6 +264,22 @@ Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error cond
 ```
 
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
+    + Schema
+```
+        {
+          "$ref": "#/definitions/Order"
+        }
+```
+
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /stores/order/{orderId}
 
@@ -156,11 +287,51 @@ Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error cond
 
 For valid response try integer IDs with value <= 5 or > 10. Other values will generated exceptions
 
++ Parameters
+    + orderId (string, required) - ID of pet that needs to be fetched
+```
+        {
+          "type": "string",
+          "x-title": "orderId"
+        }
+```
+
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
+    + Schema
+```
+        {
+          "$ref": "#/definitions/Order"
+        }
+```
+
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
+
++ Response 404
+    + Headers
+```
+        Content-Type: application/json
+```
 
 #### Delete purchase order by ID [DELETE]
 
 For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors
+
++ Parameters
+    + orderId (string, required) - ID of pet that needs to be fetched
+```
+        {
+          "type": "string",
+          "x-title": "orderId"
+        }
+```
 
 + Request
     + Headers
@@ -168,7 +339,17 @@ For valid response try integer IDs with value < 1000. Anything above 1000 or non
         Content-Type: application/json
 ```
 
-+ Response 200
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
+
++ Response 404
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /users
 
@@ -189,6 +370,10 @@ This can only be done by the logged in user.
 ```
 
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /users/createWithArray
 
@@ -210,6 +395,10 @@ This can only be done by the logged in user.
 ```
 
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /users/createWithList
 
@@ -231,6 +420,10 @@ This can only be done by the logged in user.
 ```
 
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /users/login{?username,password}
 
@@ -254,22 +447,82 @@ This can only be done by the logged in user.
 ```
 
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
+    + Schema
+```
+        {
+          "type": "string"
+        }
+```
+
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /users/logout
 
 #### Logs out current logged in user session [GET]
 
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
 
 ### /users/{username}
 
 #### Get user by user name [GET]
 
++ Parameters
+    + username (string, required) - The name that needs to be fetched. Use user1 for testing.
+```
+        {
+          "type": "string",
+          "x-title": "username"
+        }
+```
+
 + Response 200
+    + Headers
+```
+        Content-Type: application/json
+```
+    + Schema
+```
+        {
+          "$ref": "#/definitions/User"
+        }
+```
+
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
+
++ Response 404
+    + Headers
+```
+        Content-Type: application/json
+```
 
 #### Updated user [PUT]
 
 This can only be done by the logged in user.
+
++ Parameters
+    + username (string, required) - The name that needs to be fetched. Use user1 for testing.
+```
+        {
+          "type": "string",
+          "x-title": "username"
+        }
+```
 
 + Request
     + Headers
@@ -283,11 +536,30 @@ This can only be done by the logged in user.
         }
 ```
 
-+ Response 200
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
+
++ Response 404
+    + Headers
+```
+        Content-Type: application/json
+```
 
 #### Delete user [DELETE]
 
 This can only be done by the logged in user.
+
++ Parameters
+    + username (string, required) - The name that needs to be fetched. Use user1 for testing.
+```
+        {
+          "type": "string",
+          "x-title": "username"
+        }
+```
 
 + Request
     + Headers
@@ -295,7 +567,17 @@ This can only be done by the logged in user.
         Content-Type: application/json
 ```
 
-+ Response 200
++ Response 400
+    + Headers
+```
+        Content-Type: application/json
+```
+
++ Response 404
+    + Headers
+```
+        Content-Type: application/json
+```
 
 # Data Structures
 

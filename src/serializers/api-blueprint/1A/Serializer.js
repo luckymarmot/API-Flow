@@ -21,6 +21,8 @@
 import { List, OrderedMap } from 'immutable'
 
 import Reference from '../../../models/Reference'
+import Variable from '../../../models/Variable'
+import URL from '../../../models/URL'
 
 import { flatten } from '../../../utils/fp-utils'
 
@@ -82,7 +84,7 @@ methods.getRootHostFromEndpoint = (api) => {
  */
 methods.getRootHostFromVariable = (api) => {
   const variable = api.getIn([ 'store', 'variable' ]).valueSeq().get(0)
-  if (!variable) {
+  if (!variable || !(variable instanceof Variable)) {
     return null
   }
 
@@ -137,7 +139,7 @@ methods.createFormatHostSection = (api) => {
     return null
   }
 
-  const rootUrl = host.generate()
+  const rootUrl = host.generate(List([ '{', '}' ]))
 
   if (!rootUrl) {
     return null
@@ -295,14 +297,9 @@ methods.getMergedResourcesBasedOnPathFromApi = (api) => {
   return OrderedMap(resources)
 }
 
-/**
- * extracts a QueryString section from a resource
- * @param {Api} api: the api containing the store to use to resolve shared parameters if needed
- * @param {Resource} resource: the resource to get the QueryString from
- * @returns {AbstractSection|null} the corresponding section that contains all the query parameters
- * as a string respecting ABP format
- */
-methods.extractQueryStringFromResource = (api, resource) => {
+methods.deduplicateArray = (array) => Array.from(new Set(array))
+
+methods.extractQueryParametersFromResourceWithDuplicates = (api, resource) => {
   const store = api.get('store')
   const queryParams = resource.get('methods')
     .map(request => request.get('parameters'))
@@ -312,7 +309,25 @@ methods.extractQueryStringFromResource = (api, resource) => {
     .map(param => param.get('key'))
     .filter(v => !!v)
 
-  const params = Array.from(new Set(queryParams))
+  return queryParams
+}
+
+methods.extractQueryParametersFromResource = (api, resource) => {
+  const queryParams = methods.extractQueryParametersFromResourceWithDuplicates(api, resource)
+  const params = methods.deduplicateArray(queryParams)
+
+  return params
+}
+
+/**
+ * extracts a QueryString section from a resource
+ * @param {Api} api: the api containing the store to use to resolve shared parameters if needed
+ * @param {Resource} resource: the resource to get the QueryString from
+ * @returns {AbstractSection|null} the corresponding section that contains all the query parameters
+ * as a string respecting ABP format
+ */
+methods.extractQueryStringFromResource = (api, resource) => {
+  const params = methods.extractQueryParametersFromResource(api, resource)
 
   if (!params.length) {
     return null
@@ -334,6 +349,25 @@ methods.extractQueryStringFromResource = (api, resource) => {
   }
 }
 
+methods.createResourceTitleSectionContent = (api, resource) => {
+  const title = resource.get('name')
+  const path = resource.get('path').generate(List([ '{', '}' ]))
+  const queryString = methods.extractQueryStringFromResource(api, resource)
+
+  let fixedTitle = title
+  if (!title || title[0] === '/') {
+    fixedTitle = null
+  }
+
+  return [
+    fixedTitle,
+    fixedTitle ? ' [' : null,
+    path ? path.replace(/\/+/, '/') : '/',
+    queryString,
+    fixedTitle ? ']' : null
+  ].filter(v => !!v)
+}
+
 /**
  * creates a Resource Title Section from a Resource.
  * @param {Api} api: the api to use to resolve shared parameters
@@ -343,28 +377,20 @@ methods.extractQueryStringFromResource = (api, resource) => {
  * exist.
  */
 methods.createResourceTitleSection = (api, resource) => {
-  const title = resource.get('name')
-  const path = resource.get('path').generate(List([ '{', '}' ]))
-  const queryString = methods.extractQueryStringFromResource(api, resource)
+  const content = methods.createResourceTitleSectionContent(api, resource)
+
+  if (!content.length) {
+    return null
+  }
 
   const section = {
     type: 'header',
     depth: 3,
     value: {
       abstract: true,
-      content: [
-        title,
-        title ? ' [' : null,
-        path,
-        queryString,
-        title ? ']' : null
-      ].filter(v => !!v),
+      content: content,
       separator: ''
     }
-  }
-
-  if (!section.value.content.length) {
-    return null
   }
 
   return section
@@ -389,6 +415,22 @@ methods.createResourceDescriptionSection = (resource) => {
   }
 }
 
+methods.createOperationTitleSectionContent = (operation) => {
+  const name = operation.get('name')
+  const method = operation.get('method')
+
+  if (!method) {
+    return []
+  }
+
+  return [
+    name,
+    name ? ' [' : null,
+    method.toUpperCase(),
+    name ? ']' : null
+  ].filter(v => !!v)
+}
+
 /**
  * creates an operation title section from an Operation/Request
  * @param {Request} operation: the operation from which to extract a title
@@ -396,26 +438,20 @@ methods.createResourceDescriptionSection = (resource) => {
  * the name and method of the operation
  */
 methods.createOperationTitleSection = (operation) => {
-  const name = operation.get('name')
-  const method = operation.get('method').toUpperCase()
+  const content = methods.createOperationTitleSectionContent(operation)
+
+  if (!content.length) {
+    return null
+  }
 
   const section = {
     type: 'header',
     depth: 4,
     value: {
       abstract: true,
-      content: [
-        name,
-        name ? ' [' : null,
-        method,
-        name ? ']' : null
-      ].filter(v => !!v),
+      content: content,
       separator: ''
     }
-  }
-
-  if (!section.value.content.length) {
-    return null
   }
 
   return section
@@ -462,6 +498,13 @@ methods.createParameterKeySegment = (parameter) => {
   return section
 }
 
+methods.createParameterOptionalSegmentContent = (schema, parameter) => {
+  const type = schema.type || parameter.get('type')
+  const optionalText = parameter.get('required') ? 'required' : 'optional'
+
+  return [ type, optionalText ].filter(v => !!v)
+}
+
 /**
  * creates a section that contains the optional fields used in the description of a parameter
  * @param {JSONSchema} schema: the JSON Schema representing the parameter
@@ -470,14 +513,9 @@ methods.createParameterKeySegment = (parameter) => {
  * a parameter, in the expected format.
  */
 methods.createParameterOptionalSegment = (schema, parameter) => {
-  const type = schema.type || parameter.get('type')
-  const optionalText = parameter.get('required') ? 'required' : 'optional'
+  const content = methods.createParameterOptionalSegmentContent(schema, parameter)
 
-  const optionalData = [
-    type, optionalText
-  ].filter(v => !!v)
-
-  if (!optionalData.length) {
+  if (!content.length) {
     return null
   }
 
@@ -487,7 +525,7 @@ methods.createParameterOptionalSegment = (schema, parameter) => {
       '(',
       {
         abstract: true,
-        content: optionalData,
+        content: content,
         separator: ', '
       },
       ')'
@@ -576,16 +614,15 @@ methods.convertParameterIntoParamSection = (parameter) => {
 
 /**
  * extracts path parameters name from a Path
- * @param {Api} api: the api to use to resolve shared parameters
  * @param {URL} path: the path to extract the parameters from
  * @returns {Array<string>} the corresponding array that contains all the path parameters.
  */
-methods.extractPathParamsFromPath = (api, path) => {
-  if (path.getIn([ 'parameter', 'superType' ]) !== 'sequence') {
+methods.extractPathParamsFromPath = (path) => {
+  if (path.getIn([ 'pathname', 'parameter', 'superType' ]) !== 'sequence') {
     return []
   }
 
-  const sequence = path.getIn([ 'parameter', 'value' ])
+  const sequence = path.getIn([ 'pathname', 'parameter', 'value' ])
   if (!sequence || !sequence.size) {
     return []
   }
@@ -593,29 +630,32 @@ methods.extractPathParamsFromPath = (api, path) => {
   return sequence
     .filter(param => param.get('key'))
     .valueSeq()
-    .toJS()
+    .toArray()
 }
 
-/**
- * creates the Parameters section for an operation
- * @param {Api} api: the api to use to resolve shared parameters
- * @param {URL} path: the path from which to get the path parameters
- * @param {ParameterContainer} container: the ParameterContainer that holds all the query
- * parameters. This container is already resolved and filtered based on a set of constraints.
- * @returns {AbstractSection|null} the corresponding section that contains all the information
- * pertaining to the query and path parameters
- */
-methods.createOperationParametersSection = (api, path, container) => {
+methods.createOperationParametersSectionContent = (path, container) => {
   const queryParamSections = container
     .get('queries')
     .map(methods.convertParameterIntoParamSection)
     .valueSeq()
     .toJS()
 
-  const pathParamSections = methods.extractPathParamsFromPath(api, path)
+  const pathParamSections = methods.extractPathParamsFromPath(path)
     .map(methods.convertParameterIntoParamSection)
 
-  const paramSections = [ ...queryParamSections, ...pathParamSections ]
+  return [ ...queryParamSections, ...pathParamSections ]
+}
+
+/**
+ * creates the Parameters section for an operation
+ * @param {URL} path: the path from which to get the path parameters
+ * @param {ParameterContainer} container: the ParameterContainer that holds all the query
+ * parameters. This container is already resolved and filtered based on a set of constraints.
+ * @returns {AbstractSection|null} the corresponding section that contains all the information
+ * pertaining to the query and path parameters
+ */
+methods.createOperationParametersSection = (path, container) => {
+  const paramSections = methods.createOperationParametersSectionContent(path, container)
 
   if (!paramSections.length) {
     return null
@@ -696,19 +736,40 @@ methods.convertHeaderParameterIntoHeaderSection = (parameter) => {
   return name + ': ' + value
 }
 
+methods.getHeadersForOperationRequest = (constraints, container, method) => {
+  const headers = container.get('headers')
+
+  if (!headers.size) {
+    return null
+  }
+
+  const contentType = methods.extractContentTypeFromConstraints(constraints)
+  if (!contentType && (method || '').toLowerCase() !== 'get') {
+    return headers
+  }
+
+  const filteredHeaders = headers.filter(parameter => parameter.get('key') !== 'Content-Type')
+  if (!filteredHeaders.size) {
+    return null
+  }
+
+  return filteredHeaders
+}
+
 /**
  * creates the Headers Section and its payload from an Operation/Request ParameterContainer
  * @param {Api} api: the api used to resolve shared object, such as authentication methods
  * @param {List<Parameter>} constraints: the constraints used filter the ParameterContainer
  * @param {ParameterContainer} container: the ParameterContainer containing all the header
  * parameters.
+ * @param {string?} method: the method associated with this operation request.
  * @returns {ListSection} the section that contains all the information pertaining to the headers
  * of the operation
  */
-methods.createOperationRequestHeaderSection = (api, constraints, container) => {
-  const headers = container.get('headers')
+methods.createOperationRequestHeaderSection = (api, constraints, container, method) => {
+  const headers = methods.getHeadersForOperationRequest(constraints, container, method)
 
-  if (!headers.size) {
+  if (!headers) {
     return null
   }
 
@@ -844,12 +905,13 @@ methods.createOperationRequestSchemaSection = (container) => {
  * @returns {AbstractSection|null} the corresponding `Request` section
  */
 methods.createOperationRequestSection = (api, constraints, container, operation) => {
+  const method = operation.get('method')
   const section = {
     type: 'list-item',
     abstract: true,
     content: [
       methods.createOperationRequestTitleSection(constraints),
-      methods.createOperationRequestHeaderSection(api, constraints, container, operation),
+      methods.createOperationRequestHeaderSection(api, constraints, container, method),
       methods.createOperationRequestSchemaSection(container)
     ].filter(v => !!v),
     separator: '\n'
@@ -955,6 +1017,7 @@ methods.createOperationResponseSections = (api, operation) => {
     })
     .map(response => methods.createOperationResponseSection(api, response))
     .filter(v => !!v)
+    .valueSeq()
     .toJS()
 
   if (!responseSections.length) {
@@ -980,7 +1043,7 @@ methods.createOperationContentSection = (api, path, operation) => {
     type: 'list',
     depth: 0,
     value: [
-      methods.createOperationParametersSection(api, path, container),
+      methods.createOperationParametersSection(path, container),
       methods.createOperationRequestSection(api, contextConstraints, container, operation),
       ...methods.createOperationResponseSections(api, operation)
     ].filter(v => !!v)
@@ -1108,6 +1171,40 @@ methods.createDataStructuresHeaderSection = () => {
   return section
 }
 
+methods.createDataStructuresSectionContent = ({ key, value }) => {
+  const header = {
+    type: 'header',
+    depth: 2,
+    value: {
+      abstract: true,
+      content: [
+        key,
+        ' (',
+        value.type || 'object',
+        ')'
+      ],
+      separator: ''
+    }
+  }
+
+  const schema = {
+    type: 'asset',
+    depth: 2,
+    value: value
+  }
+
+  const section = {
+    abstract: true,
+    content: [
+      header,
+      schema
+    ],
+    separator: '\n'
+  }
+
+  return section
+}
+
 /**
  * converts each shared constraint into a Data Structure Section
  * @param {Api} api: the api from which to get the shared constraints
@@ -1116,45 +1213,13 @@ methods.createDataStructuresHeaderSection = () => {
 methods.createDataStructureSections = (api) => {
   const constraints = api.getIn([ 'store', 'constraint' ])
 
-  if (!constraints) {
+  if (!constraints || !constraints.size) {
     return []
   }
 
   const sections = constraints
     .map((constraint, key) => ({ key, value: constraint.toJSONSchema() }))
-    .map(({ key, value }) => {
-      const header = {
-        type: 'header',
-        depth: 2,
-        value: {
-          abstract: true,
-          content: [
-            key,
-            ' (',
-            value.type || 'object',
-            ')'
-          ],
-          separator: ''
-        }
-      }
-
-      const schema = {
-        type: 'asset',
-        depth: 2,
-        value: value
-      }
-
-      const section = {
-        abstract: true,
-        content: [
-          header,
-          schema
-        ],
-        separator: '\n'
-      }
-
-      return section
-    })
+    .map(methods.createDataStructuresSectionContent)
     .valueSeq()
     .toJS()
 
@@ -1221,7 +1286,7 @@ methods.stringifyAbstractSection = (section) => {
 methods.stringifyHeaderSection = (section) => {
   const header = methods.stringifySection(section.value)
 
-  return (new Array(section.depth + 1)).join('#') + ' ' + header
+  return (new Array(Math.max(section.depth, 1) + 1)).join('#') + ' ' + header
 }
 
 /**
