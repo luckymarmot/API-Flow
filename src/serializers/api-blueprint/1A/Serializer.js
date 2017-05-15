@@ -1,7 +1,12 @@
 /**
  * An Api Blueprint 1A serializer.
  * This implementation has the following limitations:
- * - TODO: write the limitations of this serializer (wrt to the api-blueprint spec)
+ * - it does not link between data Structures and attributes, as attributes need to be in MSON
+ * format
+ * - attributes are not supported.
+ * - authentication methods are not included because they require an example header, which is a mess
+ * to implement and interpret
+ * - no grouping
  *
  * NOTE: we allow use of undefined in this file as it works nicely with JSON.stringify, which drops
  * keys with a value of undefined.
@@ -777,7 +782,6 @@ methods.createOperationRequestHeaderSection = (api, constraints, container, meth
     .valueSeq()
     .toJS()
     .join('\n')
-  // TODO add authentication header
 
   return {
     type: 'list',
