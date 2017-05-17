@@ -1479,11 +1479,11 @@ methods.isProducesHeader = (param) => {
 methods.extractContentTypesFromParam = (param) => {
   const schema = param.getJSONSchema(false)
   if (schema.enum) {
-    return schema.enum
+    return schema.enum.map(contentType => contentType.split(';')[0])
   }
 
   if (schema.default) {
-    return [ schema.default ]
+    return [ schema.default ].map(contentType => contentType.split(';')[0])
   }
 
   return []
