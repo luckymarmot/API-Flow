@@ -421,10 +421,25 @@ methods.isPartOfBaseUrl = (defaultUrl, defaultSecureUrl, urlPart) => {
   return defaultUrl.indexOf(urlPart) >= 0 || defaultSecureUrl.indexOf(urlPart) >= 0
 }
 
-// NOTE: we assume that the urlPart is after the protocol
-methods.findIntersection = (defaultUrl, urlPart) => {
-  const match = (defaultUrl + '####' + urlPart).match(/^.*?(.*)####\1(.*)$/)
+/**
+ * finds the intersection between two strings, and returns the intersection, as well as the right-
+ * most exclusion. This is used to find the overlap between a host url and a part of a url
+ * associated with that host.
+ * @param {string} defaultUrl: the default url to test against.
+ * @param {string} defaultSecureUrl: the default secure url to test against.
+ * @param {string} urlPart: the part of url to test
+ * @returns {{ inside: string, outside: string }}
+ *
+ * Note: this assumes Paw only supports http and https.
+ * Note: this may work incorrectly if url is as follow: http://example.com/example.com/ (not tested)
+ */
+methods.findIntersection = (defaultUrl, defaultSecureUrl, urlPart) => {
+  let baseUrl = defaultUrl
+  if (urlPart.match(/^[^:]*s:\/\//)) {
+    baseUrl = defaultSecureUrl
+  }
 
+  const match = (baseUrl + '####' + urlPart).match(/^.*?(.*)####\1(.*)$/)
   // always matches
   return { inside: match[1], outside: match[2] }
 }
@@ -452,7 +467,10 @@ methods.addComponentToBaseOrPath = (
   { baseComponents, pathComponents },
   { key: urlPart, value: component }
 ) => {
-  if (methods.isPartOfBaseUrl(defaultUrl, defaultSecureUrl, urlPart)) {
+  if (
+    pathComponents.length === 0 &&
+    methods.isPartOfBaseUrl(defaultUrl, defaultSecureUrl, urlPart)
+  ) {
     // component is member of base url
     baseComponents.push({ key: urlPart, value: component })
     return { baseComponents, pathComponents }
@@ -460,7 +478,7 @@ methods.addComponentToBaseOrPath = (
 
   if (pathComponents.length === 0) {
     // component may be split between base url and path
-    const { inside, outside } = methods.findIntersection(defaultUrl, urlPart)
+    const { inside, outside } = methods.findIntersection(defaultUrl, defaultSecureUrl, urlPart)
     baseComponents.push({ key: inside, value: inside })
     pathComponents.push({ key: outside, value: outside })
   }
