@@ -595,13 +595,28 @@ describe('parsers/paw/Parser.js', () => {
   describe('@findIntersection', () => {
     it('should work', () => {
       const defaultUrl = 'http://echo.paw.cloud/pets'
-      const inputs = [ '/pets', '/pets/234', '/234' ]
+      const defaultSecureUrl = 'https://echo.paw.cloud/pets'
+      const inputs = [
+        '/pets',
+        '/pets/234',
+        '/234',
+        // this one should be outside, because our intersection method tries to place strings so
+        // that they overlap from the right
+        'http://echo.paw.cloud',
+        'http://echo.paw.cloud/pets',
+        'https://echo.paw.cloud/pets'
+      ]
       const expected = [
         { inside: '/pets', outside: '' },
         { inside: '/pets', outside: '/234' },
-        { inside: '', outside: '/234' }
+        { inside: '', outside: '/234' },
+        { inside: '', outside: 'http://echo.paw.cloud' },
+        { inside: 'http://echo.paw.cloud/pets', outside: '' },
+        { inside: 'https://echo.paw.cloud/pets', outside: '' }
       ]
-      const actual = inputs.map(input => __internals__.findIntersection(defaultUrl, input))
+      const actual = inputs.map(
+        input => __internals__.findIntersection(defaultUrl, defaultSecureUrl, input)
+      )
       expect(actual).toEqual(expected)
     })
   })
