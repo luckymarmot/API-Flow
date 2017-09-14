@@ -478,7 +478,7 @@ methods.addHostEntryToHostMap = (hostMap, { key, value }) => {
   const hostname = key.get('hostname') ? key.get('hostname').generate(List([ '{{', '}}' ])) : ''
   const port = key.get('port') ? ':' + key.get('port').generate(List([ '{{', '}}' ])) : ''
   const host = hostname + port
-  const pathname = key.get('pathname').generate(List([ '{{', '}}' ]))
+  const pathname = key.get('pathname') ? key.get('pathname').generate(List([ '{{', '}}' ])) : ''
 
   if (!hostMap[host]) {
     hostMap[host] = { entries: [], lcPathname: pathname.split('/') }
