@@ -123,7 +123,7 @@ methods.traverse = (content, { $ref = '#/' } = {}) => {
 methods.resolve = (options, uri, { $ref = '' } = {}) => {
   const uriToLoad = resolve(uri, $ref)
   const protocol = parse(uriToLoad).protocol
-  if (protocol && protocol.substr(0,4) === 'http') {
+  if (protocol && protocol.substr(0, 4) === 'http') {
     return options.httpResolver.resolve(uriToLoad.split('#')[0])
   }
 
