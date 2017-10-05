@@ -125,11 +125,11 @@ methods.isParsable = (content) => {
 methods.resolve = (options, uri, { $ref = '' } = {}) => {
   const uriToLoad = resolve(uri, $ref)
   const protocol = parse(uriToLoad).protocol
-  if (protocol === 'file:' || protocol === 'file' || !protocol) {
-    return options.fsResolver.resolve(uriToLoad.split('#')[0])
+  if (protocol && protocol.substr(0,4) === 'http') {
+    return options.httpResolver.resolve(uriToLoad.split('#')[0])
   }
 
-  return options.httpResolver.resolve(uriToLoad.split('#')[0])
+  return options.fsResolver.resolve(uriToLoad.split('#')[0])
 }
 
 /**
