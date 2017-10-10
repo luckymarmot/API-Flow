@@ -960,6 +960,13 @@ describe('parsers/postman/v2.0/Parser.js', () => {
             variableDelimiters: List([ '{{', '}}', ':' ])
           }),
           value: 321
+        },
+        {
+          key: new URL({
+            url: 'staging.paw.cloud',
+            variableDelimiters: List([ '{{', '}}', ':' ])
+          }),
+          value: 123
         }
       ]
       const expected = {
@@ -1017,6 +1024,18 @@ describe('parsers/postman/v2.0/Parser.js', () => {
             }
           ],
           lcPathname: [ '', 'users', '321' ]
+        },
+        'staging.paw.cloud': {
+          entries: [
+            {
+              key: new URL({
+                url: 'staging.paw.cloud',
+                variableDelimiters: List([ '{{', '}}', ':' ])
+              }),
+              value: 123
+            }
+          ],
+          lcPathname: [ '' ]
         }
       }
 

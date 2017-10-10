@@ -95,7 +95,7 @@ PRs are welcomed!
 Our sole requirement is that organizations that want to extend API-Flow to support their format write both a parser and a serializer, and not simply a serializer.
 
 ## Documentation
-You can find more information about the internal structure of API-Flow in [src](https://github.com/luckymarmot/API-Flow/tree/develop/src). We've also created a set of templates to help speed up the extension process: [loader](https://github.com/luckymarmot/API-Flow/tree/develop/src/loaders/template/v1.0), [parser](https://github.com/luckymarmot/API-Flow/tree/develop/src/parsers/template/v1.0/), and [environment](https://github.com/luckymarmot/API-Flow/tree/develop/src/environments/template)
+You can find more information about the internal structure of API-Flow in [src](https://github.com/JonathanMontane/API-Flow/tree/develop/src). We've also created a set of templates to help speed up the extension process: [loader](https://github.com/JonathanMontane/API-Flow/tree/develop/src/loaders/template/v1.0), [parser](https://github.com/JonathanMontane/API-Flow/tree/develop/src/parsers/template/v1.0/), and [environment](https://github.com/JonathanMontane/API-Flow/tree/develop/src/environments/template)
 
 ## License
 
@@ -104,4 +104,4 @@ Copyright © 2016 Paw Inc.
 
 ## Contributors
 
-See [Contributors](https://github.com/luckymarmot/API-Flow/graphs/contributors).
+See [Contributors](https://github.com/JonathanMontane/API-Flow/graphs/contributors).

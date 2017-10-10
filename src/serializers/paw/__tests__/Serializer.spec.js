@@ -746,7 +746,7 @@ describe('serializers/paw/Serializer.js', () => {
       spyOn(__internals__, 'convertAuthIntoDynamicValue').andReturn(123)
       spyOn(__internals__, 'wrapDV').andReturn('123')
 
-      const expected = variable
+      const expected = { variable, auth }
       const actual = __internals__.addAuthToDomain(domain, environment, auth, key)
 
       expect(domain.createEnvironmentVariable).toHaveBeenCalledWith(key)
@@ -2040,7 +2040,7 @@ describe('serializers/paw/Serializer.js', () => {
       const store = new Store()
       const auth = new Auth.Basic()
 
-      const expected = '123'
+      const expected = { variable: '123', auth }
       const actual = __internals__.convertReferenceOrAuthToDsEntry(store, auth)
 
       expect(actual).toEqual(expected)
@@ -2051,12 +2051,27 @@ describe('serializers/paw/Serializer.js', () => {
     it('should work', () => {
       const pawReq = { setHeader: () => {} }
       spyOn(pawReq, 'setHeader').andReturn(123)
-      const auth = 'some dynamic string'
+      const authData = { variable: 'some dynamic string', auth: new Auth.Basic() }
 
       const expected = pawReq
-      const actual = __internals__.addAuthToRequest(pawReq, auth)
+      const actual = __internals__.addAuthToRequest(pawReq, authData)
 
-      expect(pawReq.setHeader).toHaveBeenCalledWith('Authorization', auth)
+      expect(pawReq.setHeader).toHaveBeenCalledWith('Authorization', authData.variable)
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work with ApiKeys custom headers', () => {
+      const pawReq = { setHeader: () => {} }
+      spyOn(pawReq, 'setHeader').andReturn(123)
+      const authData = {
+        variable: 'some dynamic string',
+        auth: new Auth.ApiKey({ name: 'X-Auth-Token' })
+      }
+
+      const expected = pawReq
+      const actual = __internals__.addAuthToRequest(pawReq, authData)
+
+      expect(pawReq.setHeader).toHaveBeenCalledWith('X-Auth-Token', authData.variable)
       expect(actual).toEqual(expected)
     })
   })
