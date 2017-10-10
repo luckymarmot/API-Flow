@@ -13,7 +13,7 @@ import PostmanCollectionV2Parser from './parsers/postman/v2.0/Parser'
 import SwaggerV2Serializer from './serializers/swagger/v2.0/Serializer'
 import RAMLV1Serializer from './serializers/raml/v1.0/Serializer'
 import InternalSerializer from './serializers/internal/Serializer'
-import PostmanV2Serializer from './serializers/postman/v2.0/Serializer'
+import PostmanCollectionV2Serializer from './serializers/postman/v2.0/Serializer'
 import ApiBlueprint1ASerializer from './serializers/api-blueprint/1A/Serializer'
 
 export const loaders = [
@@ -34,7 +34,7 @@ export const serializers = [
   SwaggerV2Serializer,
   RAMLV1Serializer,
   InternalSerializer,
-  PostmanV2Serializer,
+  PostmanCollectionV2Serializer,
   ApiBlueprint1ASerializer
 ]
 
