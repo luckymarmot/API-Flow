@@ -442,7 +442,7 @@ methods.convertAuthIntoDynamicValue = (auth) => {
  * @param {Environment} environment: the environment in which this auth value is applicable.
  * @param {Auth} auth: the auth to add to the domain
  * @param {string} key: the name of the auth
- * @returns {EnvironmentVariable} the newly created environment variable.
+ * @returns {{ variable: EnvironmentVariable, auth: Auth }} the newly created environment variable.
  */
 methods.addAuthToDomain = (domain, environment, auth, key) => {
   const variable = domain.createEnvironmentVariable(key)
@@ -450,7 +450,7 @@ methods.addAuthToDomain = (domain, environment, auth, key) => {
   const ds = methods.wrapDV(dv)
   variable.setValue(ds, environment)
 
-  return variable
+  return { variable, auth }
 }
 
 /**
@@ -1041,7 +1041,7 @@ methods.convertAuthFromReference = (store, reference) => {
  * converts a reference or an auth into a DynamicString Entry.
  * @param {Store} store: the store used to resolve references
  * @param {Auth|Reference} authOrReference: the record to convert into a DynamicString
- * @returns {DynamicString} the corresponding DynamicString
+ * @returns {{ variable: DynamicString, auth: Auth }} the corresponding DynamicString
  */
 methods.convertReferenceOrAuthToDsEntry = (store, authOrReference) => {
   if (authOrReference instanceof Reference) {
@@ -1049,18 +1049,25 @@ methods.convertReferenceOrAuthToDsEntry = (store, authOrReference) => {
   }
 
   const dv = methods.convertAuthIntoDynamicValue(authOrReference)
-  return methods.wrapDV(dv)
+  return { variable: methods.wrapDV(dv), auth: authOrReference }
 }
 
 // TODO create Variable DS that has enum with all auth possible
 /**
  * sets the Auth DynamicString as am Authorization Header.
  * @param {PawRequest} pawRequest: the paw request to update
- * @param {DynamicString} auth: the DynamicString representing an auth
+ * @param {Objecti} authData: the object containing the auth representation as a DynamicString and
+ * the original auth Record.
+ * @param {DynamicString} variable: the DynamicString representing an auth
+ * @param {Auth} auth: the original auth
  * @returns {PawRequest} the update paw request
  */
-methods.addAuthToRequest = (pawRequest, auth) => {
-  pawRequest.setHeader('Authorization', auth)
+methods.addAuthToRequest = (pawRequest, { variable, auth }) => {
+  let authName = 'Authorization'
+  if (auth instanceof Auth.ApiKey) {
+    authName = auth.get('name')
+  }
+  pawRequest.setHeader(authName, variable)
   return pawRequest
 }
 

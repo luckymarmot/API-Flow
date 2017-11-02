@@ -70,11 +70,12 @@ methods.parseJSON = (str) => {
 
 methods.resolve = (options, uri, { $ref = '' } = {}) => {
   const uriToLoad = resolve(uri, $ref)
-  if (parse(uriToLoad).protocol === 'file:') {
-    return options.fsResolver.resolve(uriToLoad.split('#')[0])
+  const protocol = parse(uriToLoad).protocol
+  if (protocol && protocol.substr(0, 4) === 'http') {
+    return options.httpResolver.resolve(uriToLoad.split('#')[0])
   }
 
-  return options.httpResolver.resolve(uriToLoad.split('#')[0])
+  return options.fsResolver.resolve(uriToLoad.split('#')[0])
 }
 
 
