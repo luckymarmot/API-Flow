@@ -1029,12 +1029,12 @@ methods.getContainerFromRequest = (request) => {
  * converts an auth into a DynamicString from a reference.
  * @param {Store} store: the store to use to resolve the reference
  * @param {Reference} reference: the reference to an EnvironmentVariable representing an Auth.
- * @returns {DynamicString} the corresponding DynamicString
+ * @returns {{ variable: DynamicString, auth: Auth }} the corresponding DynamicString
  */
 methods.convertAuthFromReference = (store, reference) => {
-  const variable = store.getIn([ 'auth', reference.get('uuid') ])
+  const { variable, auth } = store.getIn([ 'auth', reference.get('uuid') ])
   const ds = variable.createDynamicString()
-  return ds
+  return { variable: ds, auth: auth }
 }
 
 /**
