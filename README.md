@@ -21,9 +21,20 @@ We intend to support:
 - and many more.
 
 ## Installation
-### from a cloned repository
 
-just run
+You can install this library in two different ways. 
+
+### Install via NPM/Yarn 
+
+```shell
+$ yarn add api-flow
+# or 
+$ npm install api-flow
+```
+
+### Install from source
+
+Just run:
 
 ```sh
 git clone https://github.com/luckymarmot/API-Flow.git
@@ -31,19 +42,12 @@ cd API-Flow
 make install
 ```
 
-This will install the node module dependencies
-
-## Building the different libraries
-### node, web, and webworker
-
-run the following command to build API-Flow for the different environments that you need
+This will install the node module dependencies, but you will need to build API-Flow for the different environments that you need:
 
 ```sh
 # use TARGET="node" if you only want the node library
 make runners TARGET="node web webworker"
 ```
-
-### Paw
 
 You can use the following command to add the different extensions to Paw
 
@@ -52,12 +56,15 @@ You can use the following command to add the different extensions to Paw
 make transfer TARGET="swagger raml1 postman2"
 ```
 
-## Using the npm module
-### as a standard library
+## Usage
+
+### Standard Library
 
 ```js
-const ApiFlow = require('api-flow'); // if from npm
+const ApiFlow = require('api-flow'); // if from yarn/npm
 const ApiFlow = require('./dist/node/api-flow.js'); // if from `make runners TARGET="node"`
+
+const path = require('path');
 
 const options = {
     source: {
