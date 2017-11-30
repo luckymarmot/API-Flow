@@ -362,17 +362,6 @@
           "request": {
             "url": {
               "raw": "https://6-dot-authentiqio.appspot.com/scope/:job",
-              "protocol": "https",
-              "auth": {},
-              "host": [
-                "6-dot-authentiqio",
-                "appspot",
-                "com"
-              ],
-              "path": [
-                "scope",
-                ":job"
-              ],
               "variable": [
                 {
                   "value": "{{job}}",

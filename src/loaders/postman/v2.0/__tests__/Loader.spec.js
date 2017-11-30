@@ -436,12 +436,14 @@ describe('loaders/postman/v2.0/Loader.js', () => {
       const inputs = [
         { request: { url: '123' } },
         { request: { url: 234 } },
-        { request: { url: { host: 345 } } }
+        { request: { url: { raw: 345 } } },
+        { request: { url: { host: 456 } } }
       ]
       const expected = [
         { request: { url: '123123', urlString: '123' } },
-        { request: { url: 234, urlString: 234 / 2 } },
-        { request: { url: { host: 345, domain: 345 }, urlString: 345 / 2 } }
+        { request: { url: 234 * 2, urlString: 234 } },
+        { request: { url: 345 * 2, urlString: 345 } },
+        { request: { url: { host: 456, domain: 456 }, urlString: 456 / 2 } }
       ]
       const actual = inputs.map(input => __internals__.normalizeRequestURL(input))
       expect(actual).toEqual(expected)

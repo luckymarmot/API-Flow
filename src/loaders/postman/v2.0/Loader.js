@@ -270,16 +270,26 @@ methods.normalizeRequestURL = (item) => {
     return item
   }
 
-  if (typeof item.request.url === 'string') {
-    item.request.urlString = item.request.url
-    item.request.url = methods.createPostmanURLObjectFromURLString(item.request.urlString)
-  }
-  else {
-    if (item.request.url && !item.request.url.domain && item.request.url.host) {
-      item.request.url.domain = item.request.url.host
+  let { url, urlString } = item.request
+
+  if (typeof url === 'object') {
+    // Lets just use this raw string, its gonna have everything
+    if (url.raw) {
+      item.request.urlString = url.raw
+      item.request.url = methods.createPostmanURLObjectFromURLString(url.raw)
+      return item
+    }
+    // cater to some random bug before we do the object normalization
+    if (!url.domain && url.host) {
+      item.request.url.domain = url.host
     }
     item.request.urlString = methods.createPostmanURLStringFromURLObject(item.request.url)
+    return item
   }
+
+  // It's not an object, hope its a string or numeric that'll act like a string
+  item.request.urlString = url
+  item.request.url = methods.createPostmanURLObjectFromURLString(url)
 
   return item
 }
