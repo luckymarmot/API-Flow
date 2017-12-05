@@ -97,7 +97,7 @@ Our sole requirement is that organizations that want to extend API-Flow to suppo
 
 ## Documentation
 
-You can find more information about the internal structure of API-Flow in [src](https://github.com/luckymarmot/API-Flow/tree/develop/src). We've also created a set of templates to help speed up the extension process: [loader](https://github.com/luckymarmot/API-Flow/tree/develop/src/loaders/template/v1.0), [parser](https://github.com/luckymarmot/API-Flow/tree/develop/src/parsers/template/v1.0/), and [environment](https://github.com/luckymarmot/API-Flow/tree/develop/src/environments/template)
+You can find more information about the internal structure of API-Flow in [src](src). We've also created a set of templates to help speed up the extension process: [loader](src/loaders/template/v1.0), [parser](src/parsers/template/v1.0/), and [environment](src/environments/template)
 
 ## License
 
