@@ -4,20 +4,23 @@
 
 A flow written in ES6 using Immutable to convert between API description formats (Swagger, etc.) and other programs such as cURL command lines.
 
-## What formats are supported and what will be in the future
+## Format Support
+
 We currently support:
-- `Swagger v2.0 (in/out)`
-- `RAML v1.0 (in/out)`
-- `Postman Collection v2.0 (in/out)`
-- `Paw v3.1 (in/out)`
+
+- Swagger v2.0 (in/out)
+- RAML v1.0 (in/out)
+- Postman Collection v2.0 (in/out)
+- Paw v3.1 (in/out)
 
 We intend to support:
-- `Swagger v3.0`
-- `RAML v0.8`
-- `Postman Collection v1.0`
-- `Postman Dump v1.0`
-- `Insomnia v3.0`
-- `Api-Blueprint`
+
+- Swagger v3.0
+- RAML v0.8
+- Postman Collection v1.0
+- Postman Dump v1.0
+- Insomnia v3.0
+- API Blueprint
 - and many more.
 
 ## Installation
@@ -87,11 +90,6 @@ const promise = ApiFlow.transform({
 promise.then((data) => {
   // do some cool stuff with the data
 })
-```
-
-### Using as a CLI (coming soon)
-```sh
-node ./bin/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
 ```
 
 ### User Interface
