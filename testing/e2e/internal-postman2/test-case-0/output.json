@@ -170,7 +170,7 @@
             "header": [
               {
                 "key": "api_key",
-                "value": null
+                "value": ""
               },
               {
                 "key": "Content-Type",
