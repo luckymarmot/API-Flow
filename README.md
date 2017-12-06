@@ -98,11 +98,13 @@ API-Flow is one of the main components of [Console.REST](https://github.com/luck
 
 ## Contributing
 
-PRs are welcomed!
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for more tips on testing and contributing.
+
 Our sole requirement is that organizations that want to extend API-Flow to support their format write both a parser and a serializer, and not simply a serializer.
 
 ## Documentation
-You can find more information about the internal structure of API-Flow in [src](https://github.com/JonathanMontane/API-Flow/tree/develop/src). We've also created a set of templates to help speed up the extension process: [loader](https://github.com/JonathanMontane/API-Flow/tree/develop/src/loaders/template/v1.0), [parser](https://github.com/JonathanMontane/API-Flow/tree/develop/src/parsers/template/v1.0/), and [environment](https://github.com/JonathanMontane/API-Flow/tree/develop/src/environments/template)
+
+You can find more information about the internal structure of API-Flow in [src](src). We've also created a set of templates to help speed up the extension process: [loader](src/loaders/template/v1.0), [parser](src/parsers/template/v1.0/), and [environment](src/environments/template)
 
 ## License
 
