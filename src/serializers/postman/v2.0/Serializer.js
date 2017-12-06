@@ -620,7 +620,7 @@ methods.createHeaderFromParameter = (param) => {
     return { key, value: schema.enum[0] }
   }
 
-  return { key, value: null }
+  return { key, value: '' }
 }
 
 /**

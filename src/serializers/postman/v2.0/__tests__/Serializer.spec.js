@@ -844,7 +844,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       ]
       const expected = [
         null,
-        { key: 123, value: null },
+        { key: 123, value: '' },
         { key: 234, value: 'abc' },
         { key: 345, value: 'def' }
       ]
