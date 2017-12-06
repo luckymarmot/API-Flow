@@ -4,60 +4,72 @@
 
 A flow written in ES6 using Immutable to convert between API description formats (Swagger, etc.) and other programs such as cURL command lines.
 
-## What formats are supported and what will be in the future
+## Format Support
+
 We currently support:
-- `Swagger v2.0 (in/out)`
-- `RAML v1.0 (in/out)`
-- `Postman Collection v2.0 (in/out)`
-- `Paw v3.1 (in/out)`
+
+- Swagger v2.0 (in/out)
+- RAML v1.0 (in/out)
+- Postman Collection v2.0 (in/out)
+- Paw v3.1 (in/out)
 
 We intend to support:
-- `Swagger v3.0`
-- `RAML v0.8`
-- `Postman Collection v1.0`
-- `Postman Dump v1.0`
-- `Insomnia v3.0`
-- `Api-Blueprint`
+
+- Swagger v3.0
+- RAML v0.8
+- Postman Collection v1.0
+- Postman Dump v1.0
+- Insomnia v3.0
+- API Blueprint
 - and many more.
 
 ## Installation
-### from a cloned repository
 
-just run
+You can install this library in two different ways.
+
+
+### Install via NPM/Yarn
+
+```shell
+$ yarn add api-flow
+# or
+$ npm install api-flow
+```
+
+### Install from source
+
+Just run:
 
 ```sh
 git clone https://github.com/luckymarmot/API-Flow.git
 cd API-Flow
-make install
+yarn install
+make
 ```
 
-This will install the node module dependencies
-
-## Building the different libraries
-### node, web, and webworker
-
-run the following command to build API-Flow for the different environments that you need
+This will install the node module dependencies, but you will need to build API-Flow for the different [environments](src/environments) that you need:
 
 ```sh
 # use TARGET="node" if you only want the node library
 make runners TARGET="node web webworker"
 ```
 
-### Paw
-
-You can use the following command to add the different extensions to Paw
+You can use the following command to compile different extensions.
 
 ```sh
 # use TARGET="swagger" if you only want the swagger bindings
 make transfer TARGET="swagger raml1 postman2"
 ```
 
-## Using the npm module
-### as a standard library
+## Usage
+
+### Standard Library
 
 ```js
-const ApiFlow = require('api-flow'); // if from npm
-const ApiFlow = require('./dist/node/api-flow.js'); // if from `make runners TARGET="node"`
+const ApiFlow = require('api-flow').default; // if from yarn/npm
+const ApiFlow = require('./dist/node/api-flow.js').default; // if from `make runners TARGET="node"`
+
+const path = require('path');
 
 const options = {
     source: {
@@ -78,11 +90,6 @@ const promise = ApiFlow.transform({
 promise.then((data) => {
   // do some cool stuff with the data
 })
-```
-
-### Using as a CLI (coming soon)
-```sh
-node ./bin/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
 ```
 
 ### User Interface
