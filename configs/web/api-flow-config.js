@@ -22,7 +22,7 @@ export const loaders = [
 export const parsers = [
   SwaggerV2Parser,
   RAMLV1Parser,
-  PostmanCollectionV2Parser
+  PostmanV2Parser
 ]
 
 export const serializers = [

@@ -2010,12 +2010,12 @@ describe('serializers/paw/Serializer.js', () => {
       spyOn(variable, 'createDynamicString').andReturn(123)
 
       const store = new Store({
-        auth: OrderedMap({ a: variable })
+        auth: OrderedMap({ a: { variable: variable, auth: 'my-auth' } })
       })
 
       const ref = new Reference({ uuid: 'a' })
 
-      const expected = 123
+      const expected = { auth: 'my-auth', variable: 123 }
       const actual = __internals__.convertAuthFromReference(store, ref)
 
       expect(actual).toEqual(expected)

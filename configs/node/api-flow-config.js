@@ -1,7 +1,7 @@
 import Environment from '../../src/environments/node/Environment'
 
 import SwaggerLoader from '../../src/loaders/swagger/Loader'
-import RAMLLoader from '../../src/loaders/raml/Loader'
+import RAMLV1Loader from '../../src/loaders/raml/Loader'
 import PostmanCollectionV2Loader from '../../src/loaders/postman/v2.0/Loader'
 
 import SwaggerV2Parser from '../../src/parsers/swagger/v2.0/Parser'
