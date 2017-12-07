@@ -653,7 +653,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       }
 
       const expectedValue = {
-        description: 'no description was provided for this response',
+        description: '',
         headers: {
           userId: { type: 'string' },
           petId: { type: 'number' }
@@ -1703,21 +1703,21 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
           get: {
             responses: {
               default: {
-                description: 'no response description was provided for this operation'
+                description: ''
               }
             }
           },
           post: {
             responses: {
               default: {
-                description: 'no response description was provided for this operation'
+                description: ''
               }
             }
           },
           put: {
             responses: {
               default: {
-                description: 'no response description was provided for this operation'
+                description: ''
               }
             }
           }

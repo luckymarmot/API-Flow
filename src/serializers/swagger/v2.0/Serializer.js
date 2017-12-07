@@ -463,17 +463,11 @@ methods.getSchemaFromResponse = (response) => {
  * @returns {SwaggerResponseObject} the corresponding swagger response object.
  */
 methods.convertResponseRecordToResponseObject = (store, { key, value }) => {
-  const response = {}
-
-  if (value.get('description')) {
-    response.description = value.get('description')
+  const response = {
+    description: value.get('description') || '',
+    headers: methods.getHeadersFromResponse(store, value),
+    schema: methods.getSchemaFromResponse(value)
   }
-  else {
-    response.description = 'no description was provided for this response'
-  }
-
-  response.headers = methods.getHeadersFromResponse(store, value)
-  response.schema = methods.getSchemaFromResponse(value)
 
   return {
     key,
@@ -1123,7 +1117,7 @@ methods.getResponsesFromRequest = (store, request) => {
   if (Object.keys(responses).length === 0) {
     return {
       default: {
-        description: 'no response description was provided for this operation'
+        description: ''
       }
     }
   }
