@@ -236,7 +236,8 @@
             "description": "ID of pet that needs to be fetched",
             "required": true,
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "x-example": 12356789
           }
         ],
         "responses": {
@@ -414,7 +415,7 @@
           {
             "in": "path",
             "name": "orderId",
-            "description": "ID of pet that needs to be fetched",
+            "description": "ID of purchase order that needs to be fetched",
             "required": true,
             "type": "string"
           }

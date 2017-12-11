@@ -1252,6 +1252,12 @@ methods.convertParameterObjectIntoParameter = (parameterEntry) => {
     applicableContexts
   }
 
+  if (parameter.example) {
+    paramInstance.examples = List([parameter.example])
+  } else if (parameter['x-example']) {
+    paramInstance.examples = List([parameter['x-example']])
+  }
+
   if (parameter.type === 'array' && parameter.items) {
     const { value } = methods.convertParameterObjectIntoParameter({
       key: null,
