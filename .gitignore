@@ -56,3 +56,4 @@ lib/
 .DS_Store
 deploy-script.sh
 coverage/
+.nyc_output/

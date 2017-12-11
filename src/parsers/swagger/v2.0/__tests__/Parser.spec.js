@@ -2189,7 +2189,9 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           }) :
           new ParameterContainer()
       })
+      /* eslint-disable no-undefined */
       const inputs = [
+        [ new Store(), new URL(), undefined ],
         [ new Store(), new URL(), {} ],
         [ new Store(), new URL(), { key: 'abc', value: 123 } ],
         [
@@ -2214,8 +2216,10 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           { key: 'userId', value: 123 }
         ]
       ]
+      /* eslint-enable no-undefined */
 
       const expected = [
+        new URL(),
         new URL(),
         new URL(),
         new URL({ url: 'https://echo.paw.cloud/user/123' }),
@@ -2768,7 +2772,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           maximum: 321,
           minimum: 123,
           multipleOf: 5,
-          default: 100
+          default: 100,
+          example: 12345
         }
       }
 
@@ -2783,6 +2788,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           required: true,
           type: 'integer',
           default: 100,
+          examples: List([12345]),
           constraints: List([
             new Constraint.Maximum(321),
             new Constraint.Minimum(123),
@@ -2812,7 +2818,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
             maximum: 321,
             minimum: 123,
             multipleOf: 5,
-            default: 100
+            default: 100,
+            example: 12345
           }
         }
       }
@@ -2834,6 +2841,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
             required: true,
             type: 'integer',
             default: 100,
+            examples: List([12345]),
             constraints: List([
               new Constraint.Maximum(321),
               new Constraint.Minimum(123),
@@ -2915,6 +2923,35 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
       ]
       const actual = inputs.map(input => __internals__.convertParameterObjectIntoParameter(input))
       expect(actual).toEqual(expected)
+    })
+
+    it('should respect x-example too', () => {
+      const entry = {
+        key: 'UserId',
+        value: {
+          name: 'userId',
+          in: 'query',
+          type: 'integer',
+          required: true,
+          'x-example': 23456
+        }
+      }
+
+      const expected = {
+        key: 'UserId',
+        value: new Parameter({
+          key: 'userId',
+          name: 'userId',
+          in: 'queries',
+          uuid: 'UserId',
+          required: true,
+          type: 'integer',
+          examples: List([23456]),
+          constraints: List()
+        })
+      }
+
+      const actual = __internals__.convertParameterObjectIntoParameter(entry)
     })
   })
 

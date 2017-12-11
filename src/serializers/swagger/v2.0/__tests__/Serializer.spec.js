@@ -10,6 +10,7 @@ import Reference from '../../../../models/Reference'
 import Parameter from '../../../../models/Parameter'
 import Resource from '../../../../models/Resource'
 import URL from '../../../../models/URL'
+import URLComponent from '../../../../models/URLComponent'
 import Store from '../../../../models/Store'
 import Constraint from '../../../../models/Constraint'
 import ParameterContainer from '../../../../models/ParameterContainer'
@@ -1650,6 +1651,24 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work even if path not starting with /', () => {
+      const input = new Resource({
+        path: new URL().set(
+          'pathname',
+          new URLComponent({
+            componentName: 'pathname',
+            string: 'my/path/{pathId}',
+            variableDelimiters: List([ '{', '}' ])
+          })
+        )
+      })
+
+      const expected = '/my/path/{pathId}'
+      const actual = __internals__.getPathFromResource(input)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertInterfaceToTagString', () => {
@@ -2252,6 +2271,71 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
       }
 
       const expected = { key, value: expectedValue }
+      const actual = __internals__.convertRequestToOperationObject(store, globalInfo, request, key)
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('should work if underlying methods are correct and with request method', () => {
+      spyOn(__internals__, 'getTagStrings').andReturn([ 'pet', 'store' ])
+      spyOn(__internals__, 'getKeysFromRecord').andReturn({
+        summary: 'update a Pet',
+        description: 'updates a pet with some params',
+        operationId: 'updatePet'
+      })
+
+      spyOn(__internals__, 'getConsumesEntry').andReturn([ 'application/json' ])
+      spyOn(__internals__, 'getProducesEntry').andReturn([ 'application/xml' ])
+      spyOn(__internals__, 'getParametersFromRequest').andReturn([ {
+        in: 'query',
+        name: 'petId',
+        type: 'string'
+      } ])
+      spyOn(__internals__, 'getSchemesFromRequestEndpointOverlay').andReturn([ 'https' ])
+      spyOn(__internals__, 'getSecurityRequirementsFromRequest').andReturn([
+        {
+          petstore_auth: [ 'write:self' ]
+        }
+      ])
+      spyOn(__internals__, 'getResponsesFromRequest').andReturn({
+        '200': {
+          description: 'this method should return 200'
+        }
+      })
+
+      const store = new Store()
+      const globalInfo = {}
+      const request = new Request({ method: 'Get' })
+      const key = 'put'
+
+      const expectedValue = {
+        tags: [ 'pet', 'store' ],
+        summary: 'update a Pet',
+        description: 'updates a pet with some params',
+        operationId: 'updatePet',
+        consumes: [ 'application/json' ],
+        produces: [ 'application/xml' ],
+        parameters: [
+          {
+            in: 'query',
+            name: 'petId',
+            type: 'string'
+          }
+        ],
+        schemes: [ 'https' ],
+        security: [
+          {
+            petstore_auth: [ 'write:self' ]
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'this method should return 200'
+          }
+        }
+      }
+
+      const expected = { key: 'get', value: expectedValue }
       const actual = __internals__.convertRequestToOperationObject(store, globalInfo, request, key)
 
       expect(actual).toEqual(expected)

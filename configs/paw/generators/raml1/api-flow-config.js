@@ -21,7 +21,7 @@ export const serializers = [
 export const target = {
   identifier: 'com.luckymarmot.PawExtensions.RAML1Generator',
   title: 'RAML1Generator',
-  humanTitle: 'RAML v1.0',
+  humanTitle: 'RAML 1.0',
   format: RAMLV1Serializer.__meta__.format,
   version: RAMLV1Serializer.__meta__.version
 }

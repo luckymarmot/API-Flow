@@ -693,7 +693,7 @@ methods.isBodyParameter = (parameter) => {
   const isUrlEncoded = parameter.isValid(
     new Parameter({
       key: 'Content-Type',
-      default: 'multipart/form-data'
+      default: 'application/x-www-form-urlencoded'
     })
   )
 
@@ -918,6 +918,11 @@ methods.getTagDefinitions = (api) => {
  */
 methods.getPathFromResource = (resource) => {
   const path = resource.get('path').toURLObject(List([ '{', '}' ])).pathname
+
+  if (path[0] !== '/') {
+    return '/' + path
+  }
+
   return path
 }
 
@@ -1329,7 +1334,8 @@ methods.convertRequestToOperationObject = (store, { consumes, produces }, reques
   }
 
   const value = operation
-  return { key, value }
+  const method = request.get('method') || key
+  return { key: method.toLowerCase(), value }
 }
 /* eslint-enable max-statements */
 
@@ -1473,11 +1479,11 @@ methods.isProducesHeader = (param) => {
 methods.extractContentTypesFromParam = (param) => {
   const schema = param.getJSONSchema(false)
   if (schema.enum) {
-    return schema.enum
+    return schema.enum.map(contentType => contentType.split(';')[0])
   }
 
   if (schema.default) {
-    return [ schema.default ]
+    return [ schema.default ].map(contentType => contentType.split(';')[0])
   }
 
   return []

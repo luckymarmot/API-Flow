@@ -122,11 +122,12 @@ methods.traverse = (content, { $ref = '#/' } = {}) => {
 
 methods.resolve = (options, uri, { $ref = '' } = {}) => {
   const uriToLoad = resolve(uri, $ref)
-  if (parse(uriToLoad).protocol === 'file:') {
-    return options.fsResolver.resolve(uriToLoad.split('#')[0])
+  const protocol = parse(uriToLoad).protocol
+  if (protocol && protocol.substr(0, 4) === 'http') {
+    return options.httpResolver.resolve(uriToLoad.split('#')[0])
   }
 
-  return options.httpResolver.resolve(uriToLoad.split('#')[0])
+  return options.fsResolver.resolve(uriToLoad.split('#')[0])
 }
 
 methods.objectMap = (obj, func) => {
@@ -159,9 +160,22 @@ methods.fixRemotePaths = (options, uri, swagger) => {
   })
 }
 
+methods.fixImplicitHost = (uri) => {
+  if (!uri) {
+    return 'localhost'
+  }
+
+  const host = parse(uri).host
+  if (!host) {
+    return 'localhost'
+  }
+
+  return host
+}
+
 methods.fixImplicitUriReferences = (options, uri, swagger) => {
   if (!swagger.host) {
-    swagger.host = uri ? parse(uri).host : 'localhost'
+    swagger.host = methods.fixImplicitHost(uri)
   }
 
   if (!swagger.schemes || !swagger.schemes.length) {

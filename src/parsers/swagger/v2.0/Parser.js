@@ -89,7 +89,9 @@ methods.handleUnkownFormat = () => {
  * @returns {void}
  */
 methods.handleInvalidSwagger = () => {
-  const message = 'Invalid Swagger File (invalid schema / version < 2.0)'
+  const message = 'Invalid Swagger File (invalid schema / version < 2.0)\n' +
+    tv4.error + '\n' +
+    'Potential culprit: ' + tv4.error.dataPath
   const error = new __errors__.NotASwaggerV2(message)
   throw error
 }
@@ -893,7 +895,11 @@ methods.getRequestsForResource = (store, security, resourceObject) => {
  * @param {Entry} entry: a operation object, as an entry
  * @returns {URL} the updated path endpoint
  */
-methods.updatePathWithParametersFromOperations = (store, path, { key, value }) => {
+methods.updatePathWithParametersFromOperations = (store, path, { key, value } = {}) => {
+  if (!key && !value) {
+    return path
+  }
+
   const container = methods.getParameterContainerForOperation(store, value, key)
   const pathParams = container.get('path')
 
@@ -1244,6 +1250,12 @@ methods.convertParameterObjectIntoParameter = (parameterEntry) => {
     type: type || null,
     constraints,
     applicableContexts
+  }
+
+  if (parameter.example) {
+    paramInstance.examples = List([parameter.example])
+  } else if (parameter['x-example']) {
+    paramInstance.examples = List([parameter['x-example']])
   }
 
   if (parameter.type === 'array' && parameter.items) {

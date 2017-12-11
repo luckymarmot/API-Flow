@@ -35,7 +35,7 @@ import Auth from '../../../models/Auth'
 import { convertEntryListInMap } from '../../../utils/fp-utils'
 
 const __meta__ = {
-  format: 'postman',
+  format: 'postman-collection',
   version: 'v2.0'
 }
 

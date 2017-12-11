@@ -21,6 +21,7 @@ export const serializers = [
 export const source = {
   identifier: 'com.luckymarmot.PawExtensions.PostmanCollectionV2Importer',
   title: 'PostmanCollectionV2Importer',
+  humanTitle: 'Postman Collection 2.0 Importer',
   format: PostmanCollectionV2Parser.__meta__.format,
   version: PostmanCollectionV2Parser.__meta__.version
 }

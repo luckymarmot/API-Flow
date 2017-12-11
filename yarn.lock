@@ -1629,6 +1629,10 @@ dot-case@^1.1.0:
   dependencies:
     sentence-case "^1.1.2"
 
+drafter.js:
+  version "2.6.6"
+  resolved "https://registry.yarnpkg.com/drafter.js/-/drafter.js-2.6.6.tgz#6706978eb11afedec4de61ad8b90e006d68e3a3c"
+
 duplexify@^3.2.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/duplexify/-/duplexify-3.5.0.tgz#1aa773002e1578457e9d9d4a50b0ccaaebcbd604"
