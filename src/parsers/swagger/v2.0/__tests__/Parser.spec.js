@@ -2772,7 +2772,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           maximum: 321,
           minimum: 123,
           multipleOf: 5,
-          default: 100
+          default: 100,
+          example: 12345
         }
       }
 
@@ -2787,6 +2788,9 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           required: true,
           type: 'integer',
           default: 100,
+          examples: List([
+            12345
+          ]),
           constraints: List([
             new Constraint.Maximum(321),
             new Constraint.Minimum(123),
@@ -2816,7 +2820,8 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
             maximum: 321,
             minimum: 123,
             multipleOf: 5,
-            default: 100
+            default: 100,
+            example: 12345
           }
         }
       }
@@ -2838,6 +2843,7 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
             required: true,
             type: 'integer',
             default: 100,
+            examples: List([12345]),
             constraints: List([
               new Constraint.Maximum(321),
               new Constraint.Minimum(123),
@@ -2917,6 +2923,66 @@ describe('parsers/swagger/v2.0/Parser.js', () => {
           })
         }
       ]
+      const actual = inputs.map(input => __internals__.convertParameterObjectIntoParameter(input))
+      expect(actual).toEqual(expected)
+    })
+
+    it('should respect x-example too', () => {
+      const inputs = [
+        {
+          key: 'UserId',
+          value: {
+            name: 'userId',
+            in: 'query',
+            type: 'integer',
+            required: true,
+            'x-example': 23456
+          }
+        },
+        {
+          key: 'ShowThing',
+          value: {
+            name: 'showThing',
+            in: 'query',
+            type: 'boolean',
+            'x-example': false
+          }
+        }
+      ]
+
+      const expected = [
+        {
+          key: 'UserId',
+          value: new Parameter({
+            key: 'userId',
+            name: 'userId',
+            in: 'queries',
+            uuid: 'UserId',
+            required: true,
+            type: 'integer',
+            examples: List([
+              23456
+            ]),
+            constraints: List()
+          })
+        },
+        {
+          key: 'ShowThing',
+          value: new Parameter({
+            key: 'showThing',
+            name: 'showThing',
+            in: 'queries',
+            uuid: 'ShowThing',
+            required: false,
+            type: 'boolean',
+            examples: List([
+              false
+            ]),
+            constraints: List()
+          })
+        }
+      ]
+
       const actual = inputs.map(input => __internals__.convertParameterObjectIntoParameter(input))
       expect(actual).toEqual(expected)
     })

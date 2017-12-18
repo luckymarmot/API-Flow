@@ -5,6 +5,8 @@ import { resolve } from 'path'
 import expect from 'expect'
 const diff = require('diff')
 
+const Ajv = require('ajv');
+
 import ApiFlow from '../../../src/api-flow'
 
 const compare = (actual, expected) => {
@@ -43,6 +45,33 @@ const fixDiff = (actual, index) => {
     fs.writeFileSync(resolve(__dirname, './test-case-' + index + '/output.json'), actual)
   }
 }
+
+// Postman's JSON Schema comes from http://schema.getpostman.com/
+describe('postman collection v2 example inputs are valid', () => {
+  const jsonSchema = fs.readFileSync(
+    resolve(__dirname, '../../schemas/postman-collection-v2-0.json'),
+    'utf-8'
+  ).toString()
+
+  const ajv = new Ajv();
+
+  // Postman is still on JSON Schema Draft 04
+  ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
+
+  for (let index = 0; index < 1; index += 1) {
+    it('should validate against postman collection v2 JSON Schema ' + index, (done) => {
+      const inputJson = fs.readFileSync(
+        resolve(__dirname, './test-case-' + index + '/input.json'),
+        'utf-8'
+      ).toString()
+
+      ajv.validate(JSON.parse(jsonSchema), JSON.parse(inputJson));
+
+      expect(ajv.errors).toBe(null)
+      done()
+    })
+  }
+})
 
 describe('postman collection v2 -> internal', () => {
   for (let index = 0; index < 1; index += 1) {
