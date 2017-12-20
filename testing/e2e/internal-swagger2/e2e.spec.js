@@ -81,8 +81,7 @@ describe('internal -> swagger v2', () => {
       }
       catch (e) {
         console.error(e.stack)
-        expect(true).toEqual(false)
-        done()
+        done(new Error('unexpected error'))
       }
       /* eslint-enable no-console */
     })
