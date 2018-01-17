@@ -4,7 +4,7 @@ const config = {
   target: 'webworker',
   entry: path.resolve(__dirname, './api-flow.js'),
   output: {
-    path: path.resolve(__dirname, '../../../dist/node/'),
+    path: path.resolve(__dirname, '../../../dist/webworker/'),
     filename: 'api-flow.js',
     libraryTarget: 'umd'
   },

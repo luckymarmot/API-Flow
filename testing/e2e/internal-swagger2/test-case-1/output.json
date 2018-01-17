@@ -29,7 +29,7 @@
         ],
         "responses": {
           "default": {
-            "description": "no response description was provided for this operation"
+            "description": ""
           }
         },
         "security": [
@@ -55,7 +55,7 @@
         ],
         "responses": {
           "default": {
-            "description": "no response description was provided for this operation"
+            "description": ""
           }
         }
       }
@@ -67,7 +67,7 @@
         ],
         "responses": {
           "200": {
-            "description": "no description was provided for this response",
+            "description": "",
             "schema": {
               "$ref": "#/definitions/AnotherEntry"
             }
@@ -81,7 +81,7 @@
         ],
         "responses": {
           "200": {
-            "description": "no description was provided for this response",
+            "description": "",
             "schema": {
               "type": "object"
             }
@@ -109,7 +109,7 @@
         ],
         "responses": {
           "default": {
-            "description": "no response description was provided for this operation"
+            "description": ""
           }
         },
         "security": [
@@ -129,7 +129,7 @@
         ],
         "responses": {
           "default": {
-            "description": "no response description was provided for this operation"
+            "description": ""
           }
         }
       }
@@ -142,7 +142,7 @@
         ],
         "responses": {
           "200": {
-            "description": "no description was provided for this response",
+            "description": "",
             "schema": {
               "$ref": "#/definitions/SongsLib.Song"
             }
