@@ -22,10 +22,12 @@
     "babel-plugin-transform-flow-strip-types": "6.3.15",
     "babel-polyfill": "6.3.14",
     "babel-runtime": "6.3.19",
+    "chalk": "^2.4.1",
     "drafter.js": "^2.6.6",
     "immutable": "^3.8.1",
     "js-yaml": "3.5.5",
     "json-schema-faker": "^0.3.7",
+    "minimist": "^1.2.0",
     "raml-1-parser": "^1.1.14",
     "raml-parser": "0.8.16",
     "request": "^2.72.0",
@@ -70,6 +72,7 @@
     "extends": "./linting/prod.yaml"
   },
   "scripts": {
+    "flow": "babel-node ./bin/api-flow.js",
     "compile": "./node_modules/babel-cli/bin/babel.js --ignore='**/__tests__/' -d lib/ src/",
     "compile-node": "TARGET=node ./node_modules/webpack/bin/webpack.js",
     "compile-web": "TARGET=web ./node_modules/webpack/bin/webpack.js",

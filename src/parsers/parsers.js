@@ -1,4 +1,4 @@
-import { parsers } from 'api-flow-config'
+import { parsers } from '../api-flow-config'
 
 const methods = {}
 

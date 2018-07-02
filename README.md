@@ -83,14 +83,24 @@ promise.then((data) => {
 })
 ```
 
-### Using as a CLI (coming soon)
+### Using as a CLI
 ```sh
-node ./bin/api-flow.js some_swagger.json -f swagger -t raml > converted.yml
+./node_modules/.bin/babel-node ./bin/api-flow.js some_swagger.json --from swagger --to raml > converted.yml
 ```
 
 ### User Interface
 
 API Flow is one of the main components of [Console.REST](https://github.com/luckymarmot/console-rest). If you're an API user, you can easily use [https://console.rest/](https://console.rest/) to convert API description files. If you're an API provider, you can add a button to your API docs to let your users open and play with your API in client apps including Paw or Postman.
+
+## Formats
+
+| Name | Format | Version |
+| ---- | ------ | ------- |
+| [Swagger/OAS](https://swagger.io/) | `swagger` | `v2.0` |
+| [RAML](https://raml.org/) | `raml` | `v1.0` |
+| [Paw](https://paw.cloud) | `paw` | `v3.0` |
+| [Postman Collection](https://github.com/postmanlabs/postman-collection) | `postman-collection` | `v2.0` |
+| Internal API Flow Data | `internal` | `v1.0` |
 
 ## Contributing
 
