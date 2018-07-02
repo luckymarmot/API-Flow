@@ -1643,6 +1643,22 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
       const actual = inputs.map(input => __internals__.extractProtocolsFromApi(input))
       expect(actual).toEqual(expected)
     })
+
+    it('should work with undefined', () => {
+      const input = new Api({
+          store: new Store({
+            endpoint: OrderedMap({
+            b: new URL({
+              url: 'https://echo.paw.cloud/base',
+              variableDelimiters: List([ '{', '}' ])
+            }).set('protocol', List([undefined]))
+          })
+        })
+      })
+      const expected = null
+      const actual = __internals__.extractProtocolsFromApi(input)
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@extractMediaTypeUUIDfromApi', () => {

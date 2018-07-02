@@ -343,6 +343,9 @@ methods.getMostCommonEndpoint = (api) => {
  * @return {string} the normalized protocol
  */
 methods.removeDotsFromProtocol = (protocol) => {
+  if (!protocol) {
+    return null
+  }
   if (protocol[protocol.length - 1] === ':') {
     return protocol.slice(0, protocol.length - 1)
   }

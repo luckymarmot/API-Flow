@@ -208,6 +208,9 @@ methods.addConstraintsToDomain = (domain, environment, api) => {
  * @returns {string} the trimmed string
  */
 methods.removeDotsFromProtocol = (protocol) => {
+  if (!protocol) {
+    return null
+  }
   if (protocol[protocol.length - 1] === ':') {
     return protocol.slice(0, protocol.length - 1)
   }
