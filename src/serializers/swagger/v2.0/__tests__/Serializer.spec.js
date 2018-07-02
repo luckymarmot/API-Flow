@@ -668,7 +668,7 @@ describe('serializers/swagger/v2.0/Serializer.js', () => {
 
     it('should work with undefined', () => {
       const expected = null
-      const actual = __internals__.removeDotsFromProtocol(undefined)
+      const actual = __internals__.removeDotsFromProtocol(null)
 
       expect(actual).toEqual(expected)
     })

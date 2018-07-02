@@ -367,7 +367,7 @@ describe('serializers/paw/Serializer.js', () => {
 
     it('should work with undefined', () => {
       const expected = null
-      const actual = __internals__.removeDotsFromProtocol(undefined)
+      const actual = __internals__.removeDotsFromProtocol(null)
 
       expect(actual).toEqual(expected)
     })

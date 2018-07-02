@@ -1646,12 +1646,12 @@ describe('serializers/raml/v1.0/Serializer.js', () => {
 
     it('should work with undefined', () => {
       const input = new Api({
-          store: new Store({
-            endpoint: OrderedMap({
+        store: new Store({
+          endpoint: OrderedMap({
             b: new URL({
               url: 'https://echo.paw.cloud/base',
               variableDelimiters: List([ '{', '}' ])
-            }).set('protocol', List([undefined]))
+            }).set('protocol', List([ null ]))
           })
         })
       })
