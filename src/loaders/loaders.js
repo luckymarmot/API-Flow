@@ -1,4 +1,4 @@
-import { loaders } from '../api-flow-config'
+import { loaders } from 'api-flow-config'
 
 const methods = {}
 

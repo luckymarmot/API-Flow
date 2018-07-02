@@ -1,4 +1,4 @@
-import { serializers } from '../api-flow-config'
+import { serializers } from 'api-flow-config'
 
 const methods = {}
 
