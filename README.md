@@ -2,7 +2,7 @@
 
 # API Flow
 
-A flow written in ES6 using Immutable to convert between API description formats (Swagger, etc.) and other programs such as cURL command lines.
+A library written in ES6 using [Immutable.js](https://facebook.github.io/immutable-js/docs/) to convert between API description formats (including Swagger and RAML) and applications (including Paw and Postman).
 
 ## What formats are supported and what will be in the future
 
@@ -37,26 +37,44 @@ yarn install # or npm install
 This will install the node module dependencies
 
 ## Building the different libraries
-### node, web, and webworker
 
-run the following command to build API Flow for the different environments that you need
+### As a Library
+
+Run the following command to build API Flow for the different environments that you need:
 
 ```sh
-# use TARGET="node" if you only want the node library
-make runners TARGET="node web webworker"
+# use TARGET=node if you only want the node library
+TARGET="node web webworker" make runners
 ```
 
-### Paw
+Possible target environments are:
+
+| Target      | Description                        |
+| ----------- | ---------------------------------- |
+| `node`      | Node library                       |
+| `web`       | Web browser library                |
+| `webworker` | Web library to run in a web worker |
+
+### A a Paw Extension
 
 You can use the following command to add the different extensions to Paw
 
 ```sh
-# use TARGET="swagger" if you only want the swagger bindings
-make transfer TARGET="swagger raml1 postman2"
+# use TARGET=swagger if you only want the swagger bindings
+TARGET="swagger raml1 postman2" make transfer
 ```
 
-## Using the npm module
-### as a standard library
+Possible targets are:
+
+| Target      | Description                                      |
+| ----------- | ------------------------------------------------ |
+| `swagger`   | Swagger 2.0 importer and generator               |
+| `raml1`     | RAML 1.0 importer and generator                  |
+| `postman2`  | Postman Collection 2.0 importer and generator    |
+
+## Using the node module
+
+### As a library
 
 ```js
 const ApiFlow = require('api-flow'); // if from npm
@@ -83,12 +101,12 @@ promise.then((data) => {
 })
 ```
 
-### Using as a CLI
+### As a CLI
 ```sh
 ./node_modules/.bin/babel-node ./bin/api-flow.js some_swagger.json --from swagger --to raml > converted.yml
 ```
 
-### User Interface
+## User Interface
 
 API Flow is one of the main components of [Console.REST](https://github.com/luckymarmot/console-rest). If you're an API user, you can easily use [https://console.rest/](https://console.rest/) to convert API description files. If you're an API provider, you can add a button to your API docs to let your users open and play with your API in client apps including Paw or Postman.
 
@@ -113,7 +131,7 @@ You can find more information about the internal structure of API Flow in [src](
 ## License
 
 This repository is released under the [MIT License](LICENSE). Feel free to fork, and modify!
-Copyright © 2016 Paw Inc.
+Copyright © 2015-2018 Paw.
 
 ## Contributors
 
