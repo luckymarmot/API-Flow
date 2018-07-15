@@ -590,7 +590,7 @@ methods.convertBaseComponentsIntoVariable = (context, defaultHost, baseComponent
 
   return new Variable({
     name: defaultHost,
-    values: OrderedMap(variableValues)
+    values: new OrderedMap(variableValues)
   })
 }
 
@@ -668,7 +668,7 @@ methods.convertComponentEntryIntoStringOrParam = (request, { key, value }) => {
   }
 
   const { value: param } = methods.convertRequestVariableDVIntoParameter(
-    request, 'path', List(), value, key)
+    request, 'path', new List(), value, key)
   return param
 }
 
@@ -758,7 +758,7 @@ methods.createPathEndpoint = (sequence) => {
       in: 'path',
       type: 'string',
       superType: 'sequence',
-      value: List(sequence)
+      value: new List(sequence)
     })
   })
 
@@ -811,7 +811,7 @@ methods.extractResourceFromPawRequest = (context, reference, { request, pathComp
     value: new Resource({
       name: (request.parent || {}).name || null,
       description: (request.parent || {}).description || null,
-      endpoints: OrderedMap(endpoints),
+      endpoints: new OrderedMap(endpoints),
       path: path,
       methods: methods.extractRequestMapFromPawRequest(context, request, endpoints)
     })
@@ -868,7 +868,7 @@ methods.createDefaultHostEndpoint = (defaultHost, hostEntries) => {
     url: defaultUrl
   })
 
-  const protocols = Set(hostEntries.map(({ urlObject }) => urlObject.protocol)).toList()
+  const protocols = new Set(hostEntries.map(({ urlObject }) => urlObject.protocol)).toList()
 
   endpointValue = endpointValue.set('protocol', protocols)
   return { key: defaultHost, value: endpointValue }
@@ -1004,7 +1004,7 @@ methods.convertRequestVariableDVIntoParameter = (
     description: description || null,
     required: required || false,
     default: defaultValue,
-    constraints: List([
+    constraints: new List([
       new Constraint.JSONSchema(schema)
     ]),
     applicableContexts: contexts
@@ -1100,13 +1100,13 @@ methods.isRequestBodyMultipart = (request) => {
  * @returns {Array<Parameter>} the corresponding applicable contexts
  */
 methods.getContentTypeContexts = (contentType) => {
-  return List([
+  return new List([
     new Parameter({
       key: 'Content-Type',
       name: 'Content-Type',
       in: 'headers',
       type: 'string',
-      constraints: List([
+      constraints: new List([
         new Constraint.Enum([ contentType ])
       ])
     })
@@ -1144,7 +1144,7 @@ methods.createDefaultArrayParameter = (contexts, name) => {
  * @returns {OrderedMap<string, Parameter>} the corresponding OrderedMap of body Parameters
  */
 methods.createUrlEncodedOrMultipartBodyParameters = (dsMap, contexts, request) => {
-  const bodyParams = OrderedMap(dsMap)
+  const bodyParams = new OrderedMap(dsMap)
     .map((value, name) => {
       if (Array.isArray(value)) {
         return methods.createDefaultArrayParameter(contexts, name)
@@ -1156,7 +1156,7 @@ methods.createUrlEncodedOrMultipartBodyParameters = (dsMap, contexts, request) =
     })
     .reduce(convertEntryListInMap, {})
 
-  return OrderedMap(bodyParams)
+  return new OrderedMap(bodyParams)
 }
 
 /**
@@ -1192,15 +1192,15 @@ methods.createStandardBodyParameters = (request) => {
   const bodyDS = request.getBody(true)
 
   if (!bodyDS) {
-    return OrderedMap()
+    return new OrderedMap()
   }
 
   const { key, value } = methods.convertParameterDynamicStringIntoParameter(
-    request, 'body', List(), bodyDS, null
+    request, 'body', new List(), bodyDS, null
   )
 
   const body = { [key]: value }
-  return OrderedMap(body)
+  return new OrderedMap(body)
 }
 
 /**
@@ -1227,15 +1227,16 @@ methods.getBodyParameters = (request) => {
  */
 methods.getHeadersMapFromRequest = (request) => {
   const extractHeaders = currify(
-    methods.convertParameterDynamicStringIntoParameter, request, 'headers', List()
+    // request, location, contexts, paramDS, paramName
+    methods.convertParameterDynamicStringIntoParameter, request, 'headers', new List()
   )
 
-  const headers = OrderedMap(request.getHeaders(true))
+  const headers = new OrderedMap(request.getHeaders(true))
     .filter((_, name) => name !== 'Authorization')
     .map(extractHeaders)
     .reduce(convertEntryListInMap, {})
 
-  return OrderedMap(headers)
+  return new OrderedMap(headers)
 }
 
 /**
@@ -1245,14 +1246,14 @@ methods.getHeadersMapFromRequest = (request) => {
  */
 methods.getQueriesMapFromRequest = (request) => {
   const extractUrlParams = currify(
-    methods.convertParameterDynamicStringIntoParameter, request, 'queries', List()
+    methods.convertParameterDynamicStringIntoParameter, request, 'queries', new List()
   )
 
-  const queryParams = OrderedMap(request.getUrlParameters(true))
+  const queryParams = new OrderedMap(request.getUrlParameters(true))
     .map(extractUrlParams)
     .reduce(convertEntryListInMap, {})
 
-  return OrderedMap(queryParams)
+  return new OrderedMap(queryParams)
 }
 
 /**
@@ -1387,12 +1388,12 @@ methods.getAuthNameFromAuth = (context, request, authDS) => {
 methods.extractAuthReferencesFromRequest = (context, request) => {
   const auth = request.getHeaderByName('Authorization', true)
   if (!auth) {
-    return List()
+    return new List()
   }
 
   const authName = methods.getAuthNameFromAuth(context, request, auth)
 
-  return List([
+  return new List([
     new Reference({
       type: 'auth',
       uuid: authName
@@ -1414,7 +1415,7 @@ methods.extractRequestMapFromPawRequest = (context, pawReq, endpoints) => {
 
   const request = new Request({
     id: pawReq.id,
-    endpoints: OrderedMap(endpoints),
+    endpoints: new OrderedMap(endpoints),
     name: pawReq.name,
     description: pawReq.description,
     method,
@@ -1422,7 +1423,7 @@ methods.extractRequestMapFromPawRequest = (context, pawReq, endpoints) => {
     auths
   })
 
-  return OrderedMap({ [method]: request })
+  return new OrderedMap({ [method]: request })
 }
 
 /**
@@ -1595,7 +1596,7 @@ methods.extractResources = (context, reqs) => {
       { resources: [], variables: [], endpoints: [] }
     )
 
-  const resourceMap = OrderedMap(resources.reduce(convertEntryListInMap, {}))
+  const resourceMap = new OrderedMap(resources.reduce(convertEntryListInMap, {}))
 
   return { resources: resourceMap, variables, endpoints }
 }
@@ -1614,9 +1615,9 @@ methods.extractStore = (context, variables, endpoints, reqs) => {
     .map((request) => methods.extractAuthsFromRequest(context, request))
     .filter(({ key }) => !!key)
 
-  const variableStore = OrderedMap(variables.reduce(convertEntryListInMap, {}))
-  const endpointStore = OrderedMap(endpoints.reduce(convertEntryListInMap, {}))
-  const authStore = OrderedMap(auths.reduce(convertEntryListInMap, {}))
+  const variableStore = new OrderedMap(variables.reduce(convertEntryListInMap, {}))
+  const endpointStore = new OrderedMap(endpoints.reduce(convertEntryListInMap, {}))
+  const authStore = new OrderedMap(auths.reduce(convertEntryListInMap, {}))
 
   const store = new Store({
     variable: variableStore,
