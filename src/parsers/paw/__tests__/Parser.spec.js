@@ -1513,6 +1513,17 @@ describe('parsers/paw/Parser.js', () => {
         request, location, contexts, input, paramName)
       expect(actual).toEqual(expected)
     })
+
+    it('should work with undefined value', () => {
+      const request = {}
+      const location = 123
+      const contexts = 234
+      const paramName = 'someParam'
+      const actual = __internals__.convertParameterDynamicStringIntoParameter(
+        request, location, contexts, request.__undefined__, paramName)
+      expect(actual.key).toEqual(paramName)
+      expect(actual.value).toBeAn(Parameter)
+    })
     /* eslint-enable max-statements */
   })
 

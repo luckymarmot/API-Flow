@@ -962,7 +962,7 @@ methods.isRequestVariableDynamicValue = (component) => {
  * @returns {boolean} true if it only holds a request variable, false otherwise
  */
 methods.isRequestVariableDS = (ds) => {
-  return ds.length === 1 && methods.isRequestVariableDynamicValue(ds.components[0])
+  return ds && ds.length === 1 && methods.isRequestVariableDynamicValue(ds.components[0])
 }
 
 /**
@@ -1040,7 +1040,7 @@ methods.convertRequestVariableDSIntoParameter = (
  * @returns {Parameter} the corresponding parameter
  */
 methods.convertStandardDSIntoParameter = (location, contexts, paramDS, paramName) => {
-  const value = paramDS.getEvaluatedString()
+  const value = paramDS ? paramDS.getEvaluatedString() : ''
   const param = new Parameter({
     in: location,
     key: paramName,
