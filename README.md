@@ -120,6 +120,27 @@ API Flow is one of the main components of [Console.REST](https://github.com/luck
 | [Postman Collection](https://github.com/postmanlabs/postman-collection) | `postman-collection` | `v2.0` |
 | Internal API Flow Data | `internal` | `v1.0` |
 
+## Development
+
+### Testing
+
+```sh
+yarn run test # unit tests
+yarn run test-e2e # integration (end-to-end) tests
+```
+
+### Linting
+
+```sh
+yarn run lint
+```
+
+### Code coverage
+
+```sh
+yarn run coverage
+```
+
 ## Contributing
 
 PRs are welcomed!

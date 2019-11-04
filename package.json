@@ -73,14 +73,14 @@
   },
   "scripts": {
     "flow": "babel-node ./bin/api-flow.js",
-    "compile": "./node_modules/babel-cli/bin/babel.js --ignore='**/__tests__/' -d lib/ src/",
+    "compile": "babel --ignore='**/__tests__/' -d lib/ src/",
     "compile-node": "TARGET=node ./node_modules/webpack/bin/webpack.js",
     "compile-web": "TARGET=web ./node_modules/webpack/bin/webpack.js",
     "compile-worker": "TARGET=webworker ./node_modules/webpack/bin/webpack.js",
-    "test": "$npm_package_options_mocha --require mocha --compilers js:babel-register --reporter spec \"src/**/__tests__/*.spec.js\"",
-    "test-e2e": "$npm_package_options_mocha --require mocha --compilers js:babel-register --require \"testing/test-require-patch.js\" --reporter spec \"testing/**/*.spec.js\"",
-    "cov": "NODE_ENV=test node \"./node_modules/.bin/nyc\" \"./node_modules/.bin/mocha\" \"src/**/__tests__/*.spec.js\"",
-    "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
+    "test": "$npm_package_options_mocha \"src/**/__tests__/*.spec.js\"",
+    "test-e2e": "$npm_package_options_mocha --require \"testing/test-require-patch.js\" \"testing/**/*.spec.js\"",
+    "lint": "eslint -c linting/prod.yaml src/",
+    "coverage": "NODE_ENV=test node \"./node_modules/.bin/nyc\" \"./node_modules/.bin/mocha\" \"src/**/__tests__/*.spec.js\""
   },
   "options": {
     "mocha": "./node_modules/.bin/mocha --require mocha --compilers js:babel-register --reporter spec"
