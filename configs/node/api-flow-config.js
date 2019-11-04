@@ -6,7 +6,7 @@ import PostmanV2Loader from '../../src/loaders/postman/v2.0/Loader'
 
 import SwaggerV2Parser from '../../src/parsers/swagger/v2.0/Parser'
 import RAMLV1Parser from '../../src/parsers/raml/v1.0/Parser'
-import PostmanV2Parser from '../../src/loaders/postman/v2.0/Parser'
+import PostmanV2Parser from '../../src/parsers/postman/v2.0/Parser'
 
 import SwaggerV2Serializer from '../../src/serializers/swagger/v2.0/Serializer'
 import RAMLV1Serializer from '../../src/serializers/raml/v1.0/Serializer'

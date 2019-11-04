@@ -364,6 +364,13 @@ describe('serializers/paw/Serializer.js', () => {
 
       expect(actual).toEqual(expected)
     })
+
+    it('should work with undefined', () => {
+      const expected = null
+      const actual = __internals__.removeDotsFromProtocol(null)
+
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe('@convertProtocolIntoRecordParameter', () => {

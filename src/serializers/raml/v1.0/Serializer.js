@@ -872,6 +872,7 @@ methods.extractProtocolsFromApi = (api) => {
   }
 
   const validProtocols = protocols
+    .filter(protocol => (!!protocol))
     .filter(protocol => protocol.match(/https?:?/i))
     .map(protocol => protocol.match(/(https?)/i)[1].toUpperCase())
     .toJS()

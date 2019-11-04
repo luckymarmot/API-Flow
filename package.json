@@ -22,10 +22,12 @@
     "babel-plugin-transform-flow-strip-types": "6.3.15",
     "babel-polyfill": "6.3.14",
     "babel-runtime": "6.3.19",
+    "chalk": "^2.4.1",
     "drafter.js": "^2.6.6",
     "immutable": "^3.8.1",
     "js-yaml": "3.5.5",
     "json-schema-faker": "^0.3.7",
+    "minimist": "^1.2.0",
     "raml-1-parser": "^1.1.14",
     "raml-parser": "0.8.16",
     "request": "^2.72.0",
@@ -70,13 +72,15 @@
     "extends": "./linting/prod.yaml"
   },
   "scripts": {
-    "compile": "./node_modules/babel-cli/bin/babel.js --ignore='**/__tests__/' -d lib/ src/",
+    "flow": "babel-node ./bin/api-flow.js",
+    "compile": "babel --ignore='**/__tests__/' -d lib/ src/",
     "compile-node": "TARGET=node ./node_modules/webpack/bin/webpack.js",
     "compile-web": "TARGET=web ./node_modules/webpack/bin/webpack.js",
     "compile-worker": "TARGET=webworker ./node_modules/webpack/bin/webpack.js",
     "test": "$npm_package_options_mocha \"src/**/__tests__/*.spec.js\"",
-    "validate": "node validate.js",
-    "lint": "./node_modules/eslint/bin/eslint.js -c linting/prod.yaml src/"
+    "test-e2e": "$npm_package_options_mocha --require \"testing/test-require-patch.js\" \"testing/**/*.spec.js\"",
+    "lint": "eslint -c linting/prod.yaml src/",
+    "coverage": "NODE_ENV=test node \"./node_modules/.bin/nyc\" \"./node_modules/.bin/mocha\" \"src/**/__tests__/*.spec.js\""
   },
   "options": {
     "mocha": "./node_modules/.bin/mocha --require mocha --compilers js:babel-register --reporter spec"

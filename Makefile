@@ -25,13 +25,5 @@ transfer: clean importers generators
 pack: clean importers generators
 	sh "$(SCRIPTS)/pack.sh" $(BASE) $(TARGET)
 
-lint:
-	sh "$(SCRIPTS)/lint.sh" $(BASE)
-
-test:
-	sh "$(SCRIPTS)/test.sh" $(BASE) $(TEST_TARGET)
-
-validate: lint test
-
 watch:
 	sh "$(SCRIPTS)/watch.sh" $(BASE) $(COMMAND)
